@@ -1,7 +1,5 @@
 # TIADAS
-
 ### Espacios
-
 * Space(object)
     * Atributos
         * **shape**
@@ -49,7 +47,6 @@
         * **spaces:** La tupla con los dos espacios.
         
 ### Entornos
-
 * gym.Env
     * Atributos
         * **action_space:** Acciones posibles a realizar.
@@ -79,8 +76,23 @@ rid of simple correlations.)
 ```
 
 ### Instalar como paquete local
-Para instalar los entornos como paquete locales, basta con poner:
+Para instalar los entornos como paquete locales, basta abrir la consola, ir al directorio gym_tiadas dentro de TIADAS y poner:
 ```
 python -m pip install .
 ```
-Esto lo instalará como paquete del entorno del python usado.
+Esto lo instalará como paquete del entorno dentro del python usado.
+
+### Gráficos
+Dentro del directorio plots, se almacenan los gráficos más relevantes que hemos ido generando.
+
+### Espacio Malla
+Para diseñar el espacio de malla, hemos optado por dos opciones, la primera y más sencilla (y con mejores resultados en
+tiempo), es crear un espacio **Tupla(Discrete, Discrete)**, donde el primer elemento representa el eje de coordenadas X,
+y el segundo representa el eje de coordenadas Y.
+
+La segunda opción consiste en usar un espacio discreto, y pasar de tupla a estados discretos con la función usada en la
+clase **RussellNorvigDiscrete** .
+
+### Ejemplos
+Se han creado dos entornos (uno con tupla y otro discreto), así como dos agentes para probarlos (Agent y AgentDiscrete),
+en el fichero ``main.py``, se pueden ver varias funciones con diferentes pruebas.
