@@ -1,12 +1,11 @@
 import gym
-import gym_foo
+import gym_tiadas
 import time
 import matplotlib.pyplot as plt
 
 from models import Agent, AgentDiscrete
 
 # ENV_NAME = 'CartPole-v1'
-# ENV_NAME = 'foo-extra-hard-v0'
 ENV_NAME_MESH = 'russell-norvig-v0'
 ENV_NAME_DISCRETE = 'russell-norvig-discrete-v0'
 
