@@ -1,10 +1,11 @@
-import numpy as np
 import operator
 
+import numpy as np
 
-class Agent:
+
+class AgentMultiObjective:
     __icons = {
-        'BLANK': ' ', 'BLOCK': '■', 'FINAL': '$', 'CURRENT': '☺', 'UP': '↑', 'RIGHT': '→', 'DOWN': '↓', 'LEFT': '←'
+        'BLANK': ' ', 'BLOCK': '■', 'FINAL': '$', 'CURRENT': '☺', 'UP': '↑', 'RIGHT': '→', 'DOWN': '↓', 'LEFT': '←',
     }
 
     __actions = {
@@ -12,7 +13,7 @@ class Agent:
     }
 
     def __init__(self, environment, alpha=0.1, epsilon=0.1, gamma=0.6, seed=0, default_action=0,
-                 states_to_observe=None):
+                 states_to_observe=None, rewards_weights=None):
 
         # Check alpha
         assert 0.0 < alpha <= 1.0
@@ -24,8 +25,13 @@ class Agent:
         self.default_action = default_action
 
         # Create dictionary of states to observe
-        if states_to_observe is not None:
+        if states_to_observe is None:
+            self.states_to_observe = dict()
+        else:
             self.states_to_observe = {state: list() for state in states_to_observe}
+
+        # Set weights to rewards
+        self.rewards_weights = rewards_weights
 
         # Current Agent State if the initial state of environment
         self.state = self.environment.reset()
@@ -77,7 +83,13 @@ class Agent:
             action = self.select_action()
 
             # Do step on environment
-            next_state, reward, is_final_state, info = self.environment.step(action=action)
+            next_state, rewards, is_final_state, info = self.environment.step(action=action)
+
+            # If not weights define, all rewards have same weight
+            weights = [1] * len(rewards) if self.rewards_weights is None else self.rewards_weights
+
+            # Apply weights to rewards to get only one reward
+            reward = np.sum(np.multiply(rewards, weights))
 
             # Get old value
             old_value = self.q.get(self.state, {}).get(action, self.environment.default_reward)
@@ -134,17 +146,12 @@ class Agent:
         for y in range(rows):
             for x in range(cols):
 
-                state = x, y
+                state = (x, y)
 
                 if state in self.environment.obstacles:
                     icon = self.__icons.get('BLOCK')
-                elif state in self.environment.finals.keys():
-                    icon = self.__icons.get('FINAL')
+
                 else:
-
-                    # Build state
-                    state = (x, y)
-
                     # Get best action
                     best_action = self.__get_best_action(state=state)
 
@@ -166,6 +173,25 @@ class Agent:
         # New line
         print('')
 
+    def show_crude_policy(self):
+
+        # For each state in q
+        for state in self.q.keys():
+            best_action = self.__get_best_action(state=state)
+
+            if best_action == self.__actions.get('UP'):
+                icon = self.__icons.get('UP')
+            elif best_action == self.__actions.get('RIGHT'):
+                icon = self.__icons.get('RIGHT')
+            elif best_action == self.__actions.get('DOWN'):
+                icon = self.__icons.get('DOWN')
+            elif best_action == self.__actions.get('LEFT'):
+                icon = self.__icons.get('LEFT')
+            else:
+                icon = self.__icons.get('STAY')
+
+            print("State: {} -> Action: {}".format(state, icon))
+
     def __get_best_action(self, state=None) -> int:
         """
         Return best action for q and state given.
@@ -182,7 +208,8 @@ class Agent:
             # Get max by value, and get it's action
             action = max(self.q.get(state).items(), key=operator.itemgetter(1))[0]
         else:
-            action = self.default_action
+            # If don't know best action, get a random action
+            action = self.environment.action_space.sample()
 
         return action
 
