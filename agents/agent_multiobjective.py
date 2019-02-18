@@ -6,10 +6,7 @@ import numpy as np
 class AgentMultiObjective:
     __icons = {
         'BLANK': ' ', 'BLOCK': '■', 'FINAL': '$', 'CURRENT': '☺', 'UP': '↑', 'RIGHT': '→', 'DOWN': '↓', 'LEFT': '←',
-    }
-
-    __actions = {
-        'UP': 0, 'RIGHT': 1, 'DOWN': 2, 'LEFT': 3
+        'STAY': '×'
     }
 
     def __init__(self, environment, alpha=0.1, epsilon=0.1, gamma=0.6, seed=0, default_action=0,
@@ -86,7 +83,7 @@ class AgentMultiObjective:
             next_state, rewards, is_final_state, info = self.environment.step(action=action)
 
             # If not weights define, all rewards have same weight
-            weights = [1] * len(rewards) if self.rewards_weights is None else self.rewards_weights
+            weights = [1.] * len(rewards) if self.rewards_weights is None else self.rewards_weights
 
             # Apply weights to rewards to get only one reward
             reward = np.sum(np.multiply(rewards, weights))
@@ -148,21 +145,12 @@ class AgentMultiObjective:
 
                 state = (x, y)
 
-                if state in self.environment.obstacles:
+                if hasattr(self.environment, 'obstacles') and state in self.environment.obstacles:
                     icon = self.__icons.get('BLOCK')
 
                 else:
                     # Get best action
-                    best_action = self.__get_best_action(state=state)
-
-                    if best_action == self.__actions.get('UP'):
-                        icon = self.__icons.get('UP')
-                    elif best_action == self.__actions.get('RIGHT'):
-                        icon = self.__icons.get('RIGHT')
-                    elif best_action == self.__actions.get('DOWN'):
-                        icon = self.__icons.get('DOWN')
-                    else:
-                        icon = self.__icons.get('LEFT')
+                    icon = self.__get_best_action(state=state)
 
                 # Show col
                 print('| {} '.format(icon), end='')
@@ -174,23 +162,15 @@ class AgentMultiObjective:
         print('')
 
     def show_crude_policy(self):
-
+        """
+        Show all states with it's best action
+        :return:
+        """
         # For each state in q
         for state in self.q.keys():
             best_action = self.__get_best_action(state=state)
 
-            if best_action == self.__actions.get('UP'):
-                icon = self.__icons.get('UP')
-            elif best_action == self.__actions.get('RIGHT'):
-                icon = self.__icons.get('RIGHT')
-            elif best_action == self.__actions.get('DOWN'):
-                icon = self.__icons.get('DOWN')
-            elif best_action == self.__actions.get('LEFT'):
-                icon = self.__icons.get('LEFT')
-            else:
-                icon = self.__icons.get('STAY')
-
-            print("State: {} -> Action: {}".format(state, icon))
+            print("State: {} -> Action: {}".format(state, best_action))
 
     def __get_best_action(self, state=None) -> int:
         """

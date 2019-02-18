@@ -4,7 +4,7 @@ import time
 import matplotlib.pyplot as plt
 
 from agents import Agent, AgentDiscrete, AgentBuridanAssOne, AgentMultiObjective
-from gym_tiadas.envs import BuridanAss, DeepSeaTreasure
+from gym_tiadas.envs import BuridanAss, DeepSeaTreasure, ResourceGathering, PressurizedBountifulSeaTreasure
 
 # ENV_NAME = 'CartPole-v1'
 ENV_NAME_MESH = 'russell-norvig-v0'
@@ -26,6 +26,7 @@ def training(agent, epochs=100000, verbose=False):
 
     # Show values
     if verbose:
+        agent.show_crude_policy()
         agent.show_q()
 
 
@@ -170,18 +171,32 @@ def plot_performance(epochs=100000):
     agent_mesh.show_policy()
 
 
-def buridan_ass():
-    environment = BuridanAss()
-    agent = AgentBuridanAssOne(environment=environment)
-    training(agent=agent, epochs=100000)
-    agent.show_crude_policy()
-
-
 def deep_sea_treasure():
     environment = DeepSeaTreasure()
     agent = AgentMultiObjective(environment=environment, rewards_weights=[.5, 1.], epsilon=0.3)
     training(agent=agent)
-    agent.show_policy()
+    pass
+
+
+def resource_gathering():
+    environment = ResourceGathering()
+    agent = AgentMultiObjective(environment=environment, rewards_weights=[0., 0., .1])
+    training(agent=agent, verbose=True, epochs=1000000)
+    pass
+
+
+def pressurized_bountiful_sea_treasure():
+    environment = PressurizedBountifulSeaTreasure()
+    agent = AgentMultiObjective(environment=environment, rewards_weights=[1., 0., 0.], epsilon=0.3)
+    training(agent=agent, epochs=200000)
+    pass
+
+
+def buridan_ass():
+    environment = BuridanAss()
+    agent = AgentMultiObjective(environment=environment, epsilon=0.3, rewards_weights=[0.3, 0.3, 0.3])
+    training(agent=agent, epochs=10000, verbose=True)
+    pass
 
 
 def main():
@@ -189,7 +204,10 @@ def main():
     # plot_training_accumulate()
     # plot_performance(epochs=1000000)
 
-    deep_sea_treasure()
+    # deep_sea_treasure()
+    # resource_gathering()
+    # buridan_ass()
+    # pressurized_bountiful_sea_treasure()
     pass
 
 

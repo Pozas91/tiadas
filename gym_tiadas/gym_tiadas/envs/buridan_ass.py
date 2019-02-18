@@ -133,7 +133,7 @@ class BuridanAss(gym.Env):
         info = {}
 
         # If there isn't more food left, it is a final state
-        final = all(not isinstance(self.food.get(state), bool) for state in self.food.keys())
+        final = any(not isinstance(self.food.get(state), bool) for state in self.food.keys())
 
         return tuple(complex_state), rewards, final, info
         # return new_state, rewards, final, info

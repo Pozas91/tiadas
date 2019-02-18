@@ -19,3 +19,18 @@ register(
     id='deep-sea-treasure-v0',
     entry_point='gym_tiadas.envs:DeepSeaTreasure'
 )
+
+register(
+    id='resource-gathering-v0',
+    entry_point='gym_tiadas.envs:ResourceGathering'
+)
+
+register(
+    id='pressurized-bountiful-sea-treasure-v0',
+    entry_point='gym_tiadas.envs:PressurizedBountifulSeaTreasure'
+)
+
+register(
+    id='deep-sea-treasure-transactions-v0',
+    entry_point='gym_tiadas.envs:DeepSeaTreasureTransactions'
+)
