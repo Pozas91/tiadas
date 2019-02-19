@@ -1,11 +1,10 @@
 import gym
-
+import numpy as np
 from gym import spaces
 from gym.utils import seeding
-import numpy as np
 
 
-class ResourceGathering(gym.Env):
+class ResourceGatheringLimit(gym.Env):
     __actions = {
         'UP': 0, 'RIGHT': 1, 'DOWN': 2, 'LEFT': 3
     }
@@ -105,7 +104,7 @@ class ResourceGathering(gym.Env):
         elif self.time >= self.time_limit:
             final = True
             # Accumulate reward
-            rewards = [reward / self.time for reward in self.state]
+            rewards = np.divide(self.state, self.time)
 
         # Set info
         info = {}

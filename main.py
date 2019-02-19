@@ -174,22 +174,24 @@ def plot_performance(epochs=100000):
 
 def deep_sea_treasure():
     environment = DeepSeaTreasure()
-    agent = AgentMultiObjective(environment=environment, rewards_weights=[.5, 1.], epsilon=0.3)
-    training(agent=agent)
+    agent = AgentMultiObjective(environment=environment, rewards_weights=[.5, 1.], epsilon=0.7)
+    training(agent=agent, verbose=True)
+    agent.show_policy()
     pass
 
 
 def resource_gathering():
     environment = ResourceGathering()
-    agent = AgentMultiObjective(environment=environment, rewards_weights=[0., 0., .1])
-    training(agent=agent, verbose=True, epochs=1000000)
+    agent = AgentMultiObjective(environment=environment, rewards_weights=[0., 0., .1], max_iterations=1000)
+    training(agent=agent, verbose=True)
     pass
 
 
 def pressurized_bountiful_sea_treasure():
     environment = PressurizedBountifulSeaTreasure()
-    agent = AgentMultiObjective(environment=environment, rewards_weights=[1., 0., 0.], epsilon=0.3)
-    training(agent=agent, epochs=200000)
+    agent = AgentMultiObjective(environment=environment, rewards_weights=[1., 0., 0.], epsilon=0.5)
+    training(agent=agent, epochs=200000, verbose=True)
+    agent.show_policy()
     pass
 
 
@@ -215,8 +217,8 @@ def main():
 
     # deep_sea_treasure()
     # resource_gathering()
-    # buridan_ass()
     # pressurized_bountiful_sea_treasure()
+    # buridan_ass()
     mo_puddle_world()
     pass
 

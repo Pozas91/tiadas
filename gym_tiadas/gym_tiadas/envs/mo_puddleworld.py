@@ -54,7 +54,6 @@ class MoPuddleWorld(gym.Env):
 
         # Update previous state
         self.current_state = new_state
-        self.time += 1
 
         # If agent is in treasure or time limit has reached
         final = self.current_state == self.final_state
