@@ -3,8 +3,9 @@ import gym_tiadas
 import time
 import matplotlib.pyplot as plt
 
-from agents import Agent, AgentDiscrete, AgentBuridanAssOne, AgentMultiObjective
-from gym_tiadas.envs import BuridanAss, DeepSeaTreasure, ResourceGathering, PressurizedBountifulSeaTreasure
+from agents import Agent, AgentDiscrete, AgentMultiObjective
+from gym_tiadas.envs import BuridanAss, DeepSeaTreasure, ResourceGathering, PressurizedBountifulSeaTreasure, \
+    MoPuddleWorld
 
 # ENV_NAME = 'CartPole-v1'
 ENV_NAME_MESH = 'russell-norvig-v0'
@@ -199,6 +200,14 @@ def buridan_ass():
     pass
 
 
+def mo_puddle_world():
+    environment = MoPuddleWorld()
+    agent = AgentMultiObjective(environment=environment, rewards_weights=[0.5, 0.5], epsilon=0.3, max_iterations=100)
+    training(agent=agent, epochs=1000, verbose=True)
+    agent.show_policy()
+    pass
+
+
 def main():
     # plot_training_from_zero()
     # plot_training_accumulate()
@@ -208,6 +217,7 @@ def main():
     # resource_gathering()
     # buridan_ass()
     # pressurized_bountiful_sea_treasure()
+    mo_puddle_world()
     pass
 
 

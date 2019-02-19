@@ -5,3 +5,4 @@ from .deep_sea_treasure import DeepSeaTreasure
 from .resource_gathering import ResourceGathering
 from .pressurized_bountiful_sea_treasure import PressurizedBountifulSeaTreasure
 from .deep_sea_treasure_transactions import DeepSeaTreasureTransactions
+from .mo_puddleworld import MoPuddleWorld

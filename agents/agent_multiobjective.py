@@ -9,8 +9,8 @@ class AgentMultiObjective:
         'STAY': '×'
     }
 
-    def __init__(self, environment, alpha=0.1, epsilon=0.1, gamma=0.6, seed=0, default_action=0,
-                 states_to_observe=None, rewards_weights=None):
+    def __init__(self, environment, alpha=0.1, epsilon=0.1, gamma=0.6, seed=0, default_action=0, default_reward=0.,
+                 states_to_observe=None, rewards_weights=None, max_iterations=None):
 
         # Check alpha
         assert 0.0 < alpha <= 1.0
@@ -20,6 +20,10 @@ class AgentMultiObjective:
         self.gamma = gamma
         self.environment = environment
         self.default_action = default_action
+        self.default_reward = default_reward
+
+        self.max_iterations = max_iterations
+        self.iterations = 0
 
         # Create dictionary of states to observe
         if states_to_observe is None:
@@ -76,11 +80,17 @@ class AgentMultiObjective:
         is_final_state = False
 
         while not is_final_state:
+            # Reset iterations
+            self.__reset_iterations()
+
             # Get an action
             action = self.select_action()
 
             # Do step on environment
             next_state, rewards, is_final_state, info = self.environment.step(action=action)
+
+            # Increment iterations
+            self.iterations += 1
 
             # If not weights define, all rewards have same weight
             weights = [1.] * len(rewards) if self.rewards_weights is None else self.rewards_weights
@@ -89,7 +99,7 @@ class AgentMultiObjective:
             reward = np.sum(np.multiply(rewards, weights))
 
             # Get old value
-            old_value = self.q.get(self.state, {}).get(action, self.environment.default_reward)
+            old_value = self.q.get(self.state, {}).get(action, self.default_reward)
 
             # Get next max value
             next_max = self.__get_best_value(state=next_state)
@@ -113,6 +123,10 @@ class AgentMultiObjective:
 
             # Update state
             self.state = next_state
+
+            # Check timeout
+            if self.max_iterations is not None and not is_final_state:
+                is_final_state = self.iterations >= self.max_iterations
 
         # Append new data
         for state, data in self.states_to_observe.items():
@@ -189,7 +203,8 @@ class AgentMultiObjective:
             action = max(self.q.get(state).items(), key=operator.itemgetter(1))[0]
         else:
             # If don't know best action, get a random action
-            action = self.environment.action_space.sample()
+            # action = self.environment.action_space.sample()
+            action = self.default_action
 
         return action
 
@@ -206,6 +221,9 @@ class AgentMultiObjective:
             # Get max by value, and get it
             value = max(self.q.get(state).items(), key=operator.itemgetter(1))[1]
         else:
-            value = self.environment.default_reward
+            value = self.default_reward
 
         return value
+
+    def __reset_iterations(self):
+        self.iterations = 0

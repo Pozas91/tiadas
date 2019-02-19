@@ -2,64 +2,30 @@ import gym
 
 from gym import spaces
 from gym.utils import seeding
+from scipy.spatial import distance
 
 
 class MoPuddleWorld(gym.Env):
-    __actions = {
-        'UP': 0, 'RIGHT': 1, 'DOWN': 2, 'LEFT': 3
-    }
+    __actions = {'UP': 0, 'RIGHT': 1, 'DOWN': 2, 'LEFT': 3}
     __icons = {'BLANK': ' ', 'BLOCK': '■', 'REWARD': '$', 'CURRENT': '☺'}
 
-    def __init__(self, initial_observation=(0, 0), default_reward=0., seed=0, desired_action=.05):
-        """
-        :param initial_observation:
-        :param default_reward:
-        :param seed:
-        """
+    def __init__(self, finish_reward=10., penalize_non_goal=-1., seed=0, final_state=(19, 0)):
 
+        self.penalize_non_goal = penalize_non_goal
+        self.final_reward = finish_reward
         self.action_space = spaces.Discrete(len(self.__actions))
 
         # Mesh of 10 cols and 11 rows
         self.observation_space = spaces.Tuple((
-            spaces.Discrete(10), spaces.Discrete(11)
+            spaces.Discrete(20), spaces.Discrete(20)
         ))
 
-        self.default_reward = default_reward
-
-        assert isinstance(initial_observation, tuple) and self.observation_space.contains(initial_observation)
-        self.initial_state = initial_observation
-        self.current_state = self.initial_state
-
-        # List of all treasures and its reward.
-        self.treasures = {
-            (0, 1): 1,
-            (1, 2): 2,
-            (2, 3): 3,
-            (3, 4): 5,
-            (4, 4): 8,
-            (5, 4): 16,
-            (6, 7): 24,
-            (7, 7): 50,
-            (8, 9): 74,
-            (9, 10): 124,
-        }
-
         self.obstacles = frozenset()
-        self.obstacles = self.obstacles.union([(0, y) for y in range(2, 11)])
-        self.obstacles = self.obstacles.union([(1, y) for y in range(3, 11)])
-        self.obstacles = self.obstacles.union([(2, y) for y in range(4, 11)])
-        self.obstacles = self.obstacles.union([(3, y) for y in range(5, 11)])
-        self.obstacles = self.obstacles.union([(4, y) for y in range(5, 11)])
-        self.obstacles = self.obstacles.union([(5, y) for y in range(5, 11)])
-        self.obstacles = self.obstacles.union([(6, y) for y in range(8, 11)])
-        self.obstacles = self.obstacles.union([(7, y) for y in range(8, 11)])
-        self.obstacles = self.obstacles.union([(8, y) for y in range(10, 11)])
+        self.obstacles = self.obstacles.union([(x, y) for x in range(0, 11) for y in range(3, 7)])
+        self.obstacles = self.obstacles.union([(x, y) for x in range(6, 10) for y in range(2, 14)])
 
-        # Time inverted in find a treasure
-        self.time = 0
-        self.time_limit = time_limit
-
-        self.reset()
+        self.final_state = final_state
+        self.current_state = self.reset()
 
         self.np_random = None
         self.seed(seed=seed)
@@ -77,10 +43,10 @@ class MoPuddleWorld(gym.Env):
         """
         Given an action, do a step
         :param action:
-        :return: (state, (time_inverted, treasure_value), final, info)
+        :return: (state, (non_goal_reached, puddle_penalize), final, info)
         """
 
-        # (time_inverted, treasure_value)
+        # (non_goal_reached, puddle_penalize)
         rewards = [0., 0.]
 
         # Get new state
@@ -90,24 +56,44 @@ class MoPuddleWorld(gym.Env):
         self.current_state = new_state
         self.time += 1
 
-        # Get time inverted
-        rewards[0] = -self.time
-
-        # Get treasure value
-        rewards[1] = self.treasures.get(self.current_state, self.default_reward)
-
-        # Set info
-        info = {}
-
         # If agent is in treasure or time limit has reached
-        final = self.current_state in self.treasures.keys() or self.time >= self.time_limit
+        final = self.current_state == self.final_state
+
+        # Set final reward
+        rewards[0] = self.final_reward if final else self.penalize_non_goal
+
+        if self.current_state in self.obstacles:
+            x_space, y_space = self.observation_space.spaces
+            # Get all spaces
+            all_space = [(x, y) for x in range(x_space.n) for y in range(y_space.n)]
+            # Get free spaces
+            free_spaces = list(set(all_space) - self.obstacles)
+            # Start with infinite distance
+            min_distance = float('inf')
+
+            # For each free space
+            for state in free_spaces:
+                min_distance = min(min_distance, distance.cityblock(self.current_state, state))
+
+            # Set penalization per distance
+            rewards[1] = -min_distance
+
+            # Set info
+        info = {}
 
         return self.current_state, rewards, final, info
 
     def reset(self):
-        self.current_state = self.initial_state
-        self.time = 0
+        """
+        Get random non-goal state to current_value
+        :return:
+        """
+        random_space = self.observation_space.sample()
 
+        while random_space == self.final_state:
+            random_space = self.observation_space.sample()
+
+        self.current_state = random_space
         return self.current_state
 
     def render(self, **kwargs):
@@ -124,8 +110,6 @@ class MoPuddleWorld(gym.Env):
                     icon = self.__icons.get('CURRENT')
                 elif state in self.obstacles:
                     icon = self.__icons.get('BLOCK')
-                elif state in self.treasures.keys():
-                    icon = self.treasures.get(state)
                 else:
                     icon = self.__icons.get('BLANK')
 
@@ -161,7 +145,7 @@ class MoPuddleWorld(gym.Env):
         # Set new state
         new_state = x, y
 
-        if not self.observation_space.contains(new_state) or new_state in self.obstacles:
+        if not self.observation_space.contains(new_state):
             # New state is invalid.
             new_state = self.current_state
 
