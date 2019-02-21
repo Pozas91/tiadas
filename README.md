@@ -82,6 +82,11 @@ python -m pip install .
 ```
 Esto lo instalará como paquete del entorno dentro del python usado.
 
+Una vez hecho esto, cuando queramos usar los entornos de nuestra librería deberemos importarla con:
+```python
+import gym_tiadas
+```
+
 ### Gráficos
 Dentro del directorio plots, se almacenan los gráficos más relevantes que hemos ido generando.
 

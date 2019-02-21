@@ -1,34 +1,17 @@
-import gym
-import gym_tiadas
 import time
+
+import gym
 import matplotlib.pyplot as plt
+import numpy as np
+from gym_tiadas.envs import BuridanAss, DeepSeaTreasure, ResourceGathering, PressurizedBountifulSeaTreasure, \
+    MoPuddleWorld, DeepSeaTreasureSimplified
 
 from agents import Agent, AgentDiscrete, AgentMultiObjective
-from gym_tiadas.envs import BuridanAss, DeepSeaTreasure, ResourceGathering, PressurizedBountifulSeaTreasure, \
-    MoPuddleWorld
+from utils import pareto, training
 
 # ENV_NAME = 'CartPole-v1'
 ENV_NAME_MESH = 'russell-norvig-v0'
 ENV_NAME_DISCRETE = 'russell-norvig-discrete-v0'
-
-
-def training(agent, epochs=100000, verbose=False):
-    """
-    Return an agent trained with `epochs` epochs.
-    :param verbose:
-    :param agent:
-    :param epochs:
-    :return:
-    """
-
-    for _ in range(epochs):
-        # Do an episode
-        agent.episode()
-
-    # Show values
-    if verbose:
-        agent.show_crude_policy()
-        agent.show_q()
 
 
 def plot_training_from_zero():
@@ -174,22 +157,49 @@ def plot_performance(epochs=100000):
 
 def deep_sea_treasure():
     environment = DeepSeaTreasure()
-    agent = AgentMultiObjective(environment=environment, rewards_weights=[.5, 1.], epsilon=0.7)
+    agent = AgentMultiObjective(environment=environment, weights=[0., 1.], epsilon=0.8)
     training(agent=agent, verbose=True)
     agent.show_policy()
     pass
 
 
+def deep_sea_treasure_pareto():
+    # Build environment
+    environment = DeepSeaTreasureSimplified()
+
+    agent_time = AgentMultiObjective(environment=environment, weights=[1., 0.], epsilon=0.5, default_action=1)
+    training(agent=agent_time)
+
+    p = tuple(np.max(agent_time.rewards_history, axis=0))
+
+    agent_treasure = AgentMultiObjective(environment=environment, weights=[0., 1.], epsilon=0.5,
+                                         default_action=1)
+    training(agent=agent_treasure)
+
+    q = tuple(np.max(agent_treasure.rewards_history, axis=0))
+
+    pareto_frontier = pareto.algorithm(p=p, q=q, problem=agent_time)
+    pareto_frontier_np = np.array(pareto_frontier)
+
+    x = pareto_frontier_np[:, 0]
+    y = pareto_frontier_np[:, 1]
+
+    plt.scatter(x, y)
+    plt.ylabel('Reward')
+    plt.xlabel('Time')
+    plt.show()
+
+
 def resource_gathering():
     environment = ResourceGathering()
-    agent = AgentMultiObjective(environment=environment, rewards_weights=[0., 0., .1], max_iterations=1000)
+    agent = AgentMultiObjective(environment=environment, weights=[0., 0., .1], max_iterations=1000)
     training(agent=agent, verbose=True)
     pass
 
 
 def pressurized_bountiful_sea_treasure():
     environment = PressurizedBountifulSeaTreasure()
-    agent = AgentMultiObjective(environment=environment, rewards_weights=[1., 0., 0.], epsilon=0.5)
+    agent = AgentMultiObjective(environment=environment, weights=[1., 0., 0.], epsilon=0.5)
     training(agent=agent, epochs=200000, verbose=True)
     agent.show_policy()
     pass
@@ -197,14 +207,14 @@ def pressurized_bountiful_sea_treasure():
 
 def buridan_ass():
     environment = BuridanAss()
-    agent = AgentMultiObjective(environment=environment, epsilon=0.3, rewards_weights=[0.3, 0.3, 0.3])
+    agent = AgentMultiObjective(environment=environment, epsilon=0.3, weights=[0.3, 0.3, 0.3])
     training(agent=agent, epochs=10000, verbose=True)
     pass
 
 
 def mo_puddle_world():
     environment = MoPuddleWorld()
-    agent = AgentMultiObjective(environment=environment, rewards_weights=[0.5, 0.5], epsilon=0.3, max_iterations=100)
+    agent = AgentMultiObjective(environment=environment, weights=[0.5, 0.5], epsilon=0.3, max_iterations=100)
     training(agent=agent, epochs=1000, verbose=True)
     agent.show_policy()
     pass
@@ -216,10 +226,11 @@ def main():
     # plot_performance(epochs=1000000)
 
     # deep_sea_treasure()
+    deep_sea_treasure_pareto()
     # resource_gathering()
     # pressurized_bountiful_sea_treasure()
     # buridan_ass()
-    mo_puddle_world()
+    # mo_puddle_world()
     pass
 
 

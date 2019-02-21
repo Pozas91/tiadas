@@ -1,18 +1,16 @@
-import numpy as np
 import operator
+
+import numpy as np
 
 
 class Agent:
     __icons = {
-        'BLANK': ' ', 'BLOCK': '■', 'FINAL': '$', 'CURRENT': '☺', 'UP': '↑', 'RIGHT': '→', 'DOWN': '↓', 'LEFT': '←'
+        'BLANK': ' ', 'BLOCK': '■', 'FINAL': '$', 'CURRENT': '☺', 'UP': '↑', 'RIGHT': '→', 'DOWN': '↓', 'LEFT': '←',
+        'STAY': '×'
     }
 
-    __actions = {
-        'UP': 0, 'RIGHT': 1, 'DOWN': 2, 'LEFT': 3
-    }
-
-    def __init__(self, environment, alpha=0.1, epsilon=0.1, gamma=0.6, seed=0, default_action=0,
-                 states_to_observe=None):
+    def __init__(self, environment, alpha=0.1, epsilon=0.1, gamma=0.6, seed=0, default_action=0, default_reward=0.,
+                 states_to_observe=None, max_iterations=None):
 
         # Check alpha
         assert 0.0 < alpha <= 1.0
@@ -22,6 +20,11 @@ class Agent:
         self.gamma = gamma
         self.environment = environment
         self.default_action = default_action
+        self.default_reward = default_reward
+
+        # To intensive problems
+        self.max_iterations = max_iterations
+        self.iterations = 0
 
         # Create dictionary of states to observe
         if states_to_observe is None:
@@ -37,6 +40,9 @@ class Agent:
 
         # Initialize to Q-Learning Dictionary
         self.q = dict()
+
+        # Rewards history data
+        self.rewards_history = list()
 
     def __setstate__(self, state) -> None:
         """
@@ -74,15 +80,28 @@ class Agent:
         # Condition to stop episode
         is_final_state = False
 
+        # Reset iterations
+        self.__reset_iterations()
+
         while not is_final_state:
+
+            # Increment iterations
+            self.iterations += 1
+
             # Get an action
             action = self.select_action()
 
             # Do step on environment
             next_state, reward, is_final_state, info = self.environment.step(action=action)
 
+            # Transform reward
+            reward = self.__processing_reward(reward=reward)
+
+            # Append to rewards history
+            self.rewards_history.append(reward)
+
             # Get old value
-            old_value = self.q.get(self.state, {}).get(action, self.environment.default_reward)
+            old_value = self.q.get(self.state, {}).get(action, self.default_reward)
 
             # Get next max value
             next_max = self.__get_best_value(state=next_state)
@@ -106,6 +125,10 @@ class Agent:
 
             # Update state
             self.state = next_state
+
+            # Check timeout
+            if self.max_iterations is not None and not is_final_state:
+                is_final_state = self.iterations >= self.max_iterations
 
         # Append new data
         for state, data in self.states_to_observe.items():
@@ -136,28 +159,15 @@ class Agent:
         for y in range(rows):
             for x in range(cols):
 
-                state = x, y
+                state = (x, y)
 
-                if state in self.environment.obstacles:
+                if hasattr(self.environment, 'obstacles') and state in self.environment.obstacles:
                     icon = self.__icons.get('BLOCK')
-                elif state in self.environment.finals.keys():
-                    icon = self.__icons.get('FINAL')
+                elif state not in self.q.keys():
+                    icon = '-'
                 else:
-
-                    # Build state
-                    state = (x, y)
-
                     # Get best action
-                    best_action = self.__get_best_action(state=state)
-
-                    if best_action == self.__actions.get('UP'):
-                        icon = self.__icons.get('UP')
-                    elif best_action == self.__actions.get('RIGHT'):
-                        icon = self.__icons.get('RIGHT')
-                    elif best_action == self.__actions.get('DOWN'):
-                        icon = self.__icons.get('DOWN')
-                    else:
-                        icon = self.__icons.get('LEFT')
+                    icon = self.__get_best_action(state=state)
 
                 # Show col
                 print('| {} '.format(icon), end='')
@@ -167,6 +177,23 @@ class Agent:
 
         # New line
         print('')
+
+    def show_crude_policy(self):
+        """
+        Show all states with it's best action
+        :return:
+        """
+        # For each state in q
+        for state in self.q.keys():
+            best_action = self.__get_best_action(state=state)
+
+            print("State: {} -> Action: {}".format(state, best_action))
+
+    def reset(self):
+        self.rewards_history = list()
+        self.q = dict()
+        self.state = self.environment.reset()
+        self.iterations = 0
 
     def __get_best_action(self, state=None) -> int:
         """
@@ -184,6 +211,8 @@ class Agent:
             # Get max by value, and get it's action
             action = max(self.q.get(state).items(), key=operator.itemgetter(1))[0]
         else:
+            # If don't know best action, get a random action
+            # action = self.environment.action_space.sample()
             action = self.default_action
 
         return action
@@ -201,6 +230,17 @@ class Agent:
             # Get max by value, and get it
             value = max(self.q.get(state).items(), key=operator.itemgetter(1))[1]
         else:
-            value = self.environment.default_reward
+            value = self.default_reward
 
         return value
+
+    def __reset_iterations(self):
+        self.iterations = 0
+
+    def __processing_reward(self, reward):
+        """
+        Processing reward function.
+        :param reward:
+        :return:
+        """
+        return reward

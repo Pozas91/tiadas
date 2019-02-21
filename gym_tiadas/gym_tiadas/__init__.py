@@ -39,3 +39,8 @@ register(
     id='mo-puddle-word-v0',
     entry_point='gym_tiadas.envs:MoPuddleWorld'
 )
+
+register(
+    id='deep-sea-treasure-simplified-v0',
+    entry_point='gym_tiadas.envs:DeepSeaTreasureSimplified'
+)
