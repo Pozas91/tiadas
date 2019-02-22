@@ -1,7 +1,8 @@
-from agents import Agent, AgentMultiObjective
+from agents import Agent
+import numpy as np
 
 
-def train(agent: AgentMultiObjective, epochs=int(1e5), verbose=False):
+def train(agent: Agent, epochs=int(1e4), verbose=False):
     """
     Return an agent trained with `epochs` epochs.
     :param verbose:
@@ -17,3 +18,8 @@ def train(agent: AgentMultiObjective, epochs=int(1e5), verbose=False):
     # Show values
     if verbose:
         agent.show_q()
+
+
+def normalized(data: list) -> list:
+    data = np.array(data)
+    return (data / np.linalg.norm(data)).tolist()

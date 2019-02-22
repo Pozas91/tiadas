@@ -1,43 +1,24 @@
-import gym
-
-from gym import spaces
-from gym.utils import seeding
 from scipy.spatial import distance
 
+from .env_mesh import EnvMesh
 
-class MoPuddleWorld(gym.Env):
-    __actions = {'UP': 0, 'RIGHT': 1, 'DOWN': 2, 'LEFT': 3}
-    __icons = {'BLANK': ' ', 'BLOCK': '■', 'REWARD': '$', 'CURRENT': '☺'}
 
-    def __init__(self, finish_reward=10., penalize_non_goal=-1., seed=0, final_state=(19, 0)):
+class MoPuddleWorld(EnvMesh):
+    _actions = {'UP': 0, 'RIGHT': 1, 'DOWN': 2, 'LEFT': 3}
+
+    def __init__(self, mesh_shape=(20, 20), finish_reward=10., penalize_non_goal=-1., seed=0, final_state=(19, 0)):
+
+        obstacles = frozenset()
+        obstacles = obstacles.union([(x, y) for x in range(0, 11) for y in range(3, 7)])
+        obstacles = obstacles.union([(x, y) for x in range(6, 10) for y in range(2, 14)])
+
+        super().__init__(mesh_shape, seed, obstacles=obstacles)
 
         self.penalize_non_goal = penalize_non_goal
         self.final_reward = finish_reward
-        self.action_space = spaces.Discrete(len(self.__actions))
-
-        # Mesh of 10 cols and 11 rows
-        self.observation_space = spaces.Tuple((
-            spaces.Discrete(20), spaces.Discrete(20)
-        ))
-
-        self.obstacles = frozenset()
-        self.obstacles = self.obstacles.union([(x, y) for x in range(0, 11) for y in range(3, 7)])
-        self.obstacles = self.obstacles.union([(x, y) for x in range(6, 10) for y in range(2, 14)])
 
         self.final_state = final_state
         self.current_state = self.reset()
-
-        self.np_random = None
-        self.seed(seed=seed)
-
-    def seed(self, seed=None):
-        """
-        Generate seed
-        :param seed:
-        :return:
-        """
-        self.np_random, seed = seeding.np_random(seed=seed)
-        return [seed]
 
     def step(self, action) -> (object, [float, float], bool, dict):
         """
@@ -50,7 +31,7 @@ class MoPuddleWorld(gym.Env):
         rewards = [0., 0.]
 
         # Get new state
-        new_state = self.__next_state(action=action)
+        new_state = self._next_state(action=action)
 
         # Update previous state
         self.current_state = new_state
@@ -94,59 +75,3 @@ class MoPuddleWorld(gym.Env):
 
         self.current_state = random_space
         return self.current_state
-
-    def render(self, **kwargs):
-        # Get cols (x) and rows (y) from observation space
-        cols, rows = self.observation_space.spaces[0].n, self.observation_space.spaces[1].n
-
-        for y in range(rows):
-            for x in range(cols):
-
-                # Set a state
-                state = (x, y)
-
-                if state == self.current_state:
-                    icon = self.__icons.get('CURRENT')
-                elif state in self.obstacles:
-                    icon = self.__icons.get('BLOCK')
-                else:
-                    icon = self.__icons.get('BLANK')
-
-                # Show col
-                print('| {} '.format(icon), end='')
-
-            # New row
-            print('|')
-
-        # End render
-        print('')
-
-    def __next_state(self, action) -> (int, int):
-        """
-        Calc increment or decrement of state, if the new state is out of mesh, or is obstacle, return same state.
-        :param action: UP, RIGHT, DOWN, LEFT, STAY
-        :return: x, y
-        """
-
-        # Get my position
-        x, y = self.current_state
-
-        # Do movement
-        if action == self.__actions.get('UP'):
-            y -= 1
-        elif action == self.__actions.get('RIGHT'):
-            x += 1
-        elif action == self.__actions.get('DOWN'):
-            y += 1
-        elif action == self.__actions.get('LEFT'):
-            x -= 1
-
-        # Set new state
-        new_state = x, y
-
-        if not self.observation_space.contains(new_state):
-            # New state is invalid.
-            new_state = self.current_state
-
-        # Return (x, y) position
-        return new_state

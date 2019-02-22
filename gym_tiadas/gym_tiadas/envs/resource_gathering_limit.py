@@ -1,44 +1,28 @@
-import gym
 import numpy as np
-from gym import spaces
-from gym.utils import seeding
+
+from .env_mesh import EnvMesh
 
 
-class ResourceGatheringLimit(gym.Env):
-    __actions = {
-        'UP': 0, 'RIGHT': 1, 'DOWN': 2, 'LEFT': 3
-    }
+class ResourceGatheringLimit(EnvMesh):
+    _actions = {'UP': 0, 'RIGHT': 1, 'DOWN': 2, 'LEFT': 3}
 
-    __icons = {'BLANK': ' ', 'BLOCK': '■', 'TREASURE': '$', 'CURRENT': '☺', 'ENEMY': '×', 'HOME': 'µ'}
+    _treasures = {'GOLD': 0, 'GEM': 1}
 
-    __treasures = {'GOLD': 0, 'GEM': 1}
-
-    def __init__(self, initial_state=(2, 4), default_reward=0., seed=0, enemies=None, golds=None, gems=None,
-                 p_attack=0.1, time_limit=100):
+    def __init__(self, mesh_shape=(5, 5), initial_state=(2, 4), default_reward=0., seed=0, enemies=None, golds=None,
+                 gems=None, p_attack=0.1, time_limit=100):
         """
         :param initial_state:
         :param default_reward:
         :param seed:
         """
 
+        super().__init__(mesh_shape, seed, initial_state=initial_state, default_reward=default_reward)
+
         if enemies is None:
             enemies = [(3, 0), (2, 1)]
 
         self.enemies = enemies
         self.p_attack = p_attack
-
-        self.action_space = spaces.Discrete(len(self.__actions))
-
-        # 5x5 Grid
-        self.observation_space = spaces.Tuple((
-            spaces.Discrete(5), spaces.Discrete(5)
-        ))
-
-        self.default_reward = default_reward
-
-        assert isinstance(initial_state, tuple) and self.observation_space.contains(initial_state)
-        self.home_state = initial_state
-        self.current_state = self.home_state
 
         if golds is None:
             golds = {(2, 0): True}
@@ -57,20 +41,6 @@ class ResourceGatheringLimit(gym.Env):
         # [enemy_attack, gold, gems]
         self.state = [0., 0., 0.]
 
-        self.reset()
-
-        self.np_random = None
-        self.seed(seed=seed)
-
-    def seed(self, seed=None):
-        """
-        Generate seed
-        :param seed:
-        :return:
-        """
-        self.np_random, seed = seeding.np_random(seed=seed)
-        return [seed]
-
     def step(self, action) -> (object, [float, float, float], bool, dict):
         """
         Given an action, do a step
@@ -85,7 +55,7 @@ class ResourceGatheringLimit(gym.Env):
         rewards = np.multiply(self.state, 0.)
 
         # Get new state
-        new_state = self.__next_state(action=action)
+        new_state = self._next_state(action=action)
 
         # Update previous state
         self.current_state = new_state
@@ -112,7 +82,7 @@ class ResourceGatheringLimit(gym.Env):
         return (self.current_state, tuple(self.state)), rewards, final, info
 
     def reset(self):
-        self.current_state = self.home_state
+        self.current_state = self.initial_state
         self.state = np.multiply(self.state, 0.)
         return self.current_state
 
@@ -127,17 +97,17 @@ class ResourceGatheringLimit(gym.Env):
                 state = (x, y)
 
                 if state == self.current_state:
-                    icon = self.__icons.get('CURRENT')
+                    icon = self._icons.get('CURRENT')
                 elif state in self.golds.keys():
-                    icon = self.__icons.get('TREASURE')
+                    icon = self._icons.get('TREASURE')
                 elif state in self.gems.keys():
-                    icon = self.__icons.get('TREASURE')
+                    icon = self._icons.get('TREASURE')
                 elif state in self.enemies:
-                    icon = self.__icons.get('ENEMY')
-                elif state == self.home_state:
-                    icon = self.__icons.get('HOME')
+                    icon = self._icons.get('ENEMY')
+                elif state == self.initial_state:
+                    icon = self._icons.get('HOME')
                 else:
-                    icon = self.__icons.get('BLANK')
+                    icon = self._icons.get('BLANK')
 
                 # Show col
                 print('| {} '.format(icon), end='')
@@ -147,36 +117,6 @@ class ResourceGatheringLimit(gym.Env):
 
         # End render
         print('')
-
-    def __next_state(self, action) -> (int, int):
-        """
-        Calc increment or decrement of state, if the new state is out of mesh, or is obstacle, return same state.
-        :param action: UP, RIGHT, DOWN, LEFT, STAY
-        :return: x, y
-        """
-
-        # Get my position
-        x, y = self.current_state
-
-        # Do movement
-        if action == self.__actions.get('UP'):
-            y -= 1
-        elif action == self.__actions.get('RIGHT'):
-            x += 1
-        elif action == self.__actions.get('DOWN'):
-            y += 1
-        elif action == self.__actions.get('LEFT'):
-            x -= 1
-
-        # Set new state
-        new_state = x, y
-
-        if not self.observation_space.contains(new_state):
-            # New state is invalid.
-            new_state = self.current_state
-
-        # Return (x, y) position
-        return new_state
 
     def __enemy_attack(self) -> bool:
         """
@@ -222,7 +162,7 @@ class ResourceGatheringLimit(gym.Env):
         :return:
         """
 
-        return self.current_state == self.home_state
+        return self.current_state == self.initial_state
 
     def __is_checkpoint(self) -> bool:
         """
