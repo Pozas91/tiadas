@@ -1,7 +1,16 @@
+"""The environment is a grid of 10 rows and 11 columns. The agent controls a submarine searching for undersea
+treasure. There are multiple treasure locations with varying values. There are two objectives - to minimise the time
+taken to reach the treasure, and to maximise the value of the treasure. Each episode commences with the vessel in the
+top left state, and ends when a treasure location is reached or after 1000 actions. Four actions are available to the
+agent - moving one square to the left, right, up or down. Any action which would cause the agent to leave the grid
+will leave its position unchanged. The reward received by the agent is a 2-element vector. The first element is a
+time penalty, which is -1 on all turns. The second element is the treasure value which is 0 except when the agent
+moves into a treasure location, when it is the value indicated. """
 from .env_mesh import EnvMesh
 
 
 class DeepSeaTreasure(EnvMesh):
+    # Possible actions
     _actions = {'UP': 0, 'RIGHT': 1, 'DOWN': 2, 'LEFT': 3}
 
     def __init__(self, mesh_shape=(10, 11), initial_state=(0, 0), default_reward=0., seed=0):
@@ -74,6 +83,10 @@ class DeepSeaTreasure(EnvMesh):
         return self.current_state, rewards, final, info
 
     def reset(self):
+        """
+        Reset environment to zero.
+        :return:
+        """
         self.current_state = self.initial_state
         self.time = 0
 

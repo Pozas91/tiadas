@@ -1,3 +1,6 @@
+"""
+Useful functions to calculate the pareto frontier.
+"""
 import numpy as np
 
 from agents import AgentMultiObjective
@@ -6,12 +9,12 @@ from utils import q_learning
 
 def optimize(agent: AgentMultiObjective, w1: float, w2: float) -> (float, float):
     agent.reset()
-    agent.__set_rewards_weights__([w1, w2])
+    agent.set_rewards_weights([w1, w2])
 
     q_learning.train(agent=agent)
 
     # c = max(agent.rewards_history)
-    # c = tuple(np.multiply(agent.weights, agent.get_v()))
+    # c = tuple(np.multiply(agent.weights, agent.v))
     c = tuple(q_learning.testing(agent=agent))
 
     return c

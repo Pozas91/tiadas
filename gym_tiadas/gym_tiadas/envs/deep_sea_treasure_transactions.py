@@ -1,10 +1,13 @@
+"""
+Such as DeepSeaTreasure environment but has a vector of transactions probabilities, which will be used when an action
+is to be taken.
+"""
 from .env_mesh import EnvMesh
 
 
 class DeepSeaTreasureTransactions(EnvMesh):
-    _actions = {
-        'UP': 0, 'RIGHT': 1, 'DOWN': 2, 'LEFT': 3
-    }
+    # Possible actions
+    _actions = {'UP': 0, 'RIGHT': 1, 'DOWN': 2, 'LEFT': 3}
 
     def __init__(self, mesh_shape=(10, 11), initial_state=(0, 0), default_reward=0., seed=0, n_transaction=0.3):
         """
@@ -84,6 +87,10 @@ class DeepSeaTreasureTransactions(EnvMesh):
         return self.current_state, rewards, final, info
 
     def reset(self):
+        """
+        Reset environment to zero.
+        :return:
+        """
         self.current_state = self.initial_state
         self.time = 0
 

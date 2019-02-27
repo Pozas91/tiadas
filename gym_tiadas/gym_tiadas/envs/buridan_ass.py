@@ -1,10 +1,20 @@
+"""The donkey is in the center square of the 3 x 3 grid. There are food piles on the diagonally opposite squares. The
+food is visible only from the neighboring squares in the eight directions. If the donkey moves away from the
+neighboring square of a food pile, there is a certain probability `p_stolen` with which the food is stolen. Food is
+regenerated once every `n_appear` time-steps. The donkey has to strike a compromise between minimizing the three
+different costs: hunger, lost food, and walking. A state is a tuple (s, f, t), where s stands for the square in which
+the donkey is present, f for food in the two piles, and t for the time since the donkey last ate food. If t = 9,
+it is not incremented and the donkey incurs a penalty of -1 per time step till it eats the food when t is reset to 0.
+The actions are move up, down, left, right, and stay. It is assumed that if the donkey chooses to stay at a square
+with food, then it eats the food. `p_stolen` is set to 0.9, `n_appear` is set to 10. The stolen penalty is -0.5 per
+plate and walking penalty is -1 per step. """
+
 from .env_mesh import EnvMesh
 
 
 class BuridanAss(EnvMesh):
-    _actions = {
-        'UP': 0, 'RIGHT': 1, 'DOWN': 2, 'LEFT': 3, 'STAY': 4
-    }
+    # Possible actions
+    _actions = {'UP': 0, 'RIGHT': 1, 'DOWN': 2, 'LEFT': 3, 'STAY': 4}
 
     def __init__(self, mesh_shape=(3, 3), initial_state=(1, 1), default_reward=0., seed=0, p_stolen=.9,
                  n_appear=10, stolen_penalty=-.5, walking_penalty=-1., hunger_penalty=-1., last_ate_limit=9):
@@ -111,7 +121,6 @@ class BuridanAss(EnvMesh):
         final = any(not isinstance(self.finals.get(state), bool) for state in self.finals.keys())
 
         return tuple(complex_state), rewards, final, info
-        # return new_state, rewards, final, info
 
     def reset(self):
         self.current_state = self.initial_state

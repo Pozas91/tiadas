@@ -1,10 +1,31 @@
+"""
+Base model to define environments which observation_space as mesh.
+Mesh is a grid of columns per rows, where the minimum value is (0, 0), and maximum value is (columns - 1, rows - 1).
+Top-left corner is (0, 0), top-right corner is (columns - 1, 0), bottom-left corner is (0, rows - 1) and
+bottom-right corner is (columns - 1, rows - 1).
+
+Action space is a discrete number. Allow numbers from [0, n).
+
+Finals is a dictionary which structure as follows:
+{
+    state_1: reward,
+    state_2: reward,
+    ...
+}
+
+Obstacles is a list of states: [state_1, state_2, ...]
+"""
+
 import gym
 from gym import spaces
 from gym.utils import seeding
 
 
 class EnvMesh(gym.Env):
+    # Possible actions
     _actions = dict()
+
+    # Icons to render environments
     _icons = {'BLANK': ' ', 'BLOCK': '■', 'TREASURE': '$', 'CURRENT': '☺', 'ENEMY': '×', 'HOME': 'µ', 'FINAL': '$'}
 
     def __init__(self, mesh_shape: tuple, seed=None, initial_state=None, obstacles=None, finals=None, default_reward=0.,
@@ -42,6 +63,11 @@ class EnvMesh(gym.Env):
         self.reset()
 
     def step(self, action):
+        """
+        Do a step in the environment
+        :param action:
+        :return:
+        """
         raise NotImplemented
 
     def seed(self, seed=None):
@@ -55,7 +81,7 @@ class EnvMesh(gym.Env):
 
     def reset(self):
         """
-        Reset environment
+        Reset environment to zero.
         :return:
         """
         raise NotImplemented

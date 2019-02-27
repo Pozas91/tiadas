@@ -1,3 +1,6 @@
+"""
+Unit test file where testing our application code.
+"""
 import unittest
 
 

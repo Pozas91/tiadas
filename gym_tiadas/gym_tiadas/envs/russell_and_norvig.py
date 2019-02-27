@@ -1,15 +1,19 @@
+"""
+Mesh problem with a 4x3 grid. We have an agent that try reached goal avoiding a trap. The environment has a transactions
+list of probabilities that can change agent's action to another.
+"""
 import numpy as np
 
 from .env_mesh import EnvMesh
 
 
 class RussellNorvig(EnvMesh):
+    # Possible actions
     _actions = {'UP': 0, 'RIGHT': 1, 'DOWN': 2, 'LEFT': 3}
 
     def __init__(self, mesh_shape=(4, 3), finals=None, obstacles=None, transactions=None, initial_state=(0, 2),
-                 default_reward=0., seed=0):
+                 default_reward=-0.04, seed=0):
         """
-
         :param mesh_shape:
         :param finals:
         :param obstacles:
@@ -18,18 +22,21 @@ class RussellNorvig(EnvMesh):
         :param default_reward:
         """
 
+        # finals states and its reward
         if finals is None:
             finals = {
                 (3, 0): 1.,
                 (3, 1): -1.
             }
 
+        # List of obstacles
         if obstacles is None:
             obstacles = [(1, 1)]
 
         super().__init__(mesh_shape, seed, initial_state=initial_state, obstacles=obstacles, finals=finals,
                          default_reward=default_reward)
 
+        # Probabilities to change direction of action given.
         if transactions is None:
             transactions = [0.8, 0.1, 0.0, 0.1]
 
@@ -65,6 +72,10 @@ class RussellNorvig(EnvMesh):
         return new_state, reward, final, info
 
     def reset(self):
+        """
+        Reset environment to zero.
+        :return:
+        """
         self.current_state = self.initial_state
         return self.current_state
 

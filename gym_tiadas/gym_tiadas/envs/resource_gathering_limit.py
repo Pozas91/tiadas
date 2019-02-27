@@ -1,11 +1,17 @@
+"""
+Such as Resource Gathering environment, but has a `time_limit`, if the agent non-reached goal in the `time_limit`, the
+reward vector is divide by the `time` spent.
+"""
 import numpy as np
 
 from .env_mesh import EnvMesh
 
 
 class ResourceGatheringLimit(EnvMesh):
+    # Possible actions
     _actions = {'UP': 0, 'RIGHT': 1, 'DOWN': 2, 'LEFT': 3}
 
+    # Treasures
     _treasures = {'GOLD': 0, 'GEM': 1}
 
     def __init__(self, mesh_shape=(5, 5), initial_state=(2, 4), default_reward=0., seed=0, enemies=None, golds=None,
@@ -18,18 +24,23 @@ class ResourceGatheringLimit(EnvMesh):
 
         super().__init__(mesh_shape, seed, initial_state=initial_state, default_reward=default_reward)
 
+        # States where there are enemies
         if enemies is None:
             enemies = [(3, 0), (2, 1)]
 
         self.enemies = enemies
         self.p_attack = p_attack
 
+        # States where there are gold
         if golds is None:
+            # {state: available}
             golds = {(2, 0): True}
 
         self.golds = golds
 
+        # States where there is a gem
         if gems is None:
+            # {state: available}
             gems = {(4, 1): True}
 
         self.gems = gems

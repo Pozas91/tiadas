@@ -1,3 +1,7 @@
+"""
+Useful functions to calculate a reinforcement learning based on q-learning.
+"""
+
 from copy import deepcopy
 
 import numpy as np
@@ -32,7 +36,7 @@ def cheat_train(agent: Agent, objective: float, close_margin=1e-9):
         agent.episode()
 
         # Get v(0, 0)
-        v = agent.get_v()
+        v = agent.v
 
 
 def exhaustive_train(agent: Agent, close_margin=1e-3):
@@ -147,8 +151,7 @@ def testing(agent: Agent) -> list:
     :param agent:
     :return:
     """
-    initial_state = agent.environment.reset()
-    agent.__setstate__(initial_state)
+    agent.state = agent.environment.reset()
 
     history = agent.walk()
 

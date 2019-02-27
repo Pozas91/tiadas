@@ -1,15 +1,29 @@
+"""
+Q-Learning agent to resolve environments trough reinforcement learning.
+
+The data structure of q dictionary is as follows:
+
+{
+    state_1: {action_1: reward, action_2: reward, action_3: reward, ...},
+    state_2: {action_1: reward, action_2: reward, action_3: reward, ...},
+    state_3: {action_1: reward, action_2: reward, action_3: reward, ...},
+    ...
+}
+"""
+
 import math
 
 import numpy as np
 
 
 class Agent:
+    # Different icons
     __icons = {
         'BLANK': ' ', 'BLOCK': '■', 'FINAL': '$', 'CURRENT': '☺', 'UP': '↑', 'RIGHT': '→', 'DOWN': '↓', 'LEFT': '←',
         'STAY': '×'
     }
 
-    def __init__(self, environment, alpha=0.1, epsilon=0.1, gamma=0.6, seed=0, default_action=0, default_reward=0.,
+    def __init__(self, environment, alpha=0.1, epsilon=0.1, gamma=1., seed=0, default_action=0, default_reward=0.,
                  states_to_observe=None, max_iterations=None):
 
         # Check alpha
@@ -44,22 +58,6 @@ class Agent:
         # Rewards history data
         self.rewards_history = list()
 
-    def __setstate__(self, state) -> None:
-        """
-        Set an initial state
-        :param state:
-        :return:
-        """
-        self.state = state
-
-    def __set_max_iterations__(self, max_iterations) -> None:
-        """
-        Set max_iterations
-        :param max_iterations:
-        :return:
-        """
-        self.max_iterations = max_iterations
-
     def select_action(self) -> int:
         """
         Select best action with a little e-greedy policy.
@@ -78,7 +76,7 @@ class Agent:
 
     def walk(self) -> list:
         """
-        Do a walk with current policy
+        Do a walk follows best current policy
         :return:
         """
 
@@ -106,7 +104,6 @@ class Agent:
             next_state, reward, is_final_state, info = self.environment.step(action=action)
 
             # Append to rewards history
-            # history.append(self.q.get(self.state).get(action))
             history.append(reward)
 
             # Update state
@@ -182,9 +179,7 @@ class Agent:
             data.append(self._best_value(state))
 
             # Update dictionary
-            self.states_to_observe.update({
-                state: data
-            })
+            self.states_to_observe.update({state: data})
 
     def show_q(self) -> None:
         """
@@ -207,12 +202,16 @@ class Agent:
 
                 state = (x, y)
 
+                # Check if our agent has obstacles attribute, if it has, check if state `state` is in an obstacle.
                 if hasattr(self.environment, 'obstacles') and state in self.environment.obstacles:
                     icon = self.__icons.get('BLOCK')
+
+                # If state not in Q dictionary, we unknown the state.
                 elif state not in self.q.keys():
                     icon = '-'
+
+                # Get best action
                 else:
-                    # Get best action
                     icon = self.best_action(state=state)
 
                 # Show col
@@ -251,13 +250,15 @@ class Agent:
         :return:
         """
 
+        # if don't specify a state, get current state.
         if state is None:
             state = self.state
 
-        # Get best action.
-        data = self.q.get(state, {})
+        # Get information about all actions with its rewards.
+        possible_actions = self.q.get(state, {})
 
-        if data:
+        # If not is an empty dictionary
+        if possible_actions:
             # Get max by value, and get it's action
             actions = list()
             max_value = float('-inf')
@@ -289,9 +290,12 @@ class Agent:
 
             # Short no random version
             # action = max(self.q.get(state).items(), key=operator.itemgetter(1))[0]
+
+        # If is empty dictionary, get default action
         else:
             # If don't know best action, get a random action
             # action = self.environment.action_space.sample()
+
             action = self.default_action
 
         return action
@@ -302,10 +306,11 @@ class Agent:
         :return:
         """
 
-        # Get data
-        data = self.q.get(state, {})
+        # Get information about possible actions
+        possible_actions = self.q.get(state, {})
 
-        if data:
+        # If not is an empty dictionary
+        if possible_actions:
             # Get max by value, and get it
 
             # Short no random version
@@ -314,23 +319,34 @@ class Agent:
             # Get best action and use it to get best value.
             action = self.best_action(state=state)
             value = self.q.get(state).get(action)
+
+        # If is empty get default reward
         else:
             value = self.default_reward
 
         return value
 
-    def get_v(self) -> float:
+    @property
+    def v(self) -> float:
         """
-        Get V(0, 0)
+        Get best value to initial state V(0, 0)
         :return:
         """
         initial_state = self.environment.initial_state
         return self._best_value(state=initial_state)
 
     def reset_iterations(self):
+        """
+        Set iterations to zero.
+        :return:
+        """
         self.iterations = 0
 
     def reset_rewards_history(self):
+        """
+        Forget rewards history
+        :return:
+        """
         self.rewards_history = list()
 
     def _processing_reward(self, reward):

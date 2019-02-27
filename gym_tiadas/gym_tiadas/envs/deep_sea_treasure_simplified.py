@@ -1,7 +1,11 @@
+"""
+DeepSeaTreasure environment simplified to test agents.
+"""
 from .env_mesh import EnvMesh
 
 
 class DeepSeaTreasureSimplified(EnvMesh):
+    # Possible actions
     _actions = {'UP': 0, 'RIGHT': 1, 'DOWN': 2, 'LEFT': 3}
 
     def __init__(self, mesh_shape=(3, 4), initial_state=(0, 0), default_reward=0., seed=0):
@@ -60,6 +64,10 @@ class DeepSeaTreasureSimplified(EnvMesh):
         return self.current_state, rewards, final, info
 
     def reset(self):
+        """
+        Reset environment to zero.
+        :return:
+        """
         self.current_state = self.initial_state
         self.time = 0
 

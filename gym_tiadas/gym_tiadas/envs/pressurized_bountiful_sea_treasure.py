@@ -1,7 +1,12 @@
+"""
+Inspired by the Deep Sea Treasure (DST) environment. In contrast to the, the values of the treasures are altered to
+create a convex Pareto front.
+"""
 from .env_mesh import EnvMesh
 
 
 class PressurizedBountifulSeaTreasure(EnvMesh):
+    # Possible actions
     _actions = {'UP': 0, 'RIGHT': 1, 'DOWN': 2, 'LEFT': 3}
 
     def __init__(self, mesh_shape=(10, 11), initial_observation=(0, 0), default_reward=0., seed=0):
@@ -77,6 +82,10 @@ class PressurizedBountifulSeaTreasure(EnvMesh):
         return self.current_state, rewards, final, info
 
     def reset(self):
+        """
+        Reset environment to zero.
+        :return:
+        """
         self.current_state = self.initial_state
         self.time = 0
 

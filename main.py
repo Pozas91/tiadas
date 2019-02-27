@@ -1,3 +1,6 @@
+"""
+Main file to test all develop models.
+"""
 import time
 
 import gym
@@ -143,14 +146,14 @@ def testing_pareto():
 
     agent.show_policy()
 
-    # p = agent.get_v()
+    # p = agent.v
     # p = tuple(np.multiply(agent.weights, p))
     p = tuple(q_learning.testing(agent=agent))
 
     # Reset agent
     agent.reset()
 
-    agent.__set_rewards_weights__([0.1, 0.9])
+    agent.set_rewards_weights([0.1, 0.9])
     t0 = time.time()
     # q_learning.cheat_train(agent=agent, objective=107.5, close_margin=1e-1)
     q_learning.train(agent=agent)
@@ -160,7 +163,7 @@ def testing_pareto():
 
     q = tuple(q_learning.testing(agent=agent))
 
-    # q = agent.get_v()
+    # q = agent.v
     # q = tuple(np.multiply(agent.weights, q))
 
     pareto_frontier = pareto.algorithm(p=p, q=q, problem=agent)
