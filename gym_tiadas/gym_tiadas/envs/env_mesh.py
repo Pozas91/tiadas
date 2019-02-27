@@ -15,27 +15,23 @@ class EnvMesh(gym.Env):
 
         # Create the mesh
         x, y = mesh_shape
-        self.observation_space = spaces.Tuple({spaces.Discrete(x), spaces.Discrete(y)})
+        self.observation_space = spaces.Tuple((spaces.Discrete(x), spaces.Discrete(y)))
 
         # Prepare random seed
         self.np_random = None
         self.seed(seed=seed)
 
         # Set current environment state
-        assert initial_state is None or (
-                isinstance(initial_state, tuple) and self.observation_space.contains(initial_state))
+        assert initial_state is None or self.observation_space.contains(initial_state)
         self.initial_state = initial_state
         self.current_state = self.initial_state
 
         # Set finals states
-        assert finals is None or (
-                isinstance(finals, dict) and [self.observation_space.contains(final) for final in finals.keys()])
+        assert finals is None or all([self.observation_space.contains(final) for final in finals.keys()])
         self.finals = finals
 
         # Set obstacles
-        assert obstacles is None or (
-                isinstance(obstacles, list) and [self.observation_space.contains(obstacle) for obstacle in
-                                                 obstacles])
+        assert obstacles is None or all([self.observation_space.contains(obstacle) for obstacle in obstacles])
         self.obstacles = obstacles
 
         # Defaults

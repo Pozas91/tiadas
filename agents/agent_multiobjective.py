@@ -5,7 +5,7 @@ from agents import Agent
 
 class AgentMultiObjective(Agent):
 
-    def __init__(self, environment, alpha=0.1, epsilon=0.1, gamma=0.6, seed=0, default_action=0, default_reward=0.,
+    def __init__(self, environment, alpha=0.1, epsilon=0.1, gamma=1., seed=0, default_action=0, default_reward=0.,
                  states_to_observe=None, max_iterations=None, weights=None, number_of_rewards=2):
 
         super().__init__(environment, alpha, epsilon, gamma, seed, default_action, default_reward, states_to_observe,

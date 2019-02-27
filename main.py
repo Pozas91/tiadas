@@ -6,7 +6,7 @@ import numpy as np
 from gym_tiadas.envs import *
 
 from agents import Agent, AgentMultiObjective
-from utils import pareto, training
+from utils import pareto, q_learning
 
 ENV_NAME_MESH = 'russell-norvig-v0'
 ENV_NAME_DISCRETE = 'russell-norvig-discrete-v0'
@@ -32,7 +32,7 @@ def plot_training_from_zero():
         # Training mesh agent
         agent_mesh = Agent(environment=environment_mesh)
         start_time = time.time()
-        training.train(agent=agent_mesh, epochs=epochs)
+        q_learning.train(agent=agent_mesh, epochs=epochs)
         time_train = time.time() - start_time
         time_train_mesh.append(time_train)
         print('MESH: To {} epochs -> {} seconds.'.format(epochs, time_train))
@@ -70,7 +70,7 @@ def plot_training_accumulate():
     for epochs in epochs_list:
         # Training mesh agent
         start_time = time.time()
-        training.train(agent=agent_mesh, epochs=epochs)
+        q_learning.train(agent=agent_mesh, epochs=epochs)
         time_train = time.time() - start_time
         time_train_mesh.append(time_train)
         print('MESH: To {} epochs -> {} seconds.'.format(epochs, time_train))
@@ -102,7 +102,7 @@ def plot_performance(epochs=100000):
 
     # Training mesh agent
     print("Training agent...")
-    training.train(agent=agent_mesh, epochs=epochs)
+    q_learning.train(agent=agent_mesh, epochs=epochs)
     print('Training finished!')
 
     for state, data in agent_mesh.states_to_observe.items():
@@ -123,7 +123,7 @@ def plot_performance(epochs=100000):
 def deep_sea_treasure():
     environment = DeepSeaTreasure()
     agent = AgentMultiObjective(environment=environment, weights=[0., 1.], epsilon=0.8, max_iterations=1000)
-    training.train(agent=agent, verbose=True)
+    q_learning.train(agent=agent, verbose=True)
     agent.show_policy()
     pass
 
@@ -132,22 +132,36 @@ def testing_pareto():
     # Build environment
     env = DeepSeaTreasureSimplified()
 
-    agent = AgentMultiObjective(environment=env, weights=[1., 0.], max_iterations=1000)
-    training.train(agent=agent)
+    # Build agent
+    agent = AgentMultiObjective(environment=env, weights=[0.9, 0.1], states_to_observe=[(0, 0)], epsilon=0.5,
+                                alpha=0.1, gamma=1.)
 
-    # p = max(agent.rewards_history)
-    p = agent.get_v()
-    p = tuple(np.multiply(agent.weights, p))
+    t0 = time.time()
+    q_learning.cheat_train(agent=agent, objective=-0.4, close_margin=1e-1)
+    time_train = time.time() - t0
+    print('Time train: {:.2f} seconds.'.format(time_train))
+
+    agent.show_policy()
+
+    # p = agent.get_v()
+    # p = tuple(np.multiply(agent.weights, p))
+    p = tuple(q_learning.testing(agent=agent))
 
     # Reset agent
     agent.reset()
 
-    agent.__set_rewards_weights__([0., 1.])
-    training.train(agent=agent)
+    agent.__set_rewards_weights__([0.1, 0.9])
+    t0 = time.time()
+    # q_learning.cheat_train(agent=agent, objective=107.5, close_margin=1e-1)
+    q_learning.train(agent=agent)
+    time_train = time.time() - t0
+    print('Time train: {:.2f} seconds.'.format(time_train))
+    agent.show_policy()
 
-    # q = max(agent.rewards_history)
-    q = agent.get_v()
-    q = tuple(np.multiply(agent.weights, q))
+    q = tuple(q_learning.testing(agent=agent))
+
+    # q = agent.get_v()
+    # q = tuple(np.multiply(agent.weights, q))
 
     pareto_frontier = pareto.algorithm(p=p, q=q, problem=agent)
     pareto_frontier_np = np.array(pareto_frontier)
@@ -164,7 +178,7 @@ def testing_pareto():
 def resource_gathering():
     environment = ResourceGathering()
     agent = AgentMultiObjective(environment=environment, weights=[0., 0., .1], max_iterations=1000)
-    training.train(agent=agent, verbose=True)
+    q_learning.train(agent=agent, verbose=True)
     agent.show_policy()
     pass
 
@@ -172,7 +186,7 @@ def resource_gathering():
 def pressurized_bountiful_sea_treasure():
     environment = PressurizedBountifulSeaTreasure()
     agent = AgentMultiObjective(environment=environment, weights=[1., 0., 0.], epsilon=0.5, max_iterations=1000)
-    training.train(agent=agent, epochs=200000, verbose=True)
+    q_learning.train(agent=agent, epochs=200000, verbose=True)
     agent.show_policy()
     pass
 
@@ -180,14 +194,14 @@ def pressurized_bountiful_sea_treasure():
 def buridan_ass():
     environment = BuridanAss()
     agent = AgentMultiObjective(environment=environment, epsilon=0.3, weights=[0.3, 0.3, 0.3])
-    training.train(agent=agent, epochs=10000, verbose=True)
+    q_learning.train(agent=agent, epochs=10000, verbose=True)
     pass
 
 
 def mo_puddle_world():
     environment = MoPuddleWorld()
     agent = AgentMultiObjective(environment=environment, weights=[0.5, 0.5], epsilon=0.3, max_iterations=100)
-    training.train(agent=agent, epochs=1000, verbose=True)
+    q_learning.train(agent=agent, epochs=1000, verbose=True)
     agent.show_policy()
     pass
 
@@ -198,9 +212,9 @@ def main():
     # plot_performance(epochs=1000000)
 
     # deep_sea_treasure()
-    # testing_pareto()
+    testing_pareto()
     # resource_gathering()
-    pressurized_bountiful_sea_treasure()
+    # pressurized_bountiful_sea_treasure()
     # buridan_ass()
     # mo_puddle_world()
     pass

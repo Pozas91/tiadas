@@ -1,19 +1,20 @@
 import numpy as np
 
 from agents import AgentMultiObjective
-from utils import training
+from utils import q_learning
 
 
 def optimize(agent: AgentMultiObjective, w1: float, w2: float) -> (float, float):
     agent.reset()
     agent.__set_rewards_weights__([w1, w2])
 
-    training.train(agent=agent)
+    q_learning.train(agent=agent)
 
     # c = max(agent.rewards_history)
-    c = agent.get_v()
+    # c = tuple(np.multiply(agent.weights, agent.get_v()))
+    c = tuple(q_learning.testing(agent=agent))
 
-    return tuple(np.multiply(agent.weights, c))
+    return c
 
 
 def algorithm(p: (float, float), q: (float, float), problem: AgentMultiObjective) -> list:
@@ -45,11 +46,6 @@ def algorithm(p: (float, float), q: (float, float), problem: AgentMultiObjective
         # Calculate the parameters of the new linear objective function (multiply by -1. to convert in maximize problem)
         w1 = np.multiply(a_y - b_y, -1.)
         w2 = np.multiply(b_x - a_x, -1.)
-
-        # Normalize data
-        normalized = training.normalized(data=[w1, w2])
-        w1 = normalized[0]
-        w2 = normalized[1]
 
         # Solve P to find a new solution ang get its cost vector c.
         c = optimize(problem, w1, w2)

@@ -1,4 +1,4 @@
-import operator
+import math
 
 import numpy as np
 
@@ -52,6 +52,14 @@ class Agent:
         """
         self.state = state
 
+    def __set_max_iterations__(self, max_iterations) -> None:
+        """
+        Set max_iterations
+        :param max_iterations:
+        :return:
+        """
+        self.max_iterations = max_iterations
+
     def select_action(self) -> int:
         """
         Select best action with a little e-greedy policy.
@@ -64,9 +72,47 @@ class Agent:
 
         else:
             # Get best action to exploit reward.
-            action = self._get_best_action()
+            action = self.best_action()
 
         return action
+
+    def walk(self) -> list:
+        """
+        Do a walk with current policy
+        :return:
+        """
+
+        # Reset mesh
+        self.state = self.environment.reset()
+
+        # Condition to stop walk
+        is_final_state = False
+
+        # Reset iterations
+        self.reset_iterations()
+
+        # Rewards history
+        history = list()
+
+        while not is_final_state:
+            # Increment iterations
+            self.iterations += 1
+
+            # Get an action
+            # action = self.select_action()
+            action = self.best_action()
+
+            # Do step on environment
+            next_state, reward, is_final_state, info = self.environment.step(action=action)
+
+            # Append to rewards history
+            # history.append(self.q.get(self.state).get(action))
+            history.append(reward)
+
+            # Update state
+            self.state = next_state
+
+        return history
 
     def episode(self) -> None:
         """
@@ -81,7 +127,7 @@ class Agent:
         is_final_state = False
 
         # Reset iterations
-        self._reset_iterations()
+        self.reset_iterations()
 
         while not is_final_state:
 
@@ -104,7 +150,7 @@ class Agent:
             old_value = self.q.get(self.state, {}).get(action, self.default_reward)
 
             # Get next max value
-            next_max = self._get_best_value(state=next_state)
+            next_max = self._best_value(state=next_state)
 
             # Calc new value apply Q-Learning formula:
             # Q(St, At) <- (1 - alpha) * Q(St, At) + alpha * (r + y * Q(St_1, action))
@@ -133,7 +179,7 @@ class Agent:
         # Append new data
         for state, data in self.states_to_observe.items():
             # Add to data Best value (V max)
-            data.append(self._get_best_value(state))
+            data.append(self._best_value(state))
 
             # Update dictionary
             self.states_to_observe.update({
@@ -167,7 +213,7 @@ class Agent:
                     icon = '-'
                 else:
                     # Get best action
-                    icon = self._get_best_action(state=state)
+                    icon = self.best_action(state=state)
 
                 # Show col
                 print('| {} '.format(icon), end='')
@@ -185,7 +231,7 @@ class Agent:
         """
         # For each state in q
         for state in self.q.keys():
-            best_action = self._get_best_action(state=state)
+            best_action = self.best_action(state=state)
 
             print("State: {} -> Action: {}".format(state, best_action))
 
@@ -199,7 +245,7 @@ class Agent:
         self.state = self.environment.reset()
         self.iterations = 0
 
-    def _get_best_action(self, state=None) -> int:
+    def best_action(self, state=None) -> int:
         """
         Return best action for q and state given.
         :return:
@@ -213,7 +259,36 @@ class Agent:
 
         if data:
             # Get max by value, and get it's action
-            action = max(self.q.get(state).items(), key=operator.itemgetter(1))[0]
+            actions = list()
+            max_value = float('-inf')
+
+            # Check all actions with it's rewards
+            for key in self.q.get(state).keys():
+
+                # Get current Value
+                value = self.q.get(state).get(key)
+
+                # If current value is close to new value
+                if math.isclose(a=value, b=max_value, rel_tol=1e-4):
+
+                    # Append another possible action
+                    actions.append(key)
+
+                # If current value is best than old value
+                elif value > max_value:
+
+                    # Create a new list with current key.
+                    actions = list()
+                    actions.append(key)
+
+                # Update max value
+                max_value = max(max_value, value)
+
+            # From best actions get one aleatory.
+            action = self.generator.choice(actions)
+
+            # Short no random version
+            # action = max(self.q.get(state).items(), key=operator.itemgetter(1))[0]
         else:
             # If don't know best action, get a random action
             # action = self.environment.action_space.sample()
@@ -221,7 +296,7 @@ class Agent:
 
         return action
 
-    def _get_best_value(self, state) -> float:
+    def _best_value(self, state) -> float:
         """
         Return best value for q and state given
         :return:
@@ -232,7 +307,13 @@ class Agent:
 
         if data:
             # Get max by value, and get it
-            value = max(self.q.get(state).items(), key=operator.itemgetter(1))[1]
+
+            # Short no random version
+            # value = max(self.q.get(state).items(), key=operator.itemgetter(1))[1]
+
+            # Get best action and use it to get best value.
+            action = self.best_action(state=state)
+            value = self.q.get(state).get(action)
         else:
             value = self.default_reward
 
@@ -244,10 +325,13 @@ class Agent:
         :return:
         """
         initial_state = self.environment.initial_state
-        return self._get_best_value(state=initial_state)
+        return self._best_value(state=initial_state)
 
-    def _reset_iterations(self):
+    def reset_iterations(self):
         self.iterations = 0
+
+    def reset_rewards_history(self):
+        self.rewards_history = list()
 
     def _processing_reward(self, reward):
         """
