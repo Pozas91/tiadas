@@ -28,15 +28,16 @@ def train(agent: Agent, epochs=int(1e4), verbose=False):
 
 
 def cheat_train(agent: Agent, objective: float, close_margin=1e-9):
-    # Initialize variable
-    v = 0
-
-    while not is_close(a=v, b=objective, relative=close_margin):
+    """
+    Train until agent V(0, 0) value is close to objective value.
+    :param agent:
+    :param objective:
+    :param close_margin:
+    :return:
+    """
+    while not is_close(a=agent.v, b=objective, relative=close_margin):
         # Do an episode
         agent.episode()
-
-        # Get v(0, 0)
-        v = agent.v
 
 
 def exhaustive_train(agent: Agent, close_margin=1e-3):

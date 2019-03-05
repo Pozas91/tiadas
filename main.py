@@ -137,7 +137,7 @@ def testing_pareto():
 
     # Build agent
     agent = AgentMultiObjective(environment=env, weights=[0.9, 0.1], states_to_observe=[(0, 0)], epsilon=0.5,
-                                alpha=0.1, gamma=1.)
+                                alpha=0.2, gamma=1.)
 
     t0 = time.time()
     q_learning.cheat_train(agent=agent, objective=-0.4, close_margin=1e-1)
@@ -155,8 +155,8 @@ def testing_pareto():
 
     agent.set_rewards_weights([0.1, 0.9])
     t0 = time.time()
-    # q_learning.cheat_train(agent=agent, objective=107.5, close_margin=1e-1)
-    q_learning.train(agent=agent)
+    q_learning.cheat_train(agent=agent, objective=107.5, close_margin=2.5)
+    # q_learning.train(agent=agent)
     time_train = time.time() - t0
     print('Time train: {:.2f} seconds.'.format(time_train))
     agent.show_policy()

@@ -1,40 +1,17 @@
-"""
-Useful functions to calculate the pareto frontier.
-"""
 import numpy as np
 
-from agents import AgentMultiObjective
-from utils import q_learning
+points = [(-1, 1), (-8, 8), (-9, 16), (-7, 5), (-17, 74), (-13, 24), (-19, 124), (-3, 2), (-14, 50), (-5, 3)]
 
 
-def optimize(agent: AgentMultiObjective, w1: float, w2: float) -> (float, float):
-    """
-    Try to find an c point to add in pareto's frontier.
-    :param agent:
-    :param w1:
-    :param w2:
-    :return:
-    """
-    agent.reset()
-    agent.set_rewards_weights([w1, w2])
-
-    # q_learning.train(agent=agent)
-    objective = w1 * -3 + w2 * 80
-    q_learning.cheat_train(agent=agent, objective=objective, close_margin=2)
-
-    # c = max(agent.rewards_history)
-    # c = tuple(np.multiply(agent.weights, agent.v))
-    c = tuple(q_learning.testing(agent=agent))
-
-    return c
+def optimize():
+    return points.pop()
 
 
-def algorithm(p: (float, float), q: (float, float), problem: AgentMultiObjective) -> list:
+def algorithm(p: (float, float), q: (float, float)) -> list:
     """
     Return a list of supported solutions costs
     :param p: 2D point
     :param q: 2D point
-    :param problem: A problem
     :return:
     """
 
@@ -60,7 +37,7 @@ def algorithm(p: (float, float), q: (float, float), problem: AgentMultiObjective
         w2 = np.multiply(b_x - a_x, -1.)
 
         # Solve P to find a new solution ang get its cost vector c.
-        c = optimize(problem, w1, w2)
+        c = optimize()
 
         # Decompose c vector.
         c_x, c_y = c
@@ -78,3 +55,11 @@ def algorithm(p: (float, float), q: (float, float), problem: AgentMultiObjective
             result.append(c)
 
     return result
+
+
+def main():
+    algorithm(p=(-1, 1), q=(-19, 120))
+
+
+if __name__ == '__main__':
+    main()
