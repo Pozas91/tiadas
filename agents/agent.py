@@ -1,3 +1,5 @@
+import matplotlib.pyplot as plt
+
 """
 Q-Learning agent to resolve environments trough reinforcement learning.
 
@@ -162,9 +164,7 @@ class Agent:
                 self.q.get(self.state).update(new_data)
             else:
                 # Set a new dictionary for this state
-                self.q.update({
-                    self.state: new_data
-                })
+                self.q.update({self.state: new_data})
 
             # Update state
             self.state = next_state
@@ -257,46 +257,39 @@ class Agent:
         # Get information about all actions with its rewards.
         possible_actions = self.q.get(state, {})
 
-        # If not is an empty dictionary
-        if possible_actions:
-            # Get max by value, and get it's action
-            actions = list()
-            max_value = float('-inf')
+        # Get unknown actions with default reward
+        for action in range(self.environment.action_space.n):
+            if action not in possible_actions:
+                possible_actions.update({action: self.default_reward})
 
-            # Check all actions with it's rewards
-            for key in self.q.get(state).keys():
+        # Get max by value, and get it's action
+        actions = list()
+        max_value = float('-inf')
 
-                # Get current Value
-                value = self.q.get(state).get(key)
+        # Check all actions with it's rewards
+        for possible_action in possible_actions:
 
-                # If current value is close to new value
-                if math.isclose(a=value, b=max_value, rel_tol=1e-4):
+            # Get current Value
+            value = possible_actions.get(possible_action)
 
-                    # Append another possible action
-                    actions.append(key)
+            # If current value is close to new value
+            if math.isclose(a=value, b=max_value, rel_tol=1e-4):
 
-                # If current value is best than old value
-                elif value > max_value:
+                # Append another possible action
+                actions.append(possible_action)
 
-                    # Create a new list with current key.
-                    actions = list()
-                    actions.append(key)
+            # If current value is best than old value
+            elif value > max_value:
 
-                # Update max value
-                max_value = max(max_value, value)
+                # Create a new list with current key.
+                actions = list()
+                actions.append(possible_action)
 
-            # From best actions get one aleatory.
-            action = self.generator.choice(actions)
+            # Update max value
+            max_value = max(max_value, value)
 
-            # Short no random version
-            # action = max(self.q.get(state).items(), key=operator.itemgetter(1))[0]
-
-        # If is empty dictionary, get default action
-        else:
-            # If don't know best action, get a random action
-            # action = self.environment.action_space.sample()
-
-            action = self.default_action
+        # From best actions get one aleatory.
+        action = self.generator.choice(actions)
 
         return action
 
@@ -309,31 +302,24 @@ class Agent:
         # Get information about possible actions
         possible_actions = self.q.get(state, {})
 
-        # If not is an empty dictionary
-        if possible_actions:
-            # Get max by value, and get it
+        # Get unknown actions with default reward
+        for action in range(self.environment.action_space.n):
+            if action not in possible_actions:
+                possible_actions.update({action: self.default_reward})
 
-            # Short no random version
-            # value = max(self.q.get(state).items(), key=operator.itemgetter(1))[1]
-
-            # Get best action and use it to get best value.
-            action = self.best_action(state=state)
-            value = self.q.get(state).get(action)
-
-        # If is empty get default reward
-        else:
-            value = self.default_reward
+        # Get best action and use it to get best value.
+        action = self.best_action(state=state)
+        value = possible_actions.get(action)
 
         return value
 
     @property
     def v(self) -> float:
         """
-        Get best value to initial state V(0, 0)
+        Get best value from initial state -> V_max(0, 0)
         :return:
         """
-        initial_state = self.environment.initial_state
-        return self._best_value(state=initial_state)
+        return self._best_value(state=self.environment.initial_state)
 
     def reset_iterations(self):
         """
@@ -356,3 +342,18 @@ class Agent:
         :return:
         """
         return reward
+
+    def print_observed_states(self):
+        for state, data in self.states_to_observe.items():
+            plt.plot(data, label='State: {}'.format(state))
+
+        plt.xlabel('Iterations')
+        plt.ylabel('V max')
+
+        plt.legend(loc='upper left')
+
+        plt.show()
+
+    def show_v_values(self):
+        for state in self.q.keys():
+            print('State: {} -> V: {}'.format(state, max(self.q.get(state).values())))

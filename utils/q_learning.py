@@ -146,7 +146,7 @@ def normalized(data: list) -> list:
     return (data / np.linalg.norm(data)).tolist()
 
 
-def testing(agent: Agent) -> list:
+def testing(agent: Agent) -> tuple:
     """
     Test policy
     :param agent:
@@ -154,9 +154,14 @@ def testing(agent: Agent) -> list:
     """
     agent.state = agent.environment.reset()
 
+    # Get history of walk
     history = agent.walk()
 
-    return history[-1]
+    # Sum history to get total reward
+    result = np.sum(history, axis=0)
+
+    # Return a tuple of that sum
+    return tuple(result)
 
 
 def is_close(a: float, b: float, relative=1e-3):

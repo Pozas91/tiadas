@@ -20,11 +20,10 @@ def optimize(agent: AgentMultiObjective, w1: float, w2: float) -> (float, float)
 
     # q_learning.train(agent=agent)
     objective = w1 * -3 + w2 * 80
-    q_learning.cheat_train(agent=agent, objective=objective, close_margin=2)
+    q_learning.cheat_train(agent=agent, objective=objective, close_margin=5e-1)
 
-    # c = max(agent.rewards_history)
-    # c = tuple(np.multiply(agent.weights, agent.v))
-    c = tuple(q_learning.testing(agent=agent))
+    # Get point c from agent's test.
+    c = q_learning.testing(agent=agent)
 
     return c
 

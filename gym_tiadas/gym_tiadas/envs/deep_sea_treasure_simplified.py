@@ -29,9 +29,6 @@ class DeepSeaTreasureSimplified(EnvMesh):
         super().__init__(mesh_shape, seed, initial_state=initial_state, default_reward=default_reward, finals=finals,
                          obstacles=obstacles)
 
-        # Time inverted in find a treasure
-        self.time = 0
-
     def step(self, action) -> (object, [float, float], bool, dict):
         """
         Given an action, do a step
@@ -47,10 +44,9 @@ class DeepSeaTreasureSimplified(EnvMesh):
 
         # Update previous state
         self.current_state = new_state
-        self.time += 1
 
         # Get time inverted
-        rewards[0] = -self.time
+        rewards[0] = -1
 
         # Get treasure value
         rewards[1] = self.finals.get(self.current_state, self.default_reward)
@@ -69,6 +65,5 @@ class DeepSeaTreasureSimplified(EnvMesh):
         :return:
         """
         self.current_state = self.initial_state
-        self.time = 0
 
         return self.current_state
