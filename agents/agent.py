@@ -25,7 +25,7 @@ class Agent:
         'STAY': '×'
     }
 
-    def __init__(self, environment, alpha=0.1, epsilon=0.1, gamma=1., seed=0, default_action=0, default_reward=0.,
+    def __init__(self, environment, alpha=0.1, epsilon=0.1, gamma=1., seed=0, default_reward=0.,
                  states_to_observe=None, max_iterations=None):
 
         # Check alpha
@@ -35,7 +35,6 @@ class Agent:
         self.epsilon = epsilon
         self.gamma = gamma
         self.environment = environment
-        self.default_action = default_action
         self.default_reward = default_reward
 
         # To intensive problems

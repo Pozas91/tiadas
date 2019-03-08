@@ -7,3 +7,4 @@ from .pressurized_bountiful_sea_treasure import PressurizedBountifulSeaTreasure
 from .resource_gathering import ResourceGathering
 from .resource_gathering_limit import ResourceGatheringLimit
 from .russell_and_norvig import RussellNorvig
+from .bonus_world import BonusWorld

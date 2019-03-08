@@ -13,6 +13,11 @@ class DeepSeaTreasure(EnvMesh):
     # Possible actions
     _actions = {'UP': 0, 'RIGHT': 1, 'DOWN': 2, 'LEFT': 3}
 
+    # Pareto optimal
+    pareto_optimal = [
+        (-1, 1), (-3, 2), (-5, 3), (-7, 5), (-8, 8), (-9, 16), (-13, 24), (-14, 50), (-17, 74), (-19, 124)
+    ]
+
     def __init__(self, mesh_shape=(10, 11), initial_state=(0, 0), default_reward=0., seed=0):
         """
         :param initial_state:

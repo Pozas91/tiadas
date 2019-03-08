@@ -39,3 +39,8 @@ register(
     id='deep-sea-treasure-simplified-v0',
     entry_point='gym_tiadas.envs:DeepSeaTreasureSimplified'
 )
+
+register(
+    id='bonus-world-v0',
+    entry_point='gym_tiadas.envs:BonusWorld'
+)

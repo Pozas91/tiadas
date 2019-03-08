@@ -2,6 +2,7 @@
 Useful functions to calculate a reinforcement learning based on q-learning.
 """
 
+import math
 from copy import deepcopy
 
 import numpy as np
@@ -9,7 +10,7 @@ import numpy as np
 from agents import Agent
 
 
-def train(agent: Agent, epochs=int(1e4), verbose=False):
+def train(agent: Agent, epochs=int(1e3), verbose=False):
     """
     Return an agent trained with `epochs` epochs.
     :param verbose:
@@ -27,7 +28,7 @@ def train(agent: Agent, epochs=int(1e4), verbose=False):
         agent.show_q()
 
 
-def cheat_train(agent: Agent, objective: float, close_margin=1e-9):
+def objective_training(agent: Agent, objective: float, close_margin=1e-9):
     """
     Train until agent V(0, 0) value is close to objective value.
     :param agent:
@@ -166,3 +167,19 @@ def testing(agent: Agent) -> tuple:
 
 def is_close(a: float, b: float, relative=1e-3):
     return abs(a - b) <= relative
+
+
+def distance_between_two_points(a: (float, float), b: (float, float)) -> float:
+    return math.hypot(b[0] - a[0], b[1] - a[1])
+
+
+def distance_to_origin(a: (float, float)) -> float:
+    return distance_between_two_points(a=a, b=(0, 0))
+
+
+def order_points_by_center_nearest(points) -> list:
+    # Get all points with its distance to center (0, 0).
+    distances = {point: distance_to_origin(point) for point in points}
+
+    # Sort dictionary by value from lower to higher.
+    return sorted(distances, key=distances.get, reverse=False)

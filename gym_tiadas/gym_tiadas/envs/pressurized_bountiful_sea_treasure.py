@@ -9,6 +9,11 @@ class PressurizedBountifulSeaTreasure(EnvMesh):
     # Possible actions
     _actions = {'UP': 0, 'RIGHT': 1, 'DOWN': 2, 'LEFT': 3}
 
+    # Pareto optimal
+    pareto_optimal = [
+        (-1, 5), (-3, 80), (-5, 120), (-7, 120), (-8, 145), (-9, 150), (-13, 163), (-14, 166), (-17, 173), (-19, 175)
+    ]
+
     def __init__(self, mesh_shape=(10, 11), initial_observation=(0, 0), default_reward=0., seed=0):
         """
         :param initial_observation:
@@ -44,9 +49,6 @@ class PressurizedBountifulSeaTreasure(EnvMesh):
         super().__init__(mesh_shape, seed, default_reward=default_reward, initial_state=initial_observation,
                          finals=finals, obstacles=obstacles)
 
-        # Time inverted in find a treasure
-        self.time = 0
-
     def step(self, action) -> (object, [float, float, float], bool, dict):
         """
         Given an action, do a step
@@ -55,23 +57,23 @@ class PressurizedBountifulSeaTreasure(EnvMesh):
         """
 
         # (time_inverted, treasure_value, water_pressure)
-        rewards = [0., 0., 0.]
+        # rewards = [0., 0., 0.]
+        rewards = [0., 0.]
 
         # Get new state
         new_state = self._next_state(action=action)
 
         # Update previous state
         self.current_state = new_state
-        self.time += 1
 
         # Get time inverted
-        rewards[0] = -self.time
+        rewards[0] = -1
 
         # Get treasure value
         rewards[1] = self.finals.get(self.current_state, self.default_reward)
 
         # Water pressure (y-coordinate
-        rewards[2] = -(self.current_state[1] + 1)
+        # rewards[2] = -(self.current_state[1] + 1)
 
         # Set info
         info = {}
@@ -87,6 +89,5 @@ class PressurizedBountifulSeaTreasure(EnvMesh):
         :return:
         """
         self.current_state = self.initial_state
-        self.time = 0
 
         return self.current_state

@@ -2,25 +2,39 @@
 Useful functions to calculate the pareto frontier.
 """
 import numpy as np
+import pygmo as pg
 
 from agents import AgentMultiObjective
 from utils import q_learning
 
 
-def optimize(agent: AgentMultiObjective, w1: float, w2: float) -> (float, float):
+def optimize(agent: AgentMultiObjective, w1: float, w2: float, solutions_known=None) -> (float, float):
     """
     Try to find an c point to add in pareto's frontier.
     :param agent:
+    :param solutions_known: If we know the possible solutions, we can indicate them to the algorithm to improve the
+        training of the agent. If is None, then is ignored.
     :param w1:
     :param w2:
     :return:
     """
+
+    # Reset agent (forget q-values, initial_state, etc.).
     agent.reset()
+    # Set news weights to get the new solution.
     agent.set_rewards_weights([w1, w2])
 
-    # q_learning.train(agent=agent)
-    objective = w1 * -3 + w2 * 80
-    q_learning.cheat_train(agent=agent, objective=objective, close_margin=5e-1)
+    # If solutions not is None
+    if solutions_known:
+        # Multiply and sum all points with agent's weights.
+        objectives = np.sum(np.multiply(solutions_known, [w1, w2]), axis=1)
+        # Get max of these sums (That is the objective).
+        objective = np.max(objectives)
+        # Train agent searching that objective.
+        q_learning.objective_training(agent=agent, objective=objective, close_margin=3e-1)
+    else:
+        # Normal training
+        q_learning.train(agent=agent)
 
     # Get point c from agent's test.
     c = q_learning.testing(agent=agent)
@@ -28,9 +42,11 @@ def optimize(agent: AgentMultiObjective, w1: float, w2: float) -> (float, float)
     return c
 
 
-def algorithm(p: (float, float), q: (float, float), problem: AgentMultiObjective) -> list:
+def calc_frontier(p: (float, float), q: (float, float), problem: AgentMultiObjective, solutions_known=None) -> list:
     """
     Return a list of supported solutions costs
+    :param solutions_known: If we know the possible solutions, we can indicate them to the algorithm to improve the
+        training of the agent. If is None, then is ignored.
     :param p: 2D point
     :param q: 2D point
     :param problem: A problem
@@ -44,11 +60,14 @@ def algorithm(p: (float, float), q: (float, float), problem: AgentMultiObjective
     accumulate = list()
 
     # Push a vector with p and q in the stack
-    accumulate.append((p, q))
+    accumulate.append(tuple(result))
 
     while len(accumulate) > 0:
         # Pop the next pair of points from the stack.
         a, b = accumulate.pop()
+
+        # Order points nearest by center first.
+        a, b = tuple(q_learning.order_points_by_center_nearest([a, b]))
 
         # Decompose points
         a_x, a_y = a
@@ -59,7 +78,7 @@ def algorithm(p: (float, float), q: (float, float), problem: AgentMultiObjective
         w2 = np.multiply(b_x - a_x, -1.)
 
         # Solve P to find a new solution ang get its cost vector c.
-        c = optimize(problem, w1, w2)
+        c = optimize(problem, w1, w2, solutions_known=solutions_known)
 
         # Decompose c vector.
         c_x, c_y = c
@@ -77,3 +96,17 @@ def algorithm(p: (float, float), q: (float, float), problem: AgentMultiObjective
             result.append(c)
 
     return result
+
+
+def hypervolume(points: list, reference: (float, float)) -> float:
+    """
+    By default, the pygmo library is used for minimization problems.
+    In our case, we need it to work for maximization problems.
+    :param points: List of points limits of hypervolume
+    :param reference: Reference point to calc hypervolume
+    :return: hypervolume area.
+    """
+
+    reference = np.multiply(reference, -1.)
+    points = np.multiply(points, -1.)
+    return pg.hypervolume(points).compute(reference)

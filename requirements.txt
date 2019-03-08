@@ -1,0 +1,4 @@
+pygmo
+numpy
+matplotlib
+gym

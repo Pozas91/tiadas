@@ -6,9 +6,10 @@ import time
 import gym
 import matplotlib.pyplot as plt
 import numpy as np
-from gym_tiadas.envs import *
 
 from agents import Agent, AgentMultiObjective
+# from gym_tiadas.envs import *
+from gym_tiadas.gym_tiadas.envs import *
 from utils import pareto, q_learning
 
 ENV_NAME_MESH = 'russell-norvig-v0'
@@ -131,53 +132,57 @@ def deep_sea_treasure():
     pass
 
 
+def bonus_world():
+    environment = BonusWorld()
+    agent = AgentMultiObjective(environment=environment, weights=[0., 1., 0.], epsilon=0.5, alpha=0.2, gamma=1.,
+                                states_to_observe=[(0, 0)])
+    q_learning.train(agent=agent, verbose=True)
+    agent.show_policy()
+    pass
+
+
 def testing_pareto():
     # Build environment
     env = DeepSeaTreasure()
 
     # Pareto's points
-    pareto_points = [
-        (-1, 1), (-3, 2), (-5, 3), (-7, 5), (-8, 8), (-9, 16), (-13, 24), (-14, 50), (-17, 74), (-19, 124)
-    ]
+    pareto_points = env.pareto_optimal
 
     # Build agent
     agent = AgentMultiObjective(environment=env, weights=[0.99, 0.01], states_to_observe=[(0, 0)],
-                                epsilon=0.5, alpha=0.2, gamma=1., default_action=2)
+                                epsilon=0.5, alpha=0.2, gamma=1.)
 
-    t0 = time.time()
-
+    # Search one extreme objective.
     objective = float(np.sum(np.multiply(agent.weights, pareto_points[0])))
-    q_learning.cheat_train(agent=agent, objective=objective, close_margin=1e-2)
+    q_learning.objective_training(agent=agent, objective=objective, close_margin=1e-2)
 
-    time_train = time.time() - t0
-    print('Time train: {:.2f} seconds.'.format(time_train))
-
-    agent.show_policy()
-
+    # Get p point from agent test.
     p = q_learning.testing(agent=agent)
 
     # Reset agent
     agent.reset()
 
+    # Set weights to find another extreme point
     agent.set_rewards_weights([0.01, 0.99])
-    t0 = time.time()
 
+    # Search the other extreme objective.
     objective = float(np.sum(np.multiply(agent.weights, pareto_points[-1])))
-    q_learning.cheat_train(agent=agent, objective=objective, close_margin=2)
+    q_learning.objective_training(agent=agent, objective=objective, close_margin=1e-1)
 
-    # q_learning.train(agent=agent)
-    time_train = time.time() - t0
-    print('Time train: {:.2f} seconds.'.format(time_train))
-    agent.show_policy()
-
+    # Get q point from agent test.
     q = q_learning.testing(agent=agent)
 
-    pareto_frontier = pareto.algorithm(p=p, q=q, problem=agent)
+    # Search pareto points
+    pareto_frontier = pareto.calc_frontier(p=p, q=q, problem=agent, solutions_known=pareto_points)
     pareto_frontier_np = np.array(pareto_frontier)
 
+    # Get pareto point's x axis
     x = pareto_frontier_np[:, 0]
+
+    # Get pareto point's y axis
     y = pareto_frontier_np[:, 1]
 
+    # Build and show plot.
     plt.scatter(x, y)
     plt.ylabel('Reward')
     plt.xlabel('Time')
@@ -221,7 +226,8 @@ def main():
     # plot_performance(epochs=1000000)
 
     # deep_sea_treasure()
-    testing_pareto()
+    # testing_pareto()
+    bonus_world()
     # resource_gathering()
     # pressurized_bountiful_sea_treasure()
     # buridan_ass()
