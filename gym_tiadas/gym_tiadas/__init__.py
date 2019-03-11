@@ -44,3 +44,18 @@ register(
     id='bonus-world-v0',
     entry_point='gym_tiadas.envs:BonusWorld'
 )
+
+register(
+    id='space-exploration-v0',
+    entry_point='gym_tiadas.envs:SpaceExploration'
+)
+
+register(
+    id='linked-rings-v0',
+    entry_point='gym_tiadas.envs:LinkedRings'
+)
+
+register(
+    id='non-recurrent-rings-v0',
+    entry_point='gym_tiadas.envs:NonRecurrentRings'
+)

@@ -222,7 +222,7 @@ class Agent:
         # New line
         print('')
 
-    def show_crude_policy(self):
+    def show_raw_policy(self):
         """
         Show all states with it's best action
         :return:

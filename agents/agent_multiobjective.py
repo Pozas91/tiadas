@@ -16,7 +16,10 @@ class AgentMultiObjective(Agent):
                          max_iterations)
 
         # If not weights define, all rewards have same weight
-        self.weights = [1.] * number_of_rewards if weights is None else weights
+        self.weights = [1. / number_of_rewards] * number_of_rewards if weights is None else weights
+
+        # Sum of weights must be 1.
+        assert np.sum(self.weights) == 1.
 
     def set_rewards_weights(self, rewards_weights) -> None:
         """

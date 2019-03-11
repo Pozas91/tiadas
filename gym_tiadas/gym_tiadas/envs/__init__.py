@@ -8,3 +8,6 @@ from .resource_gathering import ResourceGathering
 from .resource_gathering_limit import ResourceGatheringLimit
 from .russell_and_norvig import RussellNorvig
 from .bonus_world import BonusWorld
+from .space_exploration import SpaceExploration
+from .linked_rings import LinkedRings
+from .non_recurrent_rings import NonRecurrentRings

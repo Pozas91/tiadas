@@ -28,8 +28,8 @@ class EnvMesh(gym.Env):
     # Icons to render environments
     _icons = {'BLANK': ' ', 'BLOCK': '■', 'TREASURE': '$', 'CURRENT': '☺', 'ENEMY': '×', 'HOME': 'µ', 'FINAL': '$'}
 
-    def __init__(self, mesh_shape: tuple, seed=None, initial_state=None, obstacles=None, finals=None, default_reward=0.,
-                 default_action=0):
+    def __init__(self, mesh_shape: tuple, seed=None, initial_state=None, obstacles=None, finals=None,
+                 default_reward=0.):
 
         # Set action space
         self.action_space = spaces.Discrete(len(self._actions))
@@ -56,7 +56,6 @@ class EnvMesh(gym.Env):
         self.obstacles = obstacles
 
         # Defaults
-        self.default_action = default_action
         self.default_reward = default_reward
 
         # Reset environment

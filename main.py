@@ -141,6 +141,15 @@ def bonus_world():
     pass
 
 
+def space_exploration():
+    environment = SpaceExploration()
+    agent = AgentMultiObjective(environment=environment, weights=[0.8, 0.2], epsilon=0.5, alpha=0.2, gamma=1.,
+                                states_to_observe=[(0, 0)])
+    q_learning.train(agent=agent, verbose=True, epochs=int(1e5))
+    agent.show_policy()
+    pass
+
+
 def testing_pareto():
     # Build environment
     env = DeepSeaTreasure()
@@ -220,6 +229,26 @@ def mo_puddle_world():
     pass
 
 
+def linked_rings():
+    environment = LinkedRings()
+    agent = AgentMultiObjective(environment=environment, weights=[0.5, 0.5], epsilon=0.1, max_iterations=100,
+                                states_to_observe=[0, 1, 4])
+    q_learning.train(agent=agent, epochs=int(1e3), verbose=True)
+    agent.show_raw_policy()
+    agent.print_observed_states()
+    pass
+
+
+def non_recurrent_rings():
+    environment = NonRecurrentRings()
+    agent = AgentMultiObjective(environment=environment, weights=[0.3, 0.7], epsilon=0.1, max_iterations=100,
+                                states_to_observe=[0, 7])
+    q_learning.train(agent=agent, epochs=int(1e3), verbose=True)
+    agent.show_raw_policy()
+    agent.print_observed_states()
+    pass
+
+
 def main():
     # plot_training_from_zero()
     # plot_training_accumulate()
@@ -227,11 +256,16 @@ def main():
 
     # deep_sea_treasure()
     # testing_pareto()
-    bonus_world()
+    # bonus_world()
     # resource_gathering()
     # pressurized_bountiful_sea_treasure()
     # buridan_ass()
     # mo_puddle_world()
+
+    # space_exploration()
+
+    # linked_rings()
+    non_recurrent_rings()
     pass
 
 
