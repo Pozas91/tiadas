@@ -142,11 +142,6 @@ def policies_are_similar(a: dict, b: dict, close_margin=1e-3) -> bool:
     return are_similar
 
 
-def normalized(data: list) -> list:
-    data = np.array(data)
-    return (data / np.linalg.norm(data)).tolist()
-
-
 def testing(agent: Agent) -> tuple:
     """
     Test policy
@@ -183,3 +178,16 @@ def order_points_by_center_nearest(points) -> list:
 
     # Sort dictionary by value from lower to higher.
     return sorted(distances, key=distances.get, reverse=False)
+
+
+def weighted_sum(rewards, weights) -> float:
+    """
+    Simple Weighted-Sum function
+    :param rewards:
+    :param weights:
+    :return:
+    """
+
+    result = float(np.sum(np.multiply(rewards, weights)))
+
+    return result

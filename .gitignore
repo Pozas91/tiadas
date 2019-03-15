@@ -160,3 +160,5 @@ fabric.properties
 
 # Ignore draft.py file.
 draft.py
+agents/agent_multi_objective_scalarized.py
+agents/agent_multi_objective.py
