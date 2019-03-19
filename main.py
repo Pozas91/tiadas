@@ -7,7 +7,7 @@ import gym
 import matplotlib.pyplot as plt
 import numpy as np
 
-from agents import Agent, AgentMultiObjectiveScalarized
+from agents import Agent, AgentMultiObjective
 # from gym_tiadas.envs import *
 from gym_tiadas.gym_tiadas.envs import *
 from utils import pareto, q_learning
@@ -134,7 +134,7 @@ def russel_and_norvig():
 
 def deep_sea_treasure():
     environment = DeepSeaTreasure()
-    agent = AgentMultiObjectiveScalarized(environment=environment, weights=[0., 1.], epsilon=0.8, max_iterations=1000)
+    agent = AgentMultiObjective(environment=environment, weights=[0., 1.], epsilon=0.8, max_iterations=1000)
     q_learning.train(agent=agent, verbose=True)
     agent.show_policy()
     pass
@@ -142,9 +142,8 @@ def deep_sea_treasure():
 
 def bonus_world():
     environment = BonusWorld()
-    agent = AgentMultiObjectiveScalarized(environment=environment, weights=[0., 1., 0.], epsilon=0.5, alpha=0.2,
-                                          gamma=1.,
-                                          states_to_observe=[(0, 0)])
+    agent = AgentMultiObjective(environment=environment, weights=[0., 1., 0.], epsilon=0.5, alpha=0.2, gamma=1.,
+                                states_to_observe=[(0, 0)])
     q_learning.train(agent=agent, verbose=True)
     agent.show_policy()
     pass
@@ -152,8 +151,8 @@ def bonus_world():
 
 def space_exploration():
     environment = SpaceExploration()
-    agent = AgentMultiObjectiveScalarized(environment=environment, weights=[0.8, 0.2], epsilon=0.5, alpha=0.2, gamma=1.,
-                                          states_to_observe=[(0, 0)])
+    agent = AgentMultiObjective(environment=environment, weights=[0.8, 0.2], epsilon=0.5, alpha=0.2, gamma=1.,
+                                states_to_observe=[(0, 0)])
     q_learning.train(agent=agent, verbose=True, epochs=int(1e5))
     agent.show_policy()
     pass
@@ -170,11 +169,11 @@ def testing_pareto():
     pareto_points = env.pareto_optimal
 
     # Build agent
-    agent = AgentMultiObjectiveScalarized(environment=env, weights=[0.99, 0.01], states_to_observe=[(0, 0)],
-                                          epsilon=0.5, alpha=0.2)
+    agent = AgentMultiObjective(environment=env, weights=[0.99, 0.01], states_to_observe=[(0, 0)],
+                                epsilon=0.5, alpha=0.2)
 
     # Search one extreme objective.
-    objective = agent.f(pareto_points[0])
+    objective = agent.process_reward(pareto_points[0])
     q_learning.objective_training(agent=agent, objective=objective, close_margin=1e-2)
 
     # Get p point from agent test.
@@ -187,7 +186,7 @@ def testing_pareto():
     agent.weights = [0.01, 0.99]
 
     # Search the other extreme objective.
-    objective = agent.f(pareto_points[-1])
+    objective = agent.process_reward(pareto_points[-1])
     q_learning.objective_training(agent=agent, objective=objective, close_margin=1e-1)
 
     # Get q point from agent test.
@@ -197,6 +196,7 @@ def testing_pareto():
     pareto_frontier = pareto.calc_frontier(p=p, q=q, problem=agent, solutions_known=pareto_points)
     pareto_frontier_np = np.array(pareto_frontier)
 
+    # Calc rest of time
     time_train = time.time() - start_time
 
     # Get pareto point's x axis
@@ -217,7 +217,7 @@ def testing_pareto():
 
 def resource_gathering():
     environment = ResourceGathering()
-    agent = AgentMultiObjectiveScalarized(environment=environment, weights=[0., 0., .1], max_iterations=1000)
+    agent = AgentMultiObjective(environment=environment, weights=[0., 0., .1], max_iterations=1000)
     q_learning.train(agent=agent, verbose=True)
     agent.show_policy()
     pass
@@ -225,8 +225,7 @@ def resource_gathering():
 
 def pressurized_bountiful_sea_treasure():
     environment = PressurizedBountifulSeaTreasure()
-    agent = AgentMultiObjectiveScalarized(environment=environment, weights=[1., 0., 0.], epsilon=0.5,
-                                          max_iterations=1000)
+    agent = AgentMultiObjective(environment=environment, weights=[1., 0., 0.], epsilon=0.5, max_iterations=1000)
     q_learning.train(agent=agent, epochs=200000, verbose=True)
     agent.show_policy()
     pass
@@ -234,14 +233,14 @@ def pressurized_bountiful_sea_treasure():
 
 def buridan_ass():
     environment = BuridanAss()
-    agent = AgentMultiObjectiveScalarized(environment=environment, epsilon=0.3, weights=[0.3, 0.3, 0.3])
+    agent = AgentMultiObjective(environment=environment, epsilon=0.3, weights=[0.3, 0.3, 0.3])
     q_learning.train(agent=agent, epochs=10000, verbose=True)
     pass
 
 
 def mo_puddle_world():
     environment = MoPuddleWorld()
-    agent = AgentMultiObjectiveScalarized(environment=environment, weights=[0.5, 0.5], epsilon=0.3, max_iterations=100)
+    agent = AgentMultiObjective(environment=environment, weights=[0.5, 0.5], epsilon=0.3, max_iterations=100)
     q_learning.train(agent=agent, epochs=1000, verbose=True)
     agent.show_policy()
     pass
@@ -249,8 +248,8 @@ def mo_puddle_world():
 
 def linked_rings():
     environment = LinkedRings()
-    agent = AgentMultiObjectiveScalarized(environment=environment, weights=[0.5, 0.5], epsilon=0.1, max_iterations=100,
-                                          states_to_observe=[0, 1, 4])
+    agent = AgentMultiObjective(environment=environment, weights=[0.5, 0.5], epsilon=0.1, max_iterations=100,
+                                states_to_observe=[0, 1, 4])
     q_learning.train(agent=agent, epochs=int(1e3), verbose=True)
     agent.show_raw_policy()
     agent.print_observed_states()
@@ -259,8 +258,8 @@ def linked_rings():
 
 def non_recurrent_rings():
     environment = NonRecurrentRings()
-    agent = AgentMultiObjectiveScalarized(environment=environment, weights=[0.3, 0.7], epsilon=0.1, max_iterations=100,
-                                          states_to_observe=[0, 7])
+    agent = AgentMultiObjective(environment=environment, weights=[0.3, 0.7], epsilon=0.1, max_iterations=100,
+                                states_to_observe=[0, 7])
     q_learning.train(agent=agent, epochs=int(1e3), verbose=True)
     agent.show_raw_policy()
     agent.print_observed_states()
@@ -270,8 +269,8 @@ def non_recurrent_rings():
 def deep_sea_treasure_simplified():
     environment = DeepSeaTreasureSimplified()
     weights = [0.5] * 2
-    agent = AgentMultiObjectiveScalarized(environment=environment, weights=weights, epsilon=0.5,
-                                          states_to_observe=[(0, 0)])
+    agent = AgentMultiObjective(environment=environment, weights=weights, epsilon=0.5,
+                                states_to_observe=[(0, 0)])
     q_learning.train(agent=agent, epochs=int(1e4), verbose=True)
     agent.print_observed_states()
     agent.show_policy()
@@ -284,7 +283,7 @@ def main():
     # plot_performance(epochs=1000000)
 
     # deep_sea_treasure()
-    testing_pareto()
+    # testing_pareto()
     # bonus_world()
     # resource_gathering()
     # pressurized_bountiful_sea_treasure()

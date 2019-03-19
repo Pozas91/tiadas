@@ -59,7 +59,7 @@ class Agent:
         # Rewards history data
         self.rewards_history = list()
 
-    def select_action(self) -> int:
+    def select_action(self, state=None) -> int:
         """
         Select best action with a little e-greedy policy.
         :return:
@@ -71,7 +71,7 @@ class Agent:
 
         else:
             # Get best action to exploit reward.
-            action = self.best_action()
+            action = self.best_action(state=state)
 
         return action
 
@@ -98,7 +98,6 @@ class Agent:
             self.iterations += 1
 
             # Get an action
-            # action = self.select_action()
             action = self.best_action()
 
             # Do step on environment
@@ -138,32 +137,12 @@ class Agent:
             # Do step on environment
             next_state, reward, is_final_state, info = self.environment.step(action=action)
 
-            # Transform reward
-            reward = self._processing_reward(reward=reward)
-
             # Append to rewards history
-            self.rewards_history.append(reward)
+            history = self.process_reward(reward=reward)
+            self.rewards_history.append(history)
 
-            # Get old value
-            old_value = self.q.get(self.state, {}).get(action, self.default_reward)
-
-            # Get next max value
-            next_max = self._best_value(state=next_state)
-
-            # Calc new value apply Q-Learning formula:
-            # Q(St, At) <- (1 - alpha) * Q(St, At) + alpha * (r + y * Q(St_1, action))
-            new_value = (1 - self.alpha) * old_value + self.alpha * (reward + self.gamma * next_max)
-
-            # Prepare new data
-            new_data = {action: new_value}
-
-            # If we know this state
-            if self.state in self.q:
-                # Update value for the action done.
-                self.q.get(self.state).update(new_data)
-            else:
-                # Set a new dictionary for this state
-                self.q.update({self.state: new_data})
+            # Update Q-Dictionary
+            self._update_q_dictionary(reward=reward, action=action, next_state=next_state)
 
             # Update state
             self.state = next_state
@@ -175,10 +154,46 @@ class Agent:
         # Append new data
         for state, data in self.states_to_observe.items():
             # Add to data Best value (V max)
-            data.append(self._best_value(state))
+            value = self._best_reward(state)
+
+            # Apply function
+            value = self.process_reward(value)
+
+            # Add to data Best value (V max)
+            data.append(value)
 
             # Update dictionary
             self.states_to_observe.update({state: data})
+
+    def _update_q_dictionary(self, reward, action, next_state) -> None:
+        """
+        Update Q-Dictionary with new data
+        :param reward:
+        :param action:
+        :param next_state:
+        :return:
+        """
+
+        # Get old value
+        old_value = self.q.get(self.state, {}).get(action, self.default_reward)
+
+        # Get next max value
+        next_max = self._best_reward(state=next_state)
+
+        # Calc new value apply Q-Learning formula:
+        # Q(St, At) <- (1 - alpha) * Q(St, At) + alpha * (r + y * Q(St_1, action))
+        new_value = (1 - self.alpha) * old_value + self.alpha * (reward + self.gamma * next_max)
+
+        # Prepare new data
+        new_data = {action: new_value}
+
+        # If we know this state
+        if self.state in self.q:
+            # Update value for the action done.
+            self.q.get(self.state).update(new_data)
+        else:
+            # Set a new dictionary for this state
+            self.q.update({self.state: new_data})
 
     def show_q(self) -> None:
         """
@@ -263,38 +278,41 @@ class Agent:
 
         # Get max by value, and get it's action
         actions = list()
-        max_value = float('-inf')
+        max_reward = float('-inf')
 
         # Check all actions with it's rewards
         for possible_action in possible_actions:
 
             # Get current Value
-            value = possible_actions.get(possible_action)
+            reward = possible_actions.get(possible_action)
+
+            # Apply function
+            # reward = self.process_reward(reward=reward)
 
             # If current value is close to new value
-            if math.isclose(a=value, b=max_value, rel_tol=1e-4):
+            if math.isclose(a=reward, b=max_reward, rel_tol=1e-4):
 
                 # Append another possible action
                 actions.append(possible_action)
 
             # If current value is best than old value
-            elif value > max_value:
+            elif reward > max_reward:
 
                 # Create a new list with current key.
                 actions = list()
                 actions.append(possible_action)
 
             # Update max value
-            max_value = max(max_value, value)
+            max_reward = max(max_reward, reward)
 
         # From best actions get one aleatory.
         action = self.generator.choice(actions)
 
         return action
 
-    def _best_value(self, state) -> float:
+    def _best_reward(self, state) -> float:
         """
-        Return best value for q and state given
+        Return best reward for q and state given
         :return:
         """
 
@@ -306,11 +324,14 @@ class Agent:
             if action not in possible_actions:
                 possible_actions.update({action: self.default_reward})
 
-        # Get best action and use it to get best value.
+        # Get best action and use it to get best reward.
         action = self.best_action(state=state)
-        value = possible_actions.get(action)
+        reward = possible_actions.get(action)
 
-        return value
+        # Apply function to reward
+        # reward = self.process_reward(reward=reward)
+
+        return reward
 
     @property
     def v(self) -> float:
@@ -318,7 +339,7 @@ class Agent:
         Get best value from initial state -> V_max(0, 0)
         :return:
         """
-        return self._best_value(state=self.environment.initial_state)
+        return self._best_reward(state=self.environment.initial_state)
 
     def reset_iterations(self):
         """
@@ -334,7 +355,7 @@ class Agent:
         """
         self.rewards_history = list()
 
-    def _processing_reward(self, reward):
+    def process_reward(self, reward) -> float:
         """
         Processing reward function.
         :param reward:
@@ -343,6 +364,10 @@ class Agent:
         return reward
 
     def print_observed_states(self):
+        """
+        Show graph of observed states
+        :return:
+        """
         for state, data in self.states_to_observe.items():
             plt.plot(data, label='State: {}'.format(state))
 
@@ -354,5 +379,16 @@ class Agent:
         plt.show()
 
     def show_v_values(self):
+        """
+        Show Best rewards from Q-Dictionary
+        :return:
+        """
         for state in self.q.keys():
-            print('State: {} -> V: {}'.format(state, max(self.q.get(state).values())))
+            # Get rewards
+            rewards = self.q.get(state).values()
+
+            # Apply function to each element of list
+            # rewards = list(map(self.process_reward, rewards))
+
+            # Print result
+            print('State: {} -> V: {}'.format(state, max(rewards)))

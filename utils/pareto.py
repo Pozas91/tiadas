@@ -4,11 +4,11 @@ Useful functions to calculate the pareto frontier.
 import numpy as np
 import pygmo as pg
 
-from agents.agent_multi_objective_scalarized import AgentMultiObjectiveScalarized
+from agents import AgentMultiObjective
 from utils import q_learning
 
 
-def optimize(agent: AgentMultiObjectiveScalarized, w1: float, w2: float, solutions_known=None) -> (float, float):
+def optimize(agent: AgentMultiObjective, w1: float, w2: float, solutions_known=None) -> (float, float):
     """
     Try to find an c point to add in pareto's frontier.
     :param agent:
@@ -42,7 +42,7 @@ def optimize(agent: AgentMultiObjectiveScalarized, w1: float, w2: float, solutio
     return c
 
 
-def calc_frontier(p: (float, float), q: (float, float), problem: AgentMultiObjectiveScalarized,
+def calc_frontier(p: (float, float), q: (float, float), problem: AgentMultiObjective,
                   solutions_known=None) -> list:
     """
     Return a list of supported solutions costs

@@ -1,2 +1,2 @@
 from .agent import Agent
-from .agent_multiobjective import AgentMultiObjective
+from .agent_multi_objective import AgentMultiObjective
