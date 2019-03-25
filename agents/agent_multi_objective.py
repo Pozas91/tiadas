@@ -46,3 +46,58 @@ class AgentMultiObjective(Agent):
 
         # Super call
         super()._update_q_dictionary(reward=reward, action=action, next_state=next_state)
+
+    def pareto_q_learning(self, epochs=1000):
+        """
+
+        :param epochs:
+        :return:
+        """
+
+        # Reset mesh
+        self.reset()
+
+        # Rewards
+        r = dict()
+
+        # For each epoch
+        for t in range(epochs):
+            # Initialize state s
+            self.state = self.environment.reset()
+
+            # Condition to stop an episode
+            is_final_state = False
+
+            # Reset iterations
+            self.reset_iterations()
+
+            # Until s is terminal
+            while not is_final_state:
+                # Increment iterations
+                self.iterations += 1
+
+                # Get an action
+                action = self.select_action()
+
+                # Do step on environment
+                next_state, reward, is_final_state, info = self.environment.step(action=action)
+
+                # Update ND policies of s' in s
+
+                # Update average immediate rewards
+                old_r = self.q.get(self.state, {}).get(action, self.default_reward)
+
+                update_r = {action: np.sum()}
+                r.get(self.state).update({
+                    action: r.get(self.state, {}).get(action, 0.0)
+                })
+
+                # Update Q-Dictionary
+                self._update_q_dictionary(reward=reward, action=action, next_state=next_state)
+
+                # Update state
+                self.state = next_state
+
+                # Check timeout
+                if self.max_iterations is not None and not is_final_state:
+                    is_final_state = self.iterations >= self.max_iterations

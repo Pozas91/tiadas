@@ -111,3 +111,13 @@ def hypervolume(points: list, reference: (float, float)) -> float:
     reference = np.multiply(reference, -1.)
     points = np.multiply(points, -1.)
     return pg.hypervolume(points).compute(reference)
+
+
+def sum_a_vector_and_a_set_of_vectors(v, v_set):
+    """
+    Perfoms a vector-sum between a vector v and a set of vectors V.
+    :param v:
+    :param v_set:
+    :return:
+    """
+    return [v + vector for vector in v_set]
