@@ -2,11 +2,11 @@
 Unit tests file where testing vector model.
 """
 
+import math
 import random as rnd
 import unittest
 from copy import deepcopy
 
-import math
 import numpy as np
 
 from models import Vector, Dominance
@@ -105,7 +105,19 @@ class TestVectors(unittest.TestCase):
         Testing if constructor works
         :return:
         """
-        vector = Vector([rnd.uniform(-100., 100.) for _ in range(rnd.randint(2, 10))])
+
+        components = [rnd.uniform(-100., 100.) for _ in range(rnd.randint(2, 10))]
+
+        # List
+        vector = Vector(components)
+        self.assertTrue(isinstance(vector.components, np.ndarray))
+
+        # Set
+        vector = Vector(set(components))
+        self.assertTrue(isinstance(vector.components, np.ndarray))
+
+        # ndarray
+        vector = Vector(np.asarray(components))
         self.assertTrue(isinstance(vector.components, np.ndarray))
 
     def test_length(self):
@@ -135,9 +147,7 @@ class TestVectors(unittest.TestCase):
         """
 
         x = Vector([rnd.uniform(-100., 100.) for _ in range(rnd.randint(2, 10))])
-        y = Vector([
-            element + Vector.relative if rnd.choice([True, False]) else element - Vector.relative for element in x
-        ])
+        y = deepcopy(x)
 
         self.assertEqual(y, x)
 
@@ -163,13 +173,12 @@ class TestVectors(unittest.TestCase):
         :return:
         """
 
-        x = Vector([5 + Vector.relative, 3 - Vector.relative])
+        x = Vector([5 + Vector.relative, 3 + Vector.relative])
         y = Vector([4, 3])
         z = Vector([5, 3])
 
-        self.assertTrue(x > y)
-        self.assertTrue(z > y)
-        self.assertTrue(z > y)
+        self.assertFalse(x > y)
+        self.assertFalse(z > y)
         self.assertFalse(x > z)
         self.assertFalse(y > x)
 
@@ -180,17 +189,17 @@ class TestVectors(unittest.TestCase):
         """
 
         x = Vector([1, 2, 3])
-        self.assertEqual('[1 2 3]', str(x))
+        self.assertEqual(np.array_str(x.components), str(x))
 
         ################################################################################################################
 
         x = Vector([1, -2])
-        self.assertEqual('[1 -2]', str(x))
+        self.assertEqual(np.array_str(x.components), str(x))
 
         ################################################################################################################
 
         x = Vector([1., -2., 1])
-        self.assertEqual('[1.0 -2.0 1.0]', str(x))
+        self.assertEqual(np.array_str(x.components), str(x))
 
     def test_add(self):
         """
@@ -267,43 +276,43 @@ class TestVectors(unittest.TestCase):
 
         x = Vector([1, 2, 3, 4])
         y = deepcopy(x)
-        self.assertTrue(Vector.similar(x, y))
+        self.assertTrue(Vector.all_close(x, y))
 
         ################################################################################################################
 
         x = Vector([1, .3])
         y = Vector([1, .3])
-        self.assertTrue(Vector.similar(x, y))
+        self.assertTrue(Vector.all_close(x, y))
 
         ################################################################################################################
 
         x = Vector([1.2, 10.00001])
         y = Vector([1.20001, 10.])
-        self.assertTrue(Vector.similar(x, y))
+        self.assertTrue(Vector.all_close(x, y))
 
         ################################################################################################################
 
         x = Vector([1, .3])
         y = Vector([1])
-        self.assertFalse(Vector.similar(x, y))
+        self.assertFalse(Vector.all_close(x, y))
 
         ################################################################################################################
 
         x = Vector([1, .3])
         y = Vector([1, 4])
-        self.assertFalse(Vector.similar(x, y))
+        self.assertFalse(Vector.all_close(x, y))
 
         ################################################################################################################
 
         x = Vector([1, .3])
         y = Vector([2, .3])
-        self.assertFalse(Vector.similar(x, y))
+        self.assertFalse(Vector.all_close(x, y))
 
         ################################################################################################################
 
         x = Vector([1.2, 10.001])
         y = Vector([1.20001, 10.])
-        self.assertFalse(Vector.similar(x, y))
+        self.assertFalse(Vector.all_close(x, y))
 
     def test_dominance(self):
         """
@@ -355,6 +364,65 @@ class TestVectors(unittest.TestCase):
 
         # Check first quadrant
         vectors = self.first_quadrant
+        non_dominated = Vector.m3_max(vectors=vectors)
+
+        # Check that no vector of non_dominated list is dominated by other vector of total vectors.
+        dominance = TestVectors.check_if_all_are_non_dominated(vectors=vectors, non_dominated=non_dominated)
+
+        self.assertTrue(dominance)
+
+        ################################################################################################################
+
+        # Check second quadrant
+        vectors = self.second_quadrant
+        non_dominated = Vector.m3_max(vectors=vectors)
+
+        # Check that no vector of non_dominated list is dominated by other vector of total vectors.
+        dominance = TestVectors.check_if_all_are_non_dominated(vectors=vectors, non_dominated=non_dominated)
+
+        self.assertTrue(dominance)
+
+        ################################################################################################################
+
+        # Check third quadrant
+        vectors = self.third_quadrant
+        non_dominated = Vector.m3_max(vectors=vectors)
+
+        # Check that no vector of non_dominated list is dominated by other vector of total vectors.
+        dominance = TestVectors.check_if_all_are_non_dominated(vectors=vectors, non_dominated=non_dominated)
+
+        self.assertTrue(dominance)
+
+        ################################################################################################################
+
+        # Check fourth quadrant
+        vectors = self.fourth_quadrant
+        non_dominated = Vector.m3_max(vectors=vectors)
+
+        # Check that no vector of non_dominated list is dominated by other vector of total vectors.
+        dominance = TestVectors.check_if_all_are_non_dominated(vectors=vectors, non_dominated=non_dominated)
+
+        self.assertTrue(dominance)
+
+        ################################################################################################################
+
+        # Check all quadrants
+        vectors = self.first_quadrant + self.second_quadrant + self.third_quadrant + self.fourth_quadrant
+        non_dominated = Vector.m3_max(vectors=vectors)
+
+        # Check that no vector of non_dominated list is dominated by other vector of total vectors.
+        dominance = TestVectors.check_if_all_are_non_dominated(vectors=vectors, non_dominated=non_dominated)
+
+        self.assertTrue(dominance)
+
+    def test_m3_max_integer(self):
+        """
+        Testing m3_max function
+        :return:
+        """
+
+        # Check first quadrant
+        vectors = [(vector * (1 / Vector.relative)) for vector in self.first_quadrant]
         non_dominated = Vector.m3_max(vectors=vectors)
 
         # Check that no vector of non_dominated list is dominated by other vector of total vectors.

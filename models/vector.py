@@ -1,6 +1,10 @@
+"""
+This class represent a vector with some features necessaries for our program.
+This class have a vector, that could be
+"""
 import copy
-
 import math
+
 import numpy as np
 
 from models import Dominance
@@ -11,18 +15,26 @@ class Vector:
     Class Vector with functions to work with vectors.
     """
 
+    # Relative margin to compare of similarity of two float elements.
     relative = 1e-5
 
-    def __init__(self, components: list):
+    def __init__(self, components):
         """
         Vector's init
         :param components:
         """
+
+        assert isinstance(components, (np.ndarray, list, set))
         self.components = np.array(components)
 
     def __getitem__(self, item):
         """
-        Get item from vector
+        Get item from vector:
+
+        v1 = Vector([10, 2, 3])
+        print(v1[0]) -> "10"
+        print(v1.components[0]) -> "10"
+
         :param item:
         :return:
         """
@@ -30,39 +42,39 @@ class Vector:
 
     def __len__(self):
         """
-        Override len functions
+        Return first component from shape of self.components
         :return:
         """
-        return len(self.components)
+        return self.components.shape[0]
 
     def __eq__(self, other):
         """
-        Check if two vectors are equals
+        True if two arrays have the same shape and elements, False otherwise.
         :param other:
         :return:
         """
-        return np.allclose(self, other, rtol=Vector.relative)
+        return np.array_equal(self, other)
 
     def __str__(self):
         """
-        Convert class to string
+        Return a string representation of the data in an array.
         :return:
         """
-        return '[' + ' '.join([str(component) for component in self.components]) + ']'
+        return np.array_str(self.components)
 
     def __repr__(self):
         """
-        String that represent class
+        Return the string representation of an array.
         :return:
         """
-        return '[' + ' '.join([str(component) for component in self.components]) + ']'
+        return np.array_repr(self.components)
 
     def __hash__(self):
         """
         Hash to represent class
         :return:
         """
-        return hash(repr(self))
+        return hash(tuple(self.components))
 
     def __add__(self, other):
         """
@@ -71,43 +83,72 @@ class Vector:
         :return:
         """
 
-        if len(self) != len(other):
-            raise ArithmeticError('Length of both vectors must be equal.')
+        if self.components.shape != other.components.shape:
+            raise ArithmeticError('Shape of both vectors must be equal.')
 
-        return Vector([x + y for x, y in zip(self, other)])
+        return Vector(self.components + other.components)
 
     def __sub__(self, other):
         """
-        Sum two vectors
+        Subtract two vectors
         :param other:
         :return:
         """
 
-        if len(self) != len(other):
-            raise ArithmeticError('Length of both vectors must be equal.')
+        if self.components.shape != other.components.shape:
+            raise ArithmeticError('Shape of both vectors must be equal.')
 
-        return Vector([x - y for x, y in zip(self, other)])
+        return Vector(self.components - other.components)
+
+    def __mul__(self, other):
+        """
+        Multiply a vector
+        :param other:
+        :return:
+        """
+
+        pass
 
     def __ge__(self, other):
         """
-        Self is greater or equal than other.
-        Are greater or equal when all elements are greater or are close.
+        A vector is greater or equal than other when all components are greater or equal (or close) one by one.
+
         :param other:
         :return:
         """
 
-        return np.all([a > b or np.isclose(a, b, rtol=Vector.relative) for a, b in zip(self, other)])
+        return np.all([
+            a > b or np.isclose(a, b, rtol=Vector.relative) for a, b in zip(self.components, other.components)
+        ])
 
     def __gt__(self, other):
         """
-        self is greater than other.
-        Are greater when are greater or equals and at least one element is greater.
+        A vector is greater than other when all components are greater one by one.
 
-        `SELF DOMINATE OTHER`
         :param other:
         :return:
         """
-        return self >= other and self != other
+        return np.all(np.greater(self.components, other.components))
+
+    def __lt__(self, other):
+        """
+        A vector is less than other when all components are less one by one.
+
+        :param other:
+        :return:
+        """
+        return np.all(np.less(self.components, other.components))
+
+    def __le__(self, other):
+        """
+        A vector is less or equal than other when all components are less or equal (or close) one by one.
+
+        :param other:
+        :return:
+        """
+        return np.all([
+            a < b or np.isclose(a, b, rtol=Vector.relative) for a, b in zip(self.components, other.components)
+        ])
 
     @property
     def magnitude(self):
@@ -115,29 +156,20 @@ class Vector:
         Return magnitude of vector
         :return:
         """
-        return math.sqrt(sum(component ** 2 for component in self))
+        return math.sqrt(np.sum(self.components ** 2))
 
     @staticmethod
-    def similar(v1, v2):
+    def all_close(v1, v2):
         """
-        Check if two vectors are similar
+        Returns True if two arrays are element-wise equal within a tolerance.
+
+        If either array contains one or more NaNs, False is returned.
         :param v1:
         :param v2:
         :return:
         """
 
-        # Get `v1` length
-        length = len(v1)
-
-        # First, must be same length
-        similar = length == len(v2)
-
-        # If both have same length
-        if similar:
-            # Check if all values are closed.
-            similar = np.allclose(v1, v2, rtol=Vector.relative)
-
-        return similar
+        return np.allclose(v1, v2, rtol=Vector.relative)
 
     @staticmethod
     def dominance(v1, v2):
@@ -148,24 +180,48 @@ class Vector:
         :return:
         """
 
-        # Check if are equals
-        if Vector.similar(v1, v2):
-            result = Dominance.equals
+        v1_dominate = False
+        v2_dominate = False
 
-        # Check if `v1` is always greater or equal than `v2` (`v1` dominate `v2`), and at least one must be greater.
-        elif v1 > v2:
-            result = Dominance.dominate
+        for idx, component in enumerate(v1.components):
 
-        # Check if `v2` is always greater or equal than `v1` (`v1` is dominated by `v2`), and at least one must be
-        # greater.
-        elif v2 > v1:
-            result = Dominance.is_dominated
+            # Are equals or close...
+            if np.isclose(v1.components[idx], v2.components[idx], rtol=Vector.relative):
+                # Nothing to do at moment
+                pass
 
-        # Otherwise
+            # In this component dominates v1
+            elif v1.components[idx] > v2.components[idx]:
+                v1_dominate = True
+
+                # If already dominate v2, then both vectors are independent.
+                if v2_dominate:
+                    return Dominance.otherwise
+
+            # In this component dominates v2
+            elif v1.components[idx] < v2.components[idx]:
+                v2_dominate = True
+
+                # If already dominate v1, then both vectors are independent.
+                if v1_dominate:
+                    return Dominance.otherwise
+
+        if v1_dominate == v2_dominate:
+            # If both dominate, then both vectors are independent.
+            if v1_dominate:
+                return Dominance.otherwise
+
+            # Are equals
+            else:
+                return Dominance.equals
+
+        # v1 dominate to v2
+        elif v1_dominate:
+            return Dominance.dominate
+
+        # v2 dominate to v1
         else:
-            result = Dominance.otherwise
-
-        return result
+            return Dominance.is_dominated
 
     @staticmethod
     def m3_max(vectors: list):
@@ -175,8 +231,7 @@ class Vector:
                 - Aren't two vector equals in list.
                 - We attempt MAXIMIZE the value of all attributes.
 
-            IMPORTANT: Between V equals vectors only the lowest value is chosen
-                (which in the case of the objects Vj will be the index j).
+            If two vectors are equals, keep last one and discard the new vector.
         """
 
         non_dominated = list()
@@ -185,15 +240,16 @@ class Vector:
         for idx_i, vector_i in enumerate(vectors):
 
             discarded = False
-            i = 0
+            equals = False
+            idx_j = 0
 
             # While has more elements
-            while i < len(non_dominated) and not discarded:
+            while idx_j < len(non_dominated) and not discarded:
 
                 # Get vector and index
-                vector_j = non_dominated[i]
-                idx_j = non_dominated.index(vector_j)
+                vector_j = non_dominated[idx_j]
 
+                # Get dominance
                 dominance = Vector.dominance(v1=vector_i, v2=vector_j)
 
                 # `vector_i` dominate `vector_j`
@@ -213,22 +269,22 @@ class Vector:
 
                 # `vector_i` and `vector_j` are similar or equals
                 elif dominance == Dominance.equals:
-
-                    # Remove non-dominated vector
-                    non_dominated.pop(idx_j)
-
-                    # If `vector_j` dominate `vector_i`
-                    discarded = np.any(np.greater(vector_i, vector_j))
+                    # Stop to search (keep last one)
+                    equals = True
+                    break
 
                 # If dominance is otherwise, continue searching
                 if dominance == Dominance.otherwise:
                     # Search in next element
-                    i += 1
+                    idx_j += 1
                 else:
                     # Begin again
-                    i = 0
+                    idx_j = 0
 
-            if discarded:
+            # If both vectors are equals, do nothing
+            if equals:
+                pass
+            elif discarded:
                 # Add vector at first
                 non_dominated.insert(0, vector_j)
             else:
@@ -246,28 +302,24 @@ class Vector:
                 - Aren't two vector equals in list.
                 - We attempt MAXIMIZE the value of all attributes.
 
-            IMPORTANT: Between V equals vectors only the lowest value is chosen
-                (which in the case of the objects Vj will be the index j).
-
             Return 2 sets, non-dominated set and dominated set.
         """
 
         non_dominated = list()
         dominated = list()
-
         vector_j = None
 
         for idx_i, vector_i in enumerate(vectors):
 
             discarded = False
-            i = 0
+            equals = False
+            idx_j = 0
 
             # While has more elements
-            while i < len(non_dominated) and not discarded:
+            while idx_j < len(non_dominated) and not discarded:
 
                 # Get vector and index
-                vector_j = non_dominated[i]
-                idx_j = non_dominated.index(vector_j)
+                vector_j = non_dominated[idx_j]
 
                 # Get dominance
                 dominance = Vector.dominance(v1=vector_i, v2=vector_j)
@@ -295,31 +347,22 @@ class Vector:
 
                 # `vector_i` and `vector_j` are similar or equals
                 elif dominance == Dominance.equals:
-
-                    # Remove non-dominated vector
-                    non_dominated.pop(idx_j)
-
-                    # If `vector_j` dominate `vector_i`
-                    discarded = np.any(np.greater(vector_i, vector_j))
-
-                    # TODO: Esta parte no funciona del todo bien, habría que revisarlo.
-                    # # If is discarded
-                    # if discarded:
-                    #     # Add dominated vector
-                    #     dominated.append(vector_i)
-                    # else:
-                    #     # Add dominated vector
-                    #     dominated.append(vector_j)
+                    # Stop to search (keep last one)
+                    equals = True
+                    break
 
                 # If dominance is otherwise, continue searching
                 if dominance == Dominance.otherwise:
                     # Search in next element
-                    i += 1
+                    idx_j += 1
                 else:
                     # Begin again
-                    i = 0
+                    idx_j = 0
 
-            if discarded:
+            # If both vectors are equals, do nothing
+            if equals:
+                pass
+            elif discarded:
                 # Add vector at first
                 non_dominated.insert(0, vector_j)
             else:
@@ -352,17 +395,15 @@ class Vector:
         for idx_i, vector_i in enumerate(vectors):
 
             discarded = False
-            i = 0
+            idx_j = 0
             included_in_bucket = False
             bucket = None
 
             # While has more elements
-            while i < len(non_dominated) and not discarded and not included_in_bucket:
-                # Get vector and index
-                bucket = non_dominated[i]
+            while idx_j < len(non_dominated) and not discarded and not included_in_bucket:
 
-                # Get index of element
-                idx_j = non_dominated.index(bucket)
+                # Get vector and index
+                bucket = non_dominated[idx_j]
 
                 # Get first
                 vector_j = bucket[0]
@@ -415,10 +456,10 @@ class Vector:
                 # If dominance is otherwise, continue searching
                 if dominance == Dominance.otherwise:
                     # Search in next element
-                    i += 1
+                    idx_j += 1
                 else:
                     # Begin again
-                    i = 0
+                    idx_j = 0
 
             if discarded or included_in_bucket:
                 # Add vector at first (bucket[:] is to pass value and not reference)
