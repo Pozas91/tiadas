@@ -4,6 +4,7 @@ This class have a vector, that could be
 """
 import copy
 import math
+import operator
 
 import numpy as np
 
@@ -15,8 +16,14 @@ class Vector:
     Class Vector with functions to work with vectors.
     """
 
+    # Convert float vectors to int vectors
+    decimals = 10 ** 2
+
     # Relative margin to compare of similarity of two float elements.
-    relative = 1e-5
+    relative = 1 / decimals
+
+    # Type of vector (float, int)
+    type = None
 
     def __init__(self, components):
         """
@@ -24,8 +31,10 @@ class Vector:
         :param components:
         """
 
-        assert isinstance(components, (np.ndarray, list, set))
+        assert isinstance(components, (np.ndarray, set, list))
         self.components = np.array(components)
+
+        self.type = self.components.dtype
 
     def __getitem__(self, item):
         """
@@ -83,10 +92,7 @@ class Vector:
         :return:
         """
 
-        if self.components.shape != other.components.shape:
-            raise ArithmeticError('Shape of both vectors must be equal.')
-
-        return Vector(self.components + other.components)
+        return Vector(np.add(self.components, other))
 
     def __sub__(self, other):
         """
@@ -95,19 +101,27 @@ class Vector:
         :return:
         """
 
-        if self.components.shape != other.components.shape:
-            raise ArithmeticError('Shape of both vectors must be equal.')
-
-        return Vector(self.components - other.components)
+        return Vector(np.subtract(self.components, other))
 
     def __mul__(self, other):
         """
-        Multiply a vector
+        Multiply a vector. If other is a number, multiply all components per the number, else if another vector, then
+        multiply one by one components (in this case vector must be same length).
         :param other:
         :return:
         """
 
-        pass
+        return Vector(np.multiply(self.components, other))
+
+    def __pow__(self, power, modulo=None):
+        """
+        Pow a vector
+        :param power:
+        :param modulo:
+        :return:
+        """
+
+        return Vector(np.power(self.components, power))
 
     def __ge__(self, other):
         """
@@ -128,7 +142,9 @@ class Vector:
         :param other:
         :return:
         """
-        return np.all(np.greater(self.components, other.components))
+        return np.all([
+            a > b and not np.isclose(a, b, rtol=Vector.relative) for a, b in zip(self.components, other.components)
+        ])
 
     def __lt__(self, other):
         """
@@ -137,7 +153,9 @@ class Vector:
         :param other:
         :return:
         """
-        return np.all(np.less(self.components, other.components))
+        return np.all([
+            a < b and not np.isclose(a, b, rtol=Vector.relative) for a, b in zip(self.components, other.components)
+        ])
 
     def __le__(self, other):
         """
@@ -149,6 +167,13 @@ class Vector:
         return np.all([
             a < b or np.isclose(a, b, rtol=Vector.relative) for a, b in zip(self.components, other.components)
         ])
+
+    def to_int(self):
+        """
+        Parse Vector to int vector
+        :return:
+        """
+        return Vector((self.components * Vector.decimals).astype(int))
 
     @property
     def magnitude(self):
@@ -363,6 +388,81 @@ class Vector:
             if equals:
                 pass
             elif discarded:
+                # Add vector at first
+                non_dominated.insert(0, vector_j)
+            else:
+                # Add vector at end
+                non_dominated.append(vector_i)
+
+        return non_dominated, dominated
+
+    @staticmethod
+    def m3_max_2_sets_equals(vectors: list):
+        """
+
+        :return: a list with non-dominated vectors applying m3 algorithm of Bentley, Clarkson and Levine (1990).
+            We assume that:
+                - We attempt MAXIMIZE the value of all attributes.
+
+            # IMPORTANT
+                - This version is available duplicated or similar vectors, but is less efficient.
+            Return 2 sets, non-dominated set and dominated set.
+        """
+
+        non_dominated = list()
+        dominated = list()
+        vector_j = None
+
+        for idx_i, vector_i in enumerate(vectors):
+
+            # If is close to another vector, don't process this vector.
+            if any([Vector.all_close(v1=vector_i, v2=vector_to_examine) for vector_to_examine in
+                    non_dominated + dominated]):
+                continue
+
+            # Prepare variables
+            discarded = False
+            idx_j = 0
+
+            # While has more elements
+            while idx_j < len(non_dominated) and not discarded:
+
+                # Get vector and index
+                vector_j = non_dominated[idx_j]
+
+                # Get dominance
+                dominance = Vector.dominance(v1=vector_i, v2=vector_j)
+
+                # `vector_i` dominate `vector_j`
+                if dominance == Dominance.dominate:
+
+                    # Remove non-dominated vector
+                    non_dominated.pop(idx_j)
+
+                    # Add dominated vector_j
+                    dominated.append(vector_j)
+
+                # `vector_j` dominate `vector_i`
+                elif dominance == Dominance.is_dominated:
+
+                    # Remove non-dominated vector
+                    non_dominated.pop(idx_j)
+
+                    # Set discarded to True
+                    discarded = True
+
+                    # Add dominated vector_i
+                    dominated.append(vector_i)
+
+                # If dominance is otherwise, continue searching
+                if dominance == Dominance.otherwise:
+                    # Search in next element
+                    idx_j += 1
+                else:
+                    # Begin again
+                    idx_j = 0
+
+            if discarded:
                 # Add vector at first
                 non_dominated.insert(0, vector_j)
             else:
