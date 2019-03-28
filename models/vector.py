@@ -2,10 +2,7 @@
 This class represent a vector with some features necessaries for our program.
 This class have a vector, that could be
 """
-import copy
 import math
-import operator
-
 import numpy as np
 
 from models import Dominance
@@ -532,26 +529,19 @@ class Vector:
                     discarded = True
 
                     # Add dominated vector
-                    dominated.append(vector_j)
+                    dominated.append(vector_i)
 
                 # `vector_i` and `vector_j` are similar or equals
                 elif dominance == Dominance.equals:
 
+                    # Remove non-dominated vector
+                    non_dominated.pop(idx_j)
+
                     # Vector include in bucket
                     included_in_bucket = True
 
-                    # If `vector_j` dominate `vector_i`
-                    discarded = np.any(np.greater(vector_i, vector_j))
-
-                    if discarded:
-                        # Create a copy of vector_j
-                        vector_j_copy = copy.deepcopy(vector_j)
-
-                        # Add vector at first
-                        bucket.insert(0, vector_j_copy)
-                    else:
-                        # Add vector at end
-                        bucket.append(vector_i)
+                    # Add vector_i to exists bucket.
+                    bucket.append(vector_i)
 
                 # If dominance is otherwise, continue searching
                 if dominance == Dominance.otherwise:
@@ -562,7 +552,7 @@ class Vector:
                     idx_j = 0
 
             if discarded or included_in_bucket:
-                # Add vector at first (bucket[:] is to pass value and not reference)
+                # Add all bucket at first of non_dominated list (bucket[:] is to pass value and not reference)
                 non_dominated.insert(0, bucket[:])
             else:
                 # List of vectors

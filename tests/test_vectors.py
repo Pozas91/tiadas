@@ -2,11 +2,11 @@
 Unit tests file where testing vector model.
 """
 
-import math
 import random as rnd
 import unittest
 from copy import deepcopy
 
+import math
 import numpy as np
 
 from models import Vector, Dominance
@@ -682,8 +682,7 @@ class TestVectors(unittest.TestCase):
                 # Extract from non_dominated list and remove from solution list
                 solution.remove(non_dominated.pop())
 
-            # After previous process if any of both list have any element, then assert is failed.
-            self.assertFalse(non_dominated)
+            # After previous process if solution list have any element, then assert is failed.
             self.assertFalse(solution)
 
     def test_m3_max_integer(self):
@@ -708,8 +707,7 @@ class TestVectors(unittest.TestCase):
                 # Extract from non_dominated list and remove from solution list
                 solution.remove(non_dominated.pop())
 
-            # After previous process if any of both list have any element, then assert is failed.
-            self.assertFalse(non_dominated)
+            # After previous process if solution list have any element, then assert is failed.
             self.assertFalse(solution)
 
     def test_m3_max_2_sets(self):
@@ -718,10 +716,60 @@ class TestVectors(unittest.TestCase):
         :return:
         """
 
+        # Prepare vectors
+        problems = [
+            (
+                # Problem
+                self.first_quadrant[0],
+                # Non-dominated uniques
+                self.first_quadrant[1],
+                # Dominated (duplicates included)
+                self.first_quadrant[2] + [
+                    Vector([2 + Vector.relative, 4 - Vector.relative]), Vector([0, 6]), Vector([4, 1])
+                ],
+            ),
+            (
+                # Problem
+                self.second_quadrant[0],
+                # Non-dominated uniques
+                self.second_quadrant[1],
+                # Dominated (duplicates included)
+                self.second_quadrant[2] + [Vector([-6, 6]), Vector([-4 + Vector.relative, 2 + Vector.relative])],
+            ),
+            (
+                # Problem
+                self.third_quadrant[0],
+                # Non-dominated uniques
+                self.third_quadrant[1],
+                # Dominated (duplicates included)
+                self.third_quadrant[2] + [Vector([-7, -1]), Vector([-4 + Vector.relative, -2 + Vector.relative])],
+            ),
+            (
+                # Problem
+                self.fourth_quadrant[0],
+                # Non-dominated uniques
+                self.fourth_quadrant[1],
+                # Dominated (duplicates included)
+                self.fourth_quadrant[2] + [Vector([7 + Vector.relative, -3 - Vector.relative]), Vector([2, -1])],
+            ),
+            (
+                # Problem
+                self.all_quadrants[0],
+                # Non-dominated uniques
+                self.all_quadrants[1],
+                # Dominated (duplicates included)
+                self.all_quadrants[2] + [
+                    Vector([7 + Vector.relative, -3 - Vector.relative]), Vector([-7, -1]),
+                    Vector([-4 + Vector.relative, -2 + Vector.relative]), Vector([-6, 6]),
+                    Vector([-4 + Vector.relative, 2 + Vector.relative]), Vector([0, 6]), Vector([4, 1]),
+                    Vector([2 + Vector.relative, 4 - Vector.relative]), Vector([2, -1]),
+                    Vector([-2 - Vector.relative, -1 - Vector.relative]), Vector([-1, -4]), Vector([-1, 0])
+                ],
+            )
+        ]
+
         # Test problems
-        for problem, solution_non_dominated, solution_dominated in [self.first_quadrant, self.second_quadrant,
-                                                                    self.third_quadrant, self.fourth_quadrant,
-                                                                    self.all_quadrants]:
+        for problem, solution_non_dominated, solution_dominated in problems:
 
             # Apply m3_max_2_sets algorithm
             non_dominated, dominated = Vector.m3_max_2_sets(vectors=problem)
@@ -731,16 +779,14 @@ class TestVectors(unittest.TestCase):
                 # Extract from non_dominated list and remove from solution list
                 solution_non_dominated.remove(non_dominated.pop())
 
-            # After previous process if any of both list have any element, then assert is failed.
-            self.assertFalse(non_dominated)
+            # After previous process if solution list have any element, then assert is failed.
             self.assertFalse(solution_non_dominated)
 
             while dominated:
                 # Extract from dominated list and remove from solution list
                 solution_dominated.remove(dominated.pop())
 
-            # After previous process if any of both list have any element, then assert is failed.
-            self.assertFalse(dominated)
+            # After previous process if solution list have any element, then assert is failed.
             self.assertFalse(solution_dominated)
 
     def test_m3_max_2_sets_equals(self):
@@ -762,16 +808,14 @@ class TestVectors(unittest.TestCase):
                 # Extract from non_dominated list and remove from solution list
                 solution_non_dominated.remove(non_dominated.pop())
 
-            # After previous process if any of both list have any element, then assert is failed.
-            self.assertFalse(non_dominated)
+            # After previous process if solution list have any element, then assert is failed.
             self.assertFalse(solution_non_dominated)
 
             while dominated:
                 # Extract from dominated list and remove from solution list
                 solution_dominated.remove(dominated.pop())
 
-            # After previous process if any of both list have any element, then assert is failed.
-            self.assertFalse(dominated)
+            # After previous process if solution list have any element, then assert is failed.
             self.assertFalse(solution_dominated)
 
     def test_m3_max_2_sets_with_repetitions(self):
@@ -780,85 +824,96 @@ class TestVectors(unittest.TestCase):
         :return:
         """
 
-        # Check first quadrant
-        vectors = self.first_quadrant
+        # Prepare vectors
+        problems = [
+            (
+                # Problem
+                self.first_quadrant[0],
+                # Non-dominated uniques
+                self.first_quadrant[1],
+                # Dominated (duplicates included)
+                self.first_quadrant[2] + [Vector([2 + Vector.relative, 4 - Vector.relative]), Vector([0, 6]),
+                                          Vector([4, 1])],
+                # Non-dominated repeated
+                [Vector([5 + Vector.relative, 3 - Vector.relative])]
+            ),
+            (
+                # Problem
+                self.second_quadrant[0],
+                # Non-dominated uniques
+                self.second_quadrant[1],
+                # Dominated (duplicates included)
+                self.second_quadrant[2] + [Vector([-6, 6]), Vector([-4 + Vector.relative, 2 + Vector.relative])],
+                # Non-dominated repeated
+                [Vector([-4 - Vector.relative, 7 + Vector.relative]), Vector([-1, 0])]
+            ),
+            (
+                # Problem
+                self.third_quadrant[0],
+                # Non-dominated uniques
+                self.third_quadrant[1],
+                # Dominated (duplicates included)
+                self.third_quadrant[2] + [Vector([-7, -1]), Vector([-4 + Vector.relative, -2 + Vector.relative])],
+                # Non-dominated repeated
+                [Vector([-2 - Vector.relative, -1 - Vector.relative]), Vector([-1, -4])]
+            ),
+            (
+                # Problem
+                self.fourth_quadrant[0],
+                # Non-dominated uniques
+                self.fourth_quadrant[1],
+                # Dominated (duplicates included)
+                self.fourth_quadrant[2] + [Vector([7 + Vector.relative, -3 - Vector.relative]), Vector([2, -1])],
+                # Non-dominated repeated
+                [Vector([10 + Vector.relative, -1 + Vector.relative]), Vector([10, -1])]
+            ),
+            (
+                # Problem
+                self.all_quadrants[0],
+                # Non-dominated uniques
+                self.all_quadrants[1],
+                # Dominated (duplicates included)
+                self.all_quadrants[2] + [
+                    Vector([7 + Vector.relative, -3 - Vector.relative]), Vector([-7, -1]),
+                    Vector([-4 + Vector.relative, -2 + Vector.relative]), Vector([-6, 6]),
+                    Vector([-4 + Vector.relative, 2 + Vector.relative]), Vector([0, 6]), Vector([4, 1]),
+                    Vector([2 + Vector.relative, 4 - Vector.relative]), Vector([2, -1]),
+                    Vector([-2 - Vector.relative, -1 - Vector.relative]), Vector([-1, -4]), Vector([-1, 0])
+                ],
+                # Non-dominated repeated
+                [
+                    Vector([10 + Vector.relative, -1 + Vector.relative]), Vector([10, -1]),
+                    Vector([-4 - Vector.relative, 7 + Vector.relative]),
+                    Vector([5 + Vector.relative, 3 - Vector.relative])
+                ]
+            )
+        ]
 
-        # Get m3_max_2_sets results
-        non_dominated_unique, dominated, non_dominated_repeated = Vector.m3_max_2_sets_with_repetitions(vectors=vectors)
+        for problem, solution_non_dominated_uniques, solution_dominated, solution_non_dominated_repeat in problems:
+            # Apply m3_max_2_sets_with_repetitions algorithm
+            non_dominated_unique, dominated, non_dominated_repeated = Vector.m3_max_2_sets_with_repetitions(
+                vectors=problem)
 
-        # Check that no vector of non_dominated list is dominated by other vector of total vectors.
-        check_non_dominated = TestVectors.check_if_all_are_non_dominated(vectors,
-                                                                         non_dominated_unique + non_dominated_repeated)
-        self.assertTrue(check_non_dominated)
+            # While not is empty
+            while non_dominated_unique:
+                # Extract from non_dominated_unique list and remove from solution list
+                solution_non_dominated_uniques.remove(non_dominated_unique.pop())
 
-        # Check that each dominated vector is dominated at least by another vector
-        check_dominated = TestVectors.check_if_each_vector_is_dominated_at_least_by_another(vectors, dominated)
-        self.assertTrue(check_dominated)
+                # After previous process if solution list have any element, then assert is failed.
+            self.assertFalse(solution_non_dominated_uniques)
 
-        ################################################################################################################
+            # While not is empty
+            while dominated:
+                # Extract from dominated list and remove from solution list
+                solution_dominated.remove(dominated.pop())
 
-        # Check second quadrant
-        vectors = self.second_quadrant
+            # After previous process if solution list have any element, then assert is failed.
+            self.assertFalse(solution_dominated)
 
-        # Get m3_max_2_sets results
-        non_dominated, dominated = Vector.m3_max_2_sets(vectors=vectors)
+            # While not is empty
+            while non_dominated_repeated:
+                # Extract from non_dominated_repeat list and remove from solution list
+                solution_non_dominated_repeat.remove(non_dominated_repeated.pop())
 
-        # Check that no vector of non_dominated list is dominated by other vector of total vectors.
-        check_non_dominated = TestVectors.check_if_all_are_non_dominated(vectors,
-                                                                         non_dominated_unique + non_dominated_repeated)
-        self.assertTrue(check_non_dominated)
-
-        # Check that each dominated vector is dominated at least by another vector
-        check_dominated = TestVectors.check_if_each_vector_is_dominated_at_least_by_another(vectors, dominated)
-        self.assertTrue(check_dominated)
-
-        ################################################################################################################
-
-        # Check third quadrant
-        vectors = self.third_quadrant
-
-        # Get m3_max_2_sets results
-        non_dominated, dominated = Vector.m3_max_2_sets(vectors=vectors)
-
-        # Check that no vector of non_dominated list is dominated by other vector of total vectors.
-        check_non_dominated = TestVectors.check_if_all_are_non_dominated(vectors,
-                                                                         non_dominated_unique + non_dominated_repeated)
-        self.assertTrue(check_non_dominated)
-
-        # Check that each dominated vector is dominated at least by another vector
-        check_dominated = TestVectors.check_if_each_vector_is_dominated_at_least_by_another(vectors, dominated)
-        self.assertTrue(check_dominated)
-
-        ################################################################################################################
-
-        # Check fourth quadrant
-        vectors = self.fourth_quadrant
-
-        # Get m3_max_2_sets results
-        non_dominated, dominated = Vector.m3_max_2_sets(vectors=vectors)
-
-        # Check that no vector of non_dominated list is dominated by other vector of total vectors.
-        check_non_dominated = TestVectors.check_if_all_are_non_dominated(vectors,
-                                                                         non_dominated_unique + non_dominated_repeated)
-        self.assertTrue(check_non_dominated)
-
-        # Check that each dominated vector is dominated at least by another vector
-        check_dominated = TestVectors.check_if_each_vector_is_dominated_at_least_by_another(vectors, dominated)
-        self.assertTrue(check_dominated)
-
-        ################################################################################################################
-
-        # Check all quadrants
-        vectors = self.first_quadrant + self.second_quadrant + self.third_quadrant + self.fourth_quadrant
-
-        # Get m3_max_2_sets results
-        non_dominated, dominated = Vector.m3_max_2_sets(vectors=vectors)
-
-        # Check that no vector of non_dominated list is dominated by other vector of total vectors.
-        check_non_dominated = TestVectors.check_if_all_are_non_dominated(vectors,
-                                                                         non_dominated_unique + non_dominated_repeated)
-        self.assertTrue(check_non_dominated)
-
-        # Check that each dominated vector is dominated at least by another vector
-        check_dominated = TestVectors.check_if_each_vector_is_dominated_at_least_by_another(vectors, dominated)
-        self.assertTrue(check_dominated)
+            # After previous process if solution list have any element, then assert is failed.
+            self.assertFalse(solution_non_dominated_repeat)
