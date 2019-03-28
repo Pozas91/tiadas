@@ -196,10 +196,11 @@ class Vector:
     @staticmethod
     def dominance(v1, v2):
         """
-        Check if our vector dominate another vector.
-        :param v1:
-        :param v2:
-        :return:
+        Check dominance between two Vector ojbects. Float values are allowed
+        and treated with precision according to Vector.relative.
+        :param v1: a Vector object
+        :param v2: a Vector object
+        :return: an outoput value according to the Dominance enum.
         """
 
         v1_dominate = False
@@ -248,12 +249,16 @@ class Vector:
     @staticmethod
     def m3_max(vectors: list):
         """
-        :return: a list with non-dominated vectors applying m3 algorithm of Bentley, Clarkson and Levine (1990).
+        :param vectors : list of Vector objects, float values are assumed.
+        
+        :return: a list with non-dominated vectors applying the m3 algorithm of
+        Bentley, Clarkson and Levine (1990).
             We assume that:
-                - Aren't two vector equals in list.
-                - We attempt MAXIMIZE the value of all attributes.
+                - There are not two equal vectors in the input list.
+                - We attempt to MAXIMIZE the value of each vector element.
 
-            If two vectors are equals, keep last one and discard the new vector.
+            If, after all, two equal vectors are found, the algorithm keeps
+            just one in the output list.
         """
 
         non_dominated = list()
@@ -318,13 +323,19 @@ class Vector:
     @staticmethod
     def m3_max_2_sets(vectors: list):
         """
-
-        :return: a list with non-dominated vectors applying m3 algorithm of Bentley, Clarkson and Levine (1990).
+        :param vectors : list of Vector objects, float values are assumed.
+        
+        :return: a list with non-dominated vectors applying the m3 algorithm of
+        Bentley, Clarkson and Levine (1990).
             We assume that:
-                - Aren't two vector equals in list.
-                - We attempt MAXIMIZE the value of all attributes.
+                - There are not two equal vectors in the input list.
+                - We attempt to MAXIMIZE the value of each vector element.
 
-            Return 2 sets, non-dominated set and dominated set.
+            If, after all, two equal vectors are found, the algorithm keeps
+            just one in the output lists.
+
+            Return a tuple with a first list with the non-dominated set, and
+            a second list with the dominated set.
         """
 
         non_dominated = list()
@@ -396,14 +407,19 @@ class Vector:
     @staticmethod
     def m3_max_2_sets_equals(vectors: list):
         """
-
-        :return: a list with non-dominated vectors applying m3 algorithm of Bentley, Clarkson and Levine (1990).
+        :param vectors : list of Vector objects, float values are assumed.
+        
+        :return: a list with non-dominated vectors applying the m3 algorithm of
+        Bentley, Clarkson and Levine (1990).
             We assume that:
-                - We attempt MAXIMIZE the value of all attributes.
+                - There are not two equal vectors in the input list.
+                - We attempt to MAXIMIZE the value of each vector element.
 
-            # IMPORTANT
-                - This version is available duplicated or similar vectors, but is less efficient.
-            Return 2 sets, non-dominated set and dominated set.
+            If, after all, two equal vectors are found, the algorithm keeps
+            just one in the output lists.
+
+            Return a tuple with a first list with the non-dominated set, and
+            a second list with the dominated set.
         """
 
         non_dominated = list()
@@ -472,18 +488,7 @@ class Vector:
     def m3_max_2_sets_with_repetitions(vectors: list):
         """
 
-        :return: a list with non-dominated vectors applying m3 algorithm of Bentley, Clarkson and Levine (1990).
-            We assume that:
-                - Aren't two vector equals in list.
-                - We attempt MAXIMIZE the value of all attributes.
-
-            IMPORTANT:
-                In this version, develop by AgenteMPQ5, set of non-dominated is formed by "buckets" which have all
-                similar vectors. First of each bucket has restoTolong lowest value. That will be the one to keep the
-                agent, while for all others you can choose to delete your predecessors (that is, they are updated from
-                directly or indirectly).
-
-            Return 2 sets, non-dominated set and dominated set.
+        
         """
 
         non_dominated = list()
