@@ -159,4 +159,4 @@ fabric.properties
 .idea/httpRequests
 
 # Ignore draft.py file.
-draft_*
+draft.py
