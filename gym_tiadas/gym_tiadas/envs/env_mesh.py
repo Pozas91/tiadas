@@ -61,6 +61,22 @@ class EnvMesh(gym.Env):
         # Reset environment
         self.reset()
 
+    @property
+    def actions(self):
+        """
+        Return a dictionary with possible actions
+        :return:
+        """
+        return self._actions
+
+    @property
+    def icons(self):
+        """
+        Return a dictionary with possible icons
+        :return:
+        """
+        return self._icons
+
     def step(self, action):
         """
         Do a step in the environment
@@ -146,7 +162,7 @@ class EnvMesh(gym.Env):
         # If exists obstacles, then new_state must be in self.obstacles (p => q)
         is_obstacle = not hasattr(self, 'obstacles') or new_state in self.obstacles
 
-        if not self.observation_space.contains(new_state) and not is_obstacle:
+        if not self.observation_space.contains(new_state) or is_obstacle:
             # New state is invalid.
             new_state = self.current_state
 

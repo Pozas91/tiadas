@@ -9,7 +9,7 @@ returns to the start state. A tabular representation of this environment has 162
 of the grid when the agent has not activated the bonus, and 81 for the same cells when the bonus has been activated.
 The set of Pareto-optimal policies and the corresponding thresholds are listed in Table 2. It can be seen that
 trade-offs exist between all three objectives. Note that not all optimal policies require the agent to activate the
-bonus. """
+bonus. Vamplew et al (2017b) """
 from .env_mesh import EnvMesh
 
 
@@ -35,8 +35,7 @@ class BonusWorld(EnvMesh):
             (0, 8): (9, 1),
             (2, 8): (9, 3),
             (4, 8): (9, 5),
-            (8, 6): (9, 7),
-            (8, 8): (9, 9),
+            (6, 8): (9, 7),
         }
 
         obstacles = set()
@@ -60,7 +59,7 @@ class BonusWorld(EnvMesh):
         super().__init__(mesh_shape, seed, initial_state=initial_state, default_reward=default_reward, finals=finals,
                          obstacles=obstacles)
 
-    def step(self, action) -> (object, [float, float], bool, dict):
+    def step(self, action) -> (object, [float, float, float], bool, dict):
         """
         Given an action, do a step
         :param action:
@@ -68,7 +67,7 @@ class BonusWorld(EnvMesh):
         """
 
         # (objective 1, objective 2, time)
-        rewards = [0., 0., 0.]
+        rewards = [0, 0, 0]
 
         # Get new state
         new_state = self._next_state(action=action)
@@ -92,8 +91,8 @@ class BonusWorld(EnvMesh):
 
         # If the bonus is activated, double the reward.
         if self.bonus_activated:
-            rewards[0] *= 2.
-            rewards[1] *= 2.
+            rewards[0] *= 2
+            rewards[1] *= 2
 
         # Set info
         info = {}
