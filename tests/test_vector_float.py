@@ -1,5 +1,5 @@
 """
-Unit tests file where testing vector model.
+Unit tests file where testing VectorFloat model.
 """
 
 import random as rnd
@@ -9,157 +9,157 @@ from copy import deepcopy
 import math
 import numpy as np
 
-from models import Vector, Dominance
+from models import VectorFloat, Dominance
 
 
-class TestVectors(unittest.TestCase):
+class TestVectorFloat(unittest.TestCase):
     first_quadrant = None
     second_quadrant = None
     third_quadrant = None
     fourth_quadrant = None
 
     def setUp(self):
-        relative = Vector.relative
+        relative = VectorFloat.relative
 
         self.first_quadrant = (
             [
                 # Problem
-                Vector([0, 6]),
-                Vector([1, 6]),
-                Vector([2, 5]),
-                Vector([2, 4]),
-                Vector([2, 2]),
-                Vector([3, 4]),
-                Vector([4, 3]),
-                Vector([4, 1]),
-                Vector([5, 3]),
-                Vector([5, 2]),
-                Vector([6, 0]),
+                VectorFloat([0, 6]),
+                VectorFloat([1, 6]),
+                VectorFloat([2, 5]),
+                VectorFloat([2, 4]),
+                VectorFloat([2, 2]),
+                VectorFloat([3, 4]),
+                VectorFloat([4, 3]),
+                VectorFloat([4, 1]),
+                VectorFloat([5, 3]),
+                VectorFloat([5, 2]),
+                VectorFloat([6, 0]),
 
                 # Repeats
-                Vector([0, 6]),
-                Vector([4, 1]),
+                VectorFloat([0, 6]),
+                VectorFloat([4, 1]),
 
                 # Similar
-                Vector([5 + relative, 3 - relative]),
-                Vector([2 + relative, 4 - relative]),
+                VectorFloat([5 + relative, 3 - relative]),
+                VectorFloat([2 + relative, 4 - relative]),
             ],
             [
-                # Non-dominated vectors
-                Vector([1, 6]),
-                Vector([2, 5]),
-                Vector([3, 4]),
-                Vector([5, 3]),
-                Vector([6, 0])
+                # Non-dominated VectorFloats
+                VectorFloat([1, 6]),
+                VectorFloat([2, 5]),
+                VectorFloat([3, 4]),
+                VectorFloat([5, 3]),
+                VectorFloat([6, 0])
             ],
             [
-                # Dominated vectors
-                Vector([0, 6]),
-                Vector([2, 4]),
-                Vector([2, 2]),
-                Vector([4, 3]),
-                Vector([4, 1]),
-                Vector([5, 2]),
+                # Dominated VectorFloats
+                VectorFloat([0, 6]),
+                VectorFloat([2, 4]),
+                VectorFloat([2, 2]),
+                VectorFloat([4, 3]),
+                VectorFloat([4, 1]),
+                VectorFloat([5, 2]),
             ]
         )
 
         self.second_quadrant = (
             [
                 # Problem
-                Vector([-1, 0]),
-                Vector([-3, 4]),
-                Vector([-4, 2]),
-                Vector([-4, 7]),
-                Vector([-6, 6]),
-                Vector([-6, 0]),
-                Vector([-8, 2]),
+                VectorFloat([-1, 0]),
+                VectorFloat([-3, 4]),
+                VectorFloat([-4, 2]),
+                VectorFloat([-4, 7]),
+                VectorFloat([-6, 6]),
+                VectorFloat([-6, 0]),
+                VectorFloat([-8, 2]),
 
                 # Repeats
-                Vector([-1, 0]),
-                Vector([-6, 6]),
+                VectorFloat([-1, 0]),
+                VectorFloat([-6, 6]),
 
                 # Similar
-                Vector([-4 + relative, 2 + relative]),
-                Vector([-4 - relative, 7 + relative]),
+                VectorFloat([-4 + relative, 2 + relative]),
+                VectorFloat([-4 - relative, 7 + relative]),
             ],
             [
                 # Non-dominated
-                Vector([-1, 0]),
-                Vector([-4, 7]),
-                Vector([-3, 4]),
+                VectorFloat([-1, 0]),
+                VectorFloat([-4, 7]),
+                VectorFloat([-3, 4]),
             ],
             [
-                # Dominated vectors
-                Vector([-4, 2]),
-                Vector([-6, 6]),
-                Vector([-6, 0]),
-                Vector([-8, 2]),
+                # Dominated VectorFloats
+                VectorFloat([-4, 2]),
+                VectorFloat([-6, 6]),
+                VectorFloat([-6, 0]),
+                VectorFloat([-8, 2]),
             ]
         )
 
         self.third_quadrant = (
             [
                 # Problem
-                Vector([-1, -4]),
-                Vector([-2, -1]),
-                Vector([-3, -6]),
-                Vector([-4, -2]),
-                Vector([-5, -4]),
-                Vector([-7, -1]),
+                VectorFloat([-1, -4]),
+                VectorFloat([-2, -1]),
+                VectorFloat([-3, -6]),
+                VectorFloat([-4, -2]),
+                VectorFloat([-5, -4]),
+                VectorFloat([-7, -1]),
 
                 # Repeats
-                Vector([-1, -4]),
-                Vector([-7, -1]),
+                VectorFloat([-1, -4]),
+                VectorFloat([-7, -1]),
 
                 # Similar
-                Vector([-2 - relative, -1 - relative]),
-                Vector([-4 + relative, -2 + relative]),
+                VectorFloat([-2 - relative, -1 - relative]),
+                VectorFloat([-4 + relative, -2 + relative]),
             ],
             [
                 # Non-dominated
-                Vector([-2, -1]),
-                Vector([-1, -4])
+                VectorFloat([-2, -1]),
+                VectorFloat([-1, -4])
             ],
             [
-                # Dominated vectors
-                Vector([-3, -6]),
-                Vector([-4, -2]),
-                Vector([-5, -4]),
-                Vector([-7, -1]),
+                # Dominated VectorFloats
+                VectorFloat([-3, -6]),
+                VectorFloat([-4, -2]),
+                VectorFloat([-5, -4]),
+                VectorFloat([-7, -1]),
             ]
         )
 
         self.fourth_quadrant = (
             [
                 # Problem
-                Vector([2, -1]),
-                Vector([3, -2]),
-                Vector([1, -4]),
-                Vector([3, -5]),
-                Vector([5, -6]),
-                Vector([7, -3]),
-                Vector([10, -1]),
+                VectorFloat([2, -1]),
+                VectorFloat([3, -2]),
+                VectorFloat([1, -4]),
+                VectorFloat([3, -5]),
+                VectorFloat([5, -6]),
+                VectorFloat([7, -3]),
+                VectorFloat([10, -1]),
 
                 # Repeats
-                Vector([2, -1]),
-                Vector([10, -1]),
+                VectorFloat([2, -1]),
+                VectorFloat([10, -1]),
 
                 # Similar
-                Vector([7 + relative, -3 - relative]),
-                Vector([10 + relative, -1 + relative]),
+                VectorFloat([7 + relative, -3 - relative]),
+                VectorFloat([10 + relative, -1 + relative]),
             ],
             [
                 # Non-dominated
-                Vector([10, -1])
+                VectorFloat([10, -1])
             ],
             [
                 # Dominated
-                Vector([2, -1]),
-                Vector([3, -2]),
-                Vector([1, -4]),
-                Vector([3, -5]),
-                Vector([5, -6]),
-                Vector([7, -3]),
+                VectorFloat([2, -1]),
+                VectorFloat([3, -2]),
+                VectorFloat([1, -4]),
+                VectorFloat([3, -5]),
+                VectorFloat([5, -6]),
+                VectorFloat([7, -3]),
             ]
         )
 
@@ -168,40 +168,40 @@ class TestVectors(unittest.TestCase):
             self.first_quadrant[0] + self.second_quadrant[0] + self.third_quadrant[0] + self.fourth_quadrant[0],
             [
                 # Non-dominate
-                Vector([-4, 7]),
-                Vector([1, 6]),
-                Vector([2, 5]),
-                Vector([3, 4]),
-                Vector([5, 3]),
-                Vector([6, 0]),
-                Vector([10, -1])
+                VectorFloat([-4, 7]),
+                VectorFloat([1, 6]),
+                VectorFloat([2, 5]),
+                VectorFloat([3, 4]),
+                VectorFloat([5, 3]),
+                VectorFloat([6, 0]),
+                VectorFloat([10, -1])
             ],
             [
                 # Dominated
-                Vector([0, 6]),
-                Vector([2, 4]),
-                Vector([2, 2]),
-                Vector([4, 3]),
-                Vector([4, 1]),
-                Vector([5, 2]),
-                Vector([-1, 0]),
-                Vector([-3, 4]),
-                Vector([-4, 2]),
-                Vector([-6, 6]),
-                Vector([-6, 0]),
-                Vector([-8, 2]),
-                Vector([-1, -4]),
-                Vector([-2, -1]),
-                Vector([-3, -6]),
-                Vector([-4, -2]),
-                Vector([-5, -4]),
-                Vector([-7, -1]),
-                Vector([2, -1]),
-                Vector([1, -4]),
-                Vector([3, -2]),
-                Vector([3, -5]),
-                Vector([5, -6]),
-                Vector([7, -3]),
+                VectorFloat([0, 6]),
+                VectorFloat([2, 4]),
+                VectorFloat([2, 2]),
+                VectorFloat([4, 3]),
+                VectorFloat([4, 1]),
+                VectorFloat([5, 2]),
+                VectorFloat([-1, 0]),
+                VectorFloat([-3, 4]),
+                VectorFloat([-4, 2]),
+                VectorFloat([-6, 6]),
+                VectorFloat([-6, 0]),
+                VectorFloat([-8, 2]),
+                VectorFloat([-1, -4]),
+                VectorFloat([-2, -1]),
+                VectorFloat([-3, -6]),
+                VectorFloat([-4, -2]),
+                VectorFloat([-5, -4]),
+                VectorFloat([-7, -1]),
+                VectorFloat([2, -1]),
+                VectorFloat([1, -4]),
+                VectorFloat([3, -2]),
+                VectorFloat([3, -5]),
+                VectorFloat([5, -6]),
+                VectorFloat([7, -3]),
             ]
         )
 
@@ -217,16 +217,12 @@ class TestVectors(unittest.TestCase):
         components = [rnd.uniform(-100., 100.) for _ in range(rnd.randint(2, 10))]
 
         # List
-        vector = Vector(components)
-        self.assertTrue(isinstance(vector.components, np.ndarray))
-
-        # Set
-        vector = Vector(set(components))
-        self.assertTrue(isinstance(vector.components, np.ndarray))
+        x = VectorFloat(components)
+        self.assertTrue(isinstance(x.components, np.ndarray))
 
         # ndarray
-        vector = Vector(np.asarray(components))
-        self.assertTrue(isinstance(vector.components, np.ndarray))
+        x = VectorFloat(np.asarray(components))
+        self.assertTrue(isinstance(x.components, np.ndarray))
 
     def test_length(self):
         """
@@ -236,7 +232,7 @@ class TestVectors(unittest.TestCase):
 
         for _ in range(5):
             n = rnd.randint(1, 20)
-            n_length = Vector([rnd.uniform(-100., 100.) for _ in range(n)])
+            n_length = VectorFloat([rnd.uniform(-100., 100.) for _ in range(n)])
             self.assertEqual(n, len(n_length))
 
     def test_equal(self):
@@ -245,7 +241,7 @@ class TestVectors(unittest.TestCase):
         :return:
         """
 
-        x = Vector([rnd.uniform(-100., 100.) for _ in range(rnd.randint(2, 10))])
+        x = VectorFloat([rnd.uniform(-100., 100.) for _ in range(rnd.randint(2, 10))])
         y = deepcopy(x)
 
         self.assertEqual(y, x)
@@ -256,11 +252,11 @@ class TestVectors(unittest.TestCase):
         :return:
         """
 
-        x = Vector([5 + Vector.relative, 3 + Vector.relative])
-        y = Vector([4, 4])
-        z = Vector([5, 3])
-        w = Vector([6, 4])
-        t = Vector([3, 2])
+        x = VectorFloat([5 + VectorFloat.relative, 3 + VectorFloat.relative])
+        y = VectorFloat([4, 4])
+        z = VectorFloat([5, 3])
+        w = VectorFloat([6, 4])
+        t = VectorFloat([3, 2])
 
         self.assertFalse(x >= y)
         self.assertTrue(x >= z)
@@ -293,11 +289,11 @@ class TestVectors(unittest.TestCase):
         :return:
         """
 
-        x = Vector([5 + Vector.relative, 3 + Vector.relative])
-        y = Vector([4, 4])
-        z = Vector([5, 3])
-        w = Vector([6, 4])
-        t = Vector([3, 2])
+        x = VectorFloat([5 + VectorFloat.relative, 3 + VectorFloat.relative])
+        y = VectorFloat([4, 4])
+        z = VectorFloat([5, 3])
+        w = VectorFloat([6, 4])
+        t = VectorFloat([3, 2])
 
         self.assertFalse(x > y)
         self.assertFalse(x > z)
@@ -330,11 +326,11 @@ class TestVectors(unittest.TestCase):
         :return:
         """
 
-        x = Vector([5 + Vector.relative, 3 + Vector.relative])
-        y = Vector([4, 4])
-        z = Vector([5, 3])
-        w = Vector([6, 4])
-        t = Vector([3, 2])
+        x = VectorFloat([5 + VectorFloat.relative, 3 + VectorFloat.relative])
+        y = VectorFloat([4, 4])
+        z = VectorFloat([5, 3])
+        w = VectorFloat([6, 4])
+        t = VectorFloat([3, 2])
 
         self.assertFalse(x < y)
         self.assertFalse(x < z)
@@ -367,11 +363,11 @@ class TestVectors(unittest.TestCase):
         :return:
         """
 
-        x = Vector([5 + Vector.relative, 3 + Vector.relative])
-        y = Vector([4, 4])
-        z = Vector([5, 3])
-        w = Vector([6, 4])
-        t = Vector([3, 2])
+        x = VectorFloat([5 + VectorFloat.relative, 3 + VectorFloat.relative])
+        y = VectorFloat([4, 4])
+        z = VectorFloat([5, 3])
+        w = VectorFloat([6, 4])
+        t = VectorFloat([3, 2])
 
         self.assertFalse(x <= y)
         self.assertTrue(x <= z)
@@ -404,17 +400,17 @@ class TestVectors(unittest.TestCase):
         :return:
         """
 
-        x = Vector([1, 2, 3])
+        x = VectorFloat([1, 2, 3])
         self.assertEqual(np.array_str(x.components), str(x))
 
         ################################################################################################################
 
-        x = Vector([1, -2])
+        x = VectorFloat([1, -2])
         self.assertEqual(np.array_str(x.components), str(x))
 
         ################################################################################################################
 
-        x = Vector([1., -2., 1])
+        x = VectorFloat([1., -2., 1])
         self.assertEqual(np.array_str(x.components), str(x))
 
     def test_add(self):
@@ -423,30 +419,30 @@ class TestVectors(unittest.TestCase):
         :return:
         """
 
-        x = Vector([1, 2, 3.])
-        y = Vector([0., -2., 1.])
-        self.assertEqual(Vector([1, 0., 4.]), x + y)
+        x = VectorFloat([1, 2, 3.])
+        y = VectorFloat([0., -2., 1.])
+        self.assertEqual(VectorFloat([1, 0., 4.]), x + y)
 
         ################################################################################################################
 
-        x = Vector([-3., 2, 4.])
-        y = Vector([0., -3., 1.])
-        self.assertEqual(Vector([-3, -1., 5.]), x + y)
+        x = VectorFloat([-3., 2, 4.])
+        y = VectorFloat([0., -3., 1.])
+        self.assertEqual(VectorFloat([-3, -1., 5.]), x + y)
 
         ################################################################################################################
 
-        x = Vector([1, 2, 3])
-        self.assertEqual(Vector([2, 3, 4]), x + 1)
+        x = VectorFloat([1, 2, 3])
+        self.assertEqual(VectorFloat([2, 3, 4]), x + 1)
 
         ################################################################################################################
 
-        x = Vector([1, 2, 3])
-        self.assertEqual(Vector([2, 3, 4]), x + 1.)
+        x = VectorFloat([1, 2, 3])
+        self.assertEqual(VectorFloat([2, 3, 4]), x + 1.)
 
         ################################################################################################################
 
-        x = Vector([1, 2, 3])
-        y = Vector([4, 5, 6, 7])
+        x = VectorFloat([1, 2, 3])
+        y = VectorFloat([4, 5, 6, 7])
 
         with self.assertRaises(ValueError):
             x + y
@@ -458,30 +454,30 @@ class TestVectors(unittest.TestCase):
         :return:
         """
 
-        x = Vector([1, 2, 3.])
-        y = Vector([0., -2., 1.])
-        self.assertEqual(Vector([1, 4., 2.]), x - y)
+        x = VectorFloat([1, 2, 3.])
+        y = VectorFloat([0., -2., 1.])
+        self.assertEqual(VectorFloat([1, 4., 2.]), x - y)
 
         ################################################################################################################
 
-        x = Vector([-3., 0., 4.])
-        y = Vector([0., -3., 5.])
-        self.assertEqual(Vector([-3, 3., -1.]), x - y)
+        x = VectorFloat([-3., 0., 4.])
+        y = VectorFloat([0., -3., 5.])
+        self.assertEqual(VectorFloat([-3, 3., -1.]), x - y)
 
         ################################################################################################################
 
-        x = Vector([1, 2, 3])
-        self.assertEqual(Vector([0, 1, 2]), x - 1)
+        x = VectorFloat([1, 2, 3])
+        self.assertEqual(VectorFloat([0, 1, 2]), x - 1)
 
         ################################################################################################################
 
-        x = Vector([1, 2, 3])
-        self.assertEqual(Vector([0, 1, 2]), x - 1.)
+        x = VectorFloat([1, 2, 3])
+        self.assertEqual(VectorFloat([0, 1, 2]), x - 1.)
 
         ################################################################################################################
 
-        x = Vector([1, 2, 3])
-        y = Vector([4, 5, 6, 7])
+        x = VectorFloat([1, 2, 3])
+        y = VectorFloat([4, 5, 6, 7])
 
         with self.assertRaises(ValueError):
             x - y
@@ -493,30 +489,30 @@ class TestVectors(unittest.TestCase):
         :return:
         """
 
-        x = Vector([1, 2, 3.])
-        y = Vector([0., -2., 1.])
-        self.assertEqual(Vector([0, -4, 3]), x * y)
+        x = VectorFloat([1, 2, 3.])
+        y = VectorFloat([0., -2., 1.])
+        self.assertEqual(VectorFloat([0, -4, 3]), x * y)
 
         ################################################################################################################
 
-        x = Vector([-3., 2, 4.])
-        y = Vector([0., -3., 1.])
-        self.assertEqual(Vector([0, -6, 4]), x * y)
+        x = VectorFloat([-3., 2, 4.])
+        y = VectorFloat([0., -3., 1.])
+        self.assertEqual(VectorFloat([0, -6, 4]), x * y)
 
         ################################################################################################################
 
-        x = Vector([-3., 2, 4.])
-        self.assertEqual(Vector([-6, 4, 8]), x * 2)
+        x = VectorFloat([-3., 2, 4.])
+        self.assertEqual(VectorFloat([-6, 4, 8]), x * 2)
 
         ################################################################################################################
 
-        x = Vector([-3., 2, 4.])
-        self.assertEqual(Vector([-6, 4, 8]), x * 2.)
+        x = VectorFloat([-3., 2, 4.])
+        self.assertEqual(VectorFloat([-6, 4, 8]), x * 2.)
 
         ################################################################################################################
 
-        x = Vector([1, 2, 3])
-        y = Vector([4, 5, 6, 7])
+        x = VectorFloat([1, 2, 3])
+        y = VectorFloat([4, 5, 6, 7])
 
         with self.assertRaises(ValueError):
             x * y
@@ -528,30 +524,30 @@ class TestVectors(unittest.TestCase):
         :return:
         """
 
-        x = Vector([1, 2, 3.])
-        y = Vector([0., -2., 1.])
-        self.assertEqual(Vector([1, 0.25, 3]), x ** y)
+        x = VectorFloat([1, 2, 3.])
+        y = VectorFloat([0., -2., 1.])
+        self.assertEqual(VectorFloat([1, 0.25, 3]), x ** y)
 
         ################################################################################################################
 
-        x = Vector([-3., 2, 4.])
-        y = Vector([0., -3., 1.])
-        self.assertEqual(Vector([1, 0.125, 4]), x ** y)
+        x = VectorFloat([-3., 2, 4.])
+        y = VectorFloat([0., -3., 1.])
+        self.assertEqual(VectorFloat([1, 0.125, 4]), x ** y)
 
         ################################################################################################################
 
-        x = Vector([-3., 2, 4.])
-        self.assertEqual(Vector([9, 4, 16]), x ** 2)
+        x = VectorFloat([-3., 2, 4.])
+        self.assertEqual(VectorFloat([9, 4, 16]), x ** 2)
 
         ################################################################################################################
 
-        x = Vector([-3., 2, 4.])
-        self.assertEqual(Vector([9, 4, 16]), x ** 2.)
+        x = VectorFloat([-3., 2, 4.])
+        self.assertEqual(VectorFloat([9, 4, 16]), x ** 2.)
 
         ################################################################################################################
 
-        x = Vector([1, 2, 3])
-        y = Vector([4, 5, 6, 7])
+        x = VectorFloat([1, 2, 3])
+        y = VectorFloat([4, 5, 6, 7])
 
         with self.assertRaises(ValueError):
             x ** y
@@ -563,64 +559,64 @@ class TestVectors(unittest.TestCase):
         :return:
         """
 
-        x = Vector([1, 2, 3.])
+        x = VectorFloat([1, 2, 3.])
         self.assertEqual(math.sqrt((1 * 1) + (2 * 2) + (3 * 3)), x.magnitude)
 
         ################################################################################################################
 
-        x = Vector([1., -2.])
+        x = VectorFloat([1., -2.])
         self.assertEqual(math.sqrt((1 * 1) + (-2 * -2)), x.magnitude)
 
         ################################################################################################################
 
-        x = Vector([rnd.uniform(-100., 100.) for _ in range(6)])
+        x = VectorFloat([rnd.uniform(-100., 100.) for _ in range(6)])
         self.assertEqual(math.sqrt(sum(component ** 2 for component in x.components)), x.magnitude)
 
     def test_all_close(self):
         """
-        Testing if two vectors are similar
+        Testing if two VectorFloats are similar
         :return:
         """
 
-        x = Vector([1, 2, 3, 4])
+        x = VectorFloat([1, 2, 3, 4])
         y = deepcopy(x)
-        self.assertTrue(Vector.all_close(x, y))
+        self.assertTrue(VectorFloat.all_close(x, y))
 
         ################################################################################################################
 
-        x = Vector([1, .3])
-        y = Vector([1, .3])
-        self.assertTrue(Vector.all_close(x, y))
+        x = VectorFloat([1, .3])
+        y = VectorFloat([1, .3])
+        self.assertTrue(VectorFloat.all_close(x, y))
 
         ################################################################################################################
 
-        x = Vector([1.2, 10 + Vector.relative])
-        y = Vector([1.2 + Vector.relative, 10.])
-        self.assertTrue(Vector.all_close(x, y))
+        x = VectorFloat([1.2, 10 + VectorFloat.relative])
+        y = VectorFloat([1.2 + VectorFloat.relative, 10.])
+        self.assertTrue(VectorFloat.all_close(x, y))
 
         ################################################################################################################
 
-        x = Vector([1.2 + Vector.relative, 10])
-        y = Vector([1.2, 10. + Vector.relative])
-        self.assertTrue(Vector.all_close(x, y))
+        x = VectorFloat([1.2 + VectorFloat.relative, 10])
+        y = VectorFloat([1.2, 10. + VectorFloat.relative])
+        self.assertTrue(VectorFloat.all_close(x, y))
 
         ################################################################################################################
 
-        x = Vector([1, .3])
-        y = Vector([1])
-        self.assertFalse(Vector.all_close(x, y))
+        x = VectorFloat([1, .3])
+        y = VectorFloat([1])
+        self.assertFalse(VectorFloat.all_close(x, y))
 
         ################################################################################################################
 
-        x = Vector([1, .3])
-        y = Vector([1, 4])
-        self.assertFalse(Vector.all_close(x, y))
+        x = VectorFloat([1, .3])
+        y = VectorFloat([1, 4])
+        self.assertFalse(VectorFloat.all_close(x, y))
 
         ################################################################################################################
 
-        x = Vector([1, .3])
-        y = Vector([2, .3])
-        self.assertFalse(Vector.all_close(x, y))
+        x = VectorFloat([1, .3])
+        y = VectorFloat([2, .3])
+        self.assertFalse(VectorFloat.all_close(x, y))
 
     def test_dominance(self):
         """
@@ -628,41 +624,41 @@ class TestVectors(unittest.TestCase):
         :return:
         """
 
-        x = Vector([1, 2, 3])
-        y = Vector([4, 5, 6])
+        x = VectorFloat([1, 2, 3])
+        y = VectorFloat([4, 5, 6])
 
-        self.assertEqual(Dominance.is_dominated, Vector.dominance(x, y))
-        self.assertEqual(Dominance.dominate, Vector.dominance(y, x))
-
-        ################################################################################################################
-
-        x = Vector([10, -1])
-        y = Vector([2, -1])
-
-        self.assertEqual(Dominance.dominate, Vector.dominance(x, y))
-        self.assertEqual(Dominance.is_dominated, Vector.dominance(y, x))
+        self.assertEqual(Dominance.is_dominated, VectorFloat.dominance(x, y))
+        self.assertEqual(Dominance.dominate, VectorFloat.dominance(y, x))
 
         ################################################################################################################
 
-        x = Vector([1, 2])
-        y = Vector([0, 3])
+        x = VectorFloat([10, -1])
+        y = VectorFloat([2, -1])
 
-        self.assertEqual(Dominance.otherwise, Vector.dominance(x, y))
+        self.assertEqual(Dominance.dominate, VectorFloat.dominance(x, y))
+        self.assertEqual(Dominance.is_dominated, VectorFloat.dominance(y, x))
 
         ################################################################################################################
 
-        x = Vector([1.2, 10.00001])
-        y = Vector([1.20001, 10.])
+        x = VectorFloat([1, 2])
+        y = VectorFloat([0, 3])
+
+        self.assertEqual(Dominance.otherwise, VectorFloat.dominance(x, y))
+
+        ################################################################################################################
+
+        x = VectorFloat([1.2, 10.00001])
+        y = VectorFloat([1.20001, 10.])
 
         # Are similar
-        self.assertEqual(Dominance.equals, Vector.dominance(x, y))
+        self.assertEqual(Dominance.equals, VectorFloat.dominance(x, y))
 
         ################################################################################################################
 
         y = deepcopy(x)
 
         # Are equals
-        self.assertEqual(Dominance.equals, Vector.dominance(x, y))
+        self.assertEqual(Dominance.equals, VectorFloat.dominance(x, y))
 
     def test_m3_max(self):
         """
@@ -674,33 +670,8 @@ class TestVectors(unittest.TestCase):
         for problem, solution, _ in [self.first_quadrant, self.second_quadrant, self.third_quadrant,
                                      self.fourth_quadrant, self.all_quadrants]:
 
-            # Calc non_dominated vectors
-            non_dominated = Vector.m3_max(vectors=problem)
-
-            # While not is empty
-            while non_dominated:
-                # Extract from non_dominated list and remove from solution list
-                solution.remove(non_dominated.pop())
-
-            # After previous process if solution list have any element, then assert is failed.
-            self.assertFalse(solution)
-
-    def test_m3_max_integer(self):
-        """
-        Testing m3_max function
-        :return:
-        """
-
-        # Test problems
-        for problem, solution, _ in [self.first_quadrant, self.second_quadrant, self.third_quadrant,
-                                     self.fourth_quadrant, self.all_quadrants]:
-
-            # Parse to int vectors
-            problem = list(map(Vector.to_int, problem))
-            solution = list(map(Vector.to_int, solution))
-
-            # Calc non_dominated vectors
-            non_dominated = Vector.m3_max(vectors=problem)
+            # Calc non_dominated VectorFloats
+            non_dominated = VectorFloat.m3_max(vectors=problem)
 
             # While not is empty
             while non_dominated:
@@ -716,7 +687,7 @@ class TestVectors(unittest.TestCase):
         :return:
         """
 
-        # Prepare vectors
+        # Prepare VectorFloats
         problems = [
             (
                 # Problem
@@ -725,7 +696,8 @@ class TestVectors(unittest.TestCase):
                 self.first_quadrant[1],
                 # Dominated (duplicates included)
                 self.first_quadrant[2] + [
-                    Vector([2 + Vector.relative, 4 - Vector.relative]), Vector([0, 6]), Vector([4, 1])
+                    VectorFloat([2 + VectorFloat.relative, 4 - VectorFloat.relative]), VectorFloat([0, 6]),
+                    VectorFloat([4, 1])
                 ],
             ),
             (
@@ -734,7 +706,8 @@ class TestVectors(unittest.TestCase):
                 # Non-dominated uniques
                 self.second_quadrant[1],
                 # Dominated (duplicates included)
-                self.second_quadrant[2] + [Vector([-6, 6]), Vector([-4 + Vector.relative, 2 + Vector.relative])],
+                self.second_quadrant[2] + [VectorFloat([-6, 6]),
+                                           VectorFloat([-4 + VectorFloat.relative, 2 + VectorFloat.relative])],
             ),
             (
                 # Problem
@@ -742,7 +715,8 @@ class TestVectors(unittest.TestCase):
                 # Non-dominated uniques
                 self.third_quadrant[1],
                 # Dominated (duplicates included)
-                self.third_quadrant[2] + [Vector([-7, -1]), Vector([-4 + Vector.relative, -2 + Vector.relative])],
+                self.third_quadrant[2] + [VectorFloat([-7, -1]),
+                                          VectorFloat([-4 + VectorFloat.relative, -2 + VectorFloat.relative])],
             ),
             (
                 # Problem
@@ -750,7 +724,8 @@ class TestVectors(unittest.TestCase):
                 # Non-dominated uniques
                 self.fourth_quadrant[1],
                 # Dominated (duplicates included)
-                self.fourth_quadrant[2] + [Vector([7 + Vector.relative, -3 - Vector.relative]), Vector([2, -1])],
+                self.fourth_quadrant[2] + [VectorFloat([7 + VectorFloat.relative, -3 - VectorFloat.relative]),
+                                           VectorFloat([2, -1])],
             ),
             (
                 # Problem
@@ -759,11 +734,13 @@ class TestVectors(unittest.TestCase):
                 self.all_quadrants[1],
                 # Dominated (duplicates included)
                 self.all_quadrants[2] + [
-                    Vector([7 + Vector.relative, -3 - Vector.relative]), Vector([-7, -1]),
-                    Vector([-4 + Vector.relative, -2 + Vector.relative]), Vector([-6, 6]),
-                    Vector([-4 + Vector.relative, 2 + Vector.relative]), Vector([0, 6]), Vector([4, 1]),
-                    Vector([2 + Vector.relative, 4 - Vector.relative]), Vector([2, -1]),
-                    Vector([-2 - Vector.relative, -1 - Vector.relative]), Vector([-1, -4]), Vector([-1, 0])
+                    VectorFloat([7 + VectorFloat.relative, -3 - VectorFloat.relative]), VectorFloat([-7, -1]),
+                    VectorFloat([-4 + VectorFloat.relative, -2 + VectorFloat.relative]), VectorFloat([-6, 6]),
+                    VectorFloat([-4 + VectorFloat.relative, 2 + VectorFloat.relative]), VectorFloat([0, 6]),
+                    VectorFloat([4, 1]),
+                    VectorFloat([2 + VectorFloat.relative, 4 - VectorFloat.relative]), VectorFloat([2, -1]),
+                    VectorFloat([-2 - VectorFloat.relative, -1 - VectorFloat.relative]), VectorFloat([-1, -4]),
+                    VectorFloat([-1, 0])
                 ],
             )
         ]
@@ -772,7 +749,7 @@ class TestVectors(unittest.TestCase):
         for problem, solution_non_dominated, solution_dominated in problems:
 
             # Apply m3_max_2_sets algorithm
-            non_dominated, dominated = Vector.m3_max_2_sets(vectors=problem)
+            non_dominated, dominated = VectorFloat.m3_max_2_sets(vectors=problem)
 
             # While not is empty
             while non_dominated:
@@ -789,7 +766,7 @@ class TestVectors(unittest.TestCase):
             # After previous process if solution list have any element, then assert is failed.
             self.assertFalse(solution_dominated)
 
-    def test_m3_max_2_sets_equals(self):
+    def test_m3_max_2_sets_not_duplicates(self):
         """
         Testing m3_max function
         :return:
@@ -801,7 +778,7 @@ class TestVectors(unittest.TestCase):
                                                                     self.all_quadrants]:
 
             # Apply m3_max_2_sets algorithm
-            non_dominated, dominated = Vector.m3_max_2_sets_equals(vectors=problem)
+            non_dominated, dominated = VectorFloat.m3_max_2_sets_not_duplicates(vectors=problem)
 
             # While not is empty
             while non_dominated:
@@ -824,7 +801,7 @@ class TestVectors(unittest.TestCase):
         :return:
         """
 
-        # Prepare vectors
+        # Prepare VectorFloats
         problems = [
             (
                 # Problem
@@ -832,10 +809,14 @@ class TestVectors(unittest.TestCase):
                 # Non-dominated uniques
                 self.first_quadrant[1],
                 # Dominated (duplicates included)
-                self.first_quadrant[2] + [Vector([2 + Vector.relative, 4 - Vector.relative]), Vector([0, 6]),
-                                          Vector([4, 1])],
+                self.first_quadrant[2] + [
+                    VectorFloat([2 + VectorFloat.relative, 4 - VectorFloat.relative]), VectorFloat([0, 6]),
+                    VectorFloat([4, 1])
+                ],
                 # Non-dominated repeated
-                [Vector([5 + Vector.relative, 3 - Vector.relative])]
+                [
+                    VectorFloat([5 + VectorFloat.relative, 3 - VectorFloat.relative])
+                ]
             ),
             (
                 # Problem
@@ -843,9 +824,13 @@ class TestVectors(unittest.TestCase):
                 # Non-dominated uniques
                 self.second_quadrant[1],
                 # Dominated (duplicates included)
-                self.second_quadrant[2] + [Vector([-6, 6]), Vector([-4 + Vector.relative, 2 + Vector.relative])],
+                self.second_quadrant[2] + [
+                    VectorFloat([-6, 6]), VectorFloat([-4 + VectorFloat.relative, 2 + VectorFloat.relative])
+                ],
                 # Non-dominated repeated
-                [Vector([-4 - Vector.relative, 7 + Vector.relative]), Vector([-1, 0])]
+                [
+                    VectorFloat([-4 - VectorFloat.relative, 7 + VectorFloat.relative]), VectorFloat([-1, 0])
+                ]
             ),
             (
                 # Problem
@@ -853,9 +838,13 @@ class TestVectors(unittest.TestCase):
                 # Non-dominated uniques
                 self.third_quadrant[1],
                 # Dominated (duplicates included)
-                self.third_quadrant[2] + [Vector([-7, -1]), Vector([-4 + Vector.relative, -2 + Vector.relative])],
+                self.third_quadrant[2] + [
+                    VectorFloat([-7, -1]), VectorFloat([-4 + VectorFloat.relative, -2 + VectorFloat.relative])
+                ],
                 # Non-dominated repeated
-                [Vector([-2 - Vector.relative, -1 - Vector.relative]), Vector([-1, -4])]
+                [
+                    VectorFloat([-2 - VectorFloat.relative, -1 - VectorFloat.relative]), VectorFloat([-1, -4])
+                ]
             ),
             (
                 # Problem
@@ -863,9 +852,13 @@ class TestVectors(unittest.TestCase):
                 # Non-dominated uniques
                 self.fourth_quadrant[1],
                 # Dominated (duplicates included)
-                self.fourth_quadrant[2] + [Vector([7 + Vector.relative, -3 - Vector.relative]), Vector([2, -1])],
+                self.fourth_quadrant[2] + [
+                    VectorFloat([7 + VectorFloat.relative, -3 - VectorFloat.relative]), VectorFloat([2, -1])
+                ],
                 # Non-dominated repeated
-                [Vector([10 + Vector.relative, -1 + Vector.relative]), Vector([10, -1])]
+                [
+                    VectorFloat([10 + VectorFloat.relative, -1 + VectorFloat.relative]), VectorFloat([10, -1])
+                ]
             ),
             (
                 # Problem
@@ -874,24 +867,25 @@ class TestVectors(unittest.TestCase):
                 self.all_quadrants[1],
                 # Dominated (duplicates included)
                 self.all_quadrants[2] + [
-                    Vector([7 + Vector.relative, -3 - Vector.relative]), Vector([-7, -1]),
-                    Vector([-4 + Vector.relative, -2 + Vector.relative]), Vector([-6, 6]),
-                    Vector([-4 + Vector.relative, 2 + Vector.relative]), Vector([0, 6]), Vector([4, 1]),
-                    Vector([2 + Vector.relative, 4 - Vector.relative]), Vector([2, -1]),
-                    Vector([-2 - Vector.relative, -1 - Vector.relative]), Vector([-1, -4]), Vector([-1, 0])
+                    VectorFloat([7 + VectorFloat.relative, -3 - VectorFloat.relative]), VectorFloat([-7, -1]),
+                    VectorFloat([-4 + VectorFloat.relative, -2 + VectorFloat.relative]), VectorFloat([-6, 6]),
+                    VectorFloat([-4 + VectorFloat.relative, 2 + VectorFloat.relative]), VectorFloat([0, 6]),
+                    VectorFloat([4, 1]), VectorFloat([-1, 0]),
+                    VectorFloat([2 + VectorFloat.relative, 4 - VectorFloat.relative]), VectorFloat([2, -1]),
+                    VectorFloat([-2 - VectorFloat.relative, -1 - VectorFloat.relative]), VectorFloat([-1, -4]),
                 ],
                 # Non-dominated repeated
                 [
-                    Vector([10 + Vector.relative, -1 + Vector.relative]), Vector([10, -1]),
-                    Vector([-4 - Vector.relative, 7 + Vector.relative]),
-                    Vector([5 + Vector.relative, 3 - Vector.relative])
+                    VectorFloat([10 + VectorFloat.relative, -1 + VectorFloat.relative]), VectorFloat([10, -1]),
+                    VectorFloat([-4 - VectorFloat.relative, 7 + VectorFloat.relative]),
+                    VectorFloat([5 + VectorFloat.relative, 3 - VectorFloat.relative])
                 ]
             )
         ]
 
         for problem, solution_non_dominated_uniques, solution_dominated, solution_non_dominated_repeat in problems:
             # Apply m3_max_2_sets_with_repetitions algorithm
-            non_dominated_unique, dominated, non_dominated_repeated = Vector.m3_max_2_sets_with_repetitions(
+            non_dominated_unique, dominated, non_dominated_repeated = VectorFloat.m3_max_2_sets_with_repetitions(
                 vectors=problem)
 
             # While not is empty

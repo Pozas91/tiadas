@@ -1,6 +1,6 @@
 """
 This class represent a vector with some features necessaries for our program.
-This class have a vector, that could be
+This class have a vector of integers (int32).
 """
 import math
 import numpy as np
@@ -13,25 +13,14 @@ class Vector:
     Class Vector with functions to work with vectors.
     """
 
-    # Convert float vectors to int vectors
-    decimals = 10 ** 2
-
-    # Relative margin to compare of similarity of two float elements.
-    relative = 1 / decimals
-
-    # Type of vector (float, int)
-    type = None
-
-    def __init__(self, components):
+    def __init__(self, components, dtype=int):
         """
         Vector's init
         :param components:
         """
 
-        assert isinstance(components, (np.ndarray, set, list))
-        self.components = np.array(components)
-
-        self.type = self.components.dtype
+        assert isinstance(components, (np.ndarray, list))
+        self.components = np.array(components).astype(dtype)
 
     def __getitem__(self, item):
         """
@@ -89,7 +78,7 @@ class Vector:
         :return:
         """
 
-        return Vector(np.add(self.components, other))
+        return self.__class__(np.add(self.components, other))
 
     def __sub__(self, other):
         """
@@ -98,7 +87,7 @@ class Vector:
         :return:
         """
 
-        return Vector(np.subtract(self.components, other))
+        return self.__class__(np.subtract(self.components, other))
 
     def __mul__(self, other):
         """
@@ -108,7 +97,7 @@ class Vector:
         :return:
         """
 
-        return Vector(np.multiply(self.components, other))
+        return self.__class__(np.multiply(self.components, other))
 
     def __pow__(self, power, modulo=None):
         """
@@ -118,19 +107,17 @@ class Vector:
         :return:
         """
 
-        return Vector(np.power(self.components, power))
+        return self.__class__(np.power(self.components, power))
 
     def __ge__(self, other):
         """
-        A vector is greater or equal than other when all components are greater or equal (or close) one by one.
+        A vector is greater or equal than other when all components are greater or equal one by one.
 
         :param other:
         :return:
         """
 
-        return np.all([
-            a > b or np.isclose(a, b, rtol=Vector.relative) for a, b in zip(self.components, other.components)
-        ])
+        return np.all(np.greater_equal(self.components, other.components))
 
     def __gt__(self, other):
         """
@@ -139,9 +126,7 @@ class Vector:
         :param other:
         :return:
         """
-        return np.all([
-            a > b and not np.isclose(a, b, rtol=Vector.relative) for a, b in zip(self.components, other.components)
-        ])
+        return np.all(np.greater(self.components, other.components))
 
     def __lt__(self, other):
         """
@@ -150,9 +135,7 @@ class Vector:
         :param other:
         :return:
         """
-        return np.all([
-            a < b and not np.isclose(a, b, rtol=Vector.relative) for a, b in zip(self.components, other.components)
-        ])
+        return np.all(np.less(self.components, other.components))
 
     def __le__(self, other):
         """
@@ -161,16 +144,7 @@ class Vector:
         :param other:
         :return:
         """
-        return np.all([
-            a < b or np.isclose(a, b, rtol=Vector.relative) for a, b in zip(self.components, other.components)
-        ])
-
-    def to_int(self):
-        """
-        Parse Vector to int vector
-        :return:
-        """
-        return Vector((self.components * Vector.decimals).astype(int))
+        return np.all(np.less_equal(self.components, other.components))
 
     @property
     def magnitude(self):
@@ -180,41 +154,20 @@ class Vector:
         """
         return math.sqrt(np.sum(self.components ** 2))
 
-    @staticmethod
-    def all_close(v1, v2):
+    def dominance(self, v2):
         """
-        Returns True if two arrays are element-wise equal within a tolerance.
-
-        If either array contains one or more NaNs, False is returned.
-        :param v1:
-        :param v2:
-        :return:
-        """
-
-        return np.allclose(v1, v2, rtol=Vector.relative)
-
-    @staticmethod
-    def dominance(v1, v2):
-        """
-        Check dominance between two Vector ojbects. Float values are allowed
+        Check dominance between two Vector objects. Float values are allowed
         and treated with precision according to Vector.relative.
-        :param v1: a Vector object
         :param v2: a Vector object
-        :return: an outoput value according to the Dominance enum.
+        :return: an output value according to the Dominance enum.
         """
 
         v1_dominate = False
         v2_dominate = False
 
-        for idx, component in enumerate(v1.components):
+        for idx, component in enumerate(self.components):
 
-            # Are equals or close...
-            if np.isclose(v1.components[idx], v2.components[idx], rtol=Vector.relative):
-                # Nothing to do at moment
-                pass
-
-            # In this component dominates v1
-            elif v1.components[idx] > v2.components[idx]:
+            if self.components[idx] > v2.components[idx]:
                 v1_dominate = True
 
                 # If already dominate v2, then both vectors are independent.
@@ -222,7 +175,7 @@ class Vector:
                     return Dominance.otherwise
 
             # In this component dominates v2
-            elif v1.components[idx] < v2.components[idx]:
+            elif self.components[idx] < v2.components[idx]:
                 v2_dominate = True
 
                 # If already dominate v1, then both vectors are independent.
@@ -277,7 +230,7 @@ class Vector:
                 vector_j = non_dominated[idx_j]
 
                 # Get dominance
-                dominance = Vector.dominance(v1=vector_i, v2=vector_j)
+                dominance = vector_i.dominance(v2=vector_j)
 
                 # `vector_i` dominate `vector_j`
                 if dominance == Dominance.dominate:
@@ -323,7 +276,7 @@ class Vector:
     @staticmethod
     def m3_max_2_sets(vectors: list):
         """
-        :param vectors : list of Vector objects, float values are assumed.
+        :param vectors : list of Vector objects.
         
         :return: a list with non-dominated vectors applying the m3 algorithm of
         Bentley, Clarkson and Levine (1990).
@@ -332,10 +285,10 @@ class Vector:
                 - We attempt to MAXIMIZE the value of each vector element.
 
             If, after all, two equal vectors are found, the algorithm keeps
-            just one in the output lists.
+            just one in the non_dominate list, but is duplicate in dominated list.
 
-            Return a tuple with a first list with the non-dominated set, and
-            a second list with the dominated set.
+            Return a tuple with a first list with the non-dominated list, and
+            a second list with the dominated list.
         """
 
         non_dominated = list()
@@ -355,7 +308,7 @@ class Vector:
                 vector_j = non_dominated[idx_j]
 
                 # Get dominance
-                dominance = Vector.dominance(v1=vector_i, v2=vector_j)
+                dominance = vector_i.dominance(v2=vector_j)
 
                 # `vector_i` dominate `vector_j`
                 if dominance == Dominance.dominate:
@@ -405,21 +358,20 @@ class Vector:
         return non_dominated, dominated
 
     @staticmethod
-    def m3_max_2_sets_equals(vectors: list):
+    def m3_max_2_sets_not_duplicates(vectors: list):
         """
-        :param vectors : list of Vector objects, float values are assumed.
+        :param vectors: list of Vector objects.
         
         :return: a list with non-dominated vectors applying the m3 algorithm of
         Bentley, Clarkson and Levine (1990).
             We assume that:
-                - There are not two equal vectors in the input list.
                 - We attempt to MAXIMIZE the value of each vector element.
 
             If, after all, two equal vectors are found, the algorithm keeps
             just one in the output lists.
 
-            Return a tuple with a first list with the non-dominated set, and
-            a second list with the dominated set.
+            Return a tuple with a first list with the non-dominated list, and
+            a second list with the dominated list.
         """
 
         non_dominated = list()
@@ -428,9 +380,8 @@ class Vector:
 
         for idx_i, vector_i in enumerate(vectors):
 
-            # If is close to another vector, don't process this vector.
-            if any([Vector.all_close(v1=vector_i, v2=vector_to_examine) for vector_to_examine in
-                    non_dominated + dominated]):
+            # If vector_i is in non_dominated or dominated, not process it.
+            if vector_i in non_dominated + dominated:
                 continue
 
             # Prepare variables
@@ -444,7 +395,7 @@ class Vector:
                 vector_j = non_dominated[idx_j]
 
                 # Get dominance
-                dominance = Vector.dominance(v1=vector_i, v2=vector_j)
+                dominance = vector_i.dominance(v2=vector_j)
 
                 # `vector_i` dominate `vector_j`
                 if dominance == Dominance.dominate:
@@ -487,8 +438,15 @@ class Vector:
     @staticmethod
     def m3_max_2_sets_with_repetitions(vectors: list):
         """
+        :param vectors: list of Vector objects.
 
-        
+        :return: a list with non-dominated vectors applying the m3 algorithm of
+        Bentley, Clarkson and Levine (1990).
+            We assume that:
+                - We attempt to MAXIMIZE the value of each vector element.
+
+            Return a tuple with a first list with the non-dominated unique list, a
+            second list with the dominated list, and a third list with non-dominated duplicate list.
         """
 
         non_dominated = list()
@@ -511,7 +469,7 @@ class Vector:
                 vector_j = bucket[0]
 
                 # Vector dominance
-                dominance = Vector.dominance(v1=vector_i, v2=vector_j)
+                dominance = vector_i.dominance(v2=vector_j)
 
                 # `vector_i` dominate `vector_j`
                 if dominance == Dominance.dominate:
