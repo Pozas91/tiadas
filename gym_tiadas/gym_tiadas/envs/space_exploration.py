@@ -8,7 +8,12 @@ occupied by an asteroid, the ship is destroyed, the episode ends, and the agent 
 radiation exposure subject to meeting minimum habitability requirements. in Space Exploration the agent can move to
 all eight neighbouring states (i.e. there are eight actions). Also if the agent leaves the bounds of the grid,
 it moves to the opposite edge of the grid. For example if the agent moves up from the top row of the grid,
-it will move to the bottom row of the same column). """
+it will move to the bottom row of the same column).
+
+FINAL STATES: To reach any of x-value states.
+
+REF: P. Vamplew et al. (2017)
+"""
 
 from .env_mesh import EnvMesh
 
@@ -52,7 +57,7 @@ class SpaceExploration(EnvMesh):
         """
 
         # (mission_success, radiation)
-        rewards = [0., 0.]
+        rewards = [0, 0]
 
         # Get new state
         new_state = self._next_state(action=action)
@@ -131,7 +136,8 @@ class SpaceExploration(EnvMesh):
         # Return (x, y) position
         return new_state
 
-    def __move_up(self, y, limit=5):
+    @staticmethod
+    def __move_up(y, limit=5):
         """
         Move to up
         :param y:
@@ -140,7 +146,8 @@ class SpaceExploration(EnvMesh):
         """
         return (y if y > 0 else limit) - 1
 
-    def __move_right(self, x, limit=13):
+    @staticmethod
+    def __move_right(x, limit=13):
         """
         Move to right
         :param x:
@@ -149,7 +156,8 @@ class SpaceExploration(EnvMesh):
         """
         return (x + 1) % limit
 
-    def __move_down(self, y, limit=5):
+    @staticmethod
+    def __move_down(y, limit=5):
         """
         Move to down
         :param y:
@@ -158,7 +166,8 @@ class SpaceExploration(EnvMesh):
         """
         return (y + 1) % limit
 
-    def __move_left(self, x, limit=13):
+    @staticmethod
+    def __move_left(x, limit=13):
         """
         Move to left
         :param x:

@@ -5,7 +5,13 @@ top left state, and ends when a treasure location is reached or after 1000 actio
 agent - moving one square to the left, right, up or down. Any action which would cause the agent to leave the grid
 will leave its position unchanged. The reward received by the agent is a 2-element vector. The first element is a
 time penalty, which is -1 on all turns. The second element is the treasure value which is 0 except when the agent
-moves into a treasure location, when it is the value indicated. """
+moves into a treasure location, when it is the value indicated.
+
+FINAL STATE: To reach any final state.
+
+REF: Empirical Evaluation methods for multi-objective reinforcement learning algorithms
+    (Vamplew, Dazeley, Berry, Issabekov and Dekker) 2011
+"""
 from .env_mesh import EnvMesh
 
 

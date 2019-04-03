@@ -9,7 +9,11 @@ returns to the start state. A tabular representation of this environment has 162
 of the grid when the agent has not activated the bonus, and 81 for the same cells when the bonus has been activated.
 The set of Pareto-optimal policies and the corresponding thresholds are listed in Table 2. It can be seen that
 trade-offs exist between all three objectives. Note that not all optimal policies require the agent to activate the
-bonus. Vamplew et al (2017b) """
+bonus.
+
+FINAL STATE: To reach a final state.
+
+REF: Vamplew et al (2017b)"""
 from .env_mesh import EnvMesh
 
 

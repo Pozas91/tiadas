@@ -159,8 +159,8 @@ class EnvMesh(gym.Env):
         # Set new state
         new_state = x, y
 
-        # If exists obstacles, then new_state must be in self.obstacles (p => q)
-        is_obstacle = not hasattr(self, 'obstacles') or new_state in self.obstacles
+        # If exists obstacles, then new_state must be in self.obstacles
+        is_obstacle = bool(self.obstacles) and new_state in self.obstacles
 
         if not self.observation_space.contains(new_state) or is_obstacle:
             # New state is invalid.

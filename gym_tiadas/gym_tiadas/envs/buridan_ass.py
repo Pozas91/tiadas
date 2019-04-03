@@ -7,7 +7,11 @@ the donkey is present, f for food in the two piles, and t for the time since the
 it is not incremented and the donkey incurs a penalty of -1 per time step till it eats the food when t is reset to 0.
 The actions are move up, down, left, right, and stay. It is assumed that if the donkey chooses to stay at a square
 with food, then it eats the food. `p_stolen` is set to 0.9, `n_appear` is set to 10. The stolen penalty is -0.5 per
-plate and walking penalty is -1 per step. """
+plate and walking penalty is -1 per step.
+
+FINAL STATE: No food to eat.
+
+REF: Dynamic Preferences in Multi-Criteria Reinforcement Learning (Sriraam Natarajan)"""
 
 from .env_mesh import EnvMesh
 
@@ -117,8 +121,8 @@ class BuridanAss(EnvMesh):
         # Set info
         info = {}
 
-        # If there isn't more food left, it is a final state
-        final = any(not isinstance(self.finals.get(state), bool) for state in self.finals.keys())
+        # If there is not more food left, it is a final state
+        final = all(not isinstance(self.finals.get(state), bool) for state in self.finals.keys())
 
         return tuple(complex_state), rewards, final, info
 

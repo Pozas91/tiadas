@@ -1,7 +1,11 @@
 """
 Inspired by the Deep Sea Treasure (DST) environment. In contrast to the, the values of the treasures are altered to
 create a convex Pareto front.
-"""
+
+FINAL STATE: To reach any final state.
+
+REF: Multi-objective reinforcement learning using sets of pareto dominating policies (Kristof Van Moffaert,
+Ann Nowé) 2014 """
 from .env_mesh import EnvMesh
 
 
@@ -57,8 +61,7 @@ class PressurizedBountifulSeaTreasure(EnvMesh):
         """
 
         # (time_inverted, treasure_value, water_pressure)
-        # rewards = [0., 0., 0.]
-        rewards = [0., 0.]
+        rewards = [0., 0., 0.]
 
         # Get new state
         new_state = self._next_state(action=action)
@@ -72,8 +75,8 @@ class PressurizedBountifulSeaTreasure(EnvMesh):
         # Get treasure value
         rewards[1] = self.finals.get(self.current_state, self.default_reward)
 
-        # Water pressure (y-coordinate
-        # rewards[2] = -(self.current_state[1] + 1)
+        # Water pressure (y-coordinate)
+        rewards[2] = -(self.current_state[1] + 1)
 
         # Set info
         info = {}

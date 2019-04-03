@@ -1,20 +1,20 @@
 """
-Unit tests file where testing BonusWorld environment.
+Unit tests file where testing MoPuddleWorld environment.
 """
 
 import unittest
 
 from gym import spaces
 
-from gym_tiadas.gym_tiadas.envs import BonusWorld
+from gym_tiadas.gym_tiadas.envs import MoPuddleWorld
 
 
-class TestBonusWorld(unittest.TestCase):
+class TestMoPuddleWorld(unittest.TestCase):
     environment = None
 
     def setUp(self):
         # Set seed to 0 to testing.
-        self.environment = BonusWorld(seed=0)
+        self.environment = MoPuddleWorld(seed=0)
 
     def tearDown(self):
         self.environment = None
@@ -36,24 +36,17 @@ class TestBonusWorld(unittest.TestCase):
         self.assertTrue(hasattr(self.environment, '_next_state'))
 
         # This environment must have another attributes
-        self.assertTrue(hasattr(self.environment, 'finals'))
+        self.assertTrue(hasattr(self.environment, 'final_state'))
         self.assertTrue(hasattr(self.environment, 'obstacles'))
-        self.assertTrue(hasattr(self.environment, 'pits'))
-        self.assertTrue(hasattr(self.environment, 'bonus'))
-        self.assertTrue(hasattr(self.environment, 'bonus_activated'))
 
-        # By default mesh shape is 9x9
-        self.assertEqual(spaces.Tuple((spaces.Discrete(9), spaces.Discrete(9))), self.environment.observation_space)
+        # By default mesh shape is 20x20
+        self.assertEqual(spaces.Tuple((spaces.Discrete(20), spaces.Discrete(20))), self.environment.observation_space)
 
         # By default action space is 4 (UP, RIGHT, DOWN, LEFT)
         self.assertEqual(spaces.Discrete(4), self.environment.action_space)
 
-        # By default initial state is (0, 0)
-        self.assertEqual((0, 0), self.environment.initial_state)
-        self.assertEqual(self.environment.initial_state, self.environment.current_state)
-
-        # Default reward is (0., 0.)
-        self.assertEqual((0., 0.), self.environment.default_reward)
+        # Finish reward is 10.
+        self.assertEqual(10., self.environment.final_reward)
 
     def test_seed(self):
         """
@@ -77,17 +70,12 @@ class TestBonusWorld(unittest.TestCase):
         :return:
         """
 
-        # Set current state to random state
-        self.environment.current_state = self.environment.observation_space.sample()
-        # Set bonus activated to True
-        self.environment.bonus_activated = True
-
         # Reset environment
         self.environment.reset()
 
         # Asserts
-        self.assertEqual(self.environment.initial_state, self.environment.current_state)
-        self.assertFalse(self.environment.bonus_activated)
+        self.assertTrue(self.environment.observation_space.contains(self.environment.current_state))
+        self.assertFalse(self.environment.current_state == self.environment.final_state)
 
     def test__next_state(self):
         """
@@ -99,6 +87,7 @@ class TestBonusWorld(unittest.TestCase):
         # Begin at state (0, 0) (TOP-LEFT corner)
         ################################################################################################################
         state = (0, 0)
+        self.environment.current_state = state
 
         # Cannot go to UP (Keep in same state)
         new_state = self.environment._next_state(action=self.environment.actions.get('UP'))
@@ -117,9 +106,9 @@ class TestBonusWorld(unittest.TestCase):
         self.assertEqual(state, new_state)
 
         ################################################################################################################
-        # Set to (8, 0) (TOP-RIGHT corner)
+        # Set to (19, 0) (TOP-RIGHT corner)
         ################################################################################################################
-        state = (8, 0)
+        state = (19, 0)
         self.environment.current_state = state
 
         # Cannot go to UP (Keep in same state)
@@ -139,9 +128,9 @@ class TestBonusWorld(unittest.TestCase):
         self.assertEqual((state[0] - 1, state[1]), new_state)
 
         ################################################################################################################
-        # Set to (8, 8) (DOWN-RIGHT corner)
+        # Set to (19, 19) (DOWN-RIGHT corner)
         ################################################################################################################
-        state = (8, 8)
+        state = (19, 19)
         self.environment.current_state = state
 
         # Go to UP (decrement y axis)
@@ -156,14 +145,14 @@ class TestBonusWorld(unittest.TestCase):
         new_state = self.environment._next_state(action=self.environment.actions.get('DOWN'))
         self.assertEqual(state, new_state)
 
-        # Go to LEFT (decrement x axis)
+        # Cannot go to LEFT (Keep in same state)
         new_state = self.environment._next_state(action=self.environment.actions.get('LEFT'))
         self.assertEqual((state[0] - 1, state[1]), new_state)
 
         ################################################################################################################
-        # Set to (0, 8) (DOWN-LEFT corner)
+        # Set to (0, 19) (DOWN-LEFT corner)
         ################################################################################################################
-        state = (0, 8)
+        state = (0, 19)
         self.environment.current_state = state
 
         # Go to UP (decrement y axis)
@@ -178,36 +167,8 @@ class TestBonusWorld(unittest.TestCase):
         new_state = self.environment._next_state(action=self.environment.actions.get('DOWN'))
         self.assertEqual(state, new_state)
 
-        # Cannot go to LEFT (Keep in same state
+        # Cannot go to LEFT (Keep in same state)
         new_state = self.environment._next_state(action=self.environment.actions.get('LEFT'))
-        self.assertEqual(state, new_state)
-
-        ################################################################################################################
-        # Obstacles (For example, (2, 2)
-        ################################################################################################################
-
-        # Set to (2, 1)
-        state = (2, 1)
-        self.environment.current_state = state
-
-        # Cannot go to DOWN (Keep in same state), because there is an obstacle.
-        new_state = self.environment._next_state(action=self.environment.actions.get('DOWN'))
-        self.assertEqual(state, new_state)
-
-        # Set to (1, 2)
-        state = (1, 2)
-        self.environment.current_state = state
-
-        # Cannot go to RIGHT (Keep in same state), because there is an obstacle.
-        new_state = self.environment._next_state(action=self.environment.actions.get('RIGHT'))
-        self.assertEqual(state, new_state)
-
-        # Set to (2, 1)
-        state = (2, 1)
-        self.environment.current_state = state
-
-        # Cannot go to DOWN (Keep in same state), because there is an obstacle.
-        new_state = self.environment._next_state(action=self.environment.actions.get('DOWN'))
         self.assertEqual(state, new_state)
 
     def test_step(self):
@@ -216,91 +177,56 @@ class TestBonusWorld(unittest.TestCase):
         :return:
         """
 
-        # Simple valid step, at each step penalizes -1.
-        new_state, rewards, is_final, info = self.environment.step(action=self.environment.actions.get('DOWN'))
+        # THIS ENVIRONMENT HAS A RANDOM INITIAL STATE. FOR TESTING I USE A PREDEFINED INITIAL STATE.
+        # Reward:
+        #   [non_goal_reached, puddle_penalize]
+
+        new_state = None
+        rewards = None
+        is_final = False
+        info = {}
+
+        # Set a current state
+        self.environment.current_state = (0, 0)
+
+        # Simple valid step
+        for _ in range(3):
+            new_state, rewards, is_final, info = self.environment.step(action=self.environment.actions.get('DOWN'))
 
         # Remember that initial state is (0, 0)
-        self.assertEqual((0, 1), new_state)
-        self.assertEqual([0, 0, -1], rewards)
+        self.assertEqual((0, 3), new_state)
+        self.assertEqual([-1, -1], rewards)
         self.assertFalse(is_final)
         self.assertFalse(info)
 
-        # Do 7 steps more to reach final step (0, 8), which reward is (9, 1)
+        # Enter in puddles a little more.
+        new_state, rewards, is_final, info = self.environment.step(action=self.environment.actions.get('DOWN'))
+
+        self.assertEqual((0, 4), new_state)
+        self.assertEqual([-1, -2], rewards)
+
+        # Enter in puddles a little more.
+        new_state, rewards, is_final, info = self.environment.step(action=self.environment.actions.get('DOWN'))
+
+        self.assertEqual((0, 5), new_state)
+        self.assertEqual([-1, -2], rewards)
+
+        # Enter a more...
         for _ in range(7):
-            new_state, rewards, is_final, _ = self.environment.step(action=self.environment.actions.get('DOWN'))
+            new_state, rewards, is_final, info = self.environment.step(action=self.environment.actions.get('RIGHT'))
 
-        self.assertEqual((0, 8), new_state)
-        self.assertEqual([9, 1, -1], rewards)
-        self.assertTrue(is_final)
-
-        ################################################################################################################
-
-        # Reset environment
-        self.environment.reset()
-
-        # Go to another final step
-        for _ in range(8):
-            new_state, rewards, is_final, _ = self.environment.step(action=self.environment.actions.get('RIGHT'))
-
-        self.assertEqual((8, 0), new_state)
-        self.assertEqual([1, 9, -1], rewards)
-        self.assertTrue(is_final)
+        self.assertEqual((7, 5), new_state)
+        self.assertEqual([-1, -4], rewards)
 
         ################################################################################################################
 
-        # Reset environment
-        self.environment.reset()
+        # Go to final state
+        for _ in range(12):
+            _ = self.environment.step(action=self.environment.actions.get('RIGHT'))
 
-        # Go to a PIT state (and reset to initial_state)
-        _, _, _, _ = self.environment.step(action=self.environment.actions.get('DOWN'))
+        for _ in range(5):
+            new_state, rewards, is_final, info = self.environment.step(action=self.environment.actions.get('UP'))
 
-        for _ in range(7):
-            new_state, rewards, is_final, _ = self.environment.step(action=self.environment.actions.get('RIGHT'))
-
-        self.assertEqual((0, 0), new_state)
-        self.assertEqual([0, 0, -1], rewards)
-        self.assertFalse(is_final)
-
-        ################################################################################################################
-
-        # Reset environment
-        self.environment.reset()
-
-        # At first bonus is disabled
-        self.assertFalse(self.environment.bonus_activated)
-
-        # Get bonus and go to final state
-
-        # 4 steps to RIGHT
-        for _ in range(4):
-            _, _, _, _ = self.environment.step(action=self.environment.actions.get('RIGHT'))
-
-        # 3 steps to DOWN
-        for _ in range(3):
-            _, _, _, _ = self.environment.step(action=self.environment.actions.get('DOWN'))
-
-        # 1 step to LEFT
-        for _ in range(1):
-            _, _, _, _ = self.environment.step(action=self.environment.actions.get('LEFT'))
-
-        # Now bonus is activated
-        self.assertTrue(self.environment.bonus_activated)
-
-        # Go to final state with bonus activated
-
-        # 3 steps to DOWN
-        for _ in range(3):
-            _, _, _, _ = self.environment.step(action=self.environment.actions.get('DOWN'))
-
-        # 1 step to RIGHT
-        for _ in range(1):
-            _, _, _, _ = self.environment.step(action=self.environment.actions.get('RIGHT'))
-
-        # 2 steps to DOWN
-        for _ in range(2):
-            new_state, rewards, is_final, _ = self.environment.step(action=self.environment.actions.get('DOWN'))
-
-        # Final state (4, 8), which reward is (9, 5), but bonus is activated.
-        self.assertEqual((4, 8), new_state)
-        self.assertEqual([9 * 2, 5 * 2, -1], rewards)
+        self.assertEqual((19, 0), new_state)
+        self.assertEqual([10, 0], rewards)
         self.assertTrue(is_final)

@@ -5,6 +5,11 @@ Simple non-episodic environment, where the agent train with a step-limit. Only t
 * Go to counter-clockwise
 
 Given a state and a action, returns reward.
+
+FINAL STATE: Does not have finals states.
+
+REF: Steering approaches to Pareto-optimal multiobjective reinforcement learning. (Peter Vamplew, Rustam Issabekov,
+Richard Dazeley, Cameron Foale, Adam Berry, Tim Moore, Douglas Creighton) 2017.
 """
 
 import gym
@@ -161,7 +166,7 @@ class LinkedRings(gym.Env):
         """
 
         # Do movement
-        new_state = self.possible_transactions.get(self.current_state, {}).get(action, self.default_reward)
+        new_state = self.possible_transactions.get(self.current_state).get(action)
 
         if not self.observation_space.contains(new_state):
             # New state is invalid, and roll back with previous.
@@ -169,3 +174,11 @@ class LinkedRings(gym.Env):
 
         # Return new state
         return new_state
+
+    @property
+    def actions(self):
+        """
+        Return a dictionary with possible actions
+        :return:
+        """
+        return self._actions

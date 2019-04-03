@@ -1,6 +1,8 @@
 """
 Such as DeepSeaTreasure environment but has a vector of transactions probabilities, which will be used when an action
 is to be taken.
+
+
 """
 from .env_mesh import EnvMesh
 
@@ -14,6 +16,7 @@ class DeepSeaTreasureTransactions(EnvMesh):
         :param initial_state:
         :param default_reward:
         :param seed:
+        :param n_transaction: if is 0, the action affected by the transaction is always the same action.
         """
 
         # List of all treasures and its reward.
@@ -47,6 +50,8 @@ class DeepSeaTreasureTransactions(EnvMesh):
 
         # Transaction
         assert 0 <= n_transaction <= 1.
+
+        # [DIR_0, DIR_90, DIR_180, DIR_270] transaction list
         self.transactions = [1. - n_transaction, n_transaction / 3, n_transaction / 3, n_transaction / 3]
 
     def step(self, action) -> (object, [float, float], bool, dict):

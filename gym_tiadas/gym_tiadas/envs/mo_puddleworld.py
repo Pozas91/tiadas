@@ -1,10 +1,14 @@
 """
-Puddleworld is a two-dimensional environment. The agent starts each episode at a random, non-goal state and has to move
+PuddleWorld is a two-dimensional environment. The agent starts each episode at a random, non-goal state and has to move
 to the goal in the top-right corner of the world, while avoiding the puddles. At each step selects between four actions
 (left, right, up or down) which move it by 1 desired direction.
 The mesh is 20x20 grid.
-The reward structure for Puddleworld is a tuple of two elements. First element is a penalty if goal is not reached, and
+The reward structure for PuddleWorld is a tuple of two elements. First element is a penalty if goal is not reached, and
 second element is a penalize by stay in a puddle, the penalize is the nearest distance to an edge of the puddle.
+
+FINAL STATE: To reach (19, 0) state.
+
+REF: Empirical evaluation methods for multi-objective reinforcement learning algorithms (2011).
 """
 from scipy.spatial import distance
 
@@ -15,18 +19,18 @@ class MoPuddleWorld(EnvMesh):
     # Possible actions
     _actions = {'UP': 0, 'RIGHT': 1, 'DOWN': 2, 'LEFT': 3}
 
-    def __init__(self, mesh_shape=(20, 20), finish_reward=10., penalize_non_goal=-1., seed=0, final_state=(19, 0)):
-
-        obstacles = frozenset()
-        obstacles = obstacles.union([(x, y) for x in range(0, 11) for y in range(3, 7)])
-        obstacles = obstacles.union([(x, y) for x in range(6, 10) for y in range(2, 14)])
-
-        super().__init__(mesh_shape, seed, obstacles=obstacles)
-
-        self.penalize_non_goal = penalize_non_goal
-        self.final_reward = finish_reward
+    def __init__(self, mesh_shape=(20, 20), final_reward=10, penalize_non_goal=-1, seed=0, final_state=(19, 0)):
 
         self.final_state = final_state
+
+        super().__init__(mesh_shape, seed)
+
+        self.puddles = frozenset()
+        self.puddles = self.puddles.union([(x, y) for x in range(0, 11) for y in range(3, 7)])
+        self.puddles = self.puddles.union([(x, y) for x in range(6, 10) for y in range(2, 14)])
+        self.penalize_non_goal = penalize_non_goal
+        self.final_reward = final_reward
+
         self.current_state = self.reset()
 
     def step(self, action) -> (object, [float, float], bool, dict):
@@ -37,7 +41,7 @@ class MoPuddleWorld(EnvMesh):
         """
 
         # (non_goal_reached, puddle_penalize)
-        rewards = [0., 0.]
+        rewards = [0, 0]
 
         # Get new state
         new_state = self._next_state(action=action)
@@ -51,13 +55,14 @@ class MoPuddleWorld(EnvMesh):
         # Set final reward
         rewards[0] = self.final_reward if final else self.penalize_non_goal
 
-        # if the current state is in an obstacle
-        if self.current_state in self.obstacles:
+        # if the current state is in an puddle
+        if self.current_state in self.puddles:
+            # Unpack spaces
             x_space, y_space = self.observation_space.spaces
             # Get all spaces
             all_space = [(x, y) for x in range(x_space.n) for y in range(y_space.n)]
             # Get free spaces
-            free_spaces = list(set(all_space) - self.obstacles)
+            free_spaces = list(set(all_space) - self.puddles)
             # Start with infinite distance
             min_distance = float('inf')
 
@@ -78,10 +83,12 @@ class MoPuddleWorld(EnvMesh):
         Get random non-goal state to current_value
         :return:
         """
-        random_space = self.observation_space.sample()
 
-        while random_space == self.final_state:
+        while True:
             random_space = self.observation_space.sample()
+
+            if random_space != self.final_state:
+                break
 
         self.current_state = random_space
         return self.current_state

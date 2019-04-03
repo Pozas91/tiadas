@@ -25,8 +25,8 @@ class RussellNorvig(EnvMesh):
         # finals states and its reward
         if finals is None:
             finals = {
-                (3, 0): 1.,
-                (3, 1): -1.
+                (3, 0): 1,
+                (3, 1): -1
             }
 
         # List of obstacles

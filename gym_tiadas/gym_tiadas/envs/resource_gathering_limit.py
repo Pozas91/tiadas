@@ -14,13 +14,34 @@ class ResourceGatheringLimit(EnvMesh):
     # Treasures
     _treasures = {'GOLD': 0, 'GEM': 1}
 
-    def __init__(self, mesh_shape=(5, 5), initial_state=(2, 4), default_reward=0., seed=0, enemies=None, golds=None,
-                 gems=None, p_attack=0.1, time_limit=100):
+    def __init__(self, mesh_shape=(5, 5), initial_state=(2, 4), default_reward=0., seed=0, enemies=None,
+                 gold_states=None, gem_states=None, p_attack=0.1, time_limit=100):
         """
         :param initial_state:
         :param default_reward:
         :param seed:
         """
+
+        # [enemy_attack, gold, gems]
+        self.state = [0, 0, 0]
+
+        # States where there are gold
+        if gold_states is None:
+            # {state: available}
+            gold_states = {(2, 0): True}
+
+        self.gold_states = gold_states
+
+        # States where there is a gem
+        if gem_states is None:
+            # {state: available}
+            gem_states = {(4, 1): True}
+
+        self.gem_states = gem_states
+
+        # Time inverted in find a treasure
+        self.time = 0
+        self.time_limit = time_limit
 
         super().__init__(mesh_shape, seed, initial_state=initial_state, default_reward=default_reward)
 
@@ -30,27 +51,6 @@ class ResourceGatheringLimit(EnvMesh):
 
         self.enemies = enemies
         self.p_attack = p_attack
-
-        # States where there are gold
-        if golds is None:
-            # {state: available}
-            golds = {(2, 0): True}
-
-        self.golds = golds
-
-        # States where there is a gem
-        if gems is None:
-            # {state: available}
-            gems = {(4, 1): True}
-
-        self.gems = gems
-
-        # Time inverted in find a treasure
-        self.time = 0
-        self.time_limit = time_limit
-
-        # [enemy_attack, gold, gems]
-        self.state = [0., 0., 0.]
 
     def step(self, action) -> (object, [float, float, float], bool, dict):
         """
@@ -63,7 +63,7 @@ class ResourceGatheringLimit(EnvMesh):
         final = False
 
         # Calc rewards
-        rewards = np.multiply(self.state, 0.)
+        rewards = np.multiply(self.state, 0).tolist()
 
         # Get new state
         new_state = self._next_state(action=action)
@@ -74,18 +74,19 @@ class ResourceGatheringLimit(EnvMesh):
 
         if self.current_state in self.enemies:
             final = self.__enemy_attack()
-            rewards = np.multiply(self.state, 1.)
-        elif self.current_state in self.golds.keys():
+            rewards = np.multiply(self.state, 1).tolist()
+        elif self.current_state in self.gold_states.keys():
             self.__get_gold()
-        elif self.current_state in self.gems.keys():
+        elif self.current_state in self.gem_states.keys():
             self.__get_gem()
         elif self.__at_home():
             final = self.__is_checkpoint()
-            rewards = np.multiply(self.state, 1.)
-        elif self.time >= self.time_limit:
+            rewards = np.multiply(self.state, 1).tolist()
+
+        if self.time >= self.time_limit:
             final = True
             # Accumulate reward
-            rewards = np.divide(self.state, self.time)
+            rewards = np.divide(self.state, self.time).tolist()
 
         # Set info
         info = {}
@@ -93,8 +94,24 @@ class ResourceGatheringLimit(EnvMesh):
         return (self.current_state, tuple(self.state)), rewards, final, info
 
     def reset(self):
+        """
+        Reset environment to zero.
+        :return:
+        """
         self.current_state = self.initial_state
-        self.state = np.multiply(self.state, 0.)
+        self.state = np.multiply(self.state, 0).tolist()
+
+        # Reset golds positions
+        for gold_state in self.gold_states.keys():
+            self.gold_states.update({gold_state: True})
+
+        # Reset gems positions
+        for gem_state in self.gem_states.keys():
+            self.gem_states.update({gem_state: True})
+
+        # Reset time inverted
+        self.time = 0
+
         return self.current_state
 
     def render(self, **kwargs):
@@ -109,9 +126,9 @@ class ResourceGatheringLimit(EnvMesh):
 
                 if state == self.current_state:
                     icon = self._icons.get('CURRENT')
-                elif state in self.golds.keys():
+                elif state in self.gold_states.keys():
                     icon = self._icons.get('TREASURE')
-                elif state in self.gems.keys():
+                elif state in self.gem_states.keys():
                     icon = self._icons.get('TREASURE')
                 elif state in self.enemies:
                     icon = self._icons.get('ENEMY')
@@ -137,9 +154,9 @@ class ResourceGatheringLimit(EnvMesh):
 
         final = False
 
-        if self.np_random.uniform() > self.p_attack:
+        if self.p_attack >= self.np_random.uniform():
             self.reset()
-            self.state[0] = -1.
+            self.state[0] = -1
             final = True
 
         return final
@@ -147,14 +164,13 @@ class ResourceGatheringLimit(EnvMesh):
     def __get_gold(self):
         """
         Check if agent can take the gold.
-        :param state:
         :return:
         """
 
         # Check if there is a gold
-        if self.golds.get(self.current_state, False):
-            self.state[1] += 1.
-            self.golds.update({self.current_state: False})
+        if self.gold_states.get(self.current_state, False):
+            self.state[1] += 1
+            self.gold_states.update({self.current_state: False})
 
     def __get_gem(self):
         """
@@ -163,9 +179,9 @@ class ResourceGatheringLimit(EnvMesh):
         """
 
         # Check if there is a gem
-        if self.gems.get(self.current_state, False):
-            self.state[2] += 1.
-            self.gems.update({self.current_state: False})
+        if self.gem_states.get(self.current_state, False):
+            self.state[2] += 1
+            self.gem_states.update({self.current_state: False})
 
     def __at_home(self) -> bool:
         """
@@ -181,4 +197,4 @@ class ResourceGatheringLimit(EnvMesh):
         :return:
         """
 
-        return (self.state[1] >= 0. or self.state[2] >= 0.) and self.__at_home()
+        return (self.state[1] >= 0 or self.state[2] >= 0) and self.__at_home()

@@ -16,7 +16,7 @@ class NonRecurrentRings(gym.Env):
 
     def __init__(self, seed=None, initial_state=0, default_reward=(0., 0.)):
         # Set action space
-        self.action_space = spaces.Discrete(len(self._actions))
+        self.action_space = spaces.Discrete(len(self.actions))
 
         # Create the observation space
         self.observation_space = spaces.Discrete(8)
@@ -33,72 +33,72 @@ class NonRecurrentRings(gym.Env):
         # Rewards dictionary
         self.rewards_dictionary = {
             0: {
-                self._actions.get('COUNTER-CLOCKWISE'): (2, -1),
-                self._actions.get('CLOCKWISE'): (-1, 0)
+                self.actions.get('COUNTER-CLOCKWISE'): (2, -1),
+                self.actions.get('CLOCKWISE'): (-1, 0)
             },
             1: {
-                self._actions.get('COUNTER-CLOCKWISE'): (2, -1),
-                self._actions.get('CLOCKWISE'): (-1, 0)
+                self.actions.get('COUNTER-CLOCKWISE'): (2, -1),
+                self.actions.get('CLOCKWISE'): (-1, 0)
             },
             2: {
-                self._actions.get('COUNTER-CLOCKWISE'): (2, -1),
-                self._actions.get('CLOCKWISE'): (-1, 0)
+                self.actions.get('COUNTER-CLOCKWISE'): (2, -1),
+                self.actions.get('CLOCKWISE'): (-1, 0)
             },
             3: {
-                self._actions.get('COUNTER-CLOCKWISE'): (2, -1),
-                self._actions.get('CLOCKWISE'): (-1, 0)
+                self.actions.get('COUNTER-CLOCKWISE'): (2, -1),
+                self.actions.get('CLOCKWISE'): (-1, 0)
             },
             4: {
-                self._actions.get('CLOCKWISE'): (-1, 2),
-                self._actions.get('COUNTER-CLOCKWISE'): (0, -1)
+                self.actions.get('CLOCKWISE'): (-1, 2),
+                self.actions.get('COUNTER-CLOCKWISE'): (0, -1)
             },
             5: {
-                self._actions.get('CLOCKWISE'): (-1, 2),
-                self._actions.get('COUNTER-CLOCKWISE'): (0, -1)
+                self.actions.get('CLOCKWISE'): (-1, 2),
+                self.actions.get('COUNTER-CLOCKWISE'): (0, -1)
             },
             6: {
-                self._actions.get('CLOCKWISE'): (-1, 2),
-                self._actions.get('COUNTER-CLOCKWISE'): (0, -1)
+                self.actions.get('CLOCKWISE'): (-1, 2),
+                self.actions.get('COUNTER-CLOCKWISE'): (0, -1)
             },
             7: {
-                self._actions.get('CLOCKWISE'): (-1, 2),
-                self._actions.get('COUNTER-CLOCKWISE'): (0, -1)
+                self.actions.get('CLOCKWISE'): (-1, 2),
+                self.actions.get('COUNTER-CLOCKWISE'): (0, -1)
             }
         }
 
         # Possible transactions from a state to another
         self.possible_transactions = {
             0: {
-                self._actions.get('COUNTER-CLOCKWISE'): 1,
-                self._actions.get('CLOCKWISE'): 7
+                self.actions.get('COUNTER-CLOCKWISE'): 1,
+                self.actions.get('CLOCKWISE'): 7
             },
             1: {
-                self._actions.get('COUNTER-CLOCKWISE'): 2,
-                self._actions.get('CLOCKWISE'): 0
+                self.actions.get('COUNTER-CLOCKWISE'): 2,
+                self.actions.get('CLOCKWISE'): 0
             },
             2: {
-                self._actions.get('COUNTER-CLOCKWISE'): 3,
-                self._actions.get('CLOCKWISE'): 1
+                self.actions.get('COUNTER-CLOCKWISE'): 3,
+                self.actions.get('CLOCKWISE'): 1
             },
             3: {
-                self._actions.get('COUNTER-CLOCKWISE'): 0,
-                self._actions.get('CLOCKWISE'): 2
+                self.actions.get('COUNTER-CLOCKWISE'): 0,
+                self.actions.get('CLOCKWISE'): 2
             },
             4: {
-                self._actions.get('CLOCKWISE'): 5,
-                self._actions.get('COUNTER-CLOCKWISE'): 7
+                self.actions.get('CLOCKWISE'): 5,
+                self.actions.get('COUNTER-CLOCKWISE'): 7
             },
             5: {
-                self._actions.get('CLOCKWISE'): 6,
-                self._actions.get('COUNTER-CLOCKWISE'): 4
+                self.actions.get('CLOCKWISE'): 6,
+                self.actions.get('COUNTER-CLOCKWISE'): 4
             },
             6: {
-                self._actions.get('CLOCKWISE'): 7,
-                self._actions.get('COUNTER-CLOCKWISE'): 5
+                self.actions.get('CLOCKWISE'): 7,
+                self.actions.get('COUNTER-CLOCKWISE'): 5
             },
             7: {
-                self._actions.get('CLOCKWISE'): 4,
-                self._actions.get('COUNTER-CLOCKWISE'): 0
+                self.actions.get('CLOCKWISE'): 4,
+                self.actions.get('COUNTER-CLOCKWISE'): 0
             }
         }
 
@@ -172,3 +172,11 @@ class NonRecurrentRings(gym.Env):
 
         # Return new state
         return new_state
+
+    @property
+    def actions(self):
+        """
+        Return a dictionary with possible actions
+        :return:
+        """
+        return self._actions
