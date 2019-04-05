@@ -1,14 +1,15 @@
 """
-It follow same process that agent model, but the reward its calculate multiply the vector of weights and the
-vector of rewards.
+Agent multi-objective single-policy.
+Convert the rewards vector into a scalarized reward, after that use Q-Learning method. It follow same process that agent
+model, but the reward its calculate multiply the weights vector and the rewards vector.
 """
 
 import numpy as np
 
-from agents import Agent
+from .agent import Agent
 
 
-class AgentMultiObjective(Agent):
+class AgentMOSP(Agent):
 
     def __init__(self, environment, alpha=0.1, epsilon=0.1, gamma=1., seed=0, default_reward=0.,
                  states_to_observe=None, max_iterations=None, weights=None):

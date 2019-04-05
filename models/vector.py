@@ -5,13 +5,19 @@ This class have a vector of integers (int32).
 import math
 import numpy as np
 
-from models import Dominance
+from .dominance import Dominance
 
 
 class Vector:
     """
-    Class Vector with functions to work with vectors.
+    Class Vector with functions to work with int vectors.
     """
+
+    # Convert float vectors to int vectors
+    decimals = 10 ** 2
+
+    # Relative margin to compare of similarity of two float elements.
+    relative = 1 / decimals
 
     def __init__(self, components, dtype=int):
         """
@@ -20,6 +26,14 @@ class Vector:
         """
 
         assert isinstance(components, (np.ndarray, list))
+
+        # If any element of vectors is float, then convert all to ints number
+        # if any(isinstance(component, float) for component in components):
+        #     components = np.multiply(components, self.decimals).tolist()
+        #     print(
+        #         "Converted float numbers to int numbers multiplying by {}, but is recommended use VectorFloat.".format(
+        #             self.decimals))
+
         self.components = np.array(components).astype(dtype)
 
     def __getitem__(self, item):
@@ -98,6 +112,15 @@ class Vector:
         """
 
         return self.__class__(np.multiply(self.components, other))
+
+    def __truediv__(self, other):
+        """
+        Divide a vector. If other is a number, divide all components per the number, else if another vector, then
+        divide one by one components (in this case vector must be same length).
+        :param other:
+        :return:
+        """
+        return self.__class__(np.divide(self.components, other))
 
     def __pow__(self, power, modulo=None):
         """

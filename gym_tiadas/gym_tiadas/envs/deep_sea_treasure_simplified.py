@@ -1,5 +1,5 @@
 """
-DeepSeaTreasure environment simplified to test agents.
+DeepSeaTreasure environment simplified to test models.
 """
 from .env_mesh import EnvMesh
 

@@ -2,15 +2,13 @@
 Useful functions to calculate a reinforcement learning based on q-learning.
 """
 
-import math
 from copy import deepcopy
 
+import math
 import numpy as np
 
-from agents import Agent
 
-
-def train(agent: Agent, epochs=int(1e3), verbose=False):
+def train(agent, epochs=int(1e3)):
     """
     Return an agent trained with `epochs` epochs.
     :param verbose:
@@ -23,12 +21,8 @@ def train(agent: Agent, epochs=int(1e3), verbose=False):
         # Do an episode
         agent.episode()
 
-    # Show values
-    if verbose:
-        agent.show_q()
 
-
-def objective_training(agent: Agent, objective: float, close_margin=1e-9):
+def objective_training(agent, objective: float, close_margin=1e-9):
     """
     Train until agent V(0, 0) value is close to objective value.
     :param agent:
@@ -41,7 +35,7 @@ def objective_training(agent: Agent, objective: float, close_margin=1e-9):
         agent.episode()
 
 
-def exhaustive_train(agent: Agent, close_margin=1e-3):
+def exhaustive_train(agent, close_margin=1e-3):
     """
     Train until Agent is stabilized
     :param close_margin: Margin of difference between two float numbers.
@@ -142,7 +136,7 @@ def policies_are_similar(a: dict, b: dict, close_margin=1e-3) -> bool:
     return are_similar
 
 
-def testing(agent: Agent) -> tuple:
+def testing(agent) -> tuple:
     """
     Test policy
     :param agent:

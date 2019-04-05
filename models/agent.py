@@ -28,12 +28,17 @@ class Agent:
     def __init__(self, environment, alpha=0.1, epsilon=0.1, gamma=1., seed=0, default_reward=0.,
                  states_to_observe=None, max_iterations=None):
 
-        # Check alpha
-        assert 0.0 < alpha <= 1.0
-        self.alpha = alpha
+        # Learning factor
+        assert 0 < alpha <= 1
+        # Discount factor
+        assert 0 < gamma <= 1
+        # Exploration factor
+        assert 0 < epsilon <= 1
 
-        self.epsilon = epsilon
+        self.alpha = alpha
         self.gamma = gamma
+        self.epsilon = epsilon
+
         self.environment = environment
         self.default_reward = default_reward
 
@@ -117,7 +122,7 @@ class Agent:
         :return:
         """
 
-        # Reset mesh
+        # Reset environment
         self.state = self.environment.reset()
 
         # Condition to stop episode
@@ -285,9 +290,6 @@ class Agent:
 
             # Get current Value
             reward = possible_actions.get(possible_action)
-
-            # Apply function
-            # reward = self.process_reward(reward=reward)
 
             # If current value is close to new value
             if math.isclose(a=reward, b=max_reward, rel_tol=1e-4):

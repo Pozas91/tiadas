@@ -4,19 +4,14 @@ This class have a vector of floats (float64).
 """
 import numpy as np
 
-from models import Dominance, Vector
+from .dominance import Dominance
+from .vector import Vector
 
 
 class VectorFloat(Vector):
     """
-    Class Vector with functions to work with vectors.
+    Class Vector with functions to work with float vectors.
     """
-
-    # Convert float vectors to int vectors
-    decimals = 10 ** 2
-
-    # Relative margin to compare of similarity of two float elements.
-    relative = 1 / decimals
 
     def __init__(self, components, dtype=float):
         """

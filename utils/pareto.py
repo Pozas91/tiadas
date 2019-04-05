@@ -4,11 +4,10 @@ Useful functions to calculate the pareto frontier.
 import numpy as np
 import pygmo as pg
 
-from agents import AgentMultiObjective
 from utils import q_learning
 
 
-def optimize(agent: AgentMultiObjective, w1: float, w2: float, solutions_known=None) -> (float, float):
+def optimize(agent, w1: float, w2: float, solutions_known=None) -> (float, float):
     """
     Try to find an c point to add in pareto's frontier.
     :param agent:
@@ -42,15 +41,14 @@ def optimize(agent: AgentMultiObjective, w1: float, w2: float, solutions_known=N
     return c
 
 
-def calc_frontier(p: (float, float), q: (float, float), problem: AgentMultiObjective,
-                  solutions_known=None) -> list:
+def calc_frontier(p: (float, float), q: (float, float), problem, solutions_known=None) -> list:
     """
     Return a list of supported solutions costs
     :param solutions_known: If we know the possible solutions, we can indicate them to the algorithm to improve the
         training of the agent. If is None, then is ignored.
     :param p: 2D point
     :param q: 2D point
-    :param problem: A problem
+    :param problem: A problem (agent)
     :return:
     """
 
@@ -99,18 +97,24 @@ def calc_frontier(p: (float, float), q: (float, float), problem: AgentMultiObjec
     return result
 
 
-def hypervolume(points: list, reference: (float, float)) -> float:
+def hypervolume(vector, reference=None) -> float:
     """
     By default, the pygmo library is used for minimization problems.
     In our case, we need it to work for maximization problems.
-    :param points: List of points limits of hypervolume
+    :param vector: List of points limits of hypervolume
     :param reference: Reference point to calc hypervolume
     :return: hypervolume area.
     """
 
-    reference = np.multiply(reference, -1.)
-    points = np.multiply(points, -1.)
-    return pg.hypervolume(points).compute(reference)
+    if not reference:
+        # Get min of all axis, and subtract 1.
+        reference = (np.min(vector, axis=0) - 1)
+
+    # Multiply by -1, to convert maximize problem into minimize problem.
+    reference = np.multiply(reference, -1)
+    vector = np.multiply(vector, -1)
+
+    return pg.hypervolume(vector).compute(reference)
 
 
 def sum_a_vector_and_a_set_of_vectors(v, v_set):
