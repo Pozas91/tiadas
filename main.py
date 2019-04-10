@@ -9,7 +9,7 @@ import numpy as np
 
 # from gym_tiadas.envs import *
 from gym_tiadas.gym_tiadas.envs import *
-from models import Agent, AgentMOSP, AgentMOMP, VectorFloat, Vector
+from models import Agent, AgentMOSP, AgentMOMP, Vector
 from utils import pareto, q_learning
 
 ENV_NAME_MESH = 'russell-norvig-v0'
@@ -275,9 +275,11 @@ def deep_sea_treasure_simplified():
 
 def deep_sea_treasure_simplified_mo_mp():
     environment = DeepSeaTreasureSimplified()
-    agent = AgentMOMP(environment=environment, default_reward=Vector([0, 0]))
+    agent = AgentMOMP(environment=environment, default_reward=Vector([0, 0]), epsilon=0.5, states_to_observe=[(0, 0)])
 
-    q_learning.train(agent=agent, epochs=int(2e2))
+    q_learning.train(agent=agent, epochs=int(3e2))
+
+    agent.print_observed_states()
     pass
 
 

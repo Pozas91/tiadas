@@ -121,8 +121,8 @@ class BuridanAss(EnvMesh):
         # Set info
         info = {}
 
-        # If there is not more food left, it is a final state
-        final = all(not isinstance(self.finals.get(state), bool) for state in self.finals.keys())
+        # Check is_final
+        final = self.is_final()
 
         return tuple(complex_state), rewards, final, info
 
@@ -208,3 +208,7 @@ class BuridanAss(EnvMesh):
 
         # Check if b is neighbour to a
         return state_b in a_neighbours
+
+    def is_final(self, state=None) -> bool:
+        # If there is not more food left, it is a final state
+        return all(not isinstance(self.finals.get(state), bool) for state in self.finals.keys())

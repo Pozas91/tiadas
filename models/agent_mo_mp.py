@@ -6,6 +6,7 @@ Save rewards, N and occurrences independently, to calculate Q-set on runtime.
 from copy import deepcopy
 
 import math
+import matplotlib.pyplot as plt
 import numpy as np
 
 import utils.pareto as up
@@ -94,6 +95,17 @@ class AgentMOMP:
             # Proceed to next state
             self.state = next_state
 
+        # Append new data
+        for state, data in self.states_to_observe.items():
+            # Add to data Best value (V max)
+            value = self._best_hypervolume(state)
+
+            # Add to data Best value (V max)
+            data.append(value)
+
+            # Update dictionary
+            self.states_to_observe.update({state: data})
+
     def get_and_update_n_s_a(self, state, action) -> int:
         """
         Update n(s, a) dictionary.
@@ -153,11 +165,14 @@ class AgentMOMP:
         :return:
         """
 
+        # Get R(s, a) with default.
         r_s_a = self.r.get(state, {}).get(action, deepcopy(self.default_reward))
 
+        # Get ND(s, a)
         non_dominated_vectors = self.nd.get(state, {}).get(action, [deepcopy(self.default_reward)])
         q_set = list()
 
+        # R(s, a) + y*ND
         for non_dominated in non_dominated_vectors:
             q_set.append(r_s_a + (non_dominated * self.gamma))
 
@@ -169,6 +184,7 @@ class AgentMOMP:
         :return:
         """
 
+        # If state is None, then set current state to state.
         if not state:
             state = self.state
 
@@ -201,16 +217,41 @@ class AgentMOMP:
 
     def hypervolume_evaluation(self, state):
         """
-        The hypervolume indicator is well-suited for two reasons
+        Calc the hypervolume for each action in state given. (HV-PQL)
+        :return:
+        """
+
+        evaluations = list()
+
+        # Get all vectors to get a common reference
+        vectors = {a: self.q_set(state=state, action=a) for a in self.environment.actions.values()}
+
+        # Calc reference point (Get min axis of all vectors and subtract 1 for reference point)
+        reference = (np.min([vector for vector_list in vectors.values() for vector in vector_list], axis=0) - 1)
+
+        # for each vector in vectors dictionary
+        for a, vector in vectors.items():
+            hv_a = up.hypervolume(vector=vector, reference=reference)
+            evaluations.insert(a, hv_a)
+
+        return evaluations
+
+    def cardinality_evaluation(self, state):
+        """
+        Calc the cardinality for each action in state given. (C-PQL)
+        :param state:
         :return:
         """
 
         evaluations = list()
 
         for a in self.environment.actions.values():
-            vector = self.q_set(state=state, action=a)
-            hv_a = up.hypervolume(vector=vector)
-            evaluations.insert(a, hv_a)
+            # Get Q-set from state given for each possible action.
+            q_set = self.q_set(state=state, action=a)
+            # Use m3_max algorithm to get non_dominated vectors from q_set.
+            non_dominated = self.default_reward.m3_max(q_set)
+            # Get number of non_dominated vectors.
+            evaluations.insert(a, len(non_dominated))
 
         return evaluations
 
@@ -226,7 +267,8 @@ class AgentMOMP:
             state = self.state
 
         # Use hypervolume evaluation
-        evaluations = self.hypervolume_evaluation(state=state)
+        # evaluations = self.hypervolume_evaluation(state=state)
+        evaluations = self.cardinality_evaluation(state=state)
 
         # Initialize actions with last action
         actions = [len(evaluations) - 1]
@@ -251,3 +293,30 @@ class AgentMOMP:
 
         # from best actions get one aleatory.
         return self.generator.choice(actions)
+
+    @staticmethod
+    def track_policy(state, target):
+        pass
+
+    def _best_hypervolume(self, state):
+        """
+        Return best hypervolume for state given.
+        :param state:
+        :return:
+        """
+        return max(self.hypervolume_evaluation(state=state))
+
+    def print_observed_states(self):
+        """
+        Show graph of observed states
+        :return:
+        """
+        for state, data in self.states_to_observe.items():
+            plt.plot(data, label='State: {}'.format(state))
+
+        plt.xlabel('Iterations')
+        plt.ylabel('HV max')
+
+        plt.legend(loc='upper left')
+
+        plt.show()

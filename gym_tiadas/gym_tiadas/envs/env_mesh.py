@@ -168,3 +168,10 @@ class EnvMesh(gym.Env):
 
         # Return (x, y) position
         return new_state
+
+    def is_final(self, state=None) -> bool:
+        """
+        Return a True if state given is terminal, False in otherwise.
+        :return:
+        """
+        raise NotImplemented

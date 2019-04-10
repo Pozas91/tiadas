@@ -68,16 +68,12 @@ class SpaceExploration(EnvMesh):
         # If agent is in a radiation state, the penalty is -11, else is -1.
         rewards[1] = -11 if self.current_state in self.radiations else -1
 
-        if self.current_state in self.asteroids:
-            # If the ship enters a cell occupied by an asteroid, the ship is destroyed.
-            rewards[0] = -100
-            # And the episode ends.
-            final = True
-        else:
-            # Get mission_success
-            rewards[0] = self.finals.get(self.current_state, self.default_reward)
-            # If agent is in final state
-            final = self.current_state in self.finals.keys()
+        # If the ship crash with asteroid, the ship is destroyed. else mission success.
+        rewards[0] = -100 if self.current_state in self.asteroids else self.finals.get(self.current_state,
+                                                                                       self.default_reward)
+
+        # Check if is_final
+        final = self.is_final(self.current_state)
 
         # Set info
         info = {}
@@ -175,3 +171,11 @@ class SpaceExploration(EnvMesh):
         :return:
         """
         return (x if x > 0 else limit) - 1
+
+    def is_final(self, state=None) -> bool:
+        # Check if agent crash with asteroid
+        crash = state in self.asteroids
+        # Check if agent is in final state
+        final = state in self.finals.keys()
+
+        return crash or final

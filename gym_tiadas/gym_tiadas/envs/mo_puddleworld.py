@@ -49,8 +49,8 @@ class MoPuddleWorld(EnvMesh):
         # Update previous state
         self.current_state = new_state
 
-        # If agent is in treasure or time limit has reached
-        final = self.current_state == self.final_state
+        # If agent is in treasure
+        final = self.is_final(self.current_state)
 
         # Set final reward
         rewards[0] = self.final_reward if final else self.penalize_non_goal
@@ -92,3 +92,7 @@ class MoPuddleWorld(EnvMesh):
 
         self.current_state = random_space
         return self.current_state
+
+    def is_final(self, state=None) -> bool:
+        # If agent is in treasure
+        return state == self.final_state

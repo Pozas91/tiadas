@@ -71,9 +71,6 @@ class ResourceGathering(EnvMesh):
         :return:
         """
 
-        # Final
-        final = False
-
         # Calc rewards
         rewards = np.multiply(self.state, 0).tolist()
 
@@ -83,10 +80,11 @@ class ResourceGathering(EnvMesh):
         # Update previous state
         self.current_state = new_state
 
+        # Check is_final
+        final = self.is_final(self.current_state)
+
         # If the agent is in the same state as an enemy
         if self.current_state in self.enemies:
-            # Check if enemy attack
-            final = self.__enemy_attack()
             rewards = np.multiply(self.state, 1).tolist()
 
         # If the agent is in the same state as gold
@@ -99,7 +97,6 @@ class ResourceGathering(EnvMesh):
 
         # If the agent is at home and have gold or gem
         elif self.__at_home():
-            final = self.__is_checkpoint()
             rewards = np.multiply(self.state, 1).tolist()
 
         # Set info
@@ -209,3 +206,11 @@ class ResourceGathering(EnvMesh):
         """
 
         return (self.state[1] >= 0 or self.state[2] >= 0) and self.__at_home()
+
+    def is_final(self, state=None) -> bool:
+        # Check if agent is attacked
+        attacked = state in self.enemies and self.__enemy_attack()
+        # Check if agent is in checkpoint
+        checkpoint = state == self.initial_state and self.__is_checkpoint()
+
+        return attacked or checkpoint

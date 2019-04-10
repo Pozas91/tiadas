@@ -106,7 +106,7 @@ def hypervolume(vector, reference=None) -> float:
     :return: hypervolume area.
     """
 
-    if not reference:
+    if reference is None:
         # Get min of all axis, and subtract 1.
         reference = (np.min(vector, axis=0) - 1)
 

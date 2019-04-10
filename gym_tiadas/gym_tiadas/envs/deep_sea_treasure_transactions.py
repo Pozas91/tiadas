@@ -82,8 +82,8 @@ class DeepSeaTreasureTransactions(EnvMesh):
         # Set info
         info = {}
 
-        # If agent is in treasure
-        final = self.current_state in self.finals.keys()
+        # Check is_final
+        final = self.is_final(self.current_state)
 
         return self.current_state, rewards, final, info
 
@@ -122,3 +122,7 @@ class DeepSeaTreasureTransactions(EnvMesh):
 
         # Cyclic direction
         return (direction + action) % self.action_space.n
+
+    def is_final(self, state=None) -> bool:
+        # If agent is in treasure
+        return state in self.finals.keys()

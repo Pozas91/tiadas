@@ -330,9 +330,6 @@ class Agent:
         action = self.best_action(state=state)
         reward = possible_actions.get(action)
 
-        # Apply function to reward
-        # reward = self.process_reward(reward=reward)
-
         return reward
 
     @property

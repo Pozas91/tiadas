@@ -11,7 +11,6 @@ import numpy as np
 def train(agent, epochs=int(1e3)):
     """
     Return an agent trained with `epochs` epochs.
-    :param verbose:
     :param agent:
     :param epochs:
     :return:

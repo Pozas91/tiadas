@@ -61,10 +61,10 @@ class RussellNorvig(EnvMesh):
         self.current_state = new_state
 
         # Get reward
-        reward = self.finals.get(new_state, self.default_reward)
+        reward = self.finals.get(self.current_state, self.default_reward)
 
         # Check if is final state
-        final = new_state in self.finals.keys()
+        final = self.is_final(self.current_state)
 
         # Set info
         info = {}
@@ -105,3 +105,6 @@ class RussellNorvig(EnvMesh):
 
         # Cyclic direction
         return (direction + action) % self.action_space.n
+
+    def is_final(self, state=None) -> bool:
+        return state in self.finals.keys()

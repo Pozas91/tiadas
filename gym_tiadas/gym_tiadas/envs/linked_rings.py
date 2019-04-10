@@ -126,8 +126,8 @@ class LinkedRings(gym.Env):
         # Update previous state
         self.current_state = new_state
 
-        # Check if is final state (This is a non-episodic problem, so doesn't have final states)
-        final = False
+        # Check is_final
+        final = self.is_final()
 
         # Set info
         info = {}
@@ -182,3 +182,7 @@ class LinkedRings(gym.Env):
         :return:
         """
         return self._actions
+
+    def is_final(self, state=None) -> bool:
+        # Check if is final state (This is a non-episodic problem, so doesn't have final states)
+        return False
