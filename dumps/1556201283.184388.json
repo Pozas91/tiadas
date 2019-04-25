@@ -1,0 +1,445 @@
+{
+  "meta": {
+    "class": "AgentMOMP",
+    "module": "models.agent_mo_mp",
+    "dependencies": {
+      "numpy": "1.13.3",
+      "matplotlib": "3.0.3"
+    }
+  },
+  "data": {
+    "epsilon": 0.4,
+    "gamma": 1.0,
+    "default_reward": [
+      0,
+      0,
+      0
+    ],
+    "environment": {
+      "meta": {
+        "class": "PressurizedBountifulSeaTreasure",
+        "module": "gym_tiadas.gym_tiadas.envs.pressurized_bountiful_sea_treasure"
+      },
+      "data": {
+        "initial_state": [
+          0,
+          0
+        ],
+        "current_state": [
+          0,
+          1
+        ],
+        "default_reward": 0.0
+      }
+    },
+    "max_iterations": null,
+    "states_to_observe": [
+      {
+        "key": [
+          0,
+          0
+        ],
+        "value": [
+          1000000.0,
+          1018710.0,
+          1027630.0,
+          1027630.0,
+          1027630.0,
+          1027630.0,
+          1018710.0,
+          1018710.0,
+          1018710.0,
+          1018710.0
+        ]
+      }
+    ],
+    "seed": 0,
+    "r": [
+      {
+        "key": [
+          0,
+          0
+        ],
+        "value": {
+          "key": 1,
+          "value": [
+            -1,
+            0,
+            -1
+          ]
+        }
+      },
+      {
+        "key": [
+          0,
+          0
+        ],
+        "value": {
+          "key": 2,
+          "value": [
+            -1,
+            5,
+            -2
+          ]
+        }
+      },
+      {
+        "key": [
+          0,
+          0
+        ],
+        "value": {
+          "key": 0,
+          "value": [
+            -1,
+            0,
+            -1
+          ]
+        }
+      },
+      {
+        "key": [
+          0,
+          0
+        ],
+        "value": {
+          "key": 3,
+          "value": [
+            -1,
+            0,
+            -1
+          ]
+        }
+      },
+      {
+        "key": [
+          1,
+          0
+        ],
+        "value": {
+          "key": 3,
+          "value": [
+            -1,
+            0,
+            -1
+          ]
+        }
+      },
+      {
+        "key": [
+          1,
+          0
+        ],
+        "value": {
+          "key": 2,
+          "value": [
+            -1,
+            0,
+            -2
+          ]
+        }
+      },
+      {
+        "key": [
+          1,
+          0
+        ],
+        "value": {
+          "key": 0,
+          "value": [
+            -1,
+            0,
+            -1
+          ]
+        }
+      },
+      {
+        "key": [
+          1,
+          1
+        ],
+        "value": {
+          "key": 2,
+          "value": [
+            -1,
+            80,
+            -3
+          ]
+        }
+      },
+      {
+        "key": [
+          1,
+          1
+        ],
+        "value": {
+          "key": 3,
+          "value": [
+            -1,
+            5,
+            -2
+          ]
+        }
+      }
+    ],
+    "nd": [
+      {
+        "key": [
+          0,
+          0
+        ],
+        "value": {
+          "key": 1,
+          "value": [
+            [
+              0,
+              0,
+              0
+            ]
+          ]
+        }
+      },
+      {
+        "key": [
+          0,
+          0
+        ],
+        "value": {
+          "key": 2,
+          "value": [
+            [
+              0,
+              0,
+              0
+            ]
+          ]
+        }
+      },
+      {
+        "key": [
+          0,
+          0
+        ],
+        "value": {
+          "key": 0,
+          "value": [
+            [
+              -1,
+              5,
+              -2
+            ],
+            [
+              -1,
+              0,
+              -1
+            ]
+          ]
+        }
+      },
+      {
+        "key": [
+          0,
+          0
+        ],
+        "value": {
+          "key": 3,
+          "value": [
+            [
+              -1,
+              5,
+              -2
+            ],
+            [
+              -1,
+              0,
+              -1
+            ]
+          ]
+        }
+      },
+      {
+        "key": [
+          1,
+          0
+        ],
+        "value": {
+          "key": 3,
+          "value": [
+            [
+              0,
+              0,
+              0
+            ]
+          ]
+        }
+      },
+      {
+        "key": [
+          1,
+          0
+        ],
+        "value": {
+          "key": 2,
+          "value": [
+            [
+              0,
+              0,
+              0
+            ],
+            [
+              -1,
+              80,
+              -3
+            ]
+          ]
+        }
+      },
+      {
+        "key": [
+          1,
+          0
+        ],
+        "value": {
+          "key": 0,
+          "value": [
+            [
+              0,
+              0,
+              0
+            ]
+          ]
+        }
+      },
+      {
+        "key": [
+          1,
+          1
+        ],
+        "value": {
+          "key": 2,
+          "value": [
+            [
+              0,
+              0,
+              0
+            ]
+          ]
+        }
+      },
+      {
+        "key": [
+          1,
+          1
+        ],
+        "value": {
+          "key": 3,
+          "value": [
+            [
+              0,
+              0,
+              0
+            ]
+          ]
+        }
+      }
+    ],
+    "n": [
+      {
+        "key": [
+          0,
+          0
+        ],
+        "value": {
+          "key": 1,
+          "value": 3
+        }
+      },
+      {
+        "key": [
+          0,
+          0
+        ],
+        "value": {
+          "key": 2,
+          "value": 8
+        }
+      },
+      {
+        "key": [
+          0,
+          0
+        ],
+        "value": {
+          "key": 0,
+          "value": 5
+        }
+      },
+      {
+        "key": [
+          0,
+          0
+        ],
+        "value": {
+          "key": 3,
+          "value": 4
+        }
+      },
+      {
+        "key": [
+          1,
+          0
+        ],
+        "value": {
+          "key": 3,
+          "value": 1
+        }
+      },
+      {
+        "key": [
+          1,
+          0
+        ],
+        "value": {
+          "key": 2,
+          "value": 2
+        }
+      },
+      {
+        "key": [
+          1,
+          0
+        ],
+        "value": {
+          "key": 0,
+          "value": 2
+        }
+      },
+      {
+        "key": [
+          1,
+          1
+        ],
+        "value": {
+          "key": 2,
+          "value": 1
+        }
+      },
+      {
+        "key": [
+          1,
+          1
+        ],
+        "value": {
+          "key": 3,
+          "value": 1
+        }
+      }
+    ],
+    "hv_reference": [
+      -100,
+      -100,
+      -100
+    ],
+    "evaluation_mechanism": "PO-PQL"
+  }
+}

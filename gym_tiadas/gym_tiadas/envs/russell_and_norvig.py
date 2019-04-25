@@ -11,36 +11,32 @@ class RussellNorvig(EnvMesh):
     # Possible actions
     _actions = {'UP': 0, 'RIGHT': 1, 'DOWN': 2, 'LEFT': 3}
 
-    def __init__(self, mesh_shape=(4, 3), finals=None, obstacles=None, transactions=None, initial_state=(0, 2),
+    def __init__(self, transactions=(0.8, 0.1, 0., 0.1), initial_state=(0, 2),
                  default_reward=-0.04, seed=0):
         """
-        :param mesh_shape:
-        :param finals:
-        :param obstacles:
-        :param transactions: [DIR_0, DIR_90, DIR_180, DIR_270]
+        :param transactions:
+            Probabilities to change direction of action given.
+            [DIR_0, DIR_90, DIR_180, DIR_270]
         :param initial_state:
         :param default_reward:
         """
 
         # finals states and its reward
-        if finals is None:
-            finals = {
-                (3, 0): 1,
-                (3, 1): -1
-            }
+        finals = {
+            (3, 0): 1,
+            (3, 1): -1
+        }
 
         # List of obstacles
-        if obstacles is None:
-            obstacles = [(1, 1)]
+        obstacles = [(1, 1)]
+
+        # Default shape
+        mesh_shape = (4, 3)
 
         super().__init__(mesh_shape, seed, initial_state=initial_state, obstacles=obstacles, finals=finals,
                          default_reward=default_reward)
 
-        # Probabilities to change direction of action given.
-        if transactions is None:
-            transactions = [0.8, 0.1, 0.0, 0.1]
-
-        assert isinstance(transactions, list) and np.sum(transactions) == 1. and len(transactions) == len(
+        assert isinstance(transactions, tuple) and np.sum(transactions) == 1. and len(transactions) == len(
             self._actions)
         self.transactions = transactions
 
@@ -107,4 +103,9 @@ class RussellNorvig(EnvMesh):
         return (direction + action) % self.action_space.n
 
     def is_final(self, state=None) -> bool:
+        """
+        Is final if agent is on final state.
+        :param state:
+        :return:
+        """
         return state in self.finals.keys()

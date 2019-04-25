@@ -22,7 +22,7 @@ class SpaceExploration(EnvMesh):
     # Possible actions
     _actions = {'UP': 0, 'UP RIGHT': 1, 'RIGHT': 2, 'DOWN RIGHT': 3, 'DOWN': 4, 'DOWN LEFT': 5, 'LEFT': 6, 'UP LEFT': 7}
 
-    def __init__(self, mesh_shape=(13, 5), initial_state=(5, 2), default_reward=0., seed=0):
+    def __init__(self, initial_state=(5, 2), default_reward=0., seed=0):
         """
         :param initial_state:
         :param default_reward:
@@ -36,6 +36,7 @@ class SpaceExploration(EnvMesh):
         finals.update({(12, i): 30 for i in range(5)})
 
         obstacles = dict()
+        mesh_shape = (13, 5)
 
         super().__init__(mesh_shape, seed, initial_state=initial_state, default_reward=default_reward, finals=finals,
                          obstacles=obstacles)
@@ -173,9 +174,29 @@ class SpaceExploration(EnvMesh):
         return (x if x > 0 else limit) - 1
 
     def is_final(self, state=None) -> bool:
+        """
+        Is final if agent crash with asteroid or is on final state.
+        :param state:
+        :return:
+        """
+
         # Check if agent crash with asteroid
         crash = state in self.asteroids
         # Check if agent is in final state
         final = state in self.finals.keys()
 
         return crash or final
+
+    def get_dict_model(self):
+        """
+        Get dict model of environment
+        :return:
+        """
+
+        data = super().get_dict_model()
+
+        # Clean specific environment data
+        del data['radiations']
+        del data['asteroids']
+
+        return data

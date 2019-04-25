@@ -11,7 +11,7 @@ class DeepSeaTreasureTransactions(EnvMesh):
     # Possible actions
     _actions = {'UP': 0, 'RIGHT': 1, 'DOWN': 2, 'LEFT': 3}
 
-    def __init__(self, mesh_shape=(10, 11), initial_state=(0, 0), default_reward=0., seed=0, n_transaction=0.3):
+    def __init__(self, initial_state=(0, 0), default_reward=0., seed=0, n_transaction=0.3):
         """
         :param initial_state:
         :param default_reward:
@@ -33,6 +33,7 @@ class DeepSeaTreasureTransactions(EnvMesh):
             (9, 10): 124,
         }
 
+        mesh_shape = (10, 11)
         obstacles = frozenset()
         obstacles = obstacles.union([(0, y) for y in range(2, 11)])
         obstacles = obstacles.union([(1, y) for y in range(3, 11)])
@@ -51,8 +52,8 @@ class DeepSeaTreasureTransactions(EnvMesh):
         # Transaction
         assert 0 <= n_transaction <= 1.
 
-        # [DIR_0, DIR_90, DIR_180, DIR_270] transaction list
-        self.transactions = [1. - n_transaction, n_transaction / 3, n_transaction / 3, n_transaction / 3]
+        # [DIR_0, DIR_90, DIR_180, DIR_270] transaction tuple
+        self.transactions = (1. - n_transaction, n_transaction / 3, n_transaction / 3, n_transaction / 3)
 
     def step(self, action) -> (object, [float, float], bool, dict):
         """
@@ -124,5 +125,9 @@ class DeepSeaTreasureTransactions(EnvMesh):
         return (direction + action) % self.action_space.n
 
     def is_final(self, state=None) -> bool:
-        # If agent is in treasure
+        """
+        Is final if agent is on final state.
+        :param state:
+        :return:
+        """
         return state in self.finals.keys()

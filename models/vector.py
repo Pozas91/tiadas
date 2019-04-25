@@ -2,10 +2,11 @@
 This class represent a vector with some features necessaries for our program.
 This class have a vector of integers (int32).
 """
+
 import math
 import numpy as np
 
-from .dominance import Dominance
+from models.dominance import Dominance
 
 
 class Vector:
@@ -26,13 +27,6 @@ class Vector:
         """
 
         assert isinstance(components, (np.ndarray, list))
-
-        # If any element of vectors is float, then convert all to ints number
-        # if any(isinstance(component, float) for component in components):
-        #     components = np.multiply(components, self.decimals).tolist()
-        #     print(
-        #         "Converted float numbers to int numbers multiplying by {}, but is recommended use VectorFloat.".format(
-        #             self.decimals))
 
         self.components = np.array(components).astype(dtype)
 

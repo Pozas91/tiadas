@@ -18,12 +18,14 @@ class PressurizedBountifulSeaTreasure(EnvMesh):
         (-1, 5), (-3, 80), (-5, 120), (-7, 120), (-8, 145), (-9, 150), (-13, 163), (-14, 166), (-17, 173), (-19, 175)
     ]
 
-    def __init__(self, mesh_shape=(10, 11), initial_observation=(0, 0), default_reward=0., seed=0):
+    def __init__(self, initial_observation=(0, 0), default_reward=0., seed=0):
         """
         :param initial_observation:
         :param default_reward:
         :param seed:
         """
+
+        mesh_shape = (10, 11)
 
         # List of all treasures and its reward.
         finals = {
@@ -96,5 +98,9 @@ class PressurizedBountifulSeaTreasure(EnvMesh):
         return self.current_state
 
     def is_final(self, state=None) -> bool:
-        # If agent is in treasure
+        """
+        If agent is in treasure
+        :param state:
+        :return:
+        """
         return state in self.finals.keys()

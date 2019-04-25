@@ -24,7 +24,7 @@ class DeepSeaTreasure(EnvMesh):
         (-1, 1), (-3, 2), (-5, 3), (-7, 5), (-8, 8), (-9, 16), (-13, 24), (-14, 50), (-17, 74), (-19, 124)
     ]
 
-    def __init__(self, mesh_shape=(10, 11), initial_state=(0, 0), default_reward=0., seed=0):
+    def __init__(self, initial_state=(0, 0), default_reward=0., seed=0):
         """
         :param initial_state:
         :param default_reward:
@@ -55,6 +55,8 @@ class DeepSeaTreasure(EnvMesh):
         obstacles = obstacles.union([(6, y) for y in range(8, 11)])
         obstacles = obstacles.union([(7, y) for y in range(8, 11)])
         obstacles = obstacles.union([(8, y) for y in range(10, 11)])
+
+        mesh_shape = (10, 11)
 
         super().__init__(mesh_shape, seed, initial_state=initial_state, default_reward=default_reward, finals=finals,
                          obstacles=obstacles)
@@ -98,4 +100,9 @@ class DeepSeaTreasure(EnvMesh):
         return self.current_state
 
     def is_final(self, state=None) -> bool:
+        """
+        Return True if state given is terminal, False in otherwise.
+        :param state:
+        :return:
+        """
         return state in self.finals.keys()

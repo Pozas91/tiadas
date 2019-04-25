@@ -28,9 +28,7 @@ class ResourceGathering(EnvMesh):
     # Treasures
     _treasures = {'GOLD': 0, 'GEM': 1}
 
-    def __init__(self, mesh_shape=(5, 5), initial_state=(2, 4), default_reward=0., seed=0, enemies=None,
-                 gold_states=None,
-                 gem_states=None, p_attack=0.1):
+    def __init__(self, initial_state=(2, 4), default_reward=0., seed=0, p_attack=0.1):
         """
         :param initial_state:
         :param default_reward:
@@ -40,28 +38,20 @@ class ResourceGathering(EnvMesh):
         # [enemy_attack, gold, gems]
         self.state = [0, 0, 0]
 
-        # States where there are gold
-        if gold_states is None:
-            # {state: available}
-            gold_states = {(2, 0): True}
+        # States where there are gold {state: available}
+        self.gold_states = {(2, 0): True}
 
-        self.gold_states = gold_states
+        # States where there is a gem {state: available}
+        self.gem_states = {(4, 1): True}
 
-        # States where there is a gem
-        if gem_states is None:
-            # {state: available}
-            gem_states = {(4, 1): True}
-
-        self.gem_states = gem_states
+        mesh_shape = (5, 5)
 
         # Super constructor call.
         super().__init__(mesh_shape, seed, initial_state=initial_state, default_reward=default_reward)
 
         # States where there are enemies
-        if enemies is None:
-            enemies = [(3, 0), (2, 1)]
+        self.enemies = [(3, 0), (2, 1)]
 
-        self.enemies = enemies
         self.p_attack = p_attack
 
     def step(self, action) -> (object, [float, float, float], bool, dict):
@@ -208,9 +198,29 @@ class ResourceGathering(EnvMesh):
         return (self.state[1] >= 0 or self.state[2] >= 0) and self.__at_home()
 
     def is_final(self, state=None) -> bool:
+        """
+        Is final if the agent is attacked or agent is on checkpoint.
+        :param state:
+        :return:
+        """
         # Check if agent is attacked
         attacked = state in self.enemies and self.__enemy_attack()
-        # Check if agent is in checkpoint
+        # Check if agent is on checkpoint
         checkpoint = state == self.initial_state and self.__is_checkpoint()
 
         return attacked or checkpoint
+
+    def get_dict_model(self):
+        """
+        Get dict model of environment
+        :return:
+        """
+
+        data = super().get_dict_model()
+
+        # Clean specific environment data
+        del data['gold_states']
+        del data['gem_states']
+        del data['enemies']
+
+        return data

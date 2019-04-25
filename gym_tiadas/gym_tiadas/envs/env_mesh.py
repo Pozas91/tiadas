@@ -136,7 +136,7 @@ class EnvMesh(gym.Env):
             # End render
             print('')
 
-    def _next_state(self, action) -> object:
+    def _next_state(self, action) -> tuple:
         """
         Calc next state with current state and action given. Default is 4-neighbors (UP, LEFT, DOWN, RIGHT)
         :param action: from action_space
@@ -169,9 +169,25 @@ class EnvMesh(gym.Env):
         # Return (x, y) position
         return new_state
 
+    def get_dict_model(self):
+        """
+        Get dict model of an environment
+        :return:
+        """
+        data = vars(self)
+
+        # Clean Environment Data
+        del data['action_space']
+        del data['observation_space']
+        del data['np_random']
+        del data['finals']
+        del data['obstacles']
+
+        return data
+
     def is_final(self, state=None) -> bool:
         """
-        Return a True if state given is terminal, False in otherwise.
+        Return True if state given is terminal, False in otherwise.
         :return:
         """
         raise NotImplemented

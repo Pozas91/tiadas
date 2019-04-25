@@ -24,7 +24,13 @@ class LinkedRings(gym.Env):
     # Icons to render environments
     _icons = {'BLANK': ' ', 'BLOCK': '■', 'TREASURE': '$', 'CURRENT': '☺', 'ENEMY': '×', 'HOME': 'µ', 'FINAL': '$'}
 
-    def __init__(self, seed=None, initial_state=0, default_reward=(0., 0.)):
+    def __init__(self, seed=0, initial_state=0, default_reward=(0., 0.)):
+        """
+        :param seed:
+        :param initial_state:
+        :param default_reward:
+        """
+
         # Set action space
         self.action_space = spaces.Discrete(len(self._actions))
 
@@ -184,5 +190,9 @@ class LinkedRings(gym.Env):
         return self._actions
 
     def is_final(self, state=None) -> bool:
-        # Check if is final state (This is a non-episodic problem, so doesn't have final states)
+        """
+        Check if is final state (This is a non-episodic problem, so doesn't have final states)
+        :param state:
+        :return:
+        """
         return False

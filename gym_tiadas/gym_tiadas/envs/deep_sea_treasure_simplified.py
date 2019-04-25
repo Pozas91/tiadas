@@ -13,7 +13,7 @@ class DeepSeaTreasureSimplified(EnvMesh):
         (-1, 5), (-3, 80), (-5, 120)
     ]
 
-    def __init__(self, mesh_shape=(3, 4), initial_state=(0, 0), default_reward=0., seed=0):
+    def __init__(self, initial_state=(0, 0), default_reward=0., seed=0):
         """
         :param initial_state:
         :param default_reward:
@@ -27,6 +27,7 @@ class DeepSeaTreasureSimplified(EnvMesh):
             (2, 3): 120,
         }
 
+        mesh_shape = (3, 4)
         obstacles = frozenset()
         obstacles = obstacles.union([(0, y) for y in range(2, 4)])
         obstacles = obstacles.union([(1, y) for y in range(3, 4)])
@@ -74,5 +75,11 @@ class DeepSeaTreasureSimplified(EnvMesh):
         return self.current_state
 
     def is_final(self, state=None) -> bool:
-        # If agent is in treasure
+        """
+        If agent is on final state.
+        :param state:
+        :return:
+        """
         return state in self.finals.keys()
+
+

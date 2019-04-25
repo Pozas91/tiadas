@@ -19,9 +19,17 @@ class MoPuddleWorld(EnvMesh):
     # Possible actions
     _actions = {'UP': 0, 'RIGHT': 1, 'DOWN': 2, 'LEFT': 3}
 
-    def __init__(self, mesh_shape=(20, 20), final_reward=10, penalize_non_goal=-1, seed=0, final_state=(19, 0)):
+    def __init__(self, default_reward=10, penalize_non_goal=-1, seed=0, final_state=(19, 0)):
+        """
+
+        :param default_reward:
+        :param penalize_non_goal:
+        :param seed:
+        :param final_state:
+        """
 
         self.final_state = final_state
+        mesh_shape = (20, 20)
 
         super().__init__(mesh_shape, seed)
 
@@ -29,7 +37,7 @@ class MoPuddleWorld(EnvMesh):
         self.puddles = self.puddles.union([(x, y) for x in range(0, 11) for y in range(3, 7)])
         self.puddles = self.puddles.union([(x, y) for x in range(6, 10) for y in range(2, 14)])
         self.penalize_non_goal = penalize_non_goal
-        self.final_reward = final_reward
+        self.final_reward = default_reward
 
         self.current_state = self.reset()
 
@@ -96,3 +104,17 @@ class MoPuddleWorld(EnvMesh):
     def is_final(self, state=None) -> bool:
         # If agent is in treasure
         return state == self.final_state
+
+    def get_dict_model(self):
+        """
+        Get dict model of environment
+        :return:
+        """
+
+        data = super().get_dict_model()
+
+        # Clean specific environment data
+        del data['puddles']
+        del data['initial_state']
+
+        return data

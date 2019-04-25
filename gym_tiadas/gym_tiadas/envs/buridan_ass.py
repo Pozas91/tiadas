@@ -20,7 +20,7 @@ class BuridanAss(EnvMesh):
     # Possible actions
     _actions = {'UP': 0, 'RIGHT': 1, 'DOWN': 2, 'LEFT': 3, 'STAY': 4}
 
-    def __init__(self, mesh_shape=(3, 3), initial_state=(1, 1), default_reward=0., seed=0, p_stolen=.9,
+    def __init__(self, initial_state=(1, 1), default_reward=0., seed=0, p_stolen=.9,
                  n_appear=10, stolen_penalty=-.5, walking_penalty=-1., hunger_penalty=-1., last_ate_limit=9):
         """
         :param initial_state:
@@ -38,6 +38,8 @@ class BuridanAss(EnvMesh):
             (0, 0): True,
             (2, 2): True
         }
+
+        mesh_shape = (3, 3)
 
         super().__init__(mesh_shape, seed, default_reward=default_reward, initial_state=initial_state, finals=finals)
 
@@ -210,5 +212,9 @@ class BuridanAss(EnvMesh):
         return state_b in a_neighbours
 
     def is_final(self, state=None) -> bool:
-        # If there is not more food left, it is a final state
+        """
+        If there is not more food left, it is a final state
+        :param state:
+        :return:
+        """
         return all(not isinstance(self.finals.get(state), bool) for state in self.finals.keys())

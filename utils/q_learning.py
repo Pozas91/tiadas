@@ -4,8 +4,9 @@ Useful functions to calculate a reinforcement learning based on q-learning.
 
 from copy import deepcopy
 
-import math
 import numpy as np
+
+from .miscellaneous import is_close
 
 
 def train(agent, epochs=int(1e3)):
@@ -151,36 +152,3 @@ def testing(agent) -> tuple:
 
     # Return a tuple of that sum
     return tuple(result)
-
-
-def is_close(a: float, b: float, relative=1e-3):
-    return abs(a - b) <= relative
-
-
-def distance_between_two_points(a: (float, float), b: (float, float)) -> float:
-    return math.hypot(b[0] - a[0], b[1] - a[1])
-
-
-def distance_to_origin(a: (float, float)) -> float:
-    return distance_between_two_points(a=a, b=(0, 0))
-
-
-def order_points_by_center_nearest(points) -> list:
-    # Get all points with its distance to center (0, 0).
-    distances = {point: distance_to_origin(point) for point in points}
-
-    # Sort dictionary by value from lower to higher.
-    return sorted(distances, key=distances.get, reverse=False)
-
-
-def weighted_sum(rewards, weights) -> float:
-    """
-    Simple Weighted-Sum function
-    :param rewards:
-    :param weights:
-    :return:
-    """
-
-    result = float(np.sum(np.multiply(rewards, weights)))
-
-    return result

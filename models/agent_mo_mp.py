@@ -1,21 +1,37 @@
 """
 Agent multi-objective multi-policy.
 Save rewards, N and occurrences independently, to calculate Q-set on runtime.
-"""
 
-from copy import deepcopy
+Evaluation mechanisms available
+    - HV-PQL: Based in hypervolume
+    - C-PQL: Based in cardinality
+    - PO-PQL: Based in Pareto
+
+For take instances of default_reward, we multiply by zero default_reward, that take less time that other operations such
+as deepcopy (≈ 247% faster) or copy (≈ 118% faster).
+"""
+import datetime
+import importlib
+import json
+import os
 
 import math
+import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 
+import utils.miscellaneous as um
 import utils.pareto as up
+from .vector import Vector
+from .vector_float import VectorFloat
 
 
 class AgentMOMP:
+    # JSON indent
+    JSON_INDENT = 2
 
-    def __init__(self, environment, default_reward, epsilon=0.1, gamma=1., seed=0, states_to_observe=None,
-                 max_iterations=None):
+    def __init__(self, environment, default_reward, epsilon=0.1, gamma=1., seed=0, max_iterations=None,
+                 hv_reference=None, evaluation_mechanism='HV-PQL', states_to_observe=None):
 
         # Discount factor
         assert 0 < gamma <= 1
@@ -27,6 +43,7 @@ class AgentMOMP:
 
         # Default reward
         self.default_reward = default_reward
+
         # Set environment
         self.environment = environment
 
@@ -38,13 +55,16 @@ class AgentMOMP:
         if states_to_observe is None:
             self.states_to_observe = dict()
         else:
-            self.states_to_observe = {state: list() for state in states_to_observe}
+            self.states_to_observe = {
+                state: list() for state in states_to_observe
+            }
 
         # Current Agent State if the initial state of environment
         self.state = self.environment.reset()
 
         # Initialize Random Generator with `seed` as initial seed.
-        self.generator = np.random.RandomState(seed=seed)
+        self.seed = seed
+        self.generator = np.random.RandomState(seed=self.seed)
 
         # Average observed immediate reward vector.
         self.r = dict()
@@ -54,6 +74,15 @@ class AgentMOMP:
 
         # Occurrences
         self.n = dict()
+
+        # HV reference
+        self.hv_reference = hv_reference
+
+        # Check if evaluation mechanism selected is available
+        if evaluation_mechanism in ('HV-PQL', 'C-PQL', 'PO-PQL'):
+            self.evaluation_mechanism = evaluation_mechanism
+        else:
+            raise ValueError('{} evaluation mechanism not recognize!'.format(evaluation_mechanism))
 
     def episode(self) -> None:
         """
@@ -130,11 +159,12 @@ class AgentMOMP:
         # Get R(s) dict.
         r_s_a_dict = self.r.get(state, {})
         # Get R(s, a) value.
-        r_s_a = r_s_a_dict.get(action, deepcopy(self.default_reward))
+        r_s_a = r_s_a_dict.get(action, self.default_reward)
         # Update R(s, a)
         r_s_a += (reward - r_s_a) / occurrences
-        # Update R dictionary
+        # Update with new R(s, a)
         r_s_a_dict.update({action: r_s_a})
+        # Update R dictionary
         self.r.update({state: r_s_a_dict})
 
     def update_nd_s_a(self, state, action, next_state):
@@ -144,12 +174,13 @@ class AgentMOMP:
 
         # for each action in actions
         for a in self.environment.actions.values():
+            # Get Q(s, a)
             q = self.q_set(state=next_state, action=a)
 
             # Union with flatten mode.
             union += q
 
-        # Update ND policies of s' in s (
+        # Update ND policies of s' in s
         nd_s_a = self.default_reward.m3_max(union)
 
         # ND(s, a) <- (ND(U_a' Q_set(s', a'))
@@ -166,10 +197,10 @@ class AgentMOMP:
         """
 
         # Get R(s, a) with default.
-        r_s_a = self.r.get(state, {}).get(action, deepcopy(self.default_reward))
+        r_s_a = self.r.get(state, {}).get(action, self.default_reward)
 
         # Get ND(s, a)
-        non_dominated_vectors = self.nd.get(state, {}).get(action, [deepcopy(self.default_reward)])
+        non_dominated_vectors = self.nd.get(state, {}).get(action, [self.default_reward])
         q_set = list()
 
         # R(s, a) + y*ND
@@ -199,7 +230,7 @@ class AgentMOMP:
 
     def reset(self):
         """
-        Reset agent, forgetting previous q-values
+        Reset agent, forgetting previous dictionaries
         :return:
         """
         self.r = dict()
@@ -208,52 +239,18 @@ class AgentMOMP:
         self.state = self.environment.reset()
         self.iterations = 0
 
+        # Reset states to observe
+        for state in self.states_to_observe:
+            self.states_to_observe.update({
+                state: list()
+            })
+
     def reset_iterations(self):
         """
         Set iterations to zero.
         :return:
         """
         self.iterations = 0
-
-    def hypervolume_evaluation(self, state):
-        """
-        Calc the hypervolume for each action in state given. (HV-PQL)
-        :return:
-        """
-
-        evaluations = list()
-
-        # Get all vectors to get a common reference
-        vectors = {a: self.q_set(state=state, action=a) for a in self.environment.actions.values()}
-
-        # Calc reference point (Get min axis of all vectors and subtract 1 for reference point)
-        reference = (np.min([vector for vector_list in vectors.values() for vector in vector_list], axis=0) - 1)
-
-        # for each vector in vectors dictionary
-        for a, vector in vectors.items():
-            hv_a = up.hypervolume(vector=vector, reference=reference)
-            evaluations.insert(a, hv_a)
-
-        return evaluations
-
-    def cardinality_evaluation(self, state):
-        """
-        Calc the cardinality for each action in state given. (C-PQL)
-        :param state:
-        :return:
-        """
-
-        evaluations = list()
-
-        for a in self.environment.actions.values():
-            # Get Q-set from state given for each possible action.
-            q_set = self.q_set(state=state, action=a)
-            # Use m3_max algorithm to get non_dominated vectors from q_set.
-            non_dominated = self.default_reward.m3_max(q_set)
-            # Get number of non_dominated vectors.
-            evaluations.insert(a, len(non_dominated))
-
-        return evaluations
 
     def best_action(self, state=None):
         """
@@ -266,33 +263,15 @@ class AgentMOMP:
         if not state:
             state = self.state
 
-        # Use hypervolume evaluation
-        # evaluations = self.hypervolume_evaluation(state=state)
-        evaluations = self.cardinality_evaluation(state=state)
+        # Use the selected evaluation
+        if self.evaluation_mechanism == 'HV-PQL':
+            action = self.hypervolume_evaluation(state=state)
+        elif self.evaluation_mechanism == 'C-PQL':
+            action = self.cardinality_evaluation(state=state)
+        else:
+            action = self.pareto_evaluation(state=state)
 
-        # Initialize actions with last action
-        actions = [len(evaluations) - 1]
-
-        # Get last element of list
-        max_evaluation = evaluations.pop()
-
-        # for each evaluation
-        for action, evaluation in enumerate(evaluations):
-
-            # If current value is close to new value
-            if math.isclose(a=evaluation, b=max_evaluation):
-                # Append another possible action
-                actions.append(action)
-
-            elif evaluation > max_evaluation:
-                # Create a new list with current key.
-                actions = [action]
-
-            # Update max value
-            max_evaluation = max(max_evaluation, evaluation)
-
-        # from best actions get one aleatory.
-        return self.generator.choice(actions)
+        return action
 
     @staticmethod
     def track_policy(state, target):
@@ -304,7 +283,17 @@ class AgentMOMP:
         :param state:
         :return:
         """
-        return max(self.hypervolume_evaluation(state=state))
+
+        hv = list()
+
+        for a in self.environment.actions.values():
+            # Get Q-set from state given for each possible action.
+            q_set = self.q_set(state=state, action=a)
+
+            # Calc hypervolume of Q_set, with reference given.
+            hv.append(up.hypervolume(vector=q_set, reference=self.hv_reference))
+
+        return max(hv)
 
     def print_observed_states(self):
         """
@@ -320,3 +309,313 @@ class AgentMOMP:
         plt.legend(loc='upper left')
 
         plt.show()
+
+    def hypervolume_evaluation(self, state):
+        """
+        Calc the hypervolume for each action in state given. (HV-PQL)
+        :param state:
+        :return:
+        """
+
+        actions = list()
+        max_evaluation = 0
+
+        # for each a in actions
+        for a in self.environment.actions.values():
+
+            # Get Q-set from state given for each possible action.
+            q_set = self.q_set(state=state, action=a)
+
+            # Calc hypervolume of Q_set, with reference given.
+            evaluation = up.hypervolume(vector=q_set, reference=self.hv_reference)
+
+            # If current value is close to new value
+            if math.isclose(a=evaluation, b=max_evaluation):
+                # Append another possible action
+                actions.append(a)
+
+            elif evaluation > max_evaluation:
+                # Create a new list with current key.
+                actions = [a]
+
+            # Update max value
+            max_evaluation = max(max_evaluation, evaluation)
+
+        # from best actions get one aleatory.
+        return self.generator.choice(actions)
+
+    def cardinality_evaluation(self, state):
+        """
+        Calc the cardinality for each action in state given. (C-PQL)
+        :param state:
+        :return:
+        """
+
+        actions = list()
+        max_evaluation = 0
+
+        # for each a in actions
+        for a in self.environment.actions.values():
+
+            # Get Q-set from state given for each possible action.
+            q_set = self.q_set(state=state, action=a)
+
+            # Use m3_max algorithm to get non_dominated vectors from q_set.
+            non_dominated = self.default_reward.m3_max(q_set)
+
+            # Get number of non_dominated vectors.
+            evaluation = len(non_dominated)
+
+            # If current value is equal to new value
+            if evaluation == max_evaluation:
+                # Append another possible action
+                actions.append(a)
+
+            elif evaluation > max_evaluation:
+                # Create a new list with current key.
+                actions = [a]
+
+            # Update max value
+            max_evaluation = max(max_evaluation, evaluation)
+
+        # from best actions get one aleatory.
+        return self.generator.choice(actions)
+
+    def pareto_evaluation(self, state):
+        """
+        Calc the pareto for each action in state given. (PO-PQL)
+        :param state:
+        :return:
+        """
+
+        actions = list()
+
+        # for each a in actions
+        for a in self.environment.actions.values():
+            # Get Q-set from state given for each possible action.
+            q_set = self.q_set(state=state, action=a)
+            # Use m3_max algorithm to get non_dominated vectors from q_set.
+            non_dominated = self.default_reward.m3_max(q_set)
+
+            # If has almost one non_dominated vector is a valid action.
+            if len(non_dominated) > 0:
+                actions.append(a)
+
+        # If actions is empty, get all possible actions.
+        if not actions:
+            actions = self.environment.actions.values()
+
+        # Get random action from valid action.
+        return self.generator.choice(actions)
+
+    def get_dict_model(self):
+        """
+        Get a dictionary of model
+        In JSON serialize only is valid strings as key on dict, so we convert all numeric keys in strings keys.
+        :return:
+        """
+        model = {
+            'meta': {
+                'class': self.__class__.__name__,
+                'module': self.__module__,
+                'dependencies': {
+                    'numpy': np.__version__,
+                    'matplotlib': matplotlib.__version__
+                }
+            },
+            'data': {
+                'epsilon': self.epsilon,
+                'gamma': self.gamma,
+                'default_reward': self.default_reward.components.tolist(),
+                'environment': {
+                    'meta': {
+                        'class': self.environment.__class__.__name__,
+                        'module': self.environment.__module__,
+                    },
+                    'data': self.environment.get_dict_model()
+                },
+                'max_iterations': self.max_iterations,
+                'states_to_observe': [{'key': k, 'value': v} for k, v in self.states_to_observe.items()],
+                'seed': self.seed,
+                'r': [
+                    {'key': k, 'value': {'key': int(k2), 'value': v2.components.tolist()}}
+                    for k, v in self.r.items() for k2, v2 in v.items()
+                ],
+                'nd': [
+                    {'key': k, 'value': {'key': int(k2), 'value': [vector.components.tolist() for vector in v2]}}
+                    for k, v in self.nd.items() for k2, v2 in v.items()
+                ],
+                'n': [
+                    {'key': k, 'value': {'key': int(k2), 'value': v2}}
+                    for k, v in self.n.items() for k2, v2 in v.items()
+                ],
+                'hv_reference': self.hv_reference.components.tolist(),
+                'evaluation_mechanism': self.evaluation_mechanism
+            }
+        }
+
+        return model
+
+    def to_json(self):
+        """
+        Get a dict model from current object and return as json string.
+        :return:
+        """
+        model = self.get_dict_model()
+        return json.dumps(model, indent=self.JSON_INDENT)
+
+    def save(self, filename=None):
+        """
+        Save model into json file.
+        :param filename: If is None, then get current timestamp as filename (defaults 'dumps' dir).
+        :return:
+        """
+
+        if filename is None:
+            filename = 'dumps/{}.json'.format(datetime.datetime.now().timestamp())
+
+        model = self.get_dict_model()
+
+        # Open file with filename in write mode with UTF-8 encoding.
+        with open(filename, 'w', encoding='UTF-8') as file:
+            json.dump(model, file, indent=self.JSON_INDENT)
+
+    @staticmethod
+    def load(filename=None):
+        """
+        Load json string from file and convert to dictionary.
+        :param filename: If is None, then get last timestamp file from 'dumps' dir.
+        :return:
+        """
+
+        if filename is None:
+            path = 'dumps'
+
+            for root, directories, files in os.walk(path):
+                # Sort list of files
+                files.sort()
+
+                # Get last filename
+                filename = files[-1]
+
+            filename = '{}/{}'.format(path, filename)
+
+        with open(filename, 'r', encoding='UTF-8') as file:
+            # Load structured data from indicated file.
+            model = json.load(file)
+
+        # Get meta-data
+        meta = model.get('meta')
+        # Get data
+        data = model.get('data')
+
+        # MARK: META
+
+        # Prepare module and class to make an instance.
+        class_name = meta.get('class')
+        module_name = meta.get('module')
+        module = importlib.import_module(module_name)
+        class_ = getattr(module, class_name)
+
+        # MARK: DATA
+
+        epsilon = data.get('epsilon')
+        gamma = data.get('gamma')
+        max_iterations = data.get('max_iterations')
+        seed = data.get('seed')
+        evaluation_mechanism = data.get('evaluation_mechanism')
+
+        # We use default_reward as reference, if all elements are int, then default_reward is a integer Vector,
+        # otherwise float Vector
+        default_reward = data.get('default_reward')
+        default_reward = Vector(default_reward) if (all([isinstance(x, int) for x in default_reward])) else VectorFloat(
+            default_reward)
+
+        # default_reward is reference so, reset components (multiply by zero) and add hv_reference to get hv_reference.
+        hv_reference = (default_reward * 0) + data.get('hv_reference')
+
+        environment = data.get('environment')
+
+        # Meta
+        environment_meta = environment.get('meta')
+        environment_class_name = environment_meta.get('class')
+        environment_module_name = environment_meta.get('module')
+        environment_module = importlib.import_module(environment_module_name)
+        environment_class_ = getattr(environment_module, environment_class_name)
+
+        # Data
+        environment_data = environment.get('data')
+
+        # Instance
+        environment = environment_class_()
+
+        # Set environment data
+        for key, value in environment_data.items():
+
+            if 'state' in key:
+                value = tuple(value)
+
+            vars(environment)[key] = value
+
+        # Update 'states_to_observe' data
+        states_to_observe = dict()
+        for item in data.get('states_to_observe'):
+            key = tuple(item.get('key'))
+            value = item.get('value')
+
+            states_to_observe.update({key: value})
+
+        # Unpack 'r' data
+        r = dict()
+        for item in data.get('r'):
+
+            key = um.lists_to_tuples(item.get('key'))
+            value = item.get('value')
+            action = value.get('key')
+            value = (default_reward * 0) + value.get('value')
+
+            if key not in r.keys():
+                r.update({key: dict()})
+
+            r.get(key).update({action: value})
+
+        # Unpack 'nd' data
+        nd = dict()
+        for item in data.get('nd'):
+
+            key = um.lists_to_tuples(item.get('key'))
+            value = item.get('value')
+            action = value.get('key')
+            value = [(default_reward * 0) + v for v in value.get('value')]
+
+            if key not in nd.keys():
+                nd.update({key: dict()})
+
+            nd.get(key).update({action: value})
+
+        # Unpack 'n' data
+        n = dict()
+        for item in data.get('n'):
+
+            key = um.lists_to_tuples(item.get('key'))
+            value = item.get('value')
+            action = value.get('key')
+            value = int(value.get('value'))
+
+            if key not in n.keys():
+                n.update({key: dict()})
+
+            n.get(key).update({action: value})
+
+        # Prepare an instance of model.
+        model = class_(environment=environment, default_reward=default_reward, epsilon=epsilon, gamma=gamma, seed=seed,
+                       max_iterations=max_iterations, hv_reference=hv_reference,
+                       evaluation_mechanism=evaluation_mechanism)
+
+        # Set finals settings and return it.
+        model.r = r
+        model.nd = nd
+        model.n = n
+        model.states_to_observe = states_to_observe
+
+        return model

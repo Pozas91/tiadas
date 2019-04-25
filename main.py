@@ -274,12 +274,29 @@ def deep_sea_treasure_simplified():
 
 
 def deep_sea_treasure_simplified_mo_mp():
-    environment = DeepSeaTreasureSimplified()
-    agent = AgentMOMP(environment=environment, default_reward=Vector([0, 0]), epsilon=0.5, states_to_observe=[(0, 0)])
+    environment = DeepSeaTreasure()
+    agent = AgentMOMP(environment=environment, default_reward=Vector([0, 0]), epsilon=0.4, states_to_observe=[(0, 0)],
+                      hv_reference=Vector([-25, 0]), evaluation_mechanism='PO-PQL')
 
-    q_learning.train(agent=agent, epochs=int(3e2))
+    graph = list()
 
-    agent.print_observed_states()
+    for _ in range(20):
+        agent.reset()
+        q_learning.train(agent=agent, epochs=int(6e3))
+        graph.append(agent.states_to_observe.get((0, 0)))
+
+    data = np.average(graph, axis=0)
+    error = np.std(graph, axis=0)
+    y = np.arange(0, len(data), 1)
+
+    plt.errorbar(x=y, y=data, yerr=error, errorevery=500)
+    # plt.plot(data)
+
+    plt.xlabel('Iterations')
+    plt.ylabel('HV max')
+    plt.legend(loc='upper left')
+    plt.show()
+
     pass
 
 
