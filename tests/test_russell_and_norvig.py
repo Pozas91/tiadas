@@ -50,8 +50,8 @@ class TestRusselAndNorvig(unittest.TestCase):
         self.assertEqual((0, 2), self.environment.initial_state)
         self.assertEqual(self.environment.initial_state, self.environment.current_state)
 
-        # Default reward is -0.04.
-        self.assertEqual(-0.04, self.environment.default_reward)
+        # Default reward is (-0.04)
+        self.assertEqual((-0.04,), self.environment.default_reward)
 
     def test_seed(self):
         """
@@ -201,7 +201,7 @@ class TestRusselAndNorvig(unittest.TestCase):
         new_state, reward, is_final, _ = self.environment.step(action=self.environment.actions.get('UP'))
 
         self.assertEqual((3, 1), new_state)
-        self.assertEqual(-1, reward)
+        self.assertEqual([-1], reward)
         self.assertTrue(is_final)
 
         ################################################################################################################
@@ -219,7 +219,7 @@ class TestRusselAndNorvig(unittest.TestCase):
             new_state, reward, is_final, _ = self.environment.step(action=self.environment.actions.get('RIGHT'))
 
         self.assertEqual((3, 0), new_state)
-        self.assertEqual(1, reward)
+        self.assertEqual([1], reward)
         self.assertTrue(is_final)
 
         ################################################################################################################

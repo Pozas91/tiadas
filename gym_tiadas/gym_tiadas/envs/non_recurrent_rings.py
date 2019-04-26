@@ -6,6 +6,8 @@ import gym
 from gym import spaces
 from gym.utils import seeding
 
+from models import Vector
+
 
 class NonRecurrentRings(gym.Env):
     # Possible actions
@@ -14,12 +16,11 @@ class NonRecurrentRings(gym.Env):
     # Icons to render environments
     _icons = {'BLANK': ' ', 'BLOCK': '■', 'TREASURE': '$', 'CURRENT': '☺', 'ENEMY': '×', 'HOME': 'µ', 'FINAL': '$'}
 
-    def __init__(self, seed=0, initial_state=0, default_reward=(0., 0.)):
+    def __init__(self, seed=0, initial_state=0):
         """
 
         :param seed:
         :param initial_state:
-        :param default_reward:
         """
 
         # Set action space
@@ -109,13 +110,10 @@ class NonRecurrentRings(gym.Env):
             }
         }
 
-        # Defaults
-        self.default_reward = default_reward
-
         # Reset environment
         self.reset()
 
-    def step(self, action):
+    def step(self, action) -> (object, Vector, bool, dict):
         """
         Do a step in the environment
         :param action:
@@ -171,7 +169,7 @@ class NonRecurrentRings(gym.Env):
         """
 
         # Do movement
-        new_state = self.possible_transactions.get(self.current_state, {}).get(action, self.default_reward)
+        new_state = self.possible_transactions.get(self.current_state).get(action)
 
         if not self.observation_space.contains(new_state):
             # New state is invalid, and roll back with previous.

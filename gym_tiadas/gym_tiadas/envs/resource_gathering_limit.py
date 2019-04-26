@@ -2,8 +2,8 @@
 Such as Resource Gathering environment, but has a `time_limit`, if the agent non-reached goal in the `time_limit`, the
 reward vector is divide by the `time` spent.
 """
-import numpy as np
 
+from models import VectorFloat
 from .env_mesh import EnvMesh
 
 
@@ -14,15 +14,14 @@ class ResourceGatheringLimit(EnvMesh):
     # Treasures
     _treasures = {'GOLD': 0, 'GEM': 1}
 
-    def __init__(self, initial_state=(2, 4), default_reward=0., seed=0, p_attack=0.1, time_limit=100):
+    def __init__(self, initial_state=(2, 4), default_reward=(0, 0, 0), seed=0, p_attack=0.1, time_limit=100):
         """
         :param initial_state:
-        :param default_reward:
+        :param default_reward: (enemy_attack, gold, gems)
         :param seed:
         """
 
-        # [enemy_attack, gold, gems]
-        self.state = [0, 0, 0]
+        self.state = VectorFloat(default_reward)
 
         # States where there are gold {state: available}
         self.gold_states = {(2, 0): True}
@@ -35,22 +34,23 @@ class ResourceGatheringLimit(EnvMesh):
         self.time_limit = time_limit
 
         mesh_shape = (5, 5)
+        default_reward = VectorFloat(default_reward)
 
-        super().__init__(mesh_shape, seed, initial_state=initial_state, default_reward=default_reward)
+        super().__init__(mesh_shape=mesh_shape, seed=seed, initial_state=initial_state, default_reward=default_reward)
 
         # States where there are enemies
         self.enemies = [(3, 0), (2, 1)]
         self.p_attack = p_attack
 
-    def step(self, action) -> (object, [float, float, float], bool, dict):
+    def step(self, action) -> (object, VectorFloat, bool, dict):
         """
         Given an action, do a step
         :param action:
         :return:
         """
 
-        # Calc rewards
-        rewards = np.multiply(self.state, 0).tolist()
+        # Initialize rewards as vector (plus zero to fast copy)
+        rewards = self.default_reward + 0
 
         # Get new state
         new_state = self._next_state(action=action)
@@ -64,7 +64,7 @@ class ResourceGatheringLimit(EnvMesh):
 
         # If the agent is in the same state as an enemy
         if self.current_state in self.enemies:
-            rewards = np.multiply(self.state, 1).tolist()
+            rewards = self.state * 1
 
         # If the agent is in the same state as gold
         elif self.current_state in self.gold_states.keys():
@@ -76,11 +76,11 @@ class ResourceGatheringLimit(EnvMesh):
 
         # If the agent is at home and have gold or gem
         elif self.__at_home():
-            rewards = np.multiply(self.state, 1).tolist()
+            rewards = self.state * 1
 
         if self.time >= self.time_limit:
             # Accumulate reward
-            rewards = np.divide(self.state, self.time).tolist()
+            rewards = self.state / self.time
 
         # Set info
         info = {}
@@ -93,7 +93,7 @@ class ResourceGatheringLimit(EnvMesh):
         :return:
         """
         self.current_state = self.initial_state
-        self.state = np.multiply(self.state, 0).tolist()
+        self.state = self.default_reward + 0
 
         # Reset golds positions
         for gold_state in self.gold_states.keys():

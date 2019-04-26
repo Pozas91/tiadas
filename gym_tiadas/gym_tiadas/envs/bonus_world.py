@@ -14,6 +14,7 @@ bonus.
 FINAL STATE: To reach a final state.
 
 REF: Vamplew et al (2017b)"""
+from models import Vector
 from .env_mesh import EnvMesh
 
 
@@ -21,10 +22,10 @@ class BonusWorld(EnvMesh):
     # Possible actions
     _actions = {'UP': 0, 'RIGHT': 1, 'DOWN': 2, 'LEFT': 3}
 
-    def __init__(self, initial_state=(0, 0), default_reward=(0., 0.), seed=0):
+    def __init__(self, initial_state=(0, 0), default_reward=(0, 0), seed=0):
         """
         :param initial_state:
-        :param default_reward:
+        :param default_reward: (objective 1, objective 2)
         :param seed:
         """
 
@@ -48,8 +49,12 @@ class BonusWorld(EnvMesh):
         obstacles.add((2, 3))
         obstacles.add((3, 2))
 
-        super().__init__(mesh_shape, seed, initial_state=initial_state, default_reward=default_reward, finals=finals,
-                         obstacles=obstacles)
+        # Default reward plus time (objective 1, objective 2, time)
+        default_reward += (-1,)
+        default_reward = Vector(default_reward)
+
+        super().__init__(mesh_shape=mesh_shape, seed=seed, default_reward=default_reward, initial_state=initial_state,
+                         finals=finals, obstacles=obstacles)
 
         # Pits marks which returns the agent to the start location.
         self.pits = [
@@ -64,15 +69,15 @@ class BonusWorld(EnvMesh):
         # Bonus is activated?
         self.bonus_activated = False
 
-    def step(self, action) -> (object, [float, float, float], bool, dict):
+    def step(self, action) -> (object, Vector, bool, dict):
         """
         Given an action, do a step
         :param action:
         :return: (state, (time_inverted, treasure_value), final, info)
         """
 
-        # (objective 1, objective 2, time)
-        rewards = [0, 0, 0]
+        # Initialize rewards as vector (plus zero to fast copy)
+        rewards = self.default_reward + 0
 
         # Get new state
         new_state = self._next_state(action=action)
@@ -88,11 +93,8 @@ class BonusWorld(EnvMesh):
         if self.current_state in self.pits:
             self.current_state = self.initial_state
 
-        # Get time inverted
-        rewards[2] = -1
-
         # Get treasure value
-        rewards[0], rewards[1] = self.finals.get(self.current_state, self.default_reward)
+        rewards[0], rewards[1] = self.finals.get(self.current_state, (self.default_reward[0], self.default_reward[1]))
 
         # If the bonus is activated, double the reward.
         if self.bonus_activated:

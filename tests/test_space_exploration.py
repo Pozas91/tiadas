@@ -51,8 +51,8 @@ class TestSpaceExploration(unittest.TestCase):
         self.assertEqual((5, 2), self.environment.initial_state)
         self.assertEqual(self.environment.initial_state, self.environment.current_state)
 
-        # Default reward is 0.
-        self.assertEqual(0., self.environment.default_reward)
+        # Default reward is (0, -1)
+        self.assertEqual((0, -1), self.environment.default_reward)
 
     def test_seed(self):
         """

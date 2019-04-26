@@ -6,6 +6,7 @@ FINAL STATE: To reach any final state.
 
 REF: Multi-objective reinforcement learning using sets of pareto dominating policies (Kristof Van Moffaert,
 Ann Nowé) 2014 """
+from models import Vector
 from .env_mesh import EnvMesh
 
 
@@ -18,10 +19,10 @@ class PressurizedBountifulSeaTreasure(EnvMesh):
         (-1, 5), (-3, 80), (-5, 120), (-7, 120), (-8, 145), (-9, 150), (-13, 163), (-14, 166), (-17, 173), (-19, 175)
     ]
 
-    def __init__(self, initial_observation=(0, 0), default_reward=0., seed=0):
+    def __init__(self, initial_observation=(0, 0), default_reward=(0,), seed=0):
         """
         :param initial_observation:
-        :param default_reward:
+        :param default_reward: (treasure_value)
         :param seed:
         """
 
@@ -52,18 +53,22 @@ class PressurizedBountifulSeaTreasure(EnvMesh):
         obstacles = obstacles.union([(7, y) for y in range(8, 11)])
         obstacles = obstacles.union([(8, y) for y in range(10, 11)])
 
-        super().__init__(mesh_shape, seed, default_reward=default_reward, initial_state=initial_observation,
-                         finals=finals, obstacles=obstacles)
+        # Default reward plus time (time_inverted, treasure_value, water_pressure)
+        default_reward = (-1,) + default_reward + (0,)
+        default_reward = Vector(default_reward)
 
-    def step(self, action) -> (object, [float, float, float], bool, dict):
+        super().__init__(mesh_shape=mesh_shape, seed=seed, default_reward=default_reward,
+                         initial_state=initial_observation, finals=finals, obstacles=obstacles)
+
+    def step(self, action) -> (object, Vector, bool, dict):
         """
         Given an action, do a step
         :param action:
         :return: (state, (time_inverted, treasure_value), final, info)
         """
 
-        # (time_inverted, treasure_value, water_pressure)
-        rewards = [0., 0., 0.]
+        # Initialize rewards as vector (plus zero to fast copy)
+        rewards = self.default_reward + 0
 
         # Get new state
         new_state = self._next_state(action=action)
@@ -71,11 +76,8 @@ class PressurizedBountifulSeaTreasure(EnvMesh):
         # Update previous state
         self.current_state = new_state
 
-        # Get time inverted
-        rewards[0] = -1
-
         # Get treasure value
-        rewards[1] = self.finals.get(self.current_state, self.default_reward)
+        rewards[1] = self.finals.get(self.current_state, self.default_reward[1])
 
         # Water pressure (y-coordinate)
         rewards[2] = -(self.current_state[1] + 1)
@@ -94,7 +96,6 @@ class PressurizedBountifulSeaTreasure(EnvMesh):
         :return:
         """
         self.current_state = self.initial_state
-
         return self.current_state
 
     def is_final(self, state=None) -> bool:

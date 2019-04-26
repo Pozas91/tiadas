@@ -7,6 +7,7 @@ import unittest
 from gym import spaces
 
 from gym_tiadas.gym_tiadas.envs import MoPuddleWorld
+from models import VectorFloat
 
 
 class TestMoPuddleWorld(unittest.TestCase):
@@ -45,8 +46,8 @@ class TestMoPuddleWorld(unittest.TestCase):
         # By default action space is 4 (UP, RIGHT, DOWN, LEFT)
         self.assertEqual(spaces.Discrete(4), self.environment.action_space)
 
-        # Finish reward is 10.
-        self.assertEqual(10., self.environment.final_reward)
+        # Default reward is (10, 0)
+        self.assertEqual((10, 0), self.environment.default_reward)
 
     def test_seed(self):
         """

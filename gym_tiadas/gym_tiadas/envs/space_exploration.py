@@ -14,7 +14,7 @@ FINAL STATES: To reach any of x-value states.
 
 REF: P. Vamplew et al. (2017)
 """
-
+from models import Vector
 from .env_mesh import EnvMesh
 
 
@@ -22,10 +22,10 @@ class SpaceExploration(EnvMesh):
     # Possible actions
     _actions = {'UP': 0, 'UP RIGHT': 1, 'RIGHT': 2, 'DOWN RIGHT': 3, 'DOWN': 4, 'DOWN LEFT': 5, 'LEFT': 6, 'UP LEFT': 7}
 
-    def __init__(self, initial_state=(5, 2), default_reward=0., seed=0):
+    def __init__(self, initial_state=(5, 2), default_reward=(0, -1), seed=0):
         """
         :param initial_state:
-        :param default_reward:
+        :param default_reward: (mission_success, radiation)
         :param seed:
         """
 
@@ -37,9 +37,10 @@ class SpaceExploration(EnvMesh):
 
         obstacles = dict()
         mesh_shape = (13, 5)
+        default_reward = Vector(default_reward)
 
-        super().__init__(mesh_shape, seed, initial_state=initial_state, default_reward=default_reward, finals=finals,
-                         obstacles=obstacles)
+        super().__init__(mesh_shape=mesh_shape, seed=seed, initial_state=initial_state, default_reward=default_reward,
+                         finals=finals, obstacles=obstacles)
 
         self.asteroids = {
             (5, 0), (4, 1), (6, 1), (3, 2), (7, 2), (4, 3), (6, 3), (5, 4)
@@ -50,15 +51,15 @@ class SpaceExploration(EnvMesh):
         self.radiations = self.radiations.union({(10, i) for i in range(5)})
         self.radiations = self.radiations.union({(11, i) for i in range(5)})
 
-    def step(self, action) -> (object, [float, float], bool, dict):
+    def step(self, action) -> (object, Vector, bool, dict):
         """
         Given an action, do a step
         :param action:
         :return: (state, (mission_success, radiation), final, info)
         """
 
-        # (mission_success, radiation)
-        rewards = [0, 0]
+        # Initialize rewards as vector (plus zero to fast copy)
+        rewards = self.default_reward + 0
 
         # Get new state
         new_state = self._next_state(action=action)
@@ -66,12 +67,12 @@ class SpaceExploration(EnvMesh):
         # Update previous state
         self.current_state = new_state
 
-        # If agent is in a radiation state, the penalty is -11, else is -1.
-        rewards[1] = -11 if self.current_state in self.radiations else -1
-
         # If the ship crash with asteroid, the ship is destroyed. else mission success.
         rewards[0] = -100 if self.current_state in self.asteroids else self.finals.get(self.current_state,
-                                                                                       self.default_reward)
+                                                                                       self.default_reward[0])
+
+        # If agent is in a radiation state, the penalty is -11, else is default radiation
+        rewards[1] = -11 if self.current_state in self.radiations else self.default_reward[1]
 
         # Check if is_final
         final = self.is_final(self.current_state)

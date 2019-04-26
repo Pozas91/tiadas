@@ -30,7 +30,7 @@ class AgentMOMP:
     # JSON indent
     JSON_INDENT = 2
 
-    def __init__(self, environment, default_reward, epsilon=0.1, gamma=1., seed=0, max_iterations=None,
+    def __init__(self, environment, epsilon=0.1, gamma=1., seed=0, max_iterations=None,
                  hv_reference=None, evaluation_mechanism='HV-PQL', states_to_observe=None):
 
         # Discount factor
@@ -40,9 +40,6 @@ class AgentMOMP:
 
         self.epsilon = epsilon
         self.gamma = gamma
-
-        # Default reward
-        self.default_reward = default_reward
 
         # Set environment
         self.environment = environment
@@ -84,6 +81,9 @@ class AgentMOMP:
         else:
             raise ValueError('{} evaluation mechanism not recognize!'.format(evaluation_mechanism))
 
+        # Default reward
+        self.default_reward = self.environment.default_reward
+
     def episode(self) -> None:
         """
         Run an episode complete until get a final step.
@@ -108,9 +108,6 @@ class AgentMOMP:
 
             # Do step on environment
             next_state, rewards, is_final, info = self.environment.step(action=action)
-
-            # Convert reward to an vector (This operation is for do not declare a type of vector)
-            rewards = (self.default_reward * 0) + rewards
 
             # Update ND policies of s' in s
             self.update_nd_s_a(state=self.state, action=action, next_state=next_state)
@@ -159,7 +156,7 @@ class AgentMOMP:
         # Get R(s) dict.
         r_s_a_dict = self.r.get(state, {})
         # Get R(s, a) value.
-        r_s_a = r_s_a_dict.get(action, self.default_reward)
+        r_s_a = r_s_a_dict.get(action, self.environment.default_reward)
         # Update R(s, a)
         r_s_a += (reward - r_s_a) / occurrences
         # Update with new R(s, a)
@@ -181,7 +178,7 @@ class AgentMOMP:
             union += q
 
         # Update ND policies of s' in s
-        nd_s_a = self.default_reward.m3_max(union)
+        nd_s_a = self.environment.default_reward.m3_max(union)
 
         # ND(s, a) <- (ND(U_a' Q_set(s', a'))
         nd_s_a_dict = self.nd.get(state, {})
@@ -197,10 +194,10 @@ class AgentMOMP:
         """
 
         # Get R(s, a) with default.
-        r_s_a = self.r.get(state, {}).get(action, self.default_reward)
+        r_s_a = self.r.get(state, {}).get(action, self.environment.default_reward)
 
         # Get ND(s, a)
-        non_dominated_vectors = self.nd.get(state, {}).get(action, [self.default_reward])
+        non_dominated_vectors = self.nd.get(state, {}).get(action, [self.environment.default_reward])
         q_set = list()
 
         # R(s, a) + y*ND
@@ -361,7 +358,7 @@ class AgentMOMP:
             q_set = self.q_set(state=state, action=a)
 
             # Use m3_max algorithm to get non_dominated vectors from q_set.
-            non_dominated = self.default_reward.m3_max(q_set)
+            non_dominated = self.environment.default_reward.m3_max(q_set)
 
             # Get number of non_dominated vectors.
             evaluation = len(non_dominated)
@@ -395,7 +392,7 @@ class AgentMOMP:
             # Get Q-set from state given for each possible action.
             q_set = self.q_set(state=state, action=a)
             # Use m3_max algorithm to get non_dominated vectors from q_set.
-            non_dominated = self.default_reward.m3_max(q_set)
+            non_dominated = self.environment.default_reward.m3_max(q_set)
 
             # If has almost one non_dominated vector is a valid action.
             if len(non_dominated) > 0:
@@ -426,7 +423,6 @@ class AgentMOMP:
             'data': {
                 'epsilon': self.epsilon,
                 'gamma': self.gamma,
-                'default_reward': self.default_reward.components.tolist(),
                 'environment': {
                     'meta': {
                         'class': self.environment.__class__.__name__,
@@ -438,18 +434,18 @@ class AgentMOMP:
                 'states_to_observe': [{'key': k, 'value': v} for k, v in self.states_to_observe.items()],
                 'seed': self.seed,
                 'r': [
-                    {'key': k, 'value': {'key': int(k2), 'value': v2.components.tolist()}}
+                    {'key': k, 'value': {'key': int(k2), 'value': v2.tolist()}}
                     for k, v in self.r.items() for k2, v2 in v.items()
                 ],
                 'nd': [
-                    {'key': k, 'value': {'key': int(k2), 'value': [vector.components.tolist() for vector in v2]}}
+                    {'key': k, 'value': {'key': int(k2), 'value': [vector.tolist() for vector in v2]}}
                     for k, v in self.nd.items() for k2, v2 in v.items()
                 ],
                 'n': [
                     {'key': k, 'value': {'key': int(k2), 'value': v2}}
                     for k, v in self.n.items() for k2, v2 in v.items()
                 ],
-                'hv_reference': self.hv_reference.components.tolist(),
+                'hv_reference': self.hv_reference.tolist(),
                 'evaluation_mechanism': self.evaluation_mechanism
             }
         }
@@ -472,12 +468,14 @@ class AgentMOMP:
         """
 
         if filename is None:
-            filename = 'dumps/{}.json'.format(datetime.datetime.now().timestamp())
+            filename = datetime.datetime.now().timestamp()
+
+        file_path = '../dumps/{}.json'.format(filename)
 
         model = self.get_dict_model()
 
         # Open file with filename in write mode with UTF-8 encoding.
-        with open(filename, 'w', encoding='UTF-8') as file:
+        with open(file_path, 'w', encoding='UTF-8') as file:
             json.dump(model, file, indent=self.JSON_INDENT)
 
     @staticmethod
@@ -489,18 +487,18 @@ class AgentMOMP:
         """
 
         if filename is None:
-            path = 'dumps'
+            path = '../dumps'
 
             for root, directories, files in os.walk(path):
                 # Sort list of files
                 files.sort()
 
                 # Get last filename
-                filename = files[-1]
+                filename = files[-1].split('.json')[0]
 
-            filename = '{}/{}'.format(path, filename)
+        file_path = '../dumps/{}.json'.format(filename)
 
-        with open(filename, 'r', encoding='UTF-8') as file:
+        with open(file_path, 'r', encoding='UTF-8') as file:
             # Load structured data from indicated file.
             model = json.load(file)
 
@@ -509,31 +507,7 @@ class AgentMOMP:
         # Get data
         data = model.get('data')
 
-        # MARK: META
-
-        # Prepare module and class to make an instance.
-        class_name = meta.get('class')
-        module_name = meta.get('module')
-        module = importlib.import_module(module_name)
-        class_ = getattr(module, class_name)
-
-        # MARK: DATA
-
-        epsilon = data.get('epsilon')
-        gamma = data.get('gamma')
-        max_iterations = data.get('max_iterations')
-        seed = data.get('seed')
-        evaluation_mechanism = data.get('evaluation_mechanism')
-
-        # We use default_reward as reference, if all elements are int, then default_reward is a integer Vector,
-        # otherwise float Vector
-        default_reward = data.get('default_reward')
-        default_reward = Vector(default_reward) if (all([isinstance(x, int) for x in default_reward])) else VectorFloat(
-            default_reward)
-
-        # default_reward is reference so, reset components (multiply by zero) and add hv_reference to get hv_reference.
-        hv_reference = (default_reward * 0) + data.get('hv_reference')
-
+        # ENVIRONMENT
         environment = data.get('environment')
 
         # Meta
@@ -554,8 +528,34 @@ class AgentMOMP:
 
             if 'state' in key:
                 value = tuple(value)
+            elif 'default_reward' in key:
+                # If all elements are int, then default_reward is a integer Vector, otherwise float Vector
+                value = Vector(value) if (all([isinstance(x, int) for x in value])) else VectorFloat(value)
 
             vars(environment)[key] = value
+
+        # Get default reward as reference
+        default_reward = environment.default_reward
+
+        # AgentMOMP
+
+        # Meta
+
+        # Prepare module and class to make an instance.
+        class_name = meta.get('class')
+        module_name = meta.get('module')
+        module = importlib.import_module(module_name)
+        class_ = getattr(module, class_name)
+
+        # Data
+        epsilon = data.get('epsilon')
+        gamma = data.get('gamma')
+        max_iterations = data.get('max_iterations')
+        seed = data.get('seed')
+        evaluation_mechanism = data.get('evaluation_mechanism')
+
+        # default_reward is reference so, reset components (multiply by zero) and add hv_reference to get hv_reference.
+        hv_reference = (default_reward * 0) + data.get('hv_reference')
 
         # Update 'states_to_observe' data
         states_to_observe = dict()
@@ -608,7 +608,7 @@ class AgentMOMP:
             n.get(key).update({action: value})
 
         # Prepare an instance of model.
-        model = class_(environment=environment, default_reward=default_reward, epsilon=epsilon, gamma=gamma, seed=seed,
+        model = class_(environment=environment, epsilon=epsilon, gamma=gamma, seed=seed,
                        max_iterations=max_iterations, hv_reference=hv_reference,
                        evaluation_mechanism=evaluation_mechanism)
 

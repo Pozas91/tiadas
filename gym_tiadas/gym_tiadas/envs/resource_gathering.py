@@ -16,8 +16,8 @@ FINAL STATE: any of below states.
 REF: Empirical Evaluation methods for multi-objective reinforcement learning algorithms
     (Vamplew, Dazeley, Berry, Issabekov and Dekker) 2011
 """
-import numpy as np
 
+from models import Vector
 from .env_mesh import EnvMesh
 
 
@@ -28,15 +28,14 @@ class ResourceGathering(EnvMesh):
     # Treasures
     _treasures = {'GOLD': 0, 'GEM': 1}
 
-    def __init__(self, initial_state=(2, 4), default_reward=0., seed=0, p_attack=0.1):
+    def __init__(self, initial_state=(2, 4), default_reward=(0, 0, 0), seed=0, p_attack=0.1):
         """
         :param initial_state:
-        :param default_reward:
+        :param default_reward: (enemy_attack, gold, gems)
         :param seed:
         """
 
-        # [enemy_attack, gold, gems]
-        self.state = [0, 0, 0]
+        self.state = Vector(default_reward)
 
         # States where there are gold {state: available}
         self.gold_states = {(2, 0): True}
@@ -45,24 +44,25 @@ class ResourceGathering(EnvMesh):
         self.gem_states = {(4, 1): True}
 
         mesh_shape = (5, 5)
+        default_reward = Vector(default_reward)
 
         # Super constructor call.
-        super().__init__(mesh_shape, seed, initial_state=initial_state, default_reward=default_reward)
+        super().__init__(mesh_shape=mesh_shape, seed=seed, initial_state=initial_state, default_reward=default_reward)
 
         # States where there are enemies
         self.enemies = [(3, 0), (2, 1)]
 
         self.p_attack = p_attack
 
-    def step(self, action) -> (object, [float, float, float], bool, dict):
+    def step(self, action) -> (object, Vector, bool, dict):
         """
         Given an action, do a step
         :param action:
         :return:
         """
 
-        # Calc rewards
-        rewards = np.multiply(self.state, 0).tolist()
+        # Initialize rewards as vector (plus zero to fast copy)
+        rewards = self.default_reward + 0
 
         # Get new state
         new_state = self._next_state(action=action)
@@ -75,7 +75,7 @@ class ResourceGathering(EnvMesh):
 
         # If the agent is in the same state as an enemy
         if self.current_state in self.enemies:
-            rewards = np.multiply(self.state, 1).tolist()
+            rewards = self.state * 1
 
         # If the agent is in the same state as gold
         elif self.current_state in self.gold_states.keys():
@@ -87,7 +87,7 @@ class ResourceGathering(EnvMesh):
 
         # If the agent is at home and have gold or gem
         elif self.__at_home():
-            rewards = np.multiply(self.state, 1).tolist()
+            rewards = self.state * 1
 
         # Set info
         info = {}
@@ -100,7 +100,7 @@ class ResourceGathering(EnvMesh):
         :return:
         """
         self.current_state = self.initial_state
-        self.state = np.multiply(self.state, 0).tolist()
+        self.state = self.default_reward + 0
 
         # Reset golds positions
         for gold_state in self.gold_states.keys():
@@ -205,6 +205,7 @@ class ResourceGathering(EnvMesh):
         """
         # Check if agent is attacked
         attacked = state in self.enemies and self.__enemy_attack()
+
         # Check if agent is on checkpoint
         checkpoint = state == self.initial_state and self.__is_checkpoint()
 

@@ -1,6 +1,7 @@
 """
 DeepSeaTreasure environment simplified to test models.
 """
+from models import Vector
 from .env_mesh import EnvMesh
 
 
@@ -13,10 +14,10 @@ class DeepSeaTreasureSimplified(EnvMesh):
         (-1, 5), (-3, 80), (-5, 120)
     ]
 
-    def __init__(self, initial_state=(0, 0), default_reward=0., seed=0):
+    def __init__(self, initial_state=(0, 0), default_reward=(0,), seed=0):
         """
         :param initial_state:
-        :param default_reward:
+        :param default_reward: (time_inverted, treasure_value)
         :param seed:
         """
 
@@ -27,23 +28,28 @@ class DeepSeaTreasureSimplified(EnvMesh):
             (2, 3): 120,
         }
 
+        # Default reward plus time (time_inverted, treasure_value)
+        default_reward = (-1,) + default_reward
+        default_reward = Vector(default_reward)
+
         mesh_shape = (3, 4)
+
         obstacles = frozenset()
         obstacles = obstacles.union([(0, y) for y in range(2, 4)])
         obstacles = obstacles.union([(1, y) for y in range(3, 4)])
 
-        super().__init__(mesh_shape, seed, initial_state=initial_state, default_reward=default_reward, finals=finals,
-                         obstacles=obstacles)
+        super().__init__(mesh_shape=mesh_shape, seed=seed, initial_state=initial_state, default_reward=default_reward,
+                         finals=finals, obstacles=obstacles)
 
-    def step(self, action) -> (object, [float, float], bool, dict):
+    def step(self, action) -> (object, Vector, bool, dict):
         """
         Given an action, do a step
         :param action:
         :return: (state, (time_inverted, treasure_value), final, info)
         """
 
-        # (time_inverted, treasure_value)
-        rewards = [0., 0.]
+        # Initialize rewards as vector (plus zero to fast copy)
+        rewards = self.default_reward + 0
 
         # Get new state
         new_state = self._next_state(action=action)
@@ -51,11 +57,8 @@ class DeepSeaTreasureSimplified(EnvMesh):
         # Update previous state
         self.current_state = new_state
 
-        # Get time inverted
-        rewards[0] = -1
-
         # Get treasure value
-        rewards[1] = self.finals.get(self.current_state, self.default_reward)
+        rewards[1] = self.finals.get(self.current_state, self.default_reward[1])
 
         # Set info
         info = {}
@@ -81,5 +84,3 @@ class DeepSeaTreasureSimplified(EnvMesh):
         :return:
         """
         return state in self.finals.keys()
-
-

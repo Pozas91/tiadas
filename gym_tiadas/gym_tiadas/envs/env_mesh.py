@@ -20,6 +20,8 @@ import gym
 from gym import spaces
 from gym.utils import seeding
 
+from models import Vector
+
 
 class EnvMesh(gym.Env):
     # Possible actions
@@ -28,8 +30,8 @@ class EnvMesh(gym.Env):
     # Icons to render environments
     _icons = {'BLANK': ' ', 'BLOCK': '■', 'TREASURE': '$', 'CURRENT': '☺', 'ENEMY': '×', 'HOME': 'µ', 'FINAL': '$'}
 
-    def __init__(self, mesh_shape: tuple, seed=None, initial_state=None, obstacles=None, finals=None,
-                 default_reward=0.):
+    def __init__(self, mesh_shape: tuple, default_reward=None, seed=None, initial_state=None, obstacles=None,
+                 finals=None):
 
         # Set action space
         self.action_space = spaces.Discrete(len(self._actions))
@@ -40,6 +42,7 @@ class EnvMesh(gym.Env):
 
         # Prepare random seed
         self.np_random = None
+        self.initial_seed = seed
         self.seed(seed=seed)
 
         # Set current environment state
@@ -77,7 +80,7 @@ class EnvMesh(gym.Env):
         """
         return self._icons
 
-    def step(self, action):
+    def step(self, action) -> (object, Vector, bool, dict):
         """
         Do a step in the environment
         :param action:
@@ -175,6 +178,9 @@ class EnvMesh(gym.Env):
         :return:
         """
         data = vars(self)
+
+        # Prepare data
+        data['default_reward'] = self.default_reward.tolist()
 
         # Clean Environment Data
         del data['action_space']

@@ -160,3 +160,6 @@ fabric.properties
 
 # Ignore draft.py file.
 draft.py
+
+# Ignore dumps directory
+dumps/*

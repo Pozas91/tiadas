@@ -4,7 +4,8 @@ Useful functions to calculate the pareto frontier.
 import numpy as np
 import pygmo as pg
 
-from utils import q_learning
+import utils.miscellaneous as um
+import utils.q_learning as uq
 
 
 def optimize(agent, w1: float, w2: float, solutions_known=None) -> (float, float):
@@ -30,13 +31,13 @@ def optimize(agent, w1: float, w2: float, solutions_known=None) -> (float, float
         # Get max of these sums (That is the objective).
         objective = np.max(objectives)
         # Train agent searching that objective.
-        q_learning.objective_training(agent=agent, objective=objective, close_margin=3e-1)
+        uq.objective_training(agent=agent, objective=objective, close_margin=3e-1)
     else:
         # Normal training
-        q_learning.train(agent=agent)
+        uq.train(agent=agent)
 
     # Get point c from agent's test.
-    c = q_learning.testing(agent=agent)
+    c = uq.testing(agent=agent)
 
     return c
 
@@ -66,7 +67,7 @@ def calc_frontier(p: (float, float), q: (float, float), problem, solutions_known
         a, b = accumulate.pop()
 
         # Order points nearest by center first.
-        a, b = tuple(q_learning.order_points_by_center_nearest([a, b]))
+        a, b = tuple(um.order_points_by_center_nearest([a, b]))
 
         # Decompose points
         a_x, a_y = a

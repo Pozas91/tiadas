@@ -12,7 +12,7 @@ plate and walking penalty is -1 per step.
 FINAL STATE: No food to eat.
 
 REF: Dynamic Preferences in Multi-Criteria Reinforcement Learning (Sriraam Natarajan)"""
-
+from models import VectorFloat
 from .env_mesh import EnvMesh
 
 
@@ -20,11 +20,11 @@ class BuridanAss(EnvMesh):
     # Possible actions
     _actions = {'UP': 0, 'RIGHT': 1, 'DOWN': 2, 'LEFT': 3, 'STAY': 4}
 
-    def __init__(self, initial_state=(1, 1), default_reward=0., seed=0, p_stolen=.9,
-                 n_appear=10, stolen_penalty=-.5, walking_penalty=-1., hunger_penalty=-1., last_ate_limit=9):
+    def __init__(self, initial_state=(1, 1), default_reward=(0., 0., 0.), seed=0, p_stolen=.9,
+                 n_appear=10, stolen_penalty=-.5, walking_penalty=-1, hunger_penalty=-1, last_ate_limit=9):
         """
         :param initial_state:
-        :param default_reward:
+        :param default_reward: (hunger, stolen, walking)
         :param seed:
         :param p_stolen: Probability to stole food if not are visible.
         :param n_appear: Number of time-steps until food is regenerated.
@@ -40,8 +40,10 @@ class BuridanAss(EnvMesh):
         }
 
         mesh_shape = (3, 3)
+        default_reward = VectorFloat(default_reward)
 
-        super().__init__(mesh_shape, seed, default_reward=default_reward, initial_state=initial_state, finals=finals)
+        super().__init__(mesh_shape=mesh_shape, seed=seed, default_reward=default_reward, initial_state=initial_state,
+                         finals=finals)
 
         self.p_stolen = p_stolen
         self.n_appear = n_appear
@@ -53,15 +55,15 @@ class BuridanAss(EnvMesh):
         # Last time that donkey ate.
         self.last_ate = 0
 
-    def step(self, action) -> (object, [float, float, float], bool, dict):
+    def step(self, action) -> (object, VectorFloat, bool, dict):
         """
         Given an action, do a step
         :param action:
         :return:
         """
 
-        # (hunger, stolen, walking)
-        rewards = [0., 0., 0.]
+        # Initialize rewards as vector (plus zero to fast copy)
+        rewards = self.default_reward + 0
 
         # (state, states_visible_with_food, last_ate)
         complex_state = [None, None, None]
@@ -112,7 +114,7 @@ class BuridanAss(EnvMesh):
             states_with_visible_food)
 
         # If action is different to stay, donkey is walking and have a penalize.
-        rewards[2] = 0. if self._actions.get('STAY') == action else -1.
+        rewards[2] = self.default_reward[2] if self._actions.get('STAY') == action else self.walking_penalty
 
         # Set last ate
         complex_state[2] = self.last_ate

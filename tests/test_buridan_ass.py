@@ -56,8 +56,8 @@ class TestBuridanAss(unittest.TestCase):
         self.assertEqual((1, 1), self.environment.initial_state)
         self.assertEqual(self.environment.initial_state, self.environment.current_state)
 
-        # Default reward is 0.
-        self.assertEqual(0., self.environment.default_reward)
+        # Default reward is (0., 0., 0.)
+        self.assertEqual((0., 0., 0.), self.environment.default_reward)
 
         # Check if finals states are correct
         for state, food in self.environment.finals.items():

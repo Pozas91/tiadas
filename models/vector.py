@@ -26,7 +26,7 @@ class Vector:
         :param components:
         """
 
-        assert isinstance(components, (np.ndarray, list))
+        assert isinstance(components, (np.ndarray, list, tuple))
 
         self.components = np.array(components).astype(dtype)
 
@@ -42,6 +42,20 @@ class Vector:
         :return:
         """
         return self.components[item]
+
+    def __setitem__(self, key, value):
+        """
+        Set value to key in vector:
+
+        v1 = Vector([10, 2, 3])
+
+        v1[1] = 9 -> Vector([10, 9, 3])
+        v1.components[1] = 9 -> Vector([10, 9, 3])
+        :param key:
+        :param value:
+        :return:
+        """
+        self.components[key] = value
 
     def __len__(self):
         """
@@ -162,6 +176,13 @@ class Vector:
         :return:
         """
         return np.all(np.less_equal(self.components, other.components))
+
+    def tolist(self):
+        """
+        Return as list al components of this vector
+        :return:
+        """
+        return self.components.tolist()
 
     @property
     def magnitude(self):

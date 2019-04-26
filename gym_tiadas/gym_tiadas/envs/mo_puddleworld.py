@@ -12,6 +12,7 @@ REF: Empirical evaluation methods for multi-objective reinforcement learning alg
 """
 from scipy.spatial import distance
 
+from models import VectorFloat
 from .env_mesh import EnvMesh
 
 
@@ -19,10 +20,10 @@ class MoPuddleWorld(EnvMesh):
     # Possible actions
     _actions = {'UP': 0, 'RIGHT': 1, 'DOWN': 2, 'LEFT': 3}
 
-    def __init__(self, default_reward=10, penalize_non_goal=-1, seed=0, final_state=(19, 0)):
+    def __init__(self, default_reward=(10, 0), penalize_non_goal=-1, seed=0, final_state=(19, 0)):
         """
 
-        :param default_reward:
+        :param default_reward: (non_goal_reached, puddle_penalize)
         :param penalize_non_goal:
         :param seed:
         :param final_state:
@@ -30,26 +31,26 @@ class MoPuddleWorld(EnvMesh):
 
         self.final_state = final_state
         mesh_shape = (20, 20)
+        default_reward = VectorFloat(default_reward)
 
-        super().__init__(mesh_shape, seed)
+        super().__init__(mesh_shape=mesh_shape, seed=seed, default_reward=default_reward)
 
         self.puddles = frozenset()
         self.puddles = self.puddles.union([(x, y) for x in range(0, 11) for y in range(3, 7)])
         self.puddles = self.puddles.union([(x, y) for x in range(6, 10) for y in range(2, 14)])
         self.penalize_non_goal = penalize_non_goal
-        self.final_reward = default_reward
 
         self.current_state = self.reset()
 
-    def step(self, action) -> (object, [float, float], bool, dict):
+    def step(self, action) -> (object, VectorFloat, bool, dict):
         """
         Given an action, do a step
         :param action:
         :return: (state, (non_goal_reached, puddle_penalize), final, info)
         """
 
-        # (non_goal_reached, puddle_penalize)
-        rewards = [0, 0]
+        # Initialize rewards as vector (plus zero to fast copy)
+        rewards = self.default_reward + 0
 
         # Get new state
         new_state = self._next_state(action=action)
@@ -61,7 +62,8 @@ class MoPuddleWorld(EnvMesh):
         final = self.is_final(self.current_state)
 
         # Set final reward
-        rewards[0] = self.final_reward if final else self.penalize_non_goal
+        if not final:
+            rewards[0] = self.penalize_non_goal
 
         # if the current state is in an puddle
         if self.current_state in self.puddles:
@@ -102,7 +104,11 @@ class MoPuddleWorld(EnvMesh):
         return self.current_state
 
     def is_final(self, state=None) -> bool:
-        # If agent is in treasure
+        """
+        Is final if agent is on final state
+        :param state:
+        :return:
+        """
         return state == self.final_state
 
     def get_dict_model(self):

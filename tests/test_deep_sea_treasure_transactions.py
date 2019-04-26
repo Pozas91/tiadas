@@ -7,6 +7,7 @@ import unittest
 from gym import spaces
 
 from gym_tiadas.gym_tiadas.envs import DeepSeaTreasureTransactions
+from models import Vector
 
 
 class TestDeepSeaTreasureTransactions(unittest.TestCase):
@@ -50,8 +51,8 @@ class TestDeepSeaTreasureTransactions(unittest.TestCase):
         self.assertEqual((0, 0), self.environment.initial_state)
         self.assertEqual(self.environment.initial_state, self.environment.current_state)
 
-        # Default reward is 0.
-        self.assertEqual(0., self.environment.default_reward)
+        # Default reward is (-1, 0)
+        self.assertEqual((-1, 0), self.environment.default_reward)
 
     def test_seed(self):
         """

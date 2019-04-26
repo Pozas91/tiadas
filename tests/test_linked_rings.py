@@ -45,9 +45,6 @@ class TestLinkedRings(unittest.TestCase):
         self.assertEqual(0, self.environment.initial_state)
         self.assertEqual(self.environment.initial_state, self.environment.current_state)
 
-        # Default reward is (0., 0.)
-        self.assertEqual((0., 0.), self.environment.default_reward)
-
     def test_seed(self):
         """
         Testing seed method

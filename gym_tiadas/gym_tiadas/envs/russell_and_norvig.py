@@ -4,6 +4,7 @@ list of probabilities that can change agent's action to another.
 """
 import numpy as np
 
+from models import VectorFloat
 from .env_mesh import EnvMesh
 
 
@@ -12,7 +13,7 @@ class RussellNorvig(EnvMesh):
     _actions = {'UP': 0, 'RIGHT': 1, 'DOWN': 2, 'LEFT': 3}
 
     def __init__(self, transactions=(0.8, 0.1, 0., 0.1), initial_state=(0, 2),
-                 default_reward=-0.04, seed=0):
+                 default_reward=(-0.04,), seed=0):
         """
         :param transactions:
             Probabilities to change direction of action given.
@@ -32,20 +33,24 @@ class RussellNorvig(EnvMesh):
 
         # Default shape
         mesh_shape = (4, 3)
+        default_reward = VectorFloat(default_reward)
 
-        super().__init__(mesh_shape, seed, initial_state=initial_state, obstacles=obstacles, finals=finals,
-                         default_reward=default_reward)
+        super().__init__(mesh_shape=mesh_shape, seed=seed, initial_state=initial_state, obstacles=obstacles,
+                         finals=finals, default_reward=default_reward)
 
         assert isinstance(transactions, tuple) and np.sum(transactions) == 1. and len(transactions) == len(
             self._actions)
         self.transactions = transactions
 
-    def step(self, action) -> (object, float, bool, dict):
+    def step(self, action) -> (object, VectorFloat, bool, dict):
         """
         Given an action, do a step
         :param action:
         :return:
         """
+
+        # Initialize rewards as vector (plus zero to fast copy)
+        reward = self.default_reward + 0
 
         # Get probability action
         action = self.__probability_action(action=action)
@@ -57,7 +62,7 @@ class RussellNorvig(EnvMesh):
         self.current_state = new_state
 
         # Get reward
-        reward = self.finals.get(self.current_state, self.default_reward)
+        reward[0] = self.finals.get(self.current_state, self.default_reward[0])
 
         # Check if is final state
         final = self.is_final(self.current_state)
