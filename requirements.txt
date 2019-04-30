@@ -3,3 +3,4 @@ pygmo
 numpy
 matplotlib
 gym
+python>=3.6
