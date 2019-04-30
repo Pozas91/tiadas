@@ -526,13 +526,17 @@ class AgentMOMP:
         # Set environment data
         for key, value in environment_data.items():
 
-            if 'state' in key:
+            if 'state' in key or 'transactions' in key:
                 value = tuple(value)
+
             elif 'default_reward' in key:
                 # If all elements are int, then default_reward is a integer Vector, otherwise float Vector
                 value = Vector(value) if (all([isinstance(x, int) for x in value])) else VectorFloat(value)
 
             vars(environment)[key] = value
+
+        # Set seed
+        environment.seed(seed=environment.initial_seed)
 
         # Get default reward as reference
         default_reward = environment.default_reward

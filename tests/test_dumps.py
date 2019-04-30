@@ -29,20 +29,24 @@ class TestDumps(unittest.TestCase):
         seed = 1
         hv_reference = Vector([-5, -5, -5])
         evaluation_mechanism = 'PO-PQL'
-        epsilon = 0.2
+        epsilon = 0.11
         states_to_observe = [(0, 0)]
         epochs = np.random.randint(10, 100)
-        gamma = 0.8
+        gamma = 0.99
         max_iterations = None
 
+        # Instance of Environment
         environment = BonusWorld(initial_state=initial_state, default_reward=default_reward, seed=seed)
 
+        # Instance of AgentMOMP
         agent = AgentMOMP(environment=environment, epsilon=epsilon, states_to_observe=states_to_observe,
                           hv_reference=hv_reference, evaluation_mechanism=evaluation_mechanism, gamma=gamma,
                           max_iterations=max_iterations)
 
+        # Train to modify data.
         uq.train(agent=agent, epochs=epochs)
 
+        # Save and load as new agent.
         agent.save()
         agent_loaded = AgentMOMP.load()
 
@@ -61,7 +65,7 @@ class TestDumps(unittest.TestCase):
 
         # Environment
         self.assertEqual(agent.environment.initial_state, agent_loaded.environment.initial_state)
-        self.assertEqual(agent.environment.seed, agent_loaded.environment.seed)
+        self.assertEqual(agent.environment.initial_seed, agent_loaded.environment.initial_seed)
         self.assertEqual(agent.environment.default_reward, agent_loaded.environment.default_reward)
         self.assertEqual(agent.environment.bonus_activated, agent_loaded.environment.bonus_activated)
 
@@ -70,25 +74,38 @@ class TestDumps(unittest.TestCase):
         Testing agent with BuridanAss environment.
         :return:
         """
-        initial_state = (1, 1)
-        default_reward = (1, 1)
+        initial_state = (0, 0)
+        default_reward = (1., 1., 1.)
         seed = 1
         hv_reference = Vector([-5, -5, -5])
         evaluation_mechanism = 'PO-PQL'
-        epsilon = 0.2
-        states_to_observe = [(0, 0)]
+        epsilon = 0.11
+        states_to_observe = [(1, 1)]
         epochs = np.random.randint(10, 100)
-        gamma = 0.8
+        gamma = 0.99
         max_iterations = None
+        p_stolen = .8
+        n_appear = 15
+        stolen_penalty = -.3
+        walking_penalty = -2
+        hunger_penalty = -2
+        last_ate_limit = 15
 
-        environment = BonusWorld(initial_state=initial_state, default_reward=default_reward, seed=seed)
+        # Instance of Environment
+        environment = BuridanAss(initial_state=initial_state, default_reward=default_reward, seed=seed,
+                                 p_stolen=p_stolen, n_appear=n_appear, stolen_penalty=stolen_penalty,
+                                 walking_penalty=walking_penalty, hunger_penalty=hunger_penalty,
+                                 last_ate_limit=last_ate_limit)
 
+        # Instance of AgentMOMP
         agent = AgentMOMP(environment=environment, epsilon=epsilon, states_to_observe=states_to_observe,
                           hv_reference=hv_reference, evaluation_mechanism=evaluation_mechanism, gamma=gamma,
                           max_iterations=max_iterations)
 
+        # Train to modify data.
         uq.train(agent=agent, epochs=epochs)
 
+        # Save and load as new agent.
         agent.save()
         agent_loaded = AgentMOMP.load()
 
@@ -107,6 +124,405 @@ class TestDumps(unittest.TestCase):
 
         # Environment
         self.assertEqual(agent.environment.initial_state, agent_loaded.environment.initial_state)
-        self.assertEqual(agent.environment.seed, agent_loaded.environment.seed)
+        self.assertEqual(agent.environment.initial_seed, agent_loaded.environment.initial_seed)
         self.assertEqual(agent.environment.default_reward, agent_loaded.environment.default_reward)
-        self.assertEqual(agent.environment.bonus_activated, agent_loaded.environment.bonus_activated)
+        self.assertEqual(agent.environment.p_stolen, agent_loaded.environment.p_stolen)
+        self.assertEqual(agent.environment.n_appear, agent_loaded.environment.n_appear)
+        self.assertEqual(agent.environment.stolen_penalty, agent_loaded.environment.stolen_penalty)
+        self.assertEqual(agent.environment.walking_penalty, agent_loaded.environment.walking_penalty)
+        self.assertEqual(agent.environment.hunger_penalty, agent_loaded.environment.hunger_penalty)
+        self.assertEqual(agent.environment.last_ate_limit, agent_loaded.environment.last_ate_limit)
+
+    def test_deep_sea_treasure(self):
+        """
+        Testing agent with DeepSeaTreasure environment.
+        :return:
+        """
+        initial_state = (1, 1)
+        default_reward = (1,)
+        seed = 1
+        hv_reference = Vector([-20, 0])
+        evaluation_mechanism = 'PO-PQL'
+        epsilon = 0.4
+        states_to_observe = [(0, 0)]
+        epochs = np.random.randint(10, 100)
+        gamma = 0.99
+        max_iterations = None
+
+        # Instance of Environment
+        environment = DeepSeaTreasure(initial_state=initial_state, default_reward=default_reward, seed=seed)
+
+        # Instance of AgentMOMP
+        agent = AgentMOMP(environment=environment, epsilon=epsilon, states_to_observe=states_to_observe,
+                          hv_reference=hv_reference, evaluation_mechanism=evaluation_mechanism, gamma=gamma,
+                          max_iterations=max_iterations)
+
+        # Train to modify data.
+        uq.train(agent=agent, epochs=epochs)
+
+        # Save and load as new agent.
+        agent.save()
+        agent_loaded = AgentMOMP.load()
+
+        # Agent
+        self.assertEqual(type(agent), type(agent_loaded))
+        self.assertEqual(agent.epsilon, agent_loaded.epsilon)
+        self.assertEqual(agent.gamma, agent_loaded.gamma)
+        self.assertEqual(agent.max_iterations, agent_loaded.max_iterations)
+        self.assertEqual(agent.states_to_observe, agent_loaded.states_to_observe)
+        self.assertEqual(agent.seed, agent_loaded.seed)
+        self.assertEqual(agent.r, agent_loaded.r)
+        self.assertEqual(agent.nd, agent_loaded.nd)
+        self.assertEqual(agent.n, agent_loaded.n)
+        self.assertEqual(agent.hv_reference, agent_loaded.hv_reference)
+        self.assertEqual(agent.evaluation_mechanism, agent_loaded.evaluation_mechanism)
+
+        # Environment
+        self.assertEqual(agent.environment.initial_state, agent_loaded.environment.initial_state)
+        self.assertEqual(agent.environment.initial_seed, agent_loaded.environment.initial_seed)
+        self.assertEqual(agent.environment.default_reward, agent_loaded.environment.default_reward)
+
+    def test_deep_sea_treasure_simplified(self):
+        """
+        Testing agent with DeepSeaTreasureSimplified environment.
+        :return:
+        """
+        initial_state = (1, 1)
+        default_reward = (1,)
+        seed = 1
+        hv_reference = Vector([-20, 0])
+        evaluation_mechanism = 'PO-PQL'
+        epsilon = 0.11
+        states_to_observe = [(0, 0)]
+        epochs = np.random.randint(10, 100)
+        gamma = 0.99
+        max_iterations = None
+
+        # Instance of Environment
+        environment = DeepSeaTreasureSimplified(initial_state=initial_state, default_reward=default_reward, seed=seed)
+
+        # Instance of AgentMOMP
+        agent = AgentMOMP(environment=environment, epsilon=epsilon, states_to_observe=states_to_observe,
+                          hv_reference=hv_reference, evaluation_mechanism=evaluation_mechanism, gamma=gamma,
+                          max_iterations=max_iterations)
+
+        # Train to modify data.
+        uq.train(agent=agent, epochs=epochs)
+
+        # Save and load as new agent.
+        agent.save()
+        agent_loaded = AgentMOMP.load()
+
+        # Agent
+        self.assertEqual(type(agent), type(agent_loaded))
+        self.assertEqual(agent.epsilon, agent_loaded.epsilon)
+        self.assertEqual(agent.gamma, agent_loaded.gamma)
+        self.assertEqual(agent.max_iterations, agent_loaded.max_iterations)
+        self.assertEqual(agent.states_to_observe, agent_loaded.states_to_observe)
+        self.assertEqual(agent.seed, agent_loaded.seed)
+        self.assertEqual(agent.r, agent_loaded.r)
+        self.assertEqual(agent.nd, agent_loaded.nd)
+        self.assertEqual(agent.n, agent_loaded.n)
+        self.assertEqual(agent.hv_reference, agent_loaded.hv_reference)
+        self.assertEqual(agent.evaluation_mechanism, agent_loaded.evaluation_mechanism)
+
+        # Environment
+        self.assertEqual(agent.environment.initial_state, agent_loaded.environment.initial_state)
+        self.assertEqual(agent.environment.initial_seed, agent_loaded.environment.initial_seed)
+        self.assertEqual(agent.environment.default_reward, agent_loaded.environment.default_reward)
+
+    def test_deep_sea_treasure_transactions(self):
+        """
+        Testing agent with DeepSeaTreasureTransactions environment.
+        :return:
+        """
+        initial_state = (1, 1)
+        default_reward = (1,)
+        seed = 1
+        hv_reference = Vector([-20, 0])
+        evaluation_mechanism = 'PO-PQL'
+        epsilon = 0.11
+        states_to_observe = [(0, 0)]
+        epochs = np.random.randint(10, 100)
+        gamma = 0.99
+        max_iterations = None
+        n_transaction = 0.33
+
+        # Instance of Environment
+        environment = DeepSeaTreasureTransactions(initial_state=initial_state, default_reward=default_reward, seed=seed,
+                                                  n_transaction=n_transaction)
+
+        # Instance of AgentMOMP
+        agent = AgentMOMP(environment=environment, epsilon=epsilon, states_to_observe=states_to_observe,
+                          hv_reference=hv_reference, evaluation_mechanism=evaluation_mechanism, gamma=gamma,
+                          max_iterations=max_iterations)
+
+        # Train to modify data.
+        uq.train(agent=agent, epochs=epochs)
+
+        # Save and load as new agent.
+        agent.save()
+        agent_loaded = AgentMOMP.load()
+
+        # Agent
+        self.assertEqual(type(agent), type(agent_loaded))
+        self.assertEqual(agent.epsilon, agent_loaded.epsilon)
+        self.assertEqual(agent.gamma, agent_loaded.gamma)
+        self.assertEqual(agent.max_iterations, agent_loaded.max_iterations)
+        self.assertEqual(agent.states_to_observe, agent_loaded.states_to_observe)
+        self.assertEqual(agent.seed, agent_loaded.seed)
+        self.assertEqual(agent.r, agent_loaded.r)
+        self.assertEqual(agent.nd, agent_loaded.nd)
+        self.assertEqual(agent.n, agent_loaded.n)
+        self.assertEqual(agent.hv_reference, agent_loaded.hv_reference)
+        self.assertEqual(agent.evaluation_mechanism, agent_loaded.evaluation_mechanism)
+
+        # Environment
+        self.assertEqual(agent.environment.initial_state, agent_loaded.environment.initial_state)
+        self.assertEqual(agent.environment.initial_seed, agent_loaded.environment.initial_seed)
+        self.assertEqual(agent.environment.default_reward, agent_loaded.environment.default_reward)
+        self.assertEqual(agent.environment.transactions, agent_loaded.environment.transactions)
+
+    def test_mo_puddle_world(self):
+        """
+        Testing agent with MoPuddleWorld environment.
+        :return:
+        """
+        default_reward = (10, 1)
+        penalize_non_goal = -1.1
+        seed = 1
+        hv_reference = Vector([-20, 0])
+        evaluation_mechanism = 'PO-PQL'
+        epsilon = 0.11
+        states_to_observe = [(0, 0)]
+        epochs = np.random.randint(10, 100)
+        gamma = 0.99
+        max_iterations = None
+
+        # Instance of Environment
+        environment = MoPuddleWorld(default_reward=default_reward, seed=seed, penalize_non_goal=penalize_non_goal)
+
+        # Instance of AgentMOMP
+        agent = AgentMOMP(environment=environment, epsilon=epsilon, states_to_observe=states_to_observe,
+                          hv_reference=hv_reference, evaluation_mechanism=evaluation_mechanism, gamma=gamma,
+                          max_iterations=max_iterations)
+
+        # Train to modify data.
+        uq.train(agent=agent, epochs=epochs)
+
+        # Save and load as new agent.
+        agent.save()
+        agent_loaded = AgentMOMP.load()
+
+        # Agent
+        self.assertEqual(type(agent), type(agent_loaded))
+        self.assertEqual(agent.epsilon, agent_loaded.epsilon)
+        self.assertEqual(agent.gamma, agent_loaded.gamma)
+        self.assertEqual(agent.max_iterations, agent_loaded.max_iterations)
+        self.assertEqual(agent.states_to_observe, agent_loaded.states_to_observe)
+        self.assertEqual(agent.seed, agent_loaded.seed)
+        self.assertEqual(agent.r, agent_loaded.r)
+        self.assertEqual(agent.nd, agent_loaded.nd)
+        self.assertEqual(agent.n, agent_loaded.n)
+        self.assertEqual(agent.hv_reference, agent_loaded.hv_reference)
+        self.assertEqual(agent.evaluation_mechanism, agent_loaded.evaluation_mechanism)
+
+        # Environment
+        self.assertEqual(agent.environment.penalize_non_goal, agent_loaded.environment.penalize_non_goal)
+        self.assertEqual(agent.environment.initial_seed, agent_loaded.environment.initial_seed)
+        self.assertEqual(agent.environment.default_reward, agent_loaded.environment.default_reward)
+
+    def test_pressurized_bountiful_sea_treasure(self):
+        """
+        Testing agent with PressurizedBountifulSeaTreasure environment.
+        :return:
+        """
+        default_reward = (-1,)
+        seed = 1
+        hv_reference = Vector([-20, -20, -20])
+        evaluation_mechanism = 'PO-PQL'
+        epsilon = 0.11
+        states_to_observe = [(0, 0)]
+        epochs = np.random.randint(10, 100)
+        gamma = 0.99
+        max_iterations = None
+
+        # Instance of Environment
+        environment = PressurizedBountifulSeaTreasure(default_reward=default_reward, seed=seed)
+
+        # Instance of AgentMOMP
+        agent = AgentMOMP(environment=environment, epsilon=epsilon, states_to_observe=states_to_observe,
+                          hv_reference=hv_reference, evaluation_mechanism=evaluation_mechanism, gamma=gamma,
+                          max_iterations=max_iterations)
+
+        # Train to modify data.
+        uq.train(agent=agent, epochs=epochs)
+
+        # Save and load as new agent.
+        agent.save()
+        agent_loaded = AgentMOMP.load()
+
+        # Agent
+        self.assertEqual(type(agent), type(agent_loaded))
+        self.assertEqual(agent.epsilon, agent_loaded.epsilon)
+        self.assertEqual(agent.gamma, agent_loaded.gamma)
+        self.assertEqual(agent.max_iterations, agent_loaded.max_iterations)
+        self.assertEqual(agent.states_to_observe, agent_loaded.states_to_observe)
+        self.assertEqual(agent.seed, agent_loaded.seed)
+        self.assertEqual(agent.r, agent_loaded.r)
+        self.assertEqual(agent.nd, agent_loaded.nd)
+        self.assertEqual(agent.n, agent_loaded.n)
+        self.assertEqual(agent.hv_reference, agent_loaded.hv_reference)
+        self.assertEqual(agent.evaluation_mechanism, agent_loaded.evaluation_mechanism)
+
+        # Environment
+        self.assertEqual(agent.environment.initial_seed, agent_loaded.environment.initial_seed)
+        self.assertEqual(agent.environment.default_reward, agent_loaded.environment.default_reward)
+
+    def test_resource_gathering(self):
+        """
+        Testing agent with ResourceGathering environment.
+        :return:
+        """
+        default_reward = (-1, 0.1, 0.1)
+        seed = 1
+        hv_reference = Vector([-20, -20, -20])
+        evaluation_mechanism = 'PO-PQL'
+        epsilon = 0.11
+        states_to_observe = [(0, 0)]
+        epochs = np.random.randint(10, 100)
+        gamma = 0.99
+        max_iterations = None
+        p_attack = 0.2
+
+        # Instance of Environment
+        environment = ResourceGathering(default_reward=default_reward, seed=seed, p_attack=p_attack)
+
+        # Instance of AgentMOMP
+        agent = AgentMOMP(environment=environment, epsilon=epsilon, states_to_observe=states_to_observe,
+                          hv_reference=hv_reference, evaluation_mechanism=evaluation_mechanism, gamma=gamma,
+                          max_iterations=max_iterations)
+
+        # Train to modify data.
+        uq.train(agent=agent, epochs=epochs)
+
+        # Save and load as new agent.
+        agent.save()
+        agent_loaded = AgentMOMP.load()
+
+        # Agent
+        self.assertEqual(type(agent), type(agent_loaded))
+        self.assertEqual(agent.epsilon, agent_loaded.epsilon)
+        self.assertEqual(agent.gamma, agent_loaded.gamma)
+        self.assertEqual(agent.max_iterations, agent_loaded.max_iterations)
+        self.assertEqual(agent.states_to_observe, agent_loaded.states_to_observe)
+        self.assertEqual(agent.seed, agent_loaded.seed)
+        self.assertEqual(agent.r, agent_loaded.r)
+        self.assertEqual(agent.nd, agent_loaded.nd)
+        self.assertEqual(agent.n, agent_loaded.n)
+        self.assertEqual(agent.hv_reference, agent_loaded.hv_reference)
+        self.assertEqual(agent.evaluation_mechanism, agent_loaded.evaluation_mechanism)
+
+        # Environment
+        self.assertEqual(agent.environment.p_attack, agent_loaded.environment.p_attack)
+        self.assertEqual(agent.environment.initial_seed, agent_loaded.environment.initial_seed)
+        self.assertEqual(agent.environment.default_reward, agent_loaded.environment.default_reward)
+
+    def test_resource_gathering_limit(self):
+        """
+        Testing agent with ResourceGatheringLimit environment.
+        :return:
+        """
+        default_reward = (-1, 0.1, 0.1)
+        seed = 1
+        time_limit = 50
+        hv_reference = Vector([-20, -20, -20])
+        evaluation_mechanism = 'PO-PQL'
+        epsilon = 0.11
+        states_to_observe = [(0, 0)]
+        epochs = np.random.randint(10, 100)
+        gamma = 0.99
+        max_iterations = None
+        p_attack = 0.2
+
+        # Instance of Environment
+        environment = ResourceGatheringLimit(default_reward=default_reward, seed=seed, p_attack=p_attack,
+                                             time_limit=time_limit)
+
+        # Instance of AgentMOMP
+        agent = AgentMOMP(environment=environment, epsilon=epsilon, states_to_observe=states_to_observe,
+                          hv_reference=hv_reference, evaluation_mechanism=evaluation_mechanism, gamma=gamma,
+                          max_iterations=max_iterations)
+
+        # Train to modify data.
+        uq.train(agent=agent, epochs=epochs)
+
+        # Save and load as new agent.
+        agent.save()
+        agent_loaded = AgentMOMP.load()
+
+        # Agent
+        self.assertEqual(type(agent), type(agent_loaded))
+        self.assertEqual(agent.epsilon, agent_loaded.epsilon)
+        self.assertEqual(agent.gamma, agent_loaded.gamma)
+        self.assertEqual(agent.max_iterations, agent_loaded.max_iterations)
+        self.assertEqual(agent.states_to_observe, agent_loaded.states_to_observe)
+        self.assertEqual(agent.seed, agent_loaded.seed)
+        self.assertEqual(agent.r, agent_loaded.r)
+        self.assertEqual(agent.nd, agent_loaded.nd)
+        self.assertEqual(agent.n, agent_loaded.n)
+        self.assertEqual(agent.hv_reference, agent_loaded.hv_reference)
+        self.assertEqual(agent.evaluation_mechanism, agent_loaded.evaluation_mechanism)
+
+        # Environment
+        self.assertEqual(agent.environment.p_attack, agent_loaded.environment.p_attack)
+        self.assertEqual(agent.environment.time_limit, agent_loaded.environment.time_limit)
+        self.assertEqual(agent.environment.initial_seed, agent_loaded.environment.initial_seed)
+        self.assertEqual(agent.environment.default_reward, agent_loaded.environment.default_reward)
+
+    def test_space_exploration(self):
+        """
+        Testing agent with SpaceExploration environment.
+        :return:
+        """
+        default_reward = (1, 0)
+        seed = 1
+        hv_reference = Vector([-20, -20])
+        evaluation_mechanism = 'PO-PQL'
+        epsilon = 0.11
+        states_to_observe = [(0, 0)]
+        epochs = np.random.randint(10, 100)
+        gamma = 0.99
+        max_iterations = None
+
+        # Instance of Environment
+        environment = SpaceExploration(default_reward=default_reward, seed=seed)
+
+        # Instance of AgentMOMP
+        agent = AgentMOMP(environment=environment, epsilon=epsilon, states_to_observe=states_to_observe,
+                          hv_reference=hv_reference, evaluation_mechanism=evaluation_mechanism, gamma=gamma,
+                          max_iterations=max_iterations)
+
+        # Train to modify data.
+        uq.train(agent=agent, epochs=epochs)
+
+        # Save and load as new agent.
+        agent.save()
+        agent_loaded = AgentMOMP.load()
+
+        # Agent
+        self.assertEqual(type(agent), type(agent_loaded))
+        self.assertEqual(agent.epsilon, agent_loaded.epsilon)
+        self.assertEqual(agent.gamma, agent_loaded.gamma)
+        self.assertEqual(agent.max_iterations, agent_loaded.max_iterations)
+        self.assertEqual(agent.states_to_observe, agent_loaded.states_to_observe)
+        self.assertEqual(agent.seed, agent_loaded.seed)
+        self.assertEqual(agent.r, agent_loaded.r)
+        self.assertEqual(agent.nd, agent_loaded.nd)
+        self.assertEqual(agent.n, agent_loaded.n)
+        self.assertEqual(agent.hv_reference, agent_loaded.hv_reference)
+        self.assertEqual(agent.evaluation_mechanism, agent_loaded.evaluation_mechanism)
+
+        # Environment
+        self.assertEqual(agent.environment.initial_seed, agent_loaded.environment.initial_seed)
+        self.assertEqual(agent.environment.default_reward, agent_loaded.environment.default_reward)

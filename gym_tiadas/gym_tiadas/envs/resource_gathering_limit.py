@@ -216,6 +216,9 @@ class ResourceGatheringLimit(EnvMesh):
 
         data = super().get_dict_model()
 
+        # Prepare environment data
+        data['state'] = self.state.tolist()
+
         # Clean specific environment data
         del data['gold_states']
         del data['gem_states']

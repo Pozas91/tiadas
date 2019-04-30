@@ -2,7 +2,7 @@ from .buridan_ass import BuridanAss
 from .deep_sea_treasure import DeepSeaTreasure
 from .deep_sea_treasure_simplified import DeepSeaTreasureSimplified
 from .deep_sea_treasure_transactions import DeepSeaTreasureTransactions
-from .mo_puddleworld import MoPuddleWorld
+from .mo_puddle_world import MoPuddleWorld
 from .pressurized_bountiful_sea_treasure import PressurizedBountifulSeaTreasure
 from .resource_gathering import ResourceGathering
 from .resource_gathering_limit import ResourceGatheringLimit

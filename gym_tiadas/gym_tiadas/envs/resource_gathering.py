@@ -92,7 +92,7 @@ class ResourceGathering(EnvMesh):
         # Set info
         info = {}
 
-        return (self.current_state, tuple(self.state)), rewards, final, info
+        return (self.current_state, tuple(self.state.tolist())), rewards, final, info
 
     def reset(self):
         """
@@ -218,6 +218,9 @@ class ResourceGathering(EnvMesh):
         """
 
         data = super().get_dict_model()
+
+        # Prepare environment data
+        data['state'] = self.state.tolist()
 
         # Clean specific environment data
         del data['gold_states']
