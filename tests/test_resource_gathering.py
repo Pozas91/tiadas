@@ -116,19 +116,19 @@ class TestResourceGathering(unittest.TestCase):
         self.environment.current_state = state
 
         # Cannot go to UP (Keep in same state)
-        new_state = self.environment._next_state(action=self.environment.actions.get('UP'))
+        new_state = self.environment.next_state(action=self.environment.actions.get('UP'))
         self.assertEqual(state, new_state)
 
         # Go to RIGHT (increment x axis)
-        new_state = self.environment._next_state(action=self.environment.actions.get('RIGHT'))
+        new_state = self.environment.next_state(action=self.environment.actions.get('RIGHT'))
         self.assertEqual((state[0] + 1, state[1]), new_state)
 
         # Go to DOWN (increment y axis)
-        new_state = self.environment._next_state(action=self.environment.actions.get('DOWN'))
+        new_state = self.environment.next_state(action=self.environment.actions.get('DOWN'))
         self.assertEqual((state[0], state[1] + 1), new_state)
 
         # Cannot go to LEFT (Keep in same state)
-        new_state = self.environment._next_state(action=self.environment.actions.get('LEFT'))
+        new_state = self.environment.next_state(action=self.environment.actions.get('LEFT'))
         self.assertEqual(state, new_state)
 
         ################################################################################################################
@@ -138,19 +138,19 @@ class TestResourceGathering(unittest.TestCase):
         self.environment.current_state = state
 
         # Cannot go to UP (Keep in same state)
-        new_state = self.environment._next_state(action=self.environment.actions.get('UP'))
+        new_state = self.environment.next_state(action=self.environment.actions.get('UP'))
         self.assertEqual(state, new_state)
 
         # Cannot go to RIGHT (Keep in same state)
-        new_state = self.environment._next_state(action=self.environment.actions.get('RIGHT'))
+        new_state = self.environment.next_state(action=self.environment.actions.get('RIGHT'))
         self.assertEqual(state, new_state)
 
         # Go to DOWN (increment y axis)
-        new_state = self.environment._next_state(action=self.environment.actions.get('DOWN'))
+        new_state = self.environment.next_state(action=self.environment.actions.get('DOWN'))
         self.assertEqual((state[0], state[1] + 1), new_state)
 
         # Go to LEFT (Keep in same state)
-        new_state = self.environment._next_state(action=self.environment.actions.get('LEFT'))
+        new_state = self.environment.next_state(action=self.environment.actions.get('LEFT'))
         self.assertEqual((state[0] - 1, state[1]), new_state)
 
         ################################################################################################################
@@ -160,19 +160,19 @@ class TestResourceGathering(unittest.TestCase):
         self.environment.current_state = state
 
         # Go to UP (decrement y axis)
-        new_state = self.environment._next_state(action=self.environment.actions.get('UP'))
+        new_state = self.environment.next_state(action=self.environment.actions.get('UP'))
         self.assertEqual((state[0], state[1] - 1), new_state)
 
         # Cannot go to RIGHT (Keep in same state)
-        new_state = self.environment._next_state(action=self.environment.actions.get('RIGHT'))
+        new_state = self.environment.next_state(action=self.environment.actions.get('RIGHT'))
         self.assertEqual(state, new_state)
 
         # Cannot go to DOWN (Keep in same state)
-        new_state = self.environment._next_state(action=self.environment.actions.get('DOWN'))
+        new_state = self.environment.next_state(action=self.environment.actions.get('DOWN'))
         self.assertEqual(state, new_state)
 
         # Go to LEFT (decrement x axis)
-        new_state = self.environment._next_state(action=self.environment.actions.get('LEFT'))
+        new_state = self.environment.next_state(action=self.environment.actions.get('LEFT'))
         self.assertEqual((state[0] - 1, state[1]), new_state)
 
         ################################################################################################################
@@ -182,19 +182,19 @@ class TestResourceGathering(unittest.TestCase):
         self.environment.current_state = state
 
         # Go to UP (decrement y axis)
-        new_state = self.environment._next_state(action=self.environment.actions.get('UP'))
+        new_state = self.environment.next_state(action=self.environment.actions.get('UP'))
         self.assertEqual((state[0], state[1] - 1), new_state)
 
         # Go to RIGHT (increment x axis)
-        new_state = self.environment._next_state(action=self.environment.actions.get('RIGHT'))
+        new_state = self.environment.next_state(action=self.environment.actions.get('RIGHT'))
         self.assertEqual((state[0] + 1, state[1]), new_state)
 
         # Cannot go to DOWN (Keep in same state)
-        new_state = self.environment._next_state(action=self.environment.actions.get('DOWN'))
+        new_state = self.environment.next_state(action=self.environment.actions.get('DOWN'))
         self.assertEqual(state, new_state)
 
         # Cannot go to LEFT (Keep in same state)
-        new_state = self.environment._next_state(action=self.environment.actions.get('LEFT'))
+        new_state = self.environment.next_state(action=self.environment.actions.get('LEFT'))
         self.assertEqual(state, new_state)
 
     def test_step(self):

@@ -16,6 +16,8 @@ Finals is a dictionary which structure as follows:
 Obstacles is a list of states: [state_1, state_2, ...]
 """
 
+from copy import deepcopy
+
 import gym
 from gym import spaces
 from gym.utils import seeding
@@ -139,15 +141,16 @@ class EnvMesh(gym.Env):
             # End render
             print('')
 
-    def _next_state(self, action) -> tuple:
+    def next_state(self, action, state=None) -> tuple:
         """
         Calc next state with current state and action given. Default is 4-neighbors (UP, LEFT, DOWN, RIGHT)
+        :param state: If a state is given, do action from that state.
         :param action: from action_space
         :return: a new state (or old if is invalid action)
         """
 
         # Get my position
-        x, y = self.current_state
+        x, y = state if state else self.current_state
 
         # Do movement
         if action == self._actions.get('UP'):
@@ -177,10 +180,15 @@ class EnvMesh(gym.Env):
         Get dict model of an environment
         :return:
         """
-        data = vars(self)
+
+        # Prepare a deepcopy to do not override original properties
+        model = deepcopy(self)
+
+        # Extract properties
+        data = vars(model)
 
         # Prepare data
-        data['default_reward'] = self.default_reward.tolist()
+        data['default_reward'] = model.default_reward.tolist()
 
         # Clean Environment Data
         del data['action_space']

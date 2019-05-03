@@ -56,7 +56,7 @@ class RussellNorvig(EnvMesh):
         action = self.__probability_action(action=action)
 
         # Get new state
-        new_state = self._next_state(action=action)
+        new_state = self.next_state(action=action)
 
         # Update previous state
         self.current_state = new_state

@@ -6,7 +6,7 @@ from copy import deepcopy
 
 import numpy as np
 
-from .miscellaneous import is_close
+import utils.miscellaneous as um
 
 
 def train(agent, epochs=int(1e3)):
@@ -30,7 +30,7 @@ def objective_training(agent, objective: float, close_margin=1e-9):
     :param close_margin:
     :return:
     """
-    while not is_close(a=agent.v, b=objective, relative=close_margin):
+    while not um.is_close(a=agent.v, b=objective, relative=close_margin):
         # Do an episode
         agent.episode()
 
@@ -123,7 +123,7 @@ def policies_are_similar(a: dict, b: dict, close_margin=1e-3) -> bool:
                 # Get and compare if both values are similar
                 a_value = a.get(state).get(action)
                 b_value = b.get(state).get(action, float('inf'))
-                are_similar &= is_close(a=a_value, b=b_value, relative=close_margin)
+                are_similar &= um.is_close(a=a_value, b=b_value, relative=close_margin)
 
                 # Increment j
                 j += 1
@@ -136,7 +136,7 @@ def policies_are_similar(a: dict, b: dict, close_margin=1e-3) -> bool:
     return are_similar
 
 
-def testing(agent) -> tuple:
+def testing(agent):
     """
     Test policy
     :param agent:
@@ -151,4 +151,4 @@ def testing(agent) -> tuple:
     result = np.sum(history, axis=0)
 
     # Return a tuple of that sum
-    return tuple(result)
+    return result

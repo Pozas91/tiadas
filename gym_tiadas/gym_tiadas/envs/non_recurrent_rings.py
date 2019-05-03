@@ -121,7 +121,7 @@ class NonRecurrentRings(gym.Env):
         """
 
         # Get new state
-        new_state = self._next_state(action=action)
+        new_state = self.next_state(action=action)
 
         # Get reward
         reward = self.rewards_dictionary.get(self.current_state).get(action)
@@ -161,7 +161,7 @@ class NonRecurrentRings(gym.Env):
         :return:
         """
 
-    def _next_state(self, action) -> object:
+    def next_state(self, action) -> object:
         """
         Calc next state with current state and action given.
         :param action: from action_space

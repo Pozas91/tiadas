@@ -1,21 +1,23 @@
 """
-Useful functions to calculate the pareto frontier.
+Methods to calculate pareto's frontier applies dichotomous search to find supported solutions.
 """
 import numpy as np
-import pygmo as pg
 
 import utils.miscellaneous as um
 import utils.q_learning as uq
 
 
-def optimize(agent, w1: float, w2: float, solutions_known=None) -> (float, float):
+def optimize(agent, w1: float, w2: float, solutions_known=None):
     """
-    Try to find an c point to add in pareto's frontier.
-    :param agent:
+    Try to find an c point to add to the pareto's frontier. There are two options:
+        * We know the solutions of pareto's frontier, and training the agent until get max solution.
+        * We don't know the solutions and training to try get max solution.
+
+    :param agent: Must be an scalarized agent multi-objective single-policy (models.agent_mo_sp.AgentMOSP).
     :param solutions_known: If we know the possible solutions, we can indicate them to the algorithm to improve the
         training of the agent. If is None, then is ignored.
-    :param w1:
-    :param w2:
+    :param w1: first weight
+    :param w2: second weight
     :return:
     """
 
@@ -33,7 +35,7 @@ def optimize(agent, w1: float, w2: float, solutions_known=None) -> (float, float
         # Train agent searching that objective.
         uq.objective_training(agent=agent, objective=objective, close_margin=3e-1)
     else:
-        # Normal training
+        # Normal training.
         uq.train(agent=agent)
 
     # Get point c from agent's test.
@@ -42,9 +44,11 @@ def optimize(agent, w1: float, w2: float, solutions_known=None) -> (float, float
     return c
 
 
-def calc_frontier(p: (float, float), q: (float, float), problem, solutions_known=None) -> list:
+def calc_frontier_scalarized(p, q, problem, solutions_known=None) -> list:
     """
-    Return a list of supported solutions costs
+    Return a list of supported solutions costs, this method is only valid to two objectives problems.
+    Applies a dichotomous search to find all supported solutions costs.
+
     :param solutions_known: If we know the possible solutions, we can indicate them to the algorithm to improve the
         training of the agent. If is None, then is ignored.
     :param p: 2D point
@@ -66,7 +70,7 @@ def calc_frontier(p: (float, float), q: (float, float), problem, solutions_known
         # Pop the next pair of points from the stack.
         a, b = accumulate.pop()
 
-        # Order points nearest by center first.
+        # Order points nearest to the center using euclidean distance.
         a, b = tuple(um.order_points_by_center_nearest([a, b]))
 
         # Decompose points
@@ -96,23 +100,3 @@ def calc_frontier(p: (float, float), q: (float, float), problem, solutions_known
             result.append(c)
 
     return result
-
-
-def hypervolume(vector, reference=None) -> float:
-    """
-    By default, the pygmo library is used for minimization problems.
-    In our case, we need it to work for maximization problems.
-    :param vector: List of points limits of hypervolume
-    :param reference: Reference point to calc hypervolume
-    :return: hypervolume area.
-    """
-
-    if reference is None:
-        # Get min of all axis, and subtract 1.
-        reference = (np.min(vector, axis=0) - 1)
-
-    # Multiply by -1, to convert maximize problem into minimize problem.
-    reference = np.multiply(reference, -1)
-    vector = np.multiply(vector, -1)
-
-    return pg.hypervolume(vector).compute(reference)

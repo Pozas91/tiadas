@@ -86,7 +86,7 @@ class TestNonRecurrentRings(unittest.TestCase):
         self.environment.current_state = 0
 
         # Go to counter-clockwise sense
-        new_state = self.environment._next_state(action=self.environment.actions.get('CLOCKWISE'))
+        new_state = self.environment.next_state(action=self.environment.actions.get('CLOCKWISE'))
 
         # State 8
         self.assertEqual(7, new_state)
@@ -97,7 +97,7 @@ class TestNonRecurrentRings(unittest.TestCase):
         self.environment.current_state = 7
 
         # Go to counter-clockwise sense
-        new_state = self.environment._next_state(action=self.environment.actions.get('COUNTER-CLOCKWISE'))
+        new_state = self.environment.next_state(action=self.environment.actions.get('COUNTER-CLOCKWISE'))
 
         # State 1
         self.assertEqual(0, new_state)
@@ -108,7 +108,7 @@ class TestNonRecurrentRings(unittest.TestCase):
         self.environment.current_state = 0
 
         # Go to counter-clockwise sense
-        new_state = self.environment._next_state(action=self.environment.actions.get('COUNTER-CLOCKWISE'))
+        new_state = self.environment.next_state(action=self.environment.actions.get('COUNTER-CLOCKWISE'))
 
         # State 2
         self.assertEqual(1, new_state)
@@ -119,7 +119,7 @@ class TestNonRecurrentRings(unittest.TestCase):
         self.environment.current_state = 1
 
         # Go to counter-clockwise sense
-        new_state = self.environment._next_state(action=self.environment.actions.get('COUNTER-CLOCKWISE'))
+        new_state = self.environment.next_state(action=self.environment.actions.get('COUNTER-CLOCKWISE'))
 
         # State 3
         self.assertEqual(2, new_state)
@@ -130,7 +130,7 @@ class TestNonRecurrentRings(unittest.TestCase):
         self.environment.current_state = 3
 
         # Go to counter-clockwise sense from state 3.
-        new_state = self.environment._next_state(action=self.environment.actions.get('COUNTER-CLOCKWISE'))
+        new_state = self.environment.next_state(action=self.environment.actions.get('COUNTER-CLOCKWISE'))
 
         # State 1
         self.assertEqual(0, new_state)

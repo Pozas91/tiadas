@@ -20,15 +20,17 @@ import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 
+import utils.hypervolume as uh
 import utils.miscellaneous as um
-import utils.pareto as up
 from .vector import Vector
 from .vector_float import VectorFloat
 
 
 class AgentMOMP:
     # JSON indent
-    JSON_INDENT = 2
+    json_indent = 2
+    # Get dumps path from this file path
+    dumps_path = '{}/../dumps'.format(os.path.dirname(os.path.abspath(__file__)))
 
     def __init__(self, environment, epsilon=0.1, gamma=1., seed=0, max_iterations=None,
                  hv_reference=None, evaluation_mechanism='HV-PQL', states_to_observe=None):
@@ -56,8 +58,8 @@ class AgentMOMP:
                 state: list() for state in states_to_observe
             }
 
-        # Current Agent State if the initial state of environment
-        self.state = self.environment.reset()
+        # Current agent state is initial_state in the environment
+        self.state = self.environment.initial_state
 
         # Initialize Random Generator with `seed` as initial seed.
         self.seed = seed
@@ -75,14 +77,14 @@ class AgentMOMP:
         # HV reference
         self.hv_reference = hv_reference
 
-        # Check if evaluation mechanism selected is available
-        if evaluation_mechanism in ('HV-PQL', 'C-PQL', 'PO-PQL'):
+        # Evaluation mechanism
+        if evaluation_mechanism in ('HV-PQL', 'PO-PQL', 'C-PQL'):
             self.evaluation_mechanism = evaluation_mechanism
         else:
-            raise ValueError('{} evaluation mechanism not recognize!'.format(evaluation_mechanism))
+            raise ValueError('Evaluation mechanism does not valid.')
 
-        # Default reward
-        self.default_reward = self.environment.default_reward
+        # Default reward agent
+        self.default_reward = self.environment.default_reward * 0
 
     def episode(self) -> None:
         """
@@ -156,7 +158,7 @@ class AgentMOMP:
         # Get R(s) dict.
         r_s_a_dict = self.r.get(state, {})
         # Get R(s, a) value.
-        r_s_a = r_s_a_dict.get(action, self.environment.default_reward)
+        r_s_a = r_s_a_dict.get(action, self.default_reward + 0)
         # Update R(s, a)
         r_s_a += (reward - r_s_a) / occurrences
         # Update with new R(s, a)
@@ -178,7 +180,7 @@ class AgentMOMP:
             union += q
 
         # Update ND policies of s' in s
-        nd_s_a = self.environment.default_reward.m3_max(union)
+        nd_s_a = self.default_reward.m3_max(union)
 
         # ND(s, a) <- (ND(U_a' Q_set(s', a'))
         nd_s_a_dict = self.nd.get(state, {})
@@ -194,10 +196,10 @@ class AgentMOMP:
         """
 
         # Get R(s, a) with default.
-        r_s_a = self.r.get(state, {}).get(action, self.environment.default_reward)
+        r_s_a = self.r.get(state, {}).get(action, self.default_reward)
 
         # Get ND(s, a)
-        non_dominated_vectors = self.nd.get(state, {}).get(action, [self.environment.default_reward])
+        non_dominated_vectors = self.nd.get(state, {}).get(action, [self.default_reward + 0])
         q_set = list()
 
         # R(s, a) + y*ND
@@ -270,9 +272,59 @@ class AgentMOMP:
 
         return action
 
-    @staticmethod
-    def track_policy(state, target):
-        pass
+    def track_policy(self, state, target):
+        """
+        This method track a policy until reach target given.
+        :param state: initial state
+        :param target: a policy to follow
+        :return:
+        """
+
+        path = [state]
+        last_state = state
+
+        # While s is not terminal
+        while not self.environment.is_final(state=state):
+
+            # Path found
+            found = False
+
+            # For each a in environments actions.
+            for a in self.environment.actions.values():
+
+                # If path is found
+                if found:
+                    break
+
+                # Retrieve R(s, a)
+                r = self.r.get(state).get(a)
+
+                # Retrieve ND(s, a)
+                nd = self.nd.get(state).get(a)
+
+                for q in nd:
+
+                    # Calc vector to follow
+                    v = (q * self.gamma) + r
+
+                    # if are equals with relaxed equality operator
+                    if v.all_close(target):
+                        # This transaction must be determinist s': T(s'|s, a) = 1
+                        state = self.environment.next_state(action=a, state=state)
+                        target = q
+
+                        # Append to path
+                        path.append(state)
+
+                        # Path found
+                        found = True
+
+                        break
+
+            if state == last_state:
+                raise ValueError('Path not found from state: {} and target: {}.'.format(state, target))
+
+        return path
 
     def _best_hypervolume(self, state):
         """
@@ -288,7 +340,7 @@ class AgentMOMP:
             q_set = self.q_set(state=state, action=a)
 
             # Calc hypervolume of Q_set, with reference given.
-            hv.append(up.hypervolume(vector=q_set, reference=self.hv_reference))
+            hv.append(uh.calc_hypervolume(list_of_vectors=q_set, reference=self.hv_reference))
 
         return max(hv)
 
@@ -324,7 +376,7 @@ class AgentMOMP:
             q_set = self.q_set(state=state, action=a)
 
             # Calc hypervolume of Q_set, with reference given.
-            evaluation = up.hypervolume(vector=q_set, reference=self.hv_reference)
+            evaluation = uh.calc_hypervolume(list_of_vectors=q_set, reference=self.hv_reference)
 
             # If current value is close to new value
             if math.isclose(a=evaluation, b=max_evaluation):
@@ -358,7 +410,7 @@ class AgentMOMP:
             q_set = self.q_set(state=state, action=a)
 
             # Use m3_max algorithm to get non_dominated vectors from q_set.
-            non_dominated = self.environment.default_reward.m3_max(q_set)
+            non_dominated = self.default_reward.m3_max(q_set)
 
             # Get number of non_dominated vectors.
             evaluation = len(non_dominated)
@@ -392,7 +444,7 @@ class AgentMOMP:
             # Get Q-set from state given for each possible action.
             q_set = self.q_set(state=state, action=a)
             # Use m3_max algorithm to get non_dominated vectors from q_set.
-            non_dominated = self.environment.default_reward.m3_max(q_set)
+            non_dominated = self.default_reward.m3_max(q_set)
 
             # If has almost one non_dominated vector is a valid action.
             if len(non_dominated) > 0:
@@ -458,7 +510,7 @@ class AgentMOMP:
         :return:
         """
         model = self.get_dict_model()
-        return json.dumps(model, indent=self.JSON_INDENT)
+        return json.dumps(model, indent=self.json_indent)
 
     def save(self, filename=None):
         """
@@ -468,39 +520,97 @@ class AgentMOMP:
         """
 
         if filename is None:
-            filename = datetime.datetime.now().timestamp()
+            # Get environment name in snake case
+            environment = um.str_to_snake_case(self.environment.__class__.__name__)
 
-        file_path = '../dumps/{}.json'.format(filename)
+            # Get evaluation mechanism in snake case
+            evaluation_mechanism = um.str_to_snake_case(self.evaluation_mechanism)
 
+            # Prepare file name
+            filename = '{}_{}_{}'.format(environment, evaluation_mechanism, datetime.datetime.now().timestamp())
+
+        # Prepare file path
+        file_path = AgentMOMP.dumps_file_path(filename=filename)
+
+        # Get dict model
         model = self.get_dict_model()
 
         # Open file with filename in write mode with UTF-8 encoding.
         with open(file_path, 'w', encoding='UTF-8') as file:
-            json.dump(model, file, indent=self.JSON_INDENT)
+            json.dump(model, file, indent=self.json_indent)
+
+    def non_dominate_vectors_from_state(self, state):
+        """
+        Return all non dominate vectors from state given.
+        :param state:
+        :return:
+        """
+
+        # Get list of non dominate vectors
+        nd_lists = self.nd.get(state, {}).values()
+
+        # Flatten nd_lists
+        nd = [item for sublist in nd_lists for item in sublist]
+
+        return self.default_reward.m3_max(nd)
 
     @staticmethod
-    def load(filename=None):
+    def load(filename=None, environment=None, evaluation_mechanism=None):
         """
         Load json string from file and convert to dictionary.
+        :param evaluation_mechanism: It is an evaluation mechanism that you want load
+        :param environment: It is an environment that you want load.
         :param filename: If is None, then get last timestamp file from 'dumps' dir.
         :return:
         """
 
+        # Check if filename is None
         if filename is None:
-            path = '../dumps'
 
-            for root, directories, files in os.walk(path):
+            # Check if environment is also None
+            if environment is None:
+                raise ValueError('If you has not indicated a filename, you must indicate a environment.')
+
+            # Check if evaluation mechanism is also None
+            if evaluation_mechanism is None:
+                raise ValueError('If you has not indicated a filename, you must indicate a evaluation mechanism.')
+
+            # Get environment name in snake case
+            environment = um.str_to_snake_case(environment.__name__)
+
+            # Get evaluation mechanism name in snake case
+            evaluation_mechanism = um.str_to_snake_case(evaluation_mechanism)
+
+            # Filter str
+            filter_str = '{}_{}'.format(environment, evaluation_mechanism)
+
+            for root, directories, files in os.walk(AgentMOMP.dumps_path):
+
+                # Filter files with that environment and evaluation mechanism
+                files = filter(lambda f: filter_str in f, files)
+
+                # Files to list
+                files = list(files)
+
                 # Sort list of files
                 files.sort()
 
-                # Get last filename
-                filename = files[-1].split('.json')[0]
+                # At least must have a file
+                if files:
+                    # Get last filename
+                    filename = files[-1].split('.json')[0]
 
-        file_path = '../dumps/{}.json'.format(filename)
+        # Prepare file path
+        file_path = AgentMOMP.dumps_file_path(filename)
 
-        with open(file_path, 'r', encoding='UTF-8') as file:
-            # Load structured data from indicated file.
-            model = json.load(file)
+        # Read file from path
+        try:
+            file = open(file_path, 'r', encoding='UTF-8')
+        except FileNotFoundError:
+            return None
+
+        # Load structured data from indicated file.
+        model = json.load(file)
 
         # Get meta-data
         meta = model.get('meta')
@@ -623,3 +733,8 @@ class AgentMOMP:
         model.states_to_observe = states_to_observe
 
         return model
+
+    @staticmethod
+    def dumps_file_path(filename):
+        # Return path from file name
+        return '{}/{}.json'.format(AgentMOMP.dumps_path, filename)

@@ -1,6 +1,8 @@
 """
 Useful functions used in this project
 """
+import re
+
 import numpy as np
 
 
@@ -83,3 +85,13 @@ def weighted_sum(rewards, weights) -> float:
     :return:
     """
     return float(np.sum(np.multiply(rewards, weights)))
+
+
+def str_to_snake_case(text: str) -> str:
+    """
+    Convert a text given to snake case text.
+    :param text:
+    :return:
+    """
+    s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', string=text)
+    return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()

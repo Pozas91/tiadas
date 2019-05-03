@@ -77,7 +77,7 @@ class DeepSeaTreasure(EnvMesh):
         rewards = self.default_reward + 0
 
         # Get new state
-        new_state = self._next_state(action=action)
+        new_state = self.next_state(action=action)
 
         # Update previous state
         self.current_state = new_state

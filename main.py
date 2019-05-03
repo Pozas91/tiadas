@@ -190,7 +190,7 @@ def testing_pareto():
     q = q_learning.testing(agent=agent)
 
     # Search pareto points
-    pareto_frontier = pareto.calc_frontier(p=p, q=q, problem=agent, solutions_known=pareto_points)
+    pareto_frontier = pareto.calc_frontier_scalarized(p=p, q=q, problem=agent, solutions_known=pareto_points)
     pareto_frontier_np = np.array(pareto_frontier)
 
     # Calc rest of time
@@ -275,8 +275,8 @@ def deep_sea_treasure_simplified():
 
 def deep_sea_treasure_simplified_mo_mp():
     environment = DeepSeaTreasure()
-    agent = AgentMOMP(environment=environment, default_reward=Vector([0, 0]), epsilon=0.4, states_to_observe=[(0, 0)],
-                      hv_reference=Vector([-25, 0]), evaluation_mechanism='PO-PQL')
+    agent = AgentMOMP(environment=environment, epsilon=0.4, states_to_observe=[(0, 0)], hv_reference=Vector([-25, 0]),
+                      evaluation_mechanism='PO-PQL')
 
     graph = list()
 
@@ -300,6 +300,43 @@ def deep_sea_treasure_simplified_mo_mp():
     pass
 
 
+def track_policy():
+    # Settings variables
+    environment = MoPuddleWorld
+    evaluation_mechanism = 'HV-PQL'
+
+    # Try to load last model
+    agent = AgentMOMP.load(environment=environment, evaluation_mechanism=evaluation_mechanism)
+
+    if agent is None:
+        # Get instance of agent
+        agent = AgentMOMP(environment=environment(), epsilon=0.4, states_to_observe=[(0, 0)],
+                          hv_reference=Vector([-150, -150]), evaluation_mechanism=evaluation_mechanism)
+
+        # Train model
+        q_learning.train(agent=agent, epochs=18000)
+
+        # Save model
+        agent.save()
+
+    # else:
+    #     # Train model
+    #     q_learning.train(agent=agent, epochs=6000)
+    #
+    #     # Save model
+    #     agent.save()
+
+    state = (5, 2)
+
+    non_dominate_vectors = agent.non_dominate_vectors_from_state(state=state)
+
+    agent.print_observed_states()
+    path = agent.track_policy(state=state, target=(-8, 0))
+
+    print(path)
+    pass
+
+
 def main():
     # plot_training_from_zero()
     # plot_training_accumulate()
@@ -319,7 +356,8 @@ def main():
     # non_recurrent_rings()
     # russel_and_norvig()
     # deep_sea_treasure_simplified()
-    deep_sea_treasure_simplified_mo_mp()
+    # deep_sea_treasure_simplified_mo_mp()
+    track_policy()
     pass
 
 

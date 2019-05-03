@@ -62,7 +62,7 @@ class SpaceExploration(EnvMesh):
         rewards = self.default_reward + 0
 
         # Get new state
-        new_state = self._next_state(action=action)
+        new_state = self.next_state(action=action)
 
         # Update previous state
         self.current_state = new_state
@@ -90,15 +90,17 @@ class SpaceExploration(EnvMesh):
         self.current_state = self.initial_state
         return self.current_state
 
-    def _next_state(self, action) -> object:
+    def next_state(self, action, state=None) -> object:
         """
         Calc next state with current state and action given, in this environment is 8-neighbors.
-        :param action:
+        :param state: If a state is given, do action from that state.
+        :param action: from action_space
         :return:
         """
 
         # Get my position
-        x, y = self.current_state
+        x, y = state if state else self.current_state
+
         # Get observations spaces
         observation_space_x, observation_space_y = self.observation_space.spaces
 

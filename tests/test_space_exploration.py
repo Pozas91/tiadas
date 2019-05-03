@@ -100,35 +100,35 @@ class TestSpaceExploration(unittest.TestCase):
         self.environment.current_state = state
 
         # Go to UP
-        new_state = self.environment._next_state(action=self.environment.actions.get('UP'))
+        new_state = self.environment.next_state(action=self.environment.actions.get('UP'))
         self.assertEqual((0, 4), new_state)
 
         # Go to UP RIGHT
-        new_state = self.environment._next_state(action=self.environment.actions.get('UP RIGHT'))
+        new_state = self.environment.next_state(action=self.environment.actions.get('UP RIGHT'))
         self.assertEqual((1, 4), new_state)
 
         # Go to RIGHT
-        new_state = self.environment._next_state(action=self.environment.actions.get('RIGHT'))
+        new_state = self.environment.next_state(action=self.environment.actions.get('RIGHT'))
         self.assertEqual((1, 0), new_state)
 
         # Go to DOWN RIGHT
-        new_state = self.environment._next_state(action=self.environment.actions.get('DOWN RIGHT'))
+        new_state = self.environment.next_state(action=self.environment.actions.get('DOWN RIGHT'))
         self.assertEqual((1, 1), new_state)
 
         # Go to DOWN
-        new_state = self.environment._next_state(action=self.environment.actions.get('DOWN'))
+        new_state = self.environment.next_state(action=self.environment.actions.get('DOWN'))
         self.assertEqual((0, 1), new_state)
 
         # Go to DOWN LEFT
-        new_state = self.environment._next_state(action=self.environment.actions.get('DOWN LEFT'))
+        new_state = self.environment.next_state(action=self.environment.actions.get('DOWN LEFT'))
         self.assertEqual((12, 1), new_state)
 
         # Go to LEFT
-        new_state = self.environment._next_state(action=self.environment.actions.get('LEFT'))
+        new_state = self.environment.next_state(action=self.environment.actions.get('LEFT'))
         self.assertEqual((12, 0), new_state)
 
         # Go to UP LEFT
-        new_state = self.environment._next_state(action=self.environment.actions.get('UP LEFT'))
+        new_state = self.environment.next_state(action=self.environment.actions.get('UP LEFT'))
         self.assertEqual((12, 4), new_state)
 
         ################################################################################################################
@@ -138,35 +138,35 @@ class TestSpaceExploration(unittest.TestCase):
         self.environment.current_state = state
 
         # Go to UP
-        new_state = self.environment._next_state(action=self.environment.actions.get('UP'))
+        new_state = self.environment.next_state(action=self.environment.actions.get('UP'))
         self.assertEqual((12, 4), new_state)
 
         # Go to UP RIGHT
-        new_state = self.environment._next_state(action=self.environment.actions.get('UP RIGHT'))
+        new_state = self.environment.next_state(action=self.environment.actions.get('UP RIGHT'))
         self.assertEqual((0, 4), new_state)
 
         # Go to RIGHT
-        new_state = self.environment._next_state(action=self.environment.actions.get('RIGHT'))
+        new_state = self.environment.next_state(action=self.environment.actions.get('RIGHT'))
         self.assertEqual((0, 0), new_state)
 
         # Go to DOWN RIGHT
-        new_state = self.environment._next_state(action=self.environment.actions.get('DOWN RIGHT'))
+        new_state = self.environment.next_state(action=self.environment.actions.get('DOWN RIGHT'))
         self.assertEqual((0, 1), new_state)
 
         # Go to DOWN
-        new_state = self.environment._next_state(action=self.environment.actions.get('DOWN'))
+        new_state = self.environment.next_state(action=self.environment.actions.get('DOWN'))
         self.assertEqual((12, 1), new_state)
 
         # Go to DOWN LEFT
-        new_state = self.environment._next_state(action=self.environment.actions.get('DOWN LEFT'))
+        new_state = self.environment.next_state(action=self.environment.actions.get('DOWN LEFT'))
         self.assertEqual((11, 1), new_state)
 
         # Go to LEFT
-        new_state = self.environment._next_state(action=self.environment.actions.get('LEFT'))
+        new_state = self.environment.next_state(action=self.environment.actions.get('LEFT'))
         self.assertEqual((11, 0), new_state)
 
         # Go to UP LEFT
-        new_state = self.environment._next_state(action=self.environment.actions.get('UP LEFT'))
+        new_state = self.environment.next_state(action=self.environment.actions.get('UP LEFT'))
         self.assertEqual((11, 4), new_state)
 
         ################################################################################################################
@@ -176,35 +176,35 @@ class TestSpaceExploration(unittest.TestCase):
         self.environment.current_state = state
 
         # Go to UP
-        new_state = self.environment._next_state(action=self.environment.actions.get('UP'))
+        new_state = self.environment.next_state(action=self.environment.actions.get('UP'))
         self.assertEqual((12, 3), new_state)
 
         # Go to UP RIGHT
-        new_state = self.environment._next_state(action=self.environment.actions.get('UP RIGHT'))
+        new_state = self.environment.next_state(action=self.environment.actions.get('UP RIGHT'))
         self.assertEqual((0, 3), new_state)
 
         # Go to RIGHT
-        new_state = self.environment._next_state(action=self.environment.actions.get('RIGHT'))
+        new_state = self.environment.next_state(action=self.environment.actions.get('RIGHT'))
         self.assertEqual((0, 4), new_state)
 
         # Go to DOWN RIGHT
-        new_state = self.environment._next_state(action=self.environment.actions.get('DOWN RIGHT'))
+        new_state = self.environment.next_state(action=self.environment.actions.get('DOWN RIGHT'))
         self.assertEqual((0, 0), new_state)
 
         # Go to DOWN
-        new_state = self.environment._next_state(action=self.environment.actions.get('DOWN'))
+        new_state = self.environment.next_state(action=self.environment.actions.get('DOWN'))
         self.assertEqual((12, 0), new_state)
 
         # Go to DOWN LEFT
-        new_state = self.environment._next_state(action=self.environment.actions.get('DOWN LEFT'))
+        new_state = self.environment.next_state(action=self.environment.actions.get('DOWN LEFT'))
         self.assertEqual((11, 0), new_state)
 
         # Go to LEFT
-        new_state = self.environment._next_state(action=self.environment.actions.get('LEFT'))
+        new_state = self.environment.next_state(action=self.environment.actions.get('LEFT'))
         self.assertEqual((11, 4), new_state)
 
         # Go to UP LEFT
-        new_state = self.environment._next_state(action=self.environment.actions.get('UP LEFT'))
+        new_state = self.environment.next_state(action=self.environment.actions.get('UP LEFT'))
         self.assertEqual((11, 3), new_state)
 
         ################################################################################################################
@@ -214,35 +214,35 @@ class TestSpaceExploration(unittest.TestCase):
         self.environment.current_state = state
 
         # Go to UP
-        new_state = self.environment._next_state(action=self.environment.actions.get('UP'))
+        new_state = self.environment.next_state(action=self.environment.actions.get('UP'))
         self.assertEqual((0, 3), new_state)
 
         # Go to UP RIGHT
-        new_state = self.environment._next_state(action=self.environment.actions.get('UP RIGHT'))
+        new_state = self.environment.next_state(action=self.environment.actions.get('UP RIGHT'))
         self.assertEqual((1, 3), new_state)
 
         # Go to RIGHT
-        new_state = self.environment._next_state(action=self.environment.actions.get('RIGHT'))
+        new_state = self.environment.next_state(action=self.environment.actions.get('RIGHT'))
         self.assertEqual((1, 4), new_state)
 
         # Go to DOWN RIGHT
-        new_state = self.environment._next_state(action=self.environment.actions.get('DOWN RIGHT'))
+        new_state = self.environment.next_state(action=self.environment.actions.get('DOWN RIGHT'))
         self.assertEqual((1, 0), new_state)
 
         # Go to DOWN
-        new_state = self.environment._next_state(action=self.environment.actions.get('DOWN'))
+        new_state = self.environment.next_state(action=self.environment.actions.get('DOWN'))
         self.assertEqual((0, 0), new_state)
 
         # Go to DOWN LEFT
-        new_state = self.environment._next_state(action=self.environment.actions.get('DOWN LEFT'))
+        new_state = self.environment.next_state(action=self.environment.actions.get('DOWN LEFT'))
         self.assertEqual((12, 0), new_state)
 
         # Go to LEFT
-        new_state = self.environment._next_state(action=self.environment.actions.get('LEFT'))
+        new_state = self.environment.next_state(action=self.environment.actions.get('LEFT'))
         self.assertEqual((12, 4), new_state)
 
         # Go to UP LEFT
-        new_state = self.environment._next_state(action=self.environment.actions.get('UP LEFT'))
+        new_state = self.environment.next_state(action=self.environment.actions.get('UP LEFT'))
         self.assertEqual((12, 3), new_state)
 
     def test_step(self):

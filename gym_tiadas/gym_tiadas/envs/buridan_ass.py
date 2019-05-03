@@ -69,7 +69,7 @@ class BuridanAss(EnvMesh):
         complex_state = [None, None, None]
 
         # Get new state
-        new_state = self._next_state(action=action)
+        new_state = self.next_state(action=action)
         complex_state[0] = new_state
 
         # Get all available food

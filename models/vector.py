@@ -6,7 +6,7 @@ This class have a vector of integers (int32).
 import math
 import numpy as np
 
-from models.dominance import Dominance
+from .dominance import Dominance
 
 
 class Vector:
@@ -191,6 +191,18 @@ class Vector:
         :return:
         """
         return math.sqrt(np.sum(self.components ** 2))
+
+    def all_close(self, v2):
+        """
+        Returns True if two arrays are element-wise equal within a tolerance.
+
+        If either array contains one or more NaNs, False is returned.
+
+        As this vector is integer, the tolerance is 0, so this method is like equal comparision.
+        :param v2:
+        :return:
+        """
+        return np.array_equal(self, v2)
 
     def dominance(self, v2):
         """

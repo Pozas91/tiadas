@@ -1,5 +1,3 @@
-import matplotlib.pyplot as plt
-
 """
 Q-Learning agent to resolve environments trough reinforcement learning.
 
@@ -14,7 +12,7 @@ The data structure of q dictionary is as follows:
 """
 
 import math
-
+import matplotlib.pyplot as plt
 import numpy as np
 
 
