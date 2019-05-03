@@ -1,14 +1,42 @@
 """
 Agent multi-objective multi-policy.
+
+
+Implementation of the PQ-learning algorithm by .........
+
 Save rewards, N and occurrences independently, to calculate Q-set on runtime.
 
 Evaluation mechanisms available
     - HV-PQL: Based in hypervolume
     - C-PQL: Based in cardinality
     - PO-PQL: Based in Pareto
+    
+    
+Sample call: 
+    
+    1) train
+    
+    ..........
+    
+    
+    2) write agent to file
+    
+    .........
+    
+    
+    3) read agent from file
+    
+    .........
+    
 
-For take instances of default_reward, we multiply by zero default_reward, that take less time that other operations such
-as deepcopy (≈ 247% faster) or copy (≈ 118% faster).
+    
+
+NOTE: Each environment defines its default reward, either integer or float.
+The agent uses a default value of zero for various operations. In order to get
+this zero vector of the same length and type of the default reward, we
+multiply the default reward by zero using our defined operation * for vectors.
+This seems faster than using either deepcopy (≈ 247% faster) or copy 
+(≈ 118% faster).
 """
 import datetime
 import importlib
@@ -88,7 +116,9 @@ class AgentMOMP:
 
     def episode(self) -> None:
         """
-        Run an episode complete until get a final step.
+        Run an complete episode using the agent's epsilon-greedy policy
+        until a final state is reached.
+        The agent updates R(s,a), ND(s,a) and n(s,a) values.
         :return:
         """
 
@@ -123,7 +153,7 @@ class AgentMOMP:
             # Proceed to next state
             self.state = next_state
 
-        # Append new data
+        # Append new data for graphical output
         for state, data in self.states_to_observe.items():
             # Add to data Best value (V max)
             value = self._best_hypervolume(state)
@@ -274,9 +304,11 @@ class AgentMOMP:
 
     def track_policy(self, state, target):
         """
-        This method track a policy until reach target given.
+        Runs an episode using one of the learned policies (policy tracking).
+        This method tracks a policy with vector-value 'target' from the
+        start 'state' until a final state is reached.
         :param state: initial state
-        :param target: a policy to follow
+        :param target: vector value of the policy to follow
         :return:
         """
 

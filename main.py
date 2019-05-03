@@ -1,5 +1,5 @@
 """
-Main file to test all develop models.
+Main file to test all developed models.
 """
 import time
 
@@ -302,7 +302,7 @@ def deep_sea_treasure_simplified_mo_mp():
 
 def track_policy():
     # Settings variables
-    environment = MoPuddleWorld
+    environment = MoPuddleWorld  #class name of the environment
     evaluation_mechanism = 'HV-PQL'
 
     # Try to load last model
@@ -326,7 +326,8 @@ def track_policy():
     #     # Save model
     #     agent.save()
 
-    state = (5, 2)
+    #state = (5, 2)  #for space exploration
+    state = (0, 0)  #for puddleworld
 
     non_dominate_vectors = agent.non_dominate_vectors_from_state(state=state)
 
