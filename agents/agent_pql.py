@@ -40,10 +40,10 @@ import datetime
 import importlib
 import json
 import os
+from copy import deepcopy
 
 import math
 import matplotlib
-import matplotlib.pyplot as plt
 import numpy as np
 
 import utils.hypervolume as uh
@@ -52,9 +52,10 @@ from gym_tiadas.gym_tiadas.envs import Environment
 from models import ActionVector
 from models.vector import Vector
 from models.vector_float import VectorFloat
+from .agent import Agent
 
 
-class AgentPQL:
+class AgentPQL(Agent):
     # Indent of the JSON file where the agent will be saved
     json_indent = 2
     # Get dumps path from this file path
@@ -75,35 +76,9 @@ class AgentPQL:
         :param states_to_observe: List of states from that we want to get a graphical output.
         """
 
-        # Discount factor
-        assert 0 < gamma <= 1
-        # Exploration factor
-        assert 0 < epsilon <= 1
-
-        self.epsilon = epsilon
-        self.gamma = gamma
-
-        # Set environment
-        self.environment = environment
-
-        # To intensive problems
-        self.max_iterations = max_iterations
-        self.iterations = 0
-
-        # Create dictionary of states to observe
-        if states_to_observe is None:
-            self.states_to_observe = dict()
-        else:
-            self.states_to_observe = {
-                state: list() for state in states_to_observe
-            }
-
-        # Current agent state is initial_state in the environment
-        self.state = self.environment.initial_state
-
-        # Initialize Random Generator with `seed` as initial seed.
-        self.seed = seed
-        self.generator = np.random.RandomState(seed=self.seed)
+        # Super call __init__
+        super().__init__(environment=environment, epsilon=epsilon, gamma=gamma, seed=seed,
+                         states_to_observe=states_to_observe, max_iterations=max_iterations)
 
         # Average observed immediate reward vector.
         self.r = dict()
@@ -161,6 +136,10 @@ class AgentPQL:
 
             # Proceed to next state
             self.state = next_state
+
+            # Check timeout
+            if self.max_iterations is not None and not is_final:
+                is_final = self.iterations >= self.max_iterations
 
         # Append new data for graphical output
         for state, data in self.states_to_observe.items():
@@ -262,25 +241,6 @@ class AgentPQL:
 
         return q_set
 
-    def select_action(self, state: object = None) -> int:
-        """
-        Select best action with an e-greedy policy.
-        :return:
-        """
-
-        # If state is None, then set current state to state.
-        if not state:
-            state = self.state
-
-        if self.generator.uniform(low=0, high=1) < self.epsilon:
-            # Get random action to explore possibilities
-            action = self.environment.action_space.sample()
-        else:
-            # Get best action to exploit reward.
-            action = self.best_action(state=state)
-
-        return action
-
     def reset(self) -> None:
         """
         Reset agent, forgetting previous dictionaries
@@ -297,13 +257,6 @@ class AgentPQL:
             self.states_to_observe.update({
                 state: list()
             })
-
-    def reset_iterations(self) -> None:
-        """
-        Set iterations to zero.
-        :return:
-        """
-        self.iterations = 0
 
     def best_action(self, state: object = None) -> int:
         """
@@ -331,19 +284,31 @@ class AgentPQL:
         Runs an episode using one of the learned policies (policy tracking).
         This method tracks a policy with vector-value 'target' from the
         start 'state' until a final state is reached.
+
+        IMPORTANT: When the vectors have not entirely converged yet or the transition scheme is stochastic, the equality
+        operator should be relaxed. In this case, the action is to be selected that minimizes the difference between the
+        left and the right term. In our experiments, we select the action that minimizes the Manhattan distance between
+        these terms.
+
         :param state: initial state
         :param target: vector value of the policy to follow
         :return:
         """
 
         path = [state]
-        last_state = state
+        # Flag to indicate that path could be wrong.
+        approximate_path = False
 
         # While s is not terminal
         while not self.environment.is_final(state=state):
 
             # Path found
             found = False
+
+            # Manhattan_distances
+            min_manhattan_distance = float('inf')
+            min_q_target = None
+            min_action = None
 
             # For each a in environments actions.
             for a in self.environment.actions.values():
@@ -367,6 +332,8 @@ class AgentPQL:
                     if v.all_close(target):
                         # This transaction must be determinist s': T(s'|s, a) = 1
                         state = self.environment.next_state(action=a, state=state)
+
+                        # Update target
                         target = q
 
                         # Append to path
@@ -377,8 +344,36 @@ class AgentPQL:
 
                         break
 
-            if state == last_state:
-                raise ValueError('Path not found from state: {} and target: {}.'.format(state, target))
+                    # Calc manhattan distance
+                    manhattan_distance = um.manhattan_distance(a=v, b=target)
+
+                    # Check if current manhattan distance is lower than min manhattan distance
+                    if manhattan_distance < min_manhattan_distance:
+                        # Get a copy of action
+                        min_action = deepcopy(a)
+
+                        # Get a copy of target
+                        min_q_target = deepcopy(q)
+
+                        # Update min manhattan distance
+                        min_manhattan_distance = manhattan_distance
+
+            # If path not found
+            if not found:
+                # This transaction must be determinist s': T(s'|s, a) = 1
+                state = self.environment.next_state(action=min_action, state=state)
+
+                # Update target
+                target = min_q_target
+
+                # Append to path
+                path.append(state)
+
+                # Active approximate path
+                approximate_path = True
+
+        if approximate_path:
+            print('\033[92m The recovered path could be wrong. \033[0m', end='\n\n')
 
         return path
 
@@ -399,21 +394,6 @@ class AgentPQL:
             hv.append(uh.calc_hypervolume(list_of_vectors=q_set, reference=self.hv_reference))
 
         return max(hv)
-
-    def show_observed_states(self):
-        """
-        Show graph of observed states
-        :return:
-        """
-        for state, data in self.states_to_observe.items():
-            plt.plot(data, label='State: {}'.format(state))
-
-        plt.xlabel('Iterations')
-        plt.ylabel('HV max')
-
-        plt.legend(loc='upper left')
-
-        plt.show()
 
     def hypervolume_evaluation(self, state: object) -> int:
         """
@@ -478,10 +458,10 @@ class AgentPQL:
         )
 
         # Get max action
-        max_action = max(actions)
+        max_cardinality = max(actions)
 
         # Get all max actions
-        actions = [action for action in actions if action == max_action]
+        actions = [action for action, cardinality in enumerate(actions) if cardinality == max_cardinality]
 
         # from best actions get one aleatory
         return self.generator.choice(actions)
@@ -514,8 +494,8 @@ class AgentPQL:
             vectors=all_q, number_of_actions=len(available_actions)
         )
 
-        # Get all max actions
-        actions = [action for action in actions if action > 0]
+        # Get actions that have almost a non dominated vector.
+        actions = [action for action, cardinality in enumerate(actions) if cardinality > 0]
 
         # If actions is empty, get all available actions.
         if len(actions) <= 0:
@@ -622,19 +602,14 @@ class AgentPQL:
         return self.environment.default_reward.m3_max(nd)
 
     def print_information(self) -> None:
-        """
-        Print basic information about agent
-        :return:
-        """
-        print('- AgentPQL information! -')
-        print("Seed: {}".format(self.seed))
-        print("Gamma: {}".format(self.gamma))
-        print("Epsilon: {}".format(self.epsilon))
+
+        super().print_information()
+
         print("Hypervolume reference: {}".format(self.hv_reference))
         print('Evaluation mechanism: {}'.format(self.evaluation_mechanism))
 
     @staticmethod
-    def load(filename: str = None, environment: Environment = None, evaluation_mechanism: str = None) -> object:
+    def load(filename: str = None, environment: Environment = None, evaluation_mechanism: str = None):
         """
         Load json string from file and convert to dictionary.
         :param evaluation_mechanism: It is an evaluation mechanism that you want load
@@ -691,6 +666,9 @@ class AgentPQL:
         # Load structured data from indicated file.
         model = json.load(file)
 
+        # Close file
+        file.close()
+
         # Get meta-data
         meta = model.get('meta')
         # Get data
@@ -716,7 +694,8 @@ class AgentPQL:
         for key, value in environment_data.items():
 
             if 'state' in key or 'transactions' in key:
-                value = tuple(value)
+                # Convert to tuples to hash
+                value = um.lists_to_tuples(value)
 
             elif 'default_reward' in key:
                 # If all elements are int, then default_reward is a integer Vector, otherwise float Vector
@@ -753,7 +732,9 @@ class AgentPQL:
         # Update 'states_to_observe' data
         states_to_observe = dict()
         for item in data.get('states_to_observe'):
-            key = tuple(item.get('key'))
+            # Convert to tuples to hash
+            key = um.lists_to_tuples(item.get('key'))
+
             value = item.get('value')
 
             states_to_observe.update({key: value})
@@ -761,7 +742,7 @@ class AgentPQL:
         # Unpack 'r' data
         r = dict()
         for item in data.get('r'):
-
+            # Convert to tuples to hash
             key = um.lists_to_tuples(item.get('key'))
             value = item.get('value')
             action = value.get('key')
@@ -775,7 +756,7 @@ class AgentPQL:
         # Unpack 'nd' data
         nd = dict()
         for item in data.get('nd'):
-
+            # Convert to tuples to hash
             key = um.lists_to_tuples(item.get('key'))
             value = item.get('value')
             action = value.get('key')
@@ -789,7 +770,7 @@ class AgentPQL:
         # Unpack 'n' data
         n = dict()
         for item in data.get('n'):
-
+            # Convert to tuples to hash
             key = um.lists_to_tuples(item.get('key'))
             value = item.get('value')
             action = value.get('key')

@@ -93,7 +93,7 @@ class DeepSeaTreasure(EnvMesh):
 
         return self.current_state, rewards, final, info
 
-    def reset(self):
+    def reset(self) -> tuple:
         """
         Reset environment to zero.
         :return:

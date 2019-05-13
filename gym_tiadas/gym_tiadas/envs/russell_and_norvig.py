@@ -73,7 +73,7 @@ class RussellNorvig(EnvMesh):
 
         return new_state, reward, final, info
 
-    def reset(self):
+    def reset(self) -> tuple:
         """
         Reset environment to zero.
         :return:

@@ -14,7 +14,7 @@ class NonRecurrentRings(Environment):
     # Icons to render environments
     _icons = {'BLANK': ' ', 'BLOCK': '■', 'TREASURE': '$', 'CURRENT': '☺', 'ENEMY': '×', 'HOME': 'µ', 'FINAL': '$'}
 
-    def __init__(self, seed: int = 0, initial_state: int = 0):
+    def __init__(self, seed: int = 0, initial_state: int = 0, default_reward: tuple = (0, 0)):
         """
         :param seed:
         :param initial_state:
@@ -28,36 +28,36 @@ class NonRecurrentRings(Environment):
         # Rewards dictionary
         self.rewards_dictionary = {
             0: {
-                self.actions.get('COUNTER-CLOCKWISE'): (2, -1),
-                self.actions.get('CLOCKWISE'): (-1, 0)
+                self.actions.get('COUNTER-CLOCKWISE'): Vector([2, -1]),
+                self.actions.get('CLOCKWISE'): Vector([-1, 0])
             },
             1: {
-                self.actions.get('COUNTER-CLOCKWISE'): (2, -1),
-                self.actions.get('CLOCKWISE'): (-1, 0)
+                self.actions.get('COUNTER-CLOCKWISE'): Vector([2, -1]),
+                self.actions.get('CLOCKWISE'): Vector([-1, 0])
             },
             2: {
-                self.actions.get('COUNTER-CLOCKWISE'): (2, -1),
-                self.actions.get('CLOCKWISE'): (-1, 0)
+                self.actions.get('COUNTER-CLOCKWISE'): Vector([2, -1]),
+                self.actions.get('CLOCKWISE'): Vector([-1, 0])
             },
             3: {
-                self.actions.get('COUNTER-CLOCKWISE'): (2, -1),
-                self.actions.get('CLOCKWISE'): (-1, 0)
+                self.actions.get('COUNTER-CLOCKWISE'): Vector([2, -1]),
+                self.actions.get('CLOCKWISE'): Vector([-1, 0])
             },
             4: {
-                self.actions.get('CLOCKWISE'): (-1, 2),
-                self.actions.get('COUNTER-CLOCKWISE'): (0, -1)
+                self.actions.get('CLOCKWISE'): Vector([-1, 2]),
+                self.actions.get('COUNTER-CLOCKWISE'): Vector([0, -1])
             },
             5: {
-                self.actions.get('CLOCKWISE'): (-1, 2),
-                self.actions.get('COUNTER-CLOCKWISE'): (0, -1)
+                self.actions.get('CLOCKWISE'): Vector([-1, 2]),
+                self.actions.get('COUNTER-CLOCKWISE'): Vector([0, -1])
             },
             6: {
-                self.actions.get('CLOCKWISE'): (-1, 2),
-                self.actions.get('COUNTER-CLOCKWISE'): (0, -1)
+                self.actions.get('CLOCKWISE'): Vector([-1, 2]),
+                self.actions.get('COUNTER-CLOCKWISE'): Vector([0, -1])
             },
             7: {
-                self.actions.get('CLOCKWISE'): (-1, 2),
-                self.actions.get('COUNTER-CLOCKWISE'): (0, -1)
+                self.actions.get('CLOCKWISE'): Vector([-1, 2]),
+                self.actions.get('COUNTER-CLOCKWISE'): Vector([0, -1])
             }
         }
 
@@ -97,6 +97,8 @@ class NonRecurrentRings(Environment):
             }
         }
 
+        self.default_reward = Vector(default_reward)
+
     def step(self, action: int) -> (int, Vector, bool, dict):
         """
         Do a step in the environment
@@ -121,7 +123,7 @@ class NonRecurrentRings(Environment):
 
         return new_state, reward, final, info
 
-    def reset(self):
+    def reset(self) -> int:
         """
         Reset environment to zero.
         :return:
@@ -150,3 +152,17 @@ class NonRecurrentRings(Environment):
     def is_final(self, state: int = None) -> bool:
         # (This is a non-episodic problem, so doesn't have final states)
         return False
+
+    def get_dict_model(self) -> dict:
+        """
+        Get dict model of environment
+        :return:
+        """
+
+        data = super().get_dict_model()
+
+        # Clean specific environment data
+        del data['possible_transactions']
+        del data['rewards_dictionary']
+
+        return data

@@ -4,6 +4,7 @@ Useful functions used in this project
 import re
 
 import numpy as np
+from scipy.spatial.distance import cityblock
 
 from models import Vector
 
@@ -31,18 +32,7 @@ def sum_a_vector_and_a_list_of_vectors(v: Vector, v_list: list):
     return [v + vector for vector in v_list]
 
 
-def is_close(a: float, b: float, relative=1e-3):
-    """
-    Check if two float numbers are close
-    :param a:
-    :param b:
-    :param relative:
-    :return:
-    """
-    return abs(a - b) <= relative
-
-
-def distance_between_vectors(a: Vector, b: Vector) -> float:
+def euclidean_distance(a: Vector, b: Vector) -> float:
     """
     Euclidean distance between two vectors
     :param a:
@@ -58,7 +48,7 @@ def distance_to_origin(a: Vector) -> float:
     :param a:
     :return:
     """
-    return distance_between_vectors(a=a, b=a * 0)
+    return euclidean_distance(a=a, b=a * 0)
 
 
 def order_vectors_by_origin_nearest(vectors: list) -> list:
@@ -73,6 +63,17 @@ def order_vectors_by_origin_nearest(vectors: list) -> list:
 
     # Sort dictionary by value from lower to higher.
     return sorted(distances, key=distances.get, reverse=False)
+
+
+def manhattan_distance(a: Vector, b: Vector) -> float:
+    """
+    Manhattan distance between two vectors
+    :param a: Vector a
+    :param b: Vector b
+    :return:
+    """
+
+    return cityblock(u=a.components, v=b.components)
 
 
 def str_to_snake_case(text: str) -> str:

@@ -7,6 +7,7 @@ import unittest
 from gym import spaces
 
 from gym_tiadas.gym_tiadas.envs import ResourceGathering
+from models import Vector
 
 
 class TestResourceGathering(unittest.TestCase):
@@ -78,9 +79,9 @@ class TestResourceGathering(unittest.TestCase):
 
         # Set current state to random state
         self.environment.current_state = self.environment.observation_space.sample()
-        self.environment.state[0] = self.environment.np_random.randint(-1, 0)
-        self.environment.state[1] = self.environment.np_random.randint(0, 1)
-        self.environment.state[2] = self.environment.np_random.randint(0, 1)
+        self.environment.status[0] = self.environment.np_random.randint(-1, 0)
+        self.environment.status[1] = self.environment.np_random.randint(0, 1)
+        self.environment.status[2] = self.environment.np_random.randint(0, 1)
 
         # Get all golds
         for gold_state in self.environment.gold_states.keys():
@@ -95,7 +96,7 @@ class TestResourceGathering(unittest.TestCase):
 
         # Asserts
         self.assertEqual(self.environment.initial_state, self.environment.current_state)
-        self.assertEqual([0, 0, 0], self.environment.state)
+        self.assertEqual(Vector([0, 0, 0]), self.environment.status)
 
         for gold_state in self.environment.gold_states.values():
             self.assertTrue(gold_state)

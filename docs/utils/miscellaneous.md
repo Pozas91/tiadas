@@ -20,16 +20,7 @@ Estas funciones no están agrupadas, ya que, son pequeñas funciones que son usa
     * **Salida**
         * Una lista de cada uno de los vectores con el vector `v` sumado.
         
-* `is_close(a: float, b: float, relative=1e-3)`
-    * **Descripción**
-        * Comprueba que dos números flotantes son "casi" iguales.
-    * **Parámetros**
-        * `a: float` - Primer flotante
-        * `b: float` - Segundo flotante
-    * **Salida**
-        * Booleano que indica si los dos números son cercanos o no.
-        
-* `distance_between_vectors(a: Vector, b: Vector) -> float`
+* `euclidean_distance(a: Vector, b: Vector) -> float`
     * **Descripción**
         * Recibe dos vectores y devuelve la distancia euclídea entre ellos.
     * **Parámetros**
@@ -37,6 +28,15 @@ Estas funciones no están agrupadas, ya que, son pequeñas funciones que son usa
         * `b: Vector` - Segundo vector
     * **Salida**
         * La distancia euclídea entre los dos vectores en número flotante.
+
+* `manhattan_distance(a: Vector, b: Vector) -> float`
+    * **Descripción**
+        * Recibe dos vectores y devuelve la distancia manhattan entre ellos.
+    * **Parámetros**
+        * `a: Vector` - Primer vector
+        * `b: Vector` - Segundo vector
+    * **Salida**
+        * La distancia manhattan entre los dos vectores en número flotante.
         
 * `distance_to_origin(a: Vector) -> float`
     * **Descripción**

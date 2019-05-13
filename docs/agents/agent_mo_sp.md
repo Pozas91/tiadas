@@ -1,9 +1,9 @@
 # Agente Q-Learning multi-objectivo escalarizado
-#### `agents.AgentMOSP(Agent)`
+#### `agents.AgentMOSP(`[`AgentQ`](agent_q.md)`)`
 
-Este agente hereda el agente [`Agent`](agent.md), la diferencia con el anterior es que se le asignan unos pesos, y puede
-ser usado en problemas multi-objectivo, ya que multiplicará el vector pesos, por el vector recompensas, obteniendo un
-flotante que es una recompensa escalarizada. 
+Este agente hereda el agente [`AgentQ`](agent_q.md), la diferencia con el anterior es que se le asignan unos pesos, y 
+puede ser usado en problemas multi-objectivo, ya que multiplicará el vector pesos, por el vector recompensas, obteniendo
+un flotante que es una recompensa escalarizada. 
 
 * **Atributos**
     * `weights` - Vector de pesos, para realizar la multiplicación escalarizada.

@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 import utils.hypervolume as uh
-from agents import AgentPQL, AgentMOSP, Agent
+from agents import AgentPQL, AgentMOSP, AgentQ
 # from gym_tiadas.envs import *
 from gym_tiadas.gym_tiadas.envs import *
 from models import Vector
@@ -36,7 +36,7 @@ def plot_training_from_zero():
 
     for epochs in epochs_list:
         # Training mesh agent
-        agent_mesh = Agent(environment=environment_mesh)
+        agent_mesh = AgentQ(environment=environment_mesh)
         start_time = time.time()
         q_learning.train(agent=agent_mesh, epochs=epochs)
         time_train = time.time() - start_time
@@ -69,7 +69,7 @@ def plot_training_accumulate():
     epochs_list = [1000, 10000]
 
     # Agents to show policy at end
-    agent_mesh = Agent(environment=environment_mesh, states_to_observe=[(0, 0), (2, 0), (2, 1), (3, 2)])
+    agent_mesh = AgentQ(environment=environment_mesh, states_to_observe=[(0, 0), (2, 0), (2, 1), (3, 2)])
 
     print("Training agent...")
 
@@ -103,8 +103,8 @@ def plot_performance(epochs=100000):
     environment_mesh = gym.make(ENV_NAME_MESH, default_reward=reward)
 
     # Agents to show policy at end
-    agent_mesh = Agent(environment=environment_mesh, states_to_observe=[(0, 0), (1, 0), (2, 0), (2, 1), (3, 2)],
-                       alpha=0.01)
+    agent_mesh = AgentQ(environment=environment_mesh, states_to_observe=[(0, 0), (1, 0), (2, 0), (2, 1), (3, 2)],
+                        alpha=0.01)
 
     # Training mesh agent
     print("Training agent...")
@@ -128,7 +128,7 @@ def plot_performance(epochs=100000):
 
 def russel_and_norvig():
     env = RussellNorvig()
-    agent = Agent(environment=env)
+    agent = AgentQ(environment=env)
     q_learning.train(agent=agent, epochs=int(1e5))
     agent.show_policy()
     pass
@@ -177,7 +177,7 @@ def testing_pareto():
 
     # Search one extreme objective.
     objective = agent.process_reward(pareto_points[0])
-    q_learning.objective_training(agent=agent, objective=objective, close_margin=1e-2)
+    q_learning.objective_training(agent=agent, objective=objective)
 
     # Get p point from agent test.
     p = q_learning.testing(agent=agent)
@@ -190,13 +190,13 @@ def testing_pareto():
 
     # Search the other extreme objective.
     objective = agent.process_reward(pareto_points[-1])
-    q_learning.objective_training(agent=agent, objective=objective, close_margin=1e-1)
+    q_learning.objective_training(agent=agent, objective=objective)
 
     # Get q point from agent test.
     q = q_learning.testing(agent=agent)
 
     # Search pareto points
-    pareto_frontier = pareto.calc_frontier_scalarized(p=p, q=q, problem=agent, solutions_known=pareto_points)
+    pareto_frontier = pareto.calc_frontier_scalarized(p=p, q=q, agent=agent, solutions_known=pareto_points)
     pareto_frontier_np = np.array(pareto_frontier)
 
     # Calc rest of time
@@ -410,14 +410,16 @@ def track_policy():
     # state = (5, 2)  # for space exploration
     # Another environments
     state = (0, 0)
+    target = Vector([-8, 15])
 
     non_dominated_vectors = agent.non_dominated_vectors_from_state(state=state)
-
     agent.show_observed_states()
-    # path = agent.track_policy(state=state, target=(-8, 0))
+    path = agent.track_policy(state=state, target=target)
+
     agent.print_information()
+    print("Target: {}".format(target))
     print("Pareto's vectors: {}".format(non_dominated_vectors))
-    # print("Found path: {}".format(path))
+    print("Found path: {}".format(path))
     pass
 
 
@@ -441,8 +443,8 @@ def main():
     # russel_and_norvig()
     # deep_sea_treasure_simplified()
     # deep_sea_treasure_simplified_mo_mp()
-    # track_policy()
-    graphs_dps()
+    track_policy()
+    # graphs_dps()
     pass
 
 

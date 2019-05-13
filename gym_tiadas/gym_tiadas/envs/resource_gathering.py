@@ -97,7 +97,7 @@ class ResourceGathering(EnvMesh):
 
         return (self.current_state, tuple(self.status.tolist())), rewards, final, info
 
-    def reset(self):
+    def reset(self) -> tuple:
         """
         Reset environment to zero.
         :return:
@@ -115,7 +115,7 @@ class ResourceGathering(EnvMesh):
 
         return self.current_state
 
-    def render(self, **kwargs):
+    def render(self, **kwargs) -> None:
         # Get cols (x) and rows (y) from observation space
         cols, rows = self.observation_space.spaces[0].n, self.observation_space.spaces[1].n
 
@@ -162,7 +162,7 @@ class ResourceGathering(EnvMesh):
 
         return final
 
-    def __get_gold(self):
+    def __get_gold(self) -> None:
         """
         Check if agent can take the gold.
         :return:
@@ -173,7 +173,7 @@ class ResourceGathering(EnvMesh):
             self.status[1] += 1
             self.gold_states.update({self.current_state: False})
 
-    def __get_gem(self):
+    def __get_gem(self) -> None:
         """
         Check if agent can take the gem.
         :return:
@@ -223,7 +223,7 @@ class ResourceGathering(EnvMesh):
         data = super().get_dict_model()
 
         # Prepare environment data
-        data['state'] = self.status.tolist()
+        data['status'] = self.status.tolist()
 
         # Clean specific environment data
         del data['gold_states']

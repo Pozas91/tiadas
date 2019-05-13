@@ -6,7 +6,6 @@ import unittest
 
 import numpy as np
 
-import utils.q_learning as uq
 from agents import AgentPQL
 from gym_tiadas.gym_tiadas.envs import *
 from models import Vector
@@ -45,7 +44,7 @@ class TestDumps(unittest.TestCase):
                          max_iterations=max_iterations)
 
         # Train to modify data.
-        uq.train(agent=agent, epochs=epochs)
+        agent.train(epochs=epochs)
 
         # Save and load as new agent.
         agent.save()
@@ -104,7 +103,7 @@ class TestDumps(unittest.TestCase):
                          max_iterations=max_iterations)
 
         # Train to modify data.
-        uq.train(agent=agent, epochs=epochs)
+        agent.train(epochs=epochs)
 
         # Save and load as new agent.
         agent.save()
@@ -159,7 +158,7 @@ class TestDumps(unittest.TestCase):
                          max_iterations=max_iterations)
 
         # Train to modify data.
-        uq.train(agent=agent, epochs=epochs)
+        agent.train(epochs=epochs)
 
         # Save and load as new agent.
         agent.save()
@@ -208,7 +207,7 @@ class TestDumps(unittest.TestCase):
                          max_iterations=max_iterations)
 
         # Train to modify data.
-        uq.train(agent=agent, epochs=epochs)
+        agent.train(epochs=epochs)
 
         # Save and load as new agent.
         agent.save()
@@ -259,7 +258,7 @@ class TestDumps(unittest.TestCase):
                          max_iterations=max_iterations)
 
         # Train to modify data.
-        uq.train(agent=agent, epochs=epochs)
+        agent.train(epochs=epochs)
 
         # Save and load as new agent.
         agent.save()
@@ -284,6 +283,100 @@ class TestDumps(unittest.TestCase):
         self.assertEqual(agent.environment.default_reward, agent_loaded.environment.default_reward)
         self.assertEqual(agent.environment.transactions, agent_loaded.environment.transactions)
 
+    def test_linked_rings(self):
+        """
+        Testing agent with LinkedRings environment.
+        :return:
+        """
+        seed = 1
+        hv_reference = Vector([-100, -100])
+        evaluation_mechanism = 'PO-PQL'
+        epsilon = 0.11
+        states_to_observe = [0]
+        epochs = np.random.randint(10, 100)
+        gamma = 0.99
+        max_iterations = 10
+        initial_state = 1
+
+        # Instance of Environment
+        env = LinkedRings(seed=seed, initial_state=initial_state)
+
+        # Instance of AgentMOMP
+        agent = AgentPQL(environment=env, epsilon=epsilon, states_to_observe=states_to_observe,
+                         hv_reference=hv_reference, evaluation_mechanism=evaluation_mechanism, gamma=gamma,
+                         max_iterations=max_iterations)
+
+        # Train to modify data.
+        agent.train(epochs=epochs)
+
+        # Save and load as new agent.
+        agent.save()
+        agent_loaded = AgentPQL.load(environment=env, evaluation_mechanism=evaluation_mechanism)
+
+        # Agent
+        self.assertEqual(type(agent), type(agent_loaded))
+        self.assertEqual(agent.epsilon, agent_loaded.epsilon)
+        self.assertEqual(agent.gamma, agent_loaded.gamma)
+        self.assertEqual(agent.max_iterations, agent_loaded.max_iterations)
+        self.assertEqual(agent.states_to_observe, agent_loaded.states_to_observe)
+        self.assertEqual(agent.seed, agent_loaded.seed)
+        self.assertEqual(agent.r, agent_loaded.r)
+        self.assertEqual(agent.nd, agent_loaded.nd)
+        self.assertEqual(agent.n, agent_loaded.n)
+        self.assertEqual(agent.hv_reference, agent_loaded.hv_reference)
+        self.assertEqual(agent.evaluation_mechanism, agent_loaded.evaluation_mechanism)
+
+        # Environment
+        self.assertEqual(agent.environment.initial_seed, agent_loaded.environment.initial_seed)
+        self.assertEqual(agent.environment.initial_state, agent_loaded.environment.initial_state)
+
+    def test_non_recurrent_rings(self):
+        """
+        Testing agent with NonRecurrentRings environment.
+        :return:
+        """
+        seed = 1
+        hv_reference = Vector([-100, -100])
+        evaluation_mechanism = 'PO-PQL'
+        epsilon = 0.11
+        states_to_observe = [0]
+        epochs = np.random.randint(10, 100)
+        gamma = 0.99
+        max_iterations = 10
+        initial_state = 1
+
+        # Instance of Environment
+        env = NonRecurrentRings(seed=seed, initial_state=initial_state)
+
+        # Instance of AgentMOMP
+        agent = AgentPQL(environment=env, epsilon=epsilon, states_to_observe=states_to_observe,
+                         hv_reference=hv_reference, evaluation_mechanism=evaluation_mechanism, gamma=gamma,
+                         max_iterations=max_iterations)
+
+        # Train to modify data.
+        agent.train(epochs=epochs)
+
+        # Save and load as new agent.
+        agent.save()
+        agent_loaded = AgentPQL.load(environment=env, evaluation_mechanism=evaluation_mechanism)
+
+        # Agent
+        self.assertEqual(type(agent), type(agent_loaded))
+        self.assertEqual(agent.epsilon, agent_loaded.epsilon)
+        self.assertEqual(agent.gamma, agent_loaded.gamma)
+        self.assertEqual(agent.max_iterations, agent_loaded.max_iterations)
+        self.assertEqual(agent.states_to_observe, agent_loaded.states_to_observe)
+        self.assertEqual(agent.seed, agent_loaded.seed)
+        self.assertEqual(agent.r, agent_loaded.r)
+        self.assertEqual(agent.nd, agent_loaded.nd)
+        self.assertEqual(agent.n, agent_loaded.n)
+        self.assertEqual(agent.hv_reference, agent_loaded.hv_reference)
+        self.assertEqual(agent.evaluation_mechanism, agent_loaded.evaluation_mechanism)
+
+        # Environment
+        self.assertEqual(agent.environment.initial_seed, agent_loaded.environment.initial_seed)
+        self.assertEqual(agent.environment.initial_state, agent_loaded.environment.initial_state)
+
     def test_mo_puddle_world(self):
         """
         Testing agent with MoPuddleWorld environment.
@@ -292,7 +385,7 @@ class TestDumps(unittest.TestCase):
         default_reward = (10, 1)
         penalize_non_goal = -1.1
         seed = 1
-        hv_reference = Vector([-20, 0])
+        hv_reference = Vector([-100, 0])
         evaluation_mechanism = 'PO-PQL'
         epsilon = 0.11
         states_to_observe = [(0, 0)]
@@ -309,7 +402,7 @@ class TestDumps(unittest.TestCase):
                          max_iterations=max_iterations)
 
         # Train to modify data.
-        uq.train(agent=agent, epochs=epochs)
+        agent.train(epochs=epochs)
 
         # Save and load as new agent.
         agent.save()
@@ -357,7 +450,7 @@ class TestDumps(unittest.TestCase):
                          max_iterations=max_iterations)
 
         # Train to modify data.
-        uq.train(agent=agent, epochs=epochs)
+        agent.train(epochs=epochs)
 
         # Save and load as new agent.
         agent.save()
@@ -405,7 +498,7 @@ class TestDumps(unittest.TestCase):
                          max_iterations=max_iterations)
 
         # Train to modify data.
-        uq.train(agent=agent, epochs=epochs)
+        agent.train(epochs=epochs)
 
         # Save and load as new agent.
         agent.save()
@@ -456,7 +549,7 @@ class TestDumps(unittest.TestCase):
                          max_iterations=max_iterations)
 
         # Train to modify data.
-        uq.train(agent=agent, epochs=epochs)
+        agent.train(epochs=epochs)
 
         # Save and load as new agent.
         agent.save()
@@ -505,7 +598,7 @@ class TestDumps(unittest.TestCase):
                          max_iterations=max_iterations)
 
         # Train to modify data.
-        uq.train(agent=agent, epochs=epochs)
+        agent.train(epochs=epochs)
 
         # Save and load as new agent.
         agent.save()

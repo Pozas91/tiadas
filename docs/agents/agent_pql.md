@@ -1,5 +1,5 @@
 # Agent PQL
-#### `agents.AgentPQL(Agent)`
+#### `agents.AgentPQL(`[`Agent`](agent.md)`)`
 
 Está basado en el artículo "Multi-Objective Reinforcement Learning using Set of
 Pareto Dominating Policies" de Kristof Van Moffaert and Ann Nowé.
@@ -17,19 +17,6 @@ encontrados.
 * **Atributos**
     * `json_indent` - Tabulación que tendrán las líneas en los ficheros json.
     * `dumps_path` - Ruta relativa hacia el directorio de volcado de datos.
-    * `gamma` - Factor de descuento.
-    * `epsilon` - Epsilon usado para la exploración del agente (política e-greedy).
-    * `environment` - Entorno de la clase [`Environment`](../environments/environment.md), sobre el que el agente
-    interactuará.
-    * `max_iterations` - Número máximo de iteraciones hasta decidir que hemos llegado a un estado final, si este valor
-    es `None` se considerará sin límite.
-    * `iterations` - Contador de iteraciones realizadas.
-    * `states_to_observe` - Diccionario donde las claves son los estados que están siendo observados y los valores, son 
-    las observaciones realizadas.
-    * `state` - Estado actual del agente.
-    * `seed` - Semilla con el que el generador de números aleatorios se iniciará.
-    * `generator` - Generador de números aleatorios, es una instancia de 
-    [`numpy.random.RandomState()`](https://docs.scipy.org/doc/numpy/reference/generated/numpy.random.RandomState.html).
     * `r` - Diccionario de diccionario, donde se almacena la recompensa inmediata media observada:
         ```json
         {
@@ -64,15 +51,6 @@ encontrados.
         * `'C-PQL'` - Evaluación por cardinalidad, el agente escoge la acción con más vectores no dominados.
     
 * **Métodos**
-    * `select_action(self, state: object = None) -> int`
-        * **Descripción**
-            * Dado un estado, un acción basado en una política e-greedy. Si se aplica el epsilon se cogerá un valor 
-            aleatorio (**exploración**), si no se cogerá la mejor acción posible (**explotación**).
-        * **Parámetros**
-            * `state: object = None` - Un objeto que representa un estado, si este valor es `None` se tomará el estado
-            actual del agente.
-        * **Salida**
-            * Devuelve un `int`, entero que representa a una acción.
     * `episode(self) -> None`
         * **Descripción**
             * Realiza un episodio completo en el entorno hasta encontrar un estado final. A medida que se realizan 
@@ -143,13 +121,6 @@ encontrados.
             actual del agente.
         * **Salida**
             * Devuelve un `int`, entero que representa a una acción.
-    * `show_observed_states(self) -> None`
-        * **Descripción**
-            * Muestra la gráfica de los estados observados a lo largo de las iteraciones.
-        * **Parámetros**
-            * **No recibe parámetros**
-        * **Salida**
-            * Muestra un gráfico con los estados observados.
     * `track_policy(self, state: object, target: `[`Vector`](../models/vector.md)`) -> list`
         * **Descripción**
             * Ejecuta un episodio usando el objetivo `target` en búsqueda de una de las políticas aprendidas, desde el 
@@ -224,14 +195,7 @@ encontrados.
         * **Parámetros**
             * `state: object` - Estado que estamos examinando.
         * **Salida**
-            * Devuelve un `list`, lista con todos los vectores no dominados.       
-    * `print_information(self) -> None`
-        * **Descripción**
-            * Muestra por consola información básica del agente, como la semilla que tiene, el gamma, etc.
-        * **Parámetros**
-            * **No recibe parámetros**
-        * **Salida**
-            * Muestra por consola la información
+            * Devuelve un `list`, lista con todos los vectores no dominados.
     * `load(filename: str = None, environment: `[`Environment`](../environments/environment.md)` = None, 
     evaluation_mechanism: str = None) -> object`
         * **Descripción**

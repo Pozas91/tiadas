@@ -44,7 +44,7 @@ class EnvMesh(Environment):
         super().__init__(observation_space=observation_space, default_reward=default_reward, seed=seed,
                          initial_state=initial_state, obstacles=obstacles, finals=finals)
 
-    def render(self, mode: str = 'human'):
+    def render(self, mode: str = 'human') -> None:
         """
         Render environment
         :param mode:

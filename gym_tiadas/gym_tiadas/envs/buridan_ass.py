@@ -131,7 +131,7 @@ class BuridanAss(EnvMesh):
 
         return tuple(complex_state), rewards, final, info
 
-    def reset(self):
+    def reset(self) -> tuple:
         self.current_state = self.initial_state
         self.last_ate = 0
 
@@ -176,7 +176,7 @@ class BuridanAss(EnvMesh):
 
         return penalize
 
-    def __regenerate_food(self):
+    def __regenerate_food(self) -> None:
         """
         Regenerate food if is necessary
         :return:

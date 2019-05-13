@@ -88,7 +88,7 @@ class MoPuddleWorld(EnvMesh):
 
         return self.current_state, rewards, final, info
 
-    def reset(self):
+    def reset(self) -> tuple:
         """
         Get random non-goal state to current_value
         :return:

@@ -82,7 +82,7 @@ class SpaceExploration(EnvMesh):
 
         return self.current_state, rewards, final, info
 
-    def reset(self):
+    def reset(self) -> tuple:
         """
         Reset environment to zero.
         :return:
@@ -137,7 +137,7 @@ class SpaceExploration(EnvMesh):
         return new_state
 
     @staticmethod
-    def __move_up(y: int, limit: int = 5):
+    def __move_up(y: int, limit: int = 5) -> int:
         """
         Move to up
         :param y:
@@ -147,7 +147,7 @@ class SpaceExploration(EnvMesh):
         return (y if y > 0 else limit) - 1
 
     @staticmethod
-    def __move_right(x: int, limit: int = 13):
+    def __move_right(x: int, limit: int = 13) -> int:
         """
         Move to right
         :param x:
@@ -157,7 +157,7 @@ class SpaceExploration(EnvMesh):
         return (x + 1) % limit
 
     @staticmethod
-    def __move_down(y: int, limit: int = 5):
+    def __move_down(y: int, limit: int = 5) -> int:
         """
         Move to down
         :param y:
@@ -167,7 +167,7 @@ class SpaceExploration(EnvMesh):
         return (y + 1) % limit
 
     @staticmethod
-    def __move_left(x: int, limit: int = 13):
+    def __move_left(x: int, limit: int = 13) -> int:
         """
         Move to left
         :param x:

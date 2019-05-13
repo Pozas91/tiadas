@@ -24,7 +24,7 @@ class LinkedRings(Environment):
     # Icons to render environments
     _icons = {'BLANK': ' ', 'BLOCK': '■', 'TREASURE': '$', 'CURRENT': '☺', 'ENEMY': '×', 'HOME': 'µ', 'FINAL': '$'}
 
-    def __init__(self, seed: int = 0, initial_state: int = 0):
+    def __init__(self, seed: int = 0, initial_state: int = 0, default_reward: tuple = (0, 0)):
         """
         :param seed:
         :param initial_state:
@@ -39,32 +39,32 @@ class LinkedRings(Environment):
         # Rewards dictionary
         self.rewards_dictionary = {
             0: {
-                self._actions.get('COUNTER-CLOCKWISE'): (3, -1),
-                self._actions.get('CLOCKWISE'): (-1, 3)
+                self._actions.get('COUNTER-CLOCKWISE'): Vector([3, -1]),
+                self._actions.get('CLOCKWISE'): Vector([-1, 3])
             },
             1: {
-                self._actions.get('COUNTER-CLOCKWISE'): (3, -1),
-                self._actions.get('CLOCKWISE'): (-1, 0)
+                self._actions.get('COUNTER-CLOCKWISE'): Vector([3, -1]),
+                self._actions.get('CLOCKWISE'): Vector([-1, 0])
             },
             2: {
-                self._actions.get('COUNTER-CLOCKWISE'): (3, -1),
-                self._actions.get('CLOCKWISE'): (-1, 0)
+                self._actions.get('COUNTER-CLOCKWISE'): Vector([3, -1]),
+                self._actions.get('CLOCKWISE'): Vector([-1, 0])
             },
             3: {
-                self._actions.get('COUNTER-CLOCKWISE'): (3, -1),
-                self._actions.get('CLOCKWISE'): (-1, 0)
+                self._actions.get('COUNTER-CLOCKWISE'): Vector([3, -1]),
+                self._actions.get('CLOCKWISE'): Vector([-1, 0])
             },
             4: {
-                self._actions.get('CLOCKWISE'): (-1, 3),
-                self._actions.get('COUNTER-CLOCKWISE'): (0, -1)
+                self._actions.get('CLOCKWISE'): Vector([-1, 3]),
+                self._actions.get('COUNTER-CLOCKWISE'): Vector([0, -1])
             },
             5: {
-                self._actions.get('CLOCKWISE'): (-1, 3),
-                self._actions.get('COUNTER-CLOCKWISE'): (0, -1)
+                self._actions.get('CLOCKWISE'): Vector([-1, 3]),
+                self._actions.get('COUNTER-CLOCKWISE'): Vector([0, -1])
             },
             6: {
-                self._actions.get('CLOCKWISE'): (-1, 3),
-                self._actions.get('COUNTER-CLOCKWISE'): (0, -1)
+                self._actions.get('CLOCKWISE'): Vector([-1, 3]),
+                self._actions.get('COUNTER-CLOCKWISE'): Vector([0, -1])
             }
         }
 
@@ -100,6 +100,8 @@ class LinkedRings(Environment):
             }
         }
 
+        self.default_reward = Vector(default_reward)
+
     def step(self, action: int) -> (int, Vector, bool, dict):
         """
         Do a step in the environment
@@ -124,7 +126,7 @@ class LinkedRings(Environment):
 
         return new_state, reward, final, info
 
-    def reset(self):
+    def reset(self) -> int:
         """
         Reset environment to zero.
         :return:
@@ -160,3 +162,17 @@ class LinkedRings(Environment):
         :return:
         """
         return False
+
+    def get_dict_model(self) -> dict:
+        """
+        Get dict model of environment
+        :return:
+        """
+
+        data = super().get_dict_model()
+
+        # Clean specific environment data
+        del data['possible_transactions']
+        del data['rewards_dictionary']
+
+        return data
