@@ -61,8 +61,8 @@ class NonRecurrentRings(Environment):
             }
         }
 
-        # Possible transactions from a state to another
-        self.possible_transactions = {
+        # Possible transitions from a state to another
+        self.possible_transitions = {
             0: {
                 self.actions.get('COUNTER-CLOCKWISE'): 1,
                 self.actions.get('CLOCKWISE'): 7
@@ -139,8 +139,11 @@ class NonRecurrentRings(Environment):
         :return: a new state (or old if is invalid action)
         """
 
+        # Check if a state is given.
+        state = self.current_state if state is None else state
+
         # Do movement
-        new_state = self.possible_transactions.get(self.current_state).get(action)
+        new_state = self.possible_transitions.get(state).get(action)
 
         if not self.observation_space.contains(new_state):
             # New state is invalid, and roll back with previous.
@@ -162,7 +165,7 @@ class NonRecurrentRings(Environment):
         data = super().get_dict_model()
 
         # Clean specific environment data
-        del data['possible_transactions']
+        del data['possible_transitions']
         del data['rewards_dictionary']
 
         return data

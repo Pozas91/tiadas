@@ -178,8 +178,7 @@ class LinkedRings(Environment):
         state = self.current_state if state is None else state
 
         # Do movement
-
-        new_state = self.possible_transitions.get(self.current_state).get(action)
+        new_state = self.possible_transitions.get(state).get(action)
 
         if not self.observation_space.contains(new_state):
             # New state is invalid, and roll back with previous.
@@ -205,7 +204,7 @@ class LinkedRings(Environment):
         data = super().get_dict_model()
 
         # Clean specific environment data
-        del data['possible_transactions']
+        del data['possible_transitions']
         del data['rewards_dictionary']
 
         return data
