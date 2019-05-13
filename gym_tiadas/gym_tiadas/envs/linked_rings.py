@@ -15,8 +15,8 @@ S3       S1     S6
 All arcs are bidirectional, except  S4 -> S1 and S7 -> S1.
 Therefore, the agent has two actions available at each state,
 
-* Go to clockwise
-* Go to counter-clockwise
+* Move clockwise
+* Move counter-clockwise
 
 States are implemented in a discrete 0-6 range as follows,
 
