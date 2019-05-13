@@ -1,15 +1,46 @@
 """
-Simple non-episodic environment, where the agent train with a step-limit. Only two actions are possible:
+Simple deterministic bi-objective non-episodic environment.
+
+STATE SPACE:
+-----------
+The space state consists of 7 states linked by actions in a two ring shape.
+State 1 is common to both rings.
+
+     S2      S5
+   /    \  /   \
+S3       S1     S6
+   \    / \     /
+     S4      S7
+
+All arcs are bidirectional, except  S4 -> S1 and S7 -> S1.
+Therefore, the agent has two actions available at each state,
 
 * Go to clockwise
 * Go to counter-clockwise
 
-Given a state and a action, returns reward.
+States are implemented in a discrete 0-6 range as follows,
 
-FINAL STATE: Does not have finals states.
+     1       4
+   /    \  /   \
+ 2       0      5
+   \    / \    /
+     3       6
 
-REF: Steering approaches to Pareto-optimal multiobjective reinforcement learning. (Peter Vamplew, Rustam Issabekov,
-Richard Dazeley, Cameron Foale, Adam Berry, Tim Moore, Douglas Creighton) 2017.
+
+REWARDS:
+-------
+Left ring: (3,-1) moving counter-clockwise, (-1,0) otherwise.
+Right ring: (-1,3) moving clockwise, (0, -1) otherwise.
+
+FINAL STATE:
+-----------
+It is not an episodic task. Does not have finals states.
+
+Reference:
+Steering approaches to Pareto-optimal multiobjective reinforcement learning.
+Peter Vamplew, Rustam Issabekov, Richard Dazeley, Cameron Foale, Adam Berry, 
+Tim Moore, Douglas Creighton
+Neurocomputing 263 (2017) 26-38.
 """
 
 import gym
@@ -22,7 +53,8 @@ class LinkedRings(gym.Env):
     _actions = {'CLOCKWISE': 0, 'COUNTER-CLOCKWISE': 1}
 
     # Icons to render environments
-    _icons = {'BLANK': ' ', 'BLOCK': '■', 'TREASURE': '$', 'CURRENT': '☺', 'ENEMY': '×', 'HOME': 'µ', 'FINAL': '$'}
+    _icons = {'BLANK': ' ', 'BLOCK': '■', 'TREASURE': '$', 'CURRENT': '☺',
+              'ENEMY': '×', 'HOME': 'µ', 'FINAL': '$'}
 
     def __init__(self, seed=0, initial_state=0):
         """
@@ -77,8 +109,8 @@ class LinkedRings(gym.Env):
             }
         }
 
-        # Possible transactions from a state to another
-        self.possible_transactions = {
+        # Possible transitions from a state to another
+        self.possible_transitions = {
             0: {
                 self._actions.get('COUNTER-CLOCKWISE'): 1,
                 self._actions.get('CLOCKWISE'): 4
@@ -114,7 +146,7 @@ class LinkedRings(gym.Env):
 
     def step(self, action):
         """
-        Do a step in the environment
+        Take a step in the environment
         :param action:
         :return:
         """
@@ -168,7 +200,7 @@ class LinkedRings(gym.Env):
         """
 
         # Do movement
-        new_state = self.possible_transactions.get(self.current_state).get(action)
+        new_state = self.possible_transitions.get(self.current_state).get(action)
 
         if not self.observation_space.contains(new_state):
             # New state is invalid, and roll back with previous.
@@ -187,8 +219,8 @@ class LinkedRings(gym.Env):
 
     def is_final(self, state=None) -> bool:
         """
-        Check if is final state (This is a non-episodic problem, so doesn't have final states)
+        Checks if this is final state. 
         :param state:
-        :return:
+        :return: Always False, since this task is not episodic.
         """
         return False
