@@ -10,10 +10,11 @@ The data structure of q dictionary is as follows:
     ...
 }
 """
-
-import math
 import matplotlib.pyplot as plt
 import numpy as np
+
+from gym_tiadas.gym_tiadas.envs import Environment
+from models import Vector
 
 
 class Agent:
@@ -23,8 +24,18 @@ class Agent:
         'STAY': '×'
     }
 
-    def __init__(self, environment, alpha=0.1, epsilon=0.1, gamma=1., seed=0, default_reward=0.,
-                 states_to_observe=None, max_iterations=None):
+    def __init__(self, environment: Environment, alpha: float = 0.1, epsilon: float = 0.1, gamma: float = 1.,
+                 seed: int = 0, states_to_observe: list = None, max_iterations: int = None):
+        """
+
+        :param environment: An environment where agent does any operation.
+        :param alpha: Learning rate
+        :param epsilon: Epsilon using in e-greedy policy, to explore more states.
+        :param gamma: Discount factor
+        :param seed: Seed used for np.random.RandomState method.
+        :param states_to_observe: List of states from that we want to get a graphical output.
+        :param max_iterations: Limits of iterations per episode.
+        """
 
         # Learning factor
         assert 0 < alpha <= 1
@@ -37,8 +48,8 @@ class Agent:
         self.gamma = gamma
         self.epsilon = epsilon
 
+        # Set environment
         self.environment = environment
-        self.default_reward = default_reward
 
         # To intensive problems
         self.max_iterations = max_iterations
@@ -54,6 +65,7 @@ class Agent:
         self.state = self.environment.reset()
 
         # Initialize Random Generator with `seed` as initial seed.
+        self.seed = seed
         self.generator = np.random.RandomState(seed=seed)
 
         # Initialize to Q-Learning Dictionary
@@ -62,7 +74,7 @@ class Agent:
         # Rewards history data
         self.rewards_history = list()
 
-    def select_action(self, state=None) -> int:
+    def select_action(self, state: object = None) -> int:
         """
         Select best action with a little e-greedy policy.
         :return:
@@ -168,7 +180,7 @@ class Agent:
             # Update dictionary
             self.states_to_observe.update({state: data})
 
-    def _update_q_dictionary(self, reward, action, next_state) -> None:
+    def _update_q_dictionary(self, reward: Vector, action: int, next_state: object) -> None:
         """
         Update Q-Dictionary with new data
         :param reward:
@@ -178,14 +190,14 @@ class Agent:
         """
 
         # Get old value
-        old_value = self.q.get(self.state, {}).get(action, self.default_reward)
+        old_value = self.q.get(self.state, {}).get(action, self.environment.default_reward.zero_vector)
 
         # Get next max value
         next_max = self._best_reward(state=next_state)
 
         # Calc new value apply Q-Learning formula:
         # Q(St, At) <- (1 - alpha) * Q(St, At) + alpha * (r + y * Q(St_1, action))
-        new_value = (1 - self.alpha) * old_value + self.alpha * (reward + self.gamma * next_max)
+        new_value = (1 - self.alpha) * old_value + self.alpha * (reward + next_max * self.gamma)
 
         # Prepare new data
         new_data = {action: new_value}
@@ -240,7 +252,7 @@ class Agent:
         # New line
         print('')
 
-    def show_raw_policy(self):
+    def show_raw_policy(self) -> None:
         """
         Show all states with it's best action
         :return:
@@ -251,7 +263,7 @@ class Agent:
 
             print("State: {} -> Action: {}".format(state, best_action))
 
-    def reset(self):
+    def reset(self) -> None:
         """
         Reset agent, forgetting previous q-values
         :return:
@@ -261,7 +273,7 @@ class Agent:
         self.state = self.environment.reset()
         self.iterations = 0
 
-    def best_action(self, state=None) -> int:
+    def best_action(self, state: object = None) -> int:
         """
         Return best action for q and state given.
         :return:
@@ -277,7 +289,7 @@ class Agent:
         # Get unknown actions with default reward
         for action in range(self.environment.action_space.n):
             if action not in possible_actions:
-                possible_actions.update({action: self.default_reward})
+                possible_actions.update({action: self.environment.default_reward.zero_vector})
 
         # Get max by value, and get it's action
         actions = list()
@@ -290,7 +302,7 @@ class Agent:
             reward = possible_actions.get(possible_action)
 
             # If current value is close to new value
-            if math.isclose(a=reward, b=max_reward, rel_tol=1e-4):
+            if reward.all_close(v2=max_reward):
 
                 # Append another possible action
                 actions.append(possible_action)
@@ -299,8 +311,7 @@ class Agent:
             elif reward > max_reward:
 
                 # Create a new list with current key.
-                actions = list()
-                actions.append(possible_action)
+                actions = [possible_action]
 
             # Update max value
             max_reward = max(max_reward, reward)
@@ -310,7 +321,7 @@ class Agent:
 
         return action
 
-    def _best_reward(self, state) -> float:
+    def _best_reward(self, state: object) -> Vector:
         """
         Return best reward for q and state given
         :return:
@@ -322,7 +333,7 @@ class Agent:
         # Get unknown actions with default reward
         for action in range(self.environment.action_space.n):
             if action not in possible_actions:
-                possible_actions.update({action: self.default_reward})
+                possible_actions.update({action: self.environment.default_reward.zero_vector})
 
         # Get best action and use it to get best reward.
         action = self.best_action(state=state)
@@ -331,28 +342,28 @@ class Agent:
         return reward
 
     @property
-    def v(self) -> float:
+    def v(self) -> Vector:
         """
         Get best value from initial state -> V_max(0, 0)
         :return:
         """
         return self._best_reward(state=self.environment.initial_state)
 
-    def reset_iterations(self):
+    def reset_iterations(self) -> None:
         """
         Set iterations to zero.
         :return:
         """
         self.iterations = 0
 
-    def reset_rewards_history(self):
+    def reset_rewards_history(self) -> None:
         """
         Forget rewards history
         :return:
         """
         self.rewards_history = list()
 
-    def process_reward(self, reward) -> float:
+    def process_reward(self, reward: Vector) -> Vector:
         """
         Processing reward function.
         :param reward:
@@ -360,7 +371,7 @@ class Agent:
         """
         return reward
 
-    def print_observed_states(self):
+    def show_observed_states(self) -> None:
         """
         Show graph of observed states
         :return:
@@ -375,7 +386,7 @@ class Agent:
 
         plt.show()
 
-    def show_v_values(self):
+    def show_v_values(self) -> None:
         """
         Show Best rewards from Q-Dictionary
         :return:

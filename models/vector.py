@@ -95,7 +95,11 @@ class Vector:
 
     def __add__(self, other):
         """
-        Sum two vectors
+        This method has four options:
+            - A vector of same length has been given, return a new Vector with the sum of each pair of components.
+            - A vector of different length has been given, throws an exception.
+            - A int, sum that int of each component.
+            - A float, remove decimals, and sum that number as int.
         :param other:
         :return:
         """
@@ -104,7 +108,11 @@ class Vector:
 
     def __sub__(self, other):
         """
-        Subtract two vectors
+        This method has four options:
+            - A vector of same length has been given, return a new Vector with the subtract of each pair of components.
+            - A vector of different length has been given, throws an exception.
+            - A int, subtract that int of each component.
+            - A float, remove decimals, and subtract that number as int.
         :param other:
         :return:
         """
@@ -113,8 +121,11 @@ class Vector:
 
     def __mul__(self, other):
         """
-        Multiply a vector. If other is a number, multiply all components per the number, else if another vector, then
-        multiply one by one components (in this case vector must be same length).
+        This method has four options:
+            - A vector of same length has been given, return a new Vector with the multiply of each pair of components.
+            - A vector of different length has been given, throws an exception.
+            - A int, multiply that int of each component.
+            - A float, remove decimals, and multiply that number as int.
         :param other:
         :return:
         """
@@ -123,8 +134,11 @@ class Vector:
 
     def __truediv__(self, other):
         """
-        Divide a vector. If other is a number, divide all components per the number, else if another vector, then
-        divide one by one components (in this case vector must be same length).
+        This method has four options:
+            - A vector of same length has been given, return a new Vector with the division of each pair of components.
+            - A vector of different length has been given, throws an exception.
+            - A int, divide that int of each component.
+            - A float, remove decimals, and divide that number as int.
         :param other:
         :return:
         """
@@ -132,7 +146,11 @@ class Vector:
 
     def __pow__(self, power, modulo=None):
         """
-        Pow a vector
+        This method has four options:
+            - A vector of same length has been given, return a new Vector with the power of each pair of components.
+            - A vector of different length has been given, throws an exception.
+            - A int, power that int of each component.
+            - A float, remove decimals, and power that number as int.
         :param power:
         :param modulo:
         :return:
@@ -143,7 +161,7 @@ class Vector:
     def __ge__(self, other):
         """
         A vector is greater or equal than other when all components are greater or equal one by one.
-
+        - Throws an exception if both vectors lengths are different.
         :param other:
         :return:
         """
@@ -153,7 +171,7 @@ class Vector:
     def __gt__(self, other):
         """
         A vector is greater than other when all components are greater one by one.
-
+        - Throws an exception if both vectors lengths are different.
         :param other:
         :return:
         """
@@ -162,7 +180,7 @@ class Vector:
     def __lt__(self, other):
         """
         A vector is less than other when all components are less one by one.
-
+        - Throws an exception if both vectors lengths are different.
         :param other:
         :return:
         """
@@ -171,11 +189,27 @@ class Vector:
     def __le__(self, other):
         """
         A vector is less or equal than other when all components are less or equal (or close) one by one.
-
+        - Throws an exception if both vectors lengths are different.
         :param other:
         :return:
         """
         return np.all(np.less_equal(self.components, other.components))
+
+    @property
+    def magnitude(self) -> float:
+        """
+        Return magnitude of vector
+        :return:
+        """
+        return math.sqrt(np.sum(self.components ** 2))
+
+    @property
+    def zero_vector(self):
+        """
+        Return a zero vector of same type and len that this vector
+        :return:
+        """
+        return self.__class__(np.zeros_like(self.components))
 
     def tolist(self):
         """
@@ -184,15 +218,7 @@ class Vector:
         """
         return self.components.tolist()
 
-    @property
-    def magnitude(self):
-        """
-        Return magnitude of vector
-        :return:
-        """
-        return math.sqrt(np.sum(self.components ** 2))
-
-    def all_close(self, v2):
+    def all_close(self, v2) -> bool:
         """
         Returns True if two arrays are element-wise equal within a tolerance.
 
@@ -204,7 +230,7 @@ class Vector:
         """
         return np.array_equal(self, v2)
 
-    def dominance(self, v2):
+    def dominance(self, v2) -> Dominance:
         """
         Check dominance between two Vector objects. Float values are allowed
         and treated with precision according to Vector.relative.
@@ -250,7 +276,7 @@ class Vector:
             return Dominance.is_dominated
 
     @staticmethod
-    def m3_max(vectors: list):
+    def m3_max(vectors: list) -> list:
         """
         :param vectors : list of Vector objects, float values are assumed.
         
@@ -324,7 +350,7 @@ class Vector:
         return non_dominated
 
     @staticmethod
-    def m3_max_2_sets(vectors: list):
+    def m3_max_2_sets(vectors: list) -> (list, list):
         """
         :param vectors : list of Vector objects.
         
@@ -408,7 +434,7 @@ class Vector:
         return non_dominated, dominated
 
     @staticmethod
-    def m3_max_2_sets_not_duplicates(vectors: list):
+    def m3_max_2_sets_not_duplicates(vectors: list) -> (list, list):
         """
         :param vectors: list of Vector objects.
         
@@ -486,7 +512,7 @@ class Vector:
         return non_dominated, dominated
 
     @staticmethod
-    def m3_max_2_sets_with_repetitions(vectors: list):
+    def m3_max_2_sets_with_repetitions(vectors: list) -> (list, list, list):
         """
         :param vectors: list of Vector objects.
 

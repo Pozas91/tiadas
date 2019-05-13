@@ -1,14 +1,68 @@
 """
-Methods to calculate pareto's frontier applies dichotomous search to find supported solutions.
+Methods to calculate pareto's frontier. Applies dichotomous search to find supported solutions.
+
+EXAMPLE OF USE:
+
+    # Build environment
+    env = DeepSeaTreasureSimplified()
+
+    # Pareto's points
+    pareto_points = env.pareto_optimal
+
+    # Build agent
+    agent = AgentMOSP(environment=env, weights=[0.99, 0.01], states_to_observe=[(0, 0)], epsilon=0.5, alpha=0.2)
+
+    # Search one extreme objective.
+    objective = agent.process_reward(pareto_points[0])
+    q_learning.objective_training(agent=agent, objective=objective, close_margin=1e-2)
+
+    # Get p point from agent test.
+    p = q_learning.testing(agent=agent)
+
+    # Reset agent to train again with others weights
+    agent.reset()
+
+    # Set weights to find another extreme point
+    agent.weights = [0.01, 0.99]
+
+    # Search the other extreme objective.
+    objective = agent.process_reward(pareto_points[-1])
+    q_learning.objective_training(agent=agent, objective=objective, close_margin=1e-1)
+
+    # Get q point from agent test.
+    q = q_learning.testing(agent=agent)
+
+    # Search pareto points (THIS IS THE CALL OF THESE FUNCTIONS)
+    pareto_frontier = pareto.calc_frontier_scalarized(p=p, q=q, problem=agent, solutions_known=pareto_points)
+    pareto_frontier_np = np.array(pareto_frontier)
+
+    # Calc rest of time
+    time_train = time.time() - start_time
+
+    # Get pareto point's x axis
+    x = pareto_frontier_np[:, 0]
+
+    # Get pareto point's y axis
+    y = pareto_frontier_np[:, 1]
+
+    # Build and show plot.
+    plt.scatter(x, y)
+    plt.ylabel('Reward')
+    plt.xlabel('Time')
+    plt.show()
+
 """
 import numpy as np
 
 import utils.miscellaneous as um
 import utils.q_learning as uq
+from models import VectorFloat
 
 
 def optimize(agent, w1: float, w2: float, solutions_known=None):
     """
+    This method is called from calc_frontier_scalarized method.
+
     Try to find an c point to add to the pareto's frontier. There are two options:
         * We know the solutions of pareto's frontier, and training the agent until get max solution.
         * We don't know the solutions and training to try get max solution.
@@ -30,8 +84,10 @@ def optimize(agent, w1: float, w2: float, solutions_known=None):
     if solutions_known:
         # Multiply and sum all points with agent's weights.
         objectives = np.sum(np.multiply(solutions_known, [w1, w2]), axis=1)
+
         # Get max of these sums (That is the objective).
-        objective = np.max(objectives)
+        objective = VectorFloat(np.max(objectives))
+
         # Train agent searching that objective.
         uq.objective_training(agent=agent, objective=objective, close_margin=3e-1)
     else:
@@ -46,6 +102,8 @@ def optimize(agent, w1: float, w2: float, solutions_known=None):
 
 def calc_frontier_scalarized(p, q, problem, solutions_known=None) -> list:
     """
+    This is a main method to calc pareto's frontier.
+
     Return a list of supported solutions costs, this method is only valid to two objectives problems.
     Applies a dichotomous search to find all supported solutions costs.
 
@@ -71,7 +129,7 @@ def calc_frontier_scalarized(p, q, problem, solutions_known=None) -> list:
         a, b = accumulate.pop()
 
         # Order points nearest to the center using euclidean distance.
-        a, b = tuple(um.order_points_by_center_nearest([a, b]))
+        a, b = tuple(um.order_vectors_by_origin_nearest([a, b]))
 
         # Decompose points
         a_x, a_y = a

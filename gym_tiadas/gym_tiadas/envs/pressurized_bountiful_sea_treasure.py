@@ -19,9 +19,9 @@ class PressurizedBountifulSeaTreasure(EnvMesh):
         (-1, 5), (-3, 80), (-5, 120), (-7, 120), (-8, 145), (-9, 150), (-13, 163), (-14, 166), (-17, 173), (-19, 175)
     ]
 
-    def __init__(self, initial_observation=(0, 0), default_reward=(0,), seed=0):
+    def __init__(self, initial_state: tuple = (0, 0), default_reward: tuple = (0,), seed: int = 0):
         """
-        :param initial_observation:
+        :param initial_state:
         :param default_reward: (treasure_value)
         :param seed:
         """
@@ -58,9 +58,9 @@ class PressurizedBountifulSeaTreasure(EnvMesh):
         default_reward = Vector(default_reward)
 
         super().__init__(mesh_shape=mesh_shape, seed=seed, default_reward=default_reward,
-                         initial_state=initial_observation, finals=finals, obstacles=obstacles)
+                         initial_state=initial_state, finals=finals, obstacles=obstacles)
 
-    def step(self, action) -> (object, Vector, bool, dict):
+    def step(self, action: int) -> (tuple, Vector, bool, dict):
         """
         Given an action, do a step
         :param action:
@@ -98,7 +98,7 @@ class PressurizedBountifulSeaTreasure(EnvMesh):
         self.current_state = self.initial_state
         return self.current_state
 
-    def is_final(self, state=None) -> bool:
+    def is_final(self, state: tuple = None) -> bool:
         """
         If agent is in treasure
         :param state:

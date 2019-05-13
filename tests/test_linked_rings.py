@@ -33,7 +33,7 @@ class TestLinkedRings(unittest.TestCase):
         self.assertTrue(hasattr(self.environment, 'step'))
         self.assertTrue(hasattr(self.environment, 'seed'))
         self.assertTrue(hasattr(self.environment, 'reset'))
-        self.assertTrue(hasattr(self.environment, '_next_state'))
+        self.assertTrue(hasattr(self.environment, 'next_state'))
 
         # Observation space is 7 states
         self.assertEqual(spaces.Discrete(7), self.environment.observation_space)

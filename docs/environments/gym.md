@@ -1,4 +1,5 @@
-# Espacios
+# Espacios básicos de `gym`
+#### `gym.Env`
 
 Los entornos tienen definidas las variables `action_space` y `observation_space`. Estas variables pertenecen a la clase 
 `Space`, la cual, tiene una serie de atributos y métdos útiles, que se describirán a continuación:
@@ -48,10 +49,5 @@ Los entornos tienen definidas las variables `action_space` y `observation_space`
     * **Una tupla de espacios simples**
     * Atributos
         * **spaces:** La tupla con los dos espacios.
-        
-## Espacio malla
-Se ha diseñado una clase llamada `EnvMesh`, de la cúal heredan la mayoría de nuestros entornos. Esta clase tiene el
-atributo `observation_space` que se compone de la clase `gym.spaces.Tuple`, junto con la clase `gym.spaces.Discrete`.
-Esto ha sido usado para simular un espacio de malla, quedando el atributo `observation_space` compuesto por 
-`Tuple(Discrete, Discrete)`, donde el primer elemento representa el eje de coordenadas **X**, y el  segundo representa
-al eje de coordenadas **Y**.
+
+[< Volver](index.md)

@@ -1,42 +1,29 @@
 """
 Such as LinkedRings environment, but in this case we have an extra state and different values.
 """
-
 import gym
-from gym import spaces
-from gym.utils import seeding
 
 from models import Vector
+from .environment import Environment
 
 
-class NonRecurrentRings(gym.Env):
+class NonRecurrentRings(Environment):
     # Possible actions
     _actions = {'CLOCKWISE': 0, 'COUNTER-CLOCKWISE': 1}
 
     # Icons to render environments
     _icons = {'BLANK': ' ', 'BLOCK': '■', 'TREASURE': '$', 'CURRENT': '☺', 'ENEMY': '×', 'HOME': 'µ', 'FINAL': '$'}
 
-    def __init__(self, seed=0, initial_state=0):
+    def __init__(self, seed: int = 0, initial_state: int = 0):
         """
-
         :param seed:
         :param initial_state:
         """
 
-        # Set action space
-        self.action_space = spaces.Discrete(len(self.actions))
-
         # Create the observation space
-        self.observation_space = spaces.Discrete(8)
+        observation_space = gym.spaces.Discrete(8)
 
-        # Prepare random seed
-        self.np_random = None
-        self.seed(seed=seed)
-
-        # Set current environment state
-        assert initial_state is None or self.observation_space.contains(initial_state)
-        self.initial_state = initial_state
-        self.current_state = self.initial_state
+        super().__init__(observation_space=observation_space, seed=seed, initial_state=initial_state)
 
         # Rewards dictionary
         self.rewards_dictionary = {
@@ -110,10 +97,7 @@ class NonRecurrentRings(gym.Env):
             }
         }
 
-        # Reset environment
-        self.reset()
-
-    def step(self, action) -> (object, Vector, bool, dict):
+    def step(self, action: int) -> (int, Vector, bool, dict):
         """
         Do a step in the environment
         :param action:
@@ -137,15 +121,6 @@ class NonRecurrentRings(gym.Env):
 
         return new_state, reward, final, info
 
-    def seed(self, seed=None):
-        """
-        Generate seed
-        :param seed:
-        :return:
-        """
-        self.np_random, seed = seeding.np_random(seed=seed)
-        return [seed]
-
     def reset(self):
         """
         Reset environment to zero.
@@ -154,16 +129,10 @@ class NonRecurrentRings(gym.Env):
         self.current_state = self.initial_state
         return self.current_state
 
-    def render(self, mode='human'):
+    def next_state(self, action: int, state: int = None) -> int:
         """
-        Render environment
-        :param mode:
-        :return:
-        """
-
-    def next_state(self, action) -> object:
-        """
-        Calc next state with current state and action given.
+        Calc next state with state and action given.
+        :param state: if a state is given, process next_state from that state, else get current state.
         :param action: from action_space
         :return: a new state (or old if is invalid action)
         """
@@ -178,14 +147,6 @@ class NonRecurrentRings(gym.Env):
         # Return new state
         return new_state
 
-    @property
-    def actions(self):
-        """
-        Return a dictionary with possible actions
-        :return:
-        """
-        return self._actions
-
-    def is_final(self, state=None) -> bool:
+    def is_final(self, state: int = None) -> bool:
         # (This is a non-episodic problem, so doesn't have final states)
         return False

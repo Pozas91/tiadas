@@ -33,7 +33,7 @@ class TestNonRecurrentRings(unittest.TestCase):
         self.assertTrue(hasattr(self.environment, 'step'))
         self.assertTrue(hasattr(self.environment, 'seed'))
         self.assertTrue(hasattr(self.environment, 'reset'))
-        self.assertTrue(hasattr(self.environment, '_next_state'))
+        self.assertTrue(hasattr(self.environment, 'next_state'))
 
         # Observation space is 8 states
         self.assertEqual(spaces.Discrete(8), self.environment.observation_space)

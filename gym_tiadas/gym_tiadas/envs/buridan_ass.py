@@ -20,8 +20,9 @@ class BuridanAss(EnvMesh):
     # Possible actions
     _actions = {'UP': 0, 'RIGHT': 1, 'DOWN': 2, 'LEFT': 3, 'STAY': 4}
 
-    def __init__(self, initial_state=(1, 1), default_reward=(0., 0., 0.), seed=0, p_stolen=.9,
-                 n_appear=10, stolen_penalty=-.5, walking_penalty=-1, hunger_penalty=-1, last_ate_limit=9):
+    def __init__(self, initial_state: tuple = (1, 1), default_reward: tuple = (0., 0., 0.), seed: int = 0,
+                 p_stolen: float = .9, n_appear: int = 10, stolen_penalty: float = -.5, walking_penalty: float = -1,
+                 hunger_penalty: float = -1, last_ate_limit: int = 9):
         """
         :param initial_state:
         :param default_reward: (hunger, stolen, walking)
@@ -55,7 +56,7 @@ class BuridanAss(EnvMesh):
         # Last time that donkey ate.
         self.last_ate = 0
 
-    def step(self, action) -> (object, VectorFloat, bool, dict):
+    def step(self, action: int) -> (tuple, VectorFloat, bool, dict):
         """
         Given an action, do a step
         :param action:
@@ -196,7 +197,7 @@ class BuridanAss(EnvMesh):
             self.finals.update({state_with_food: data})
 
     @staticmethod
-    def __are_8_neighbours(state_a, state_b) -> bool:
+    def __are_8_neighbours(state_a: tuple, state_b: tuple) -> bool:
         """
         Check if state_a and state_b are neighbours
         :param state_a:
@@ -213,7 +214,7 @@ class BuridanAss(EnvMesh):
         # Check if b is neighbour to a
         return state_b in a_neighbours
 
-    def is_final(self, state=None) -> bool:
+    def is_final(self, state: tuple = None) -> bool:
         """
         If there is not more food left, it is a final state
         :param state:

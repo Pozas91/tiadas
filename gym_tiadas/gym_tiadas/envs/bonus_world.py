@@ -22,7 +22,7 @@ class BonusWorld(EnvMesh):
     # Possible actions
     _actions = {'UP': 0, 'RIGHT': 1, 'DOWN': 2, 'LEFT': 3}
 
-    def __init__(self, initial_state=(0, 0), default_reward=(0, 0), seed=0):
+    def __init__(self, initial_state: tuple = (0, 0), default_reward: tuple = (0, 0), seed: int = 0):
         """
         :param initial_state:
         :param default_reward: (objective 1, objective 2)
@@ -43,11 +43,11 @@ class BonusWorld(EnvMesh):
             (6, 8): (9, 7),
         }
 
+        # Define mesh shape
         mesh_shape = (9, 9)
-        obstacles = set()
-        obstacles.add((2, 2))
-        obstacles.add((2, 3))
-        obstacles.add((3, 2))
+
+        # Set obstacles
+        obstacles = frozenset([(2, 2), (2, 3), (3, 2)])
 
         # Default reward plus time (objective 1, objective 2, time)
         default_reward += (-1,)
@@ -69,7 +69,7 @@ class BonusWorld(EnvMesh):
         # Bonus is activated?
         self.bonus_activated = False
 
-    def step(self, action) -> (object, Vector, bool, dict):
+    def step(self, action: int) -> (tuple, Vector, bool, dict):
         """
         Given an action, do a step
         :param action:
@@ -119,7 +119,7 @@ class BonusWorld(EnvMesh):
 
         return self.current_state
 
-    def is_final(self, state=None) -> bool:
+    def is_final(self, state: tuple = None) -> bool:
         """
         Is final if agent is on final state.
         :param state:
@@ -127,7 +127,7 @@ class BonusWorld(EnvMesh):
         """
         return state in self.finals.keys()
 
-    def get_dict_model(self):
+    def get_dict_model(self) -> dict:
         """
         Get dict model of environment
         :return:

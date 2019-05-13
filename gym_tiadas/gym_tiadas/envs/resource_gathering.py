@@ -28,14 +28,17 @@ class ResourceGathering(EnvMesh):
     # Treasures
     _treasures = {'GOLD': 0, 'GEM': 1}
 
-    def __init__(self, initial_state=(2, 4), default_reward=(0, 0, 0), seed=0, p_attack=0.1):
+    def __init__(self, initial_state: tuple = (2, 4), default_reward: tuple = (0, 0, 0), seed: int = 0,
+                 p_attack: float = 0.1):
         """
         :param initial_state:
         :param default_reward: (enemy_attack, gold, gems)
         :param seed:
+        :param p_attack: Probability that a enemy attacks when agent stay in an enemy state.
         """
 
-        self.state = Vector(default_reward)
+        # Current status of environment, Has agent any gold?, Has agent any gems?
+        self.status = Vector(default_reward)
 
         # States where there are gold {state: available}
         self.gold_states = {(2, 0): True}
@@ -54,7 +57,7 @@ class ResourceGathering(EnvMesh):
 
         self.p_attack = p_attack
 
-    def step(self, action) -> (object, Vector, bool, dict):
+    def step(self, action: int) -> (tuple, Vector, bool, dict):
         """
         Given an action, do a step
         :param action:
@@ -75,7 +78,7 @@ class ResourceGathering(EnvMesh):
 
         # If the agent is in the same state as an enemy
         if self.current_state in self.enemies:
-            rewards = self.state * 1
+            rewards = self.status * 1
 
         # If the agent is in the same state as gold
         elif self.current_state in self.gold_states.keys():
@@ -87,12 +90,12 @@ class ResourceGathering(EnvMesh):
 
         # If the agent is at home and have gold or gem
         elif self.__at_home():
-            rewards = self.state * 1
+            rewards = self.status * 1
 
         # Set info
         info = {}
 
-        return (self.current_state, tuple(self.state.tolist())), rewards, final, info
+        return (self.current_state, tuple(self.status.tolist())), rewards, final, info
 
     def reset(self):
         """
@@ -100,7 +103,7 @@ class ResourceGathering(EnvMesh):
         :return:
         """
         self.current_state = self.initial_state
-        self.state = self.default_reward + 0
+        self.status = self.default_reward + 0
 
         # Reset golds positions
         for gold_state in self.gold_states.keys():
@@ -154,7 +157,7 @@ class ResourceGathering(EnvMesh):
 
         if self.p_attack >= self.np_random.uniform():
             self.reset()
-            self.state[0] = -1
+            self.status[0] = -1
             final = True
 
         return final
@@ -167,7 +170,7 @@ class ResourceGathering(EnvMesh):
 
         # Check if there is a gold
         if self.gold_states.get(self.current_state, False):
-            self.state[1] += 1
+            self.status[1] += 1
             self.gold_states.update({self.current_state: False})
 
     def __get_gem(self):
@@ -178,7 +181,7 @@ class ResourceGathering(EnvMesh):
 
         # Check if there is a gem
         if self.gem_states.get(self.current_state, False):
-            self.state[2] += 1
+            self.status[2] += 1
             self.gem_states.update({self.current_state: False})
 
     def __at_home(self) -> bool:
@@ -195,9 +198,9 @@ class ResourceGathering(EnvMesh):
         :return:
         """
 
-        return (self.state[1] >= 0 or self.state[2] >= 0) and self.__at_home()
+        return (self.status[1] >= 0 or self.status[2] >= 0) and self.__at_home()
 
-    def is_final(self, state=None) -> bool:
+    def is_final(self, state: tuple = None) -> bool:
         """
         Is final if the agent is attacked or agent is on checkpoint.
         :param state:
@@ -211,7 +214,7 @@ class ResourceGathering(EnvMesh):
 
         return attacked or checkpoint
 
-    def get_dict_model(self):
+    def get_dict_model(self) -> dict:
         """
         Get dict model of environment
         :return:
@@ -220,7 +223,7 @@ class ResourceGathering(EnvMesh):
         data = super().get_dict_model()
 
         # Prepare environment data
-        data['state'] = self.state.tolist()
+        data['state'] = self.status.tolist()
 
         # Clean specific environment data
         del data['gold_states']

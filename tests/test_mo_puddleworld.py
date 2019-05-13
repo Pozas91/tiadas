@@ -7,7 +7,6 @@ import unittest
 from gym import spaces
 
 from gym_tiadas.gym_tiadas.envs import MoPuddleWorld
-from models import VectorFloat
 
 
 class TestMoPuddleWorld(unittest.TestCase):
@@ -34,7 +33,7 @@ class TestMoPuddleWorld(unittest.TestCase):
         self.assertTrue(hasattr(self.environment, 'step'))
         self.assertTrue(hasattr(self.environment, 'seed'))
         self.assertTrue(hasattr(self.environment, 'reset'))
-        self.assertTrue(hasattr(self.environment, '_next_state'))
+        self.assertTrue(hasattr(self.environment, 'next_state'))
 
         # This environment must have another attributes
         self.assertTrue(hasattr(self.environment, 'final_state'))

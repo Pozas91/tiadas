@@ -12,7 +12,8 @@ class DeepSeaTreasureTransactions(EnvMesh):
     # Possible actions
     _actions = {'UP': 0, 'RIGHT': 1, 'DOWN': 2, 'LEFT': 3}
 
-    def __init__(self, initial_state=(0, 0), default_reward=(0,), seed=0, n_transaction=0.3):
+    def __init__(self, initial_state: tuple = (0, 0), default_reward: tuple = (0,), seed: int = 0,
+                 n_transaction: float = 0.3):
         """
         :param initial_state:
         :param default_reward:
@@ -61,7 +62,7 @@ class DeepSeaTreasureTransactions(EnvMesh):
         # [DIR_0, DIR_90, DIR_180, DIR_270] transaction tuple
         self.transactions = (1. - n_transaction, n_transaction / 3, n_transaction / 3, n_transaction / 3)
 
-    def step(self, action) -> (object, Vector, bool, dict):
+    def step(self, action: int) -> (tuple, Vector, bool, dict):
         """
         Given an action, do a step
         :param action:
@@ -100,7 +101,7 @@ class DeepSeaTreasureTransactions(EnvMesh):
 
         return self.current_state
 
-    def __probability_action(self, action) -> int:
+    def __probability_action(self, action: int) -> int:
         """
         Decide probability action after apply probabilistic transactions.
         :param action:
@@ -127,7 +128,7 @@ class DeepSeaTreasureTransactions(EnvMesh):
         # Cyclic direction
         return (direction + action) % self.action_space.n
 
-    def is_final(self, state=None) -> bool:
+    def is_final(self, state: tuple = None) -> bool:
         """
         Is final if agent is on final state.
         :param state:

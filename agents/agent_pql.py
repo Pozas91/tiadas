@@ -1,8 +1,8 @@
 """
-Agent multi-objective multi-policy.
+Agent PQL.
 
-
-Implementation of the PQ-learning algorithm by .........
+Implementation of the PQ-learning algorithm by Kristof Van Moffaert and Ann Nowé, in "Multi-Objective Reinforcement
+Learning using Sets of Pareto Dominating Policies" paper.
 
 Save rewards, N and occurrences independently, to calculate Q-set on runtime.
 
@@ -29,8 +29,6 @@ Sample call:
     .........
     
 
-    
-
 NOTE: Each environment defines its default reward, either integer or float.
 The agent uses a default value of zero for various operations. In order to get
 this zero vector of the same length and type of the default reward, we
@@ -50,18 +48,32 @@ import numpy as np
 
 import utils.hypervolume as uh
 import utils.miscellaneous as um
-from .vector import Vector
-from .vector_float import VectorFloat
+from gym_tiadas.gym_tiadas.envs import Environment
+from models import ActionVector
+from models.vector import Vector
+from models.vector_float import VectorFloat
 
 
-class AgentMOMP:
-    # JSON indent
+class AgentPQL:
+    # Indent of the JSON file where the agent will be saved
     json_indent = 2
     # Get dumps path from this file path
     dumps_path = '{}/../dumps'.format(os.path.dirname(os.path.abspath(__file__)))
 
-    def __init__(self, environment, epsilon=0.1, gamma=1., seed=0, max_iterations=None,
-                 hv_reference=None, evaluation_mechanism='HV-PQL', states_to_observe=None):
+    def __init__(self, environment: Environment, epsilon: float = 0.1, gamma: float = 1., seed: int = 0,
+                 max_iterations: int = None, hv_reference: Vector = None, evaluation_mechanism: str = 'HV-PQL',
+                 states_to_observe: list = None):
+        """
+        :param environment: instance of any environment class.
+        :param epsilon: Epsilon used in epsilon-greedy policy, to explore more states.
+        :param gamma: Discount factor
+        :param seed: Seed used for np.random.RandomState method.
+        :param max_iterations: Limits of iterations per episode.
+        :param hv_reference: Reference vector to calc hypervolume
+        :param evaluation_mechanism: Evaluation mechanism used to calc best action to choose. Three values are
+            available: 'C-PQL', 'PO-PQL', 'HV-PQL'
+        :param states_to_observe: List of states from that we want to get a graphical output.
+        """
 
         # Discount factor
         assert 0 < gamma <= 1
@@ -110,9 +122,6 @@ class AgentMOMP:
             self.evaluation_mechanism = evaluation_mechanism
         else:
             raise ValueError('Evaluation mechanism does not valid.')
-
-        # Default reward agent
-        self.default_reward = self.environment.default_reward * 0
 
     def episode(self) -> None:
         """
@@ -164,7 +173,7 @@ class AgentMOMP:
             # Update dictionary
             self.states_to_observe.update({state: data})
 
-    def get_and_update_n_s_a(self, state, action) -> int:
+    def get_and_update_n_s_a(self, state: object, action: int) -> int:
         """
         Update n(s, a) dictionary.
         :param state:
@@ -183,12 +192,20 @@ class AgentMOMP:
 
         return n_s_a
 
-    def update_r_s_a(self, state, action, reward, occurrences):
+    def update_r_s_a(self, state: object, action: int, reward: Vector, occurrences: int) -> None:
+        """
+        Update r(s, a) dictionary.
+        :param state:
+        :param action:
+        :param reward:
+        :param occurrences:
+        :return:
+        """
 
         # Get R(s) dict.
         r_s_a_dict = self.r.get(state, {})
         # Get R(s, a) value.
-        r_s_a = r_s_a_dict.get(action, self.default_reward + 0)
+        r_s_a = r_s_a_dict.get(action, self.environment.default_reward.zero_vector)
         # Update R(s, a)
         r_s_a += (reward - r_s_a) / occurrences
         # Update with new R(s, a)
@@ -196,7 +213,14 @@ class AgentMOMP:
         # Update R dictionary
         self.r.update({state: r_s_a_dict})
 
-    def update_nd_s_a(self, state, action, next_state):
+    def update_nd_s_a(self, state: object, action: int, next_state: object) -> None:
+        """
+        Update ND(s, a)
+        :param state:
+        :param action:
+        :param next_state:
+        :return:
+        """
 
         # Union
         union = list()
@@ -210,14 +234,14 @@ class AgentMOMP:
             union += q
 
         # Update ND policies of s' in s
-        nd_s_a = self.default_reward.m3_max(union)
+        nd_s_a = self.environment.default_reward.m3_max(union)
 
         # ND(s, a) <- (ND(U_a' Q_set(s', a'))
         nd_s_a_dict = self.nd.get(state, {})
         nd_s_a_dict.update({action: nd_s_a})
         self.nd.update({state: nd_s_a_dict})
 
-    def q_set(self, state, action):
+    def q_set(self, state: object, action: int) -> list:
         """
         Calc on run-time Q-set
         :param state:
@@ -226,10 +250,10 @@ class AgentMOMP:
         """
 
         # Get R(s, a) with default.
-        r_s_a = self.r.get(state, {}).get(action, self.default_reward)
+        r_s_a = self.r.get(state, {}).get(action, self.environment.default_reward.zero_vector)
 
         # Get ND(s, a)
-        non_dominated_vectors = self.nd.get(state, {}).get(action, [self.default_reward + 0])
+        non_dominated_vectors = self.nd.get(state, {}).get(action, [self.environment.default_reward.zero_vector])
         q_set = list()
 
         # R(s, a) + y*ND
@@ -238,7 +262,7 @@ class AgentMOMP:
 
         return q_set
 
-    def select_action(self, state=None) -> int:
+    def select_action(self, state: object = None) -> int:
         """
         Select best action with an e-greedy policy.
         :return:
@@ -257,7 +281,7 @@ class AgentMOMP:
 
         return action
 
-    def reset(self):
+    def reset(self) -> None:
         """
         Reset agent, forgetting previous dictionaries
         :return:
@@ -274,14 +298,14 @@ class AgentMOMP:
                 state: list()
             })
 
-    def reset_iterations(self):
+    def reset_iterations(self) -> None:
         """
         Set iterations to zero.
         :return:
         """
         self.iterations = 0
 
-    def best_action(self, state=None):
+    def best_action(self, state: object = None) -> int:
         """
         Return best action for q and state given.
         :param state:
@@ -302,7 +326,7 @@ class AgentMOMP:
 
         return action
 
-    def track_policy(self, state, target):
+    def track_policy(self, state: object, target: Vector) -> list:
         """
         Runs an episode using one of the learned policies (policy tracking).
         This method tracks a policy with vector-value 'target' from the
@@ -358,7 +382,7 @@ class AgentMOMP:
 
         return path
 
-    def _best_hypervolume(self, state):
+    def _best_hypervolume(self, state: object) -> float:
         """
         Return best hypervolume for state given.
         :param state:
@@ -376,7 +400,7 @@ class AgentMOMP:
 
         return max(hv)
 
-    def print_observed_states(self):
+    def show_observed_states(self):
         """
         Show graph of observed states
         :return:
@@ -391,7 +415,7 @@ class AgentMOMP:
 
         plt.show()
 
-    def hypervolume_evaluation(self, state):
+    def hypervolume_evaluation(self, state: object) -> int:
         """
         Calc the hypervolume for each action in state given. (HV-PQL)
         :param state:
@@ -399,7 +423,7 @@ class AgentMOMP:
         """
 
         actions = list()
-        max_evaluation = 0
+        max_evaluation = float('-inf')
 
         # for each a in actions
         for a in self.environment.actions.values():
@@ -425,71 +449,82 @@ class AgentMOMP:
         # from best actions get one aleatory.
         return self.generator.choice(actions)
 
-    def cardinality_evaluation(self, state):
+    def cardinality_evaluation(self, state: object) -> int:
         """
         Calc the cardinality for each action in state given. (C-PQL)
         :param state:
         :return:
         """
 
-        actions = list()
-        max_evaluation = 0
+        # List of all Qs
+        all_q = list()
+
+        # Get all available actions
+        available_actions = self.environment.actions.values()
 
         # for each a in actions
-        for a in self.environment.actions.values():
+        for a in available_actions:
 
             # Get Q-set from state given for each possible action.
             q_set = self.q_set(state=state, action=a)
 
-            # Use m3_max algorithm to get non_dominated vectors from q_set.
-            non_dominated = self.default_reward.m3_max(q_set)
+            # for each Q in Q_set(s, a)
+            for q in q_set:
+                all_q.append(ActionVector(action=a, vector=q))
 
-            # Get number of non_dominated vectors.
-            evaluation = len(non_dominated)
+        # NDQs <- ND(all_q). Keep only the non-dominating solutions
+        actions = ActionVector.actions_occurrences_based_m3_with_repetitions(
+            vectors=all_q, number_of_actions=len(available_actions)
+        )
 
-            # If current value is equal to new value
-            if evaluation == max_evaluation:
-                # Append another possible action
-                actions.append(a)
+        # Get max action
+        max_action = max(actions)
 
-            elif evaluation > max_evaluation:
-                # Create a new list with current key.
-                actions = [a]
+        # Get all max actions
+        actions = [action for action in actions if action == max_action]
 
-            # Update max value
-            max_evaluation = max(max_evaluation, evaluation)
-
-        # from best actions get one aleatory.
+        # from best actions get one aleatory
         return self.generator.choice(actions)
 
-    def pareto_evaluation(self, state):
+    def pareto_evaluation(self, state: object) -> int:
         """
         Calc the pareto for each action in state given. (PO-PQL)
         :param state:
         :return:
         """
 
-        actions = list()
+        # List of all Qs
+        all_q = list()
+
+        # Get all available actions
+        available_actions = self.environment.actions.values()
 
         # for each a in actions
-        for a in self.environment.actions.values():
+        for a in available_actions:
+
             # Get Q-set from state given for each possible action.
             q_set = self.q_set(state=state, action=a)
-            # Use m3_max algorithm to get non_dominated vectors from q_set.
-            non_dominated = self.default_reward.m3_max(q_set)
 
-            # If has almost one non_dominated vector is a valid action.
-            if len(non_dominated) > 0:
-                actions.append(a)
+            # for each Q in Q_set(s, a)
+            for q in q_set:
+                all_q.append(ActionVector(action=a, vector=q))
 
-        # If actions is empty, get all possible actions.
-        if not actions:
-            actions = self.environment.actions.values()
+        # NDQs <- ND(all_q). Keep only the non-dominating solutions
+        actions = ActionVector.actions_occurrences_based_m3_with_repetitions(
+            vectors=all_q, number_of_actions=len(available_actions)
+        )
 
-        # Get random action from valid action.
+        # Get all max actions
+        actions = [action for action in actions if action > 0]
+
+        # If actions is empty, get all available actions.
+        if len(actions) <= 0:
+            actions = available_actions
+
+        # from best actions get one aleatory
         return self.generator.choice(actions)
 
-    def get_dict_model(self):
+    def get_dict_model(self) -> dict:
         """
         Get a dictionary of model
         In JSON serialize only is valid strings as key on dict, so we convert all numeric keys in strings keys.
@@ -536,7 +571,7 @@ class AgentMOMP:
 
         return model
 
-    def to_json(self):
+    def to_json(self) -> str:
         """
         Get a dict model from current object and return as json string.
         :return:
@@ -544,7 +579,7 @@ class AgentMOMP:
         model = self.get_dict_model()
         return json.dumps(model, indent=self.json_indent)
 
-    def save(self, filename=None):
+    def save(self, filename: str = None) -> None:
         """
         Save model into json file.
         :param filename: If is None, then get current timestamp as filename (defaults 'dumps' dir).
@@ -562,7 +597,7 @@ class AgentMOMP:
             filename = '{}_{}_{}'.format(environment, evaluation_mechanism, datetime.datetime.now().timestamp())
 
         # Prepare file path
-        file_path = AgentMOMP.dumps_file_path(filename=filename)
+        file_path = AgentPQL.dumps_file_path(filename=filename)
 
         # Get dict model
         model = self.get_dict_model()
@@ -571,7 +606,7 @@ class AgentMOMP:
         with open(file_path, 'w', encoding='UTF-8') as file:
             json.dump(model, file, indent=self.json_indent)
 
-    def non_dominate_vectors_from_state(self, state):
+    def non_dominated_vectors_from_state(self, state: object) -> list:
         """
         Return all non dominate vectors from state given.
         :param state:
@@ -584,10 +619,22 @@ class AgentMOMP:
         # Flatten nd_lists
         nd = [item for sublist in nd_lists for item in sublist]
 
-        return self.default_reward.m3_max(nd)
+        return self.environment.default_reward.m3_max(nd)
+
+    def print_information(self) -> None:
+        """
+        Print basic information about agent
+        :return:
+        """
+        print('- AgentPQL information! -')
+        print("Seed: {}".format(self.seed))
+        print("Gamma: {}".format(self.gamma))
+        print("Epsilon: {}".format(self.epsilon))
+        print("Hypervolume reference: {}".format(self.hv_reference))
+        print('Evaluation mechanism: {}'.format(self.evaluation_mechanism))
 
     @staticmethod
-    def load(filename=None, environment=None, evaluation_mechanism=None):
+    def load(filename: str = None, environment: Environment = None, evaluation_mechanism: str = None) -> object:
         """
         Load json string from file and convert to dictionary.
         :param evaluation_mechanism: It is an evaluation mechanism that you want load
@@ -608,7 +655,7 @@ class AgentMOMP:
                 raise ValueError('If you has not indicated a filename, you must indicate a evaluation mechanism.')
 
             # Get environment name in snake case
-            environment = um.str_to_snake_case(environment.__name__)
+            environment = um.str_to_snake_case(environment.__class__.__name__)
 
             # Get evaluation mechanism name in snake case
             evaluation_mechanism = um.str_to_snake_case(evaluation_mechanism)
@@ -616,7 +663,7 @@ class AgentMOMP:
             # Filter str
             filter_str = '{}_{}'.format(environment, evaluation_mechanism)
 
-            for root, directories, files in os.walk(AgentMOMP.dumps_path):
+            for root, directories, files in os.walk(AgentPQL.dumps_path):
 
                 # Filter files with that environment and evaluation mechanism
                 files = filter(lambda f: filter_str in f, files)
@@ -633,7 +680,7 @@ class AgentMOMP:
                     filename = files[-1].split('.json')[0]
 
         # Prepare file path
-        file_path = AgentMOMP.dumps_file_path(filename)
+        file_path = AgentPQL.dumps_file_path(filename)
 
         # Read file from path
         try:
@@ -767,6 +814,6 @@ class AgentMOMP:
         return model
 
     @staticmethod
-    def dumps_file_path(filename):
+    def dumps_file_path(filename: str) -> str:
         # Return path from file name
-        return '{}/{}.json'.format(AgentMOMP.dumps_path, filename)
+        return '{}/{}.json'.format(AgentPQL.dumps_path, filename)

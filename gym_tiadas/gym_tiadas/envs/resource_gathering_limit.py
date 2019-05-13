@@ -14,11 +14,14 @@ class ResourceGatheringLimit(EnvMesh):
     # Treasures
     _treasures = {'GOLD': 0, 'GEM': 1}
 
-    def __init__(self, initial_state=(2, 4), default_reward=(0, 0, 0), seed=0, p_attack=0.1, time_limit=100):
+    def __init__(self, initial_state: tuple = (2, 4), default_reward: tuple = (0, 0, 0), seed: int = 0,
+                 p_attack: float = 0.1, time_limit: int = 100):
         """
         :param initial_state:
         :param default_reward: (enemy_attack, gold, gems)
         :param seed:
+        :param p_attack: Probability that a enemy attacks when agent stay in an enemy state.
+        :param time_limit: When agent does `time_limit` iterations terminate current episode.
         """
 
         self.state = VectorFloat(default_reward)
@@ -42,7 +45,7 @@ class ResourceGatheringLimit(EnvMesh):
         self.enemies = [(3, 0), (2, 1)]
         self.p_attack = p_attack
 
-    def step(self, action) -> (object, VectorFloat, bool, dict):
+    def step(self, action: int) -> (tuple, VectorFloat, bool, dict):
         """
         Given an action, do a step
         :param action:
@@ -193,7 +196,7 @@ class ResourceGatheringLimit(EnvMesh):
 
         return (self.state[1] >= 0 or self.state[2] >= 0) and self.__at_home()
 
-    def is_final(self, state=None) -> bool:
+    def is_final(self, state: tuple = None) -> bool:
         """
         Is final if agent is attacked, is on checkpoint or is timeout.
         :param state:
@@ -208,7 +211,7 @@ class ResourceGatheringLimit(EnvMesh):
 
         return attacked or checkpoint or timeout
 
-    def get_dict_model(self):
+    def get_dict_model(self) -> dict:
         """
         Get dict model of environment
         :return:

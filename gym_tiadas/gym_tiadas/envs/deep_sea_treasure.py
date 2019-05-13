@@ -25,7 +25,7 @@ class DeepSeaTreasure(EnvMesh):
         (-1, 1), (-3, 2), (-5, 3), (-7, 5), (-8, 8), (-9, 16), (-13, 24), (-14, 50), (-17, 74), (-19, 124)
     ]
 
-    def __init__(self, initial_state=(0, 0), default_reward=(0,), seed=0):
+    def __init__(self, initial_state: tuple = (0, 0), default_reward: tuple = (0,), seed: int = 0):
         """
         :param initial_state:
         :param default_reward:
@@ -66,7 +66,7 @@ class DeepSeaTreasure(EnvMesh):
         super().__init__(mesh_shape=mesh_shape, seed=seed, initial_state=initial_state, default_reward=default_reward,
                          finals=finals, obstacles=obstacles)
 
-    def step(self, action) -> (object, Vector, bool, dict):
+    def step(self, action: int) -> (tuple, Vector, bool, dict):
         """
         Given an action, do a step
         :param action:
@@ -101,7 +101,7 @@ class DeepSeaTreasure(EnvMesh):
         self.current_state = self.initial_state
         return self.current_state
 
-    def is_final(self, state=None) -> bool:
+    def is_final(self, state: tuple = None) -> bool:
         """
         Return True if state given is terminal, False in otherwise.
         :param state:

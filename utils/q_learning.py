@@ -1,5 +1,67 @@
 """
-Useful functions to calculate a reinforcement learning based on q-learning.
+Useful functions to calculate a reinforcement learning based on q-learning. This file has three ways to train an agent:
+
+    * train
+    * objective_train
+    * exhaustive_train
+
+EXAMPLE OF USE TO TRAIN METHOD:
+
+    # Define environment
+    environment = SpaceExploration()
+
+    # Prepare instance of agent
+    agent = AgentMOSP(environment=environment, weights=[0.8, 0.2], epsilon=0.5, alpha=0.2, states_to_observe=[(0, 0)])
+
+    # Train agent (THIS IS THE CALL OF THESE FUNCTIONS)
+    q_learning.train(agent=agent, epochs=100000)
+
+    # Show policy learned
+    agent.show_policy()
+
+
+EXAMPLE OF USE TO OBJECTIVE METHOD:
+
+    # Reset agent (forget q-values, initial_state, etc.).
+    agent.reset()
+
+    # Set news weights to get the new solution.
+    agent.weights = [w1, w2]
+
+    # If solutions not is None
+    if solutions_known:
+        # Multiply and sum all points with agent's weights.
+        objectives = np.sum(np.multiply(solutions_known, [w1, w2]), axis=1)
+
+        # Get max of these sums (That is the objective).
+        objective = np.max(objectives)
+
+        # Train agent searching that objective. (TRAIN UNTIL AGENT.V IS CLOSE TO OBJECTIVE)
+        q_learning.objective_training(agent=agent, objective=objective, close_margin=3e-1)
+    else:
+        # Normal training.
+        q_learning.train(agent=agent)
+
+    # Get point c from agent's test.
+    c = q_learning.testing(agent=agent)
+
+    return c
+
+
+EXAMPLE OF USE TO EXHAUSTIVE TRAIN METHOD:
+
+    # Define environment
+    environment = DeepSeaTreasure()
+
+    # Prepare instance of agent
+    agent = AgentMOSP(environment=environment, weights=[0.8, 0.2], epsilon=0.5, alpha=0.2, states_to_observe=[(0, 0)])
+
+    # Train agent (TRAIN UNTIL POLICY DON'T CHANGE MORE, IS IMPORTANT THAT AGENT HAS `V` PROPERTY DEFINE)
+    q_learning.exhaustive_train(agent)
+
+    # Show results
+    agent.print_observed_states()
+
 """
 
 from copy import deepcopy
@@ -7,6 +69,7 @@ from copy import deepcopy
 import numpy as np
 
 import utils.miscellaneous as um
+from models import Vector
 
 
 def train(agent, epochs=int(1e3)):
@@ -22,7 +85,7 @@ def train(agent, epochs=int(1e3)):
         agent.episode()
 
 
-def objective_training(agent, objective: float, close_margin=1e-9):
+def objective_training(agent, objective: Vector, close_margin=1e-9):
     """
     Train until agent V(0, 0) value is close to objective value.
     :param agent:

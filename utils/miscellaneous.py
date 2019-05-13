@@ -5,6 +5,8 @@ import re
 
 import numpy as np
 
+from models import Vector
+
 
 def lists_to_tuples(x):
     """
@@ -19,14 +21,14 @@ def lists_to_tuples(x):
     return tuple(map(lists_to_tuples, x))
 
 
-def sum_a_vector_and_a_set_of_vectors(v, v_set):
+def sum_a_vector_and_a_list_of_vectors(v: Vector, v_list: list):
     """
     Performs a vector-sum between a vector v and a set of vectors V.
     :param v:
-    :param v_set:
+    :param v_list:
     :return:
     """
-    return [v + vector for vector in v_set]
+    return [v + vector for vector in v_list]
 
 
 def is_close(a: float, b: float, relative=1e-3):
@@ -40,51 +42,37 @@ def is_close(a: float, b: float, relative=1e-3):
     return abs(a - b) <= relative
 
 
-def distance_between_two_points(a, b) -> float:
+def distance_between_vectors(a: Vector, b: Vector) -> float:
     """
-    Simple distance between two points
+    Euclidean distance between two vectors
     :param a:
     :param b:
     :return:
     """
-    return np.linalg.norm(np.array(a) - np.array(b))
+    return np.linalg.norm(a - b)
 
 
-def distance_to_origin(a) -> float:
+def distance_to_origin(a: Vector) -> float:
     """
-    Distance between a point and origin
+    Distance between a vector and origin vector
     :param a:
     :return:
     """
-
-    a = np.array(a)
-    b = np.zeros_like(a)
-
-    return distance_between_two_points(a=a, b=b)
+    return distance_between_vectors(a=a, b=a * 0)
 
 
-def order_points_by_center_nearest(points: list) -> list:
+def order_vectors_by_origin_nearest(vectors: list) -> list:
     """
-    Order given points by center nearest
-    :param points:
+    Order given vectors by origin nearest
+    :param vectors:
     :return:
     """
 
-    # Get all points with its distance to origin.
-    distances = {point: distance_to_origin(point) for point in points}
+    # Get all vectors with its distance to origin.
+    distances = {vector: distance_to_origin(vector) for vector in vectors}
 
     # Sort dictionary by value from lower to higher.
     return sorted(distances, key=distances.get, reverse=False)
-
-
-def weighted_sum(rewards, weights) -> float:
-    """
-    Simple Weighted-Sum function
-    :param rewards:
-    :param weights:
-    :return:
-    """
-    return float(np.sum(np.multiply(rewards, weights)))
 
 
 def str_to_snake_case(text: str) -> str:
