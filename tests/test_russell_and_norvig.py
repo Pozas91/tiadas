@@ -33,7 +33,7 @@ class TestRusselAndNorvig(unittest.TestCase):
         self.assertTrue(hasattr(self.environment, 'step'))
         self.assertTrue(hasattr(self.environment, 'seed'))
         self.assertTrue(hasattr(self.environment, 'reset'))
-        self.assertTrue(hasattr(self.environment, '_next_state'))
+        self.assertTrue(hasattr(self.environment, 'next_state'))
 
         # This environment must have another attributes
         self.assertTrue(hasattr(self.environment, 'finals'))

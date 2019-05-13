@@ -66,14 +66,14 @@ class VectorFloat(Vector):
             a < b or np.isclose(a, b, rtol=self.relative) for a, b in zip(self.components, other.components)
         ])
 
-    def to_int(self):
+    def to_int(self) -> Vector:
         """
         Parse Vector to int vector
         :return:
         """
         return Vector((self.components * self.decimals).astype(int))
 
-    def all_close(self, v2):
+    def all_close(self, v2) -> bool:
         """
         Returns True if two arrays are element-wise equal within a tolerance.
 
@@ -84,7 +84,7 @@ class VectorFloat(Vector):
 
         return np.allclose(self, v2, rtol=self.relative)
 
-    def dominance(self, v2):
+    def dominance(self, v2) -> Dominance:
         """
         Check dominance between two Vector objects. Float values are allowed
         and treated with precision according to Vector.relative.
@@ -136,7 +136,7 @@ class VectorFloat(Vector):
             return Dominance.is_dominated
 
     @staticmethod
-    def m3_max_2_sets_not_duplicates(vectors: list):
+    def m3_max_2_sets_not_duplicates(vectors: list) -> (list, list):
         """
         :param vectors: list of Vector objects.
 

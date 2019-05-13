@@ -22,7 +22,7 @@ class SpaceExploration(EnvMesh):
     # Possible actions
     _actions = {'UP': 0, 'UP RIGHT': 1, 'RIGHT': 2, 'DOWN RIGHT': 3, 'DOWN': 4, 'DOWN LEFT': 5, 'LEFT': 6, 'UP LEFT': 7}
 
-    def __init__(self, initial_state=(5, 2), default_reward=(0, -1), seed=0):
+    def __init__(self, initial_state: tuple = (5, 2), default_reward: tuple = (0, -1), seed: int = 0):
         """
         :param initial_state:
         :param default_reward: (mission_success, radiation)
@@ -35,7 +35,7 @@ class SpaceExploration(EnvMesh):
         finals.update({(9, i): 10 for i in range(3)})
         finals.update({(12, i): 30 for i in range(5)})
 
-        obstacles = dict()
+        obstacles = frozenset()
         mesh_shape = (13, 5)
         default_reward = Vector(default_reward)
 
@@ -51,7 +51,7 @@ class SpaceExploration(EnvMesh):
         self.radiations = self.radiations.union({(10, i) for i in range(5)})
         self.radiations = self.radiations.union({(11, i) for i in range(5)})
 
-    def step(self, action) -> (object, Vector, bool, dict):
+    def step(self, action: int) -> (tuple, Vector, bool, dict):
         """
         Given an action, do a step
         :param action:
@@ -90,7 +90,7 @@ class SpaceExploration(EnvMesh):
         self.current_state = self.initial_state
         return self.current_state
 
-    def next_state(self, action, state=None) -> object:
+    def next_state(self, action: int, state: tuple = None) -> tuple:
         """
         Calc next state with current state and action given, in this environment is 8-neighbors.
         :param state: If a state is given, do action from that state.
@@ -137,7 +137,7 @@ class SpaceExploration(EnvMesh):
         return new_state
 
     @staticmethod
-    def __move_up(y, limit=5):
+    def __move_up(y: int, limit: int = 5):
         """
         Move to up
         :param y:
@@ -147,7 +147,7 @@ class SpaceExploration(EnvMesh):
         return (y if y > 0 else limit) - 1
 
     @staticmethod
-    def __move_right(x, limit=13):
+    def __move_right(x: int, limit: int = 13):
         """
         Move to right
         :param x:
@@ -157,7 +157,7 @@ class SpaceExploration(EnvMesh):
         return (x + 1) % limit
 
     @staticmethod
-    def __move_down(y, limit=5):
+    def __move_down(y: int, limit: int = 5):
         """
         Move to down
         :param y:
@@ -167,7 +167,7 @@ class SpaceExploration(EnvMesh):
         return (y + 1) % limit
 
     @staticmethod
-    def __move_left(x, limit=13):
+    def __move_left(x: int, limit: int = 13):
         """
         Move to left
         :param x:
@@ -176,7 +176,7 @@ class SpaceExploration(EnvMesh):
         """
         return (x if x > 0 else limit) - 1
 
-    def is_final(self, state=None) -> bool:
+    def is_final(self, state: tuple = None) -> bool:
         """
         Is final if agent crash with asteroid or is on final state.
         :param state:
@@ -190,7 +190,7 @@ class SpaceExploration(EnvMesh):
 
         return crash or final
 
-    def get_dict_model(self):
+    def get_dict_model(self) -> dict:
         """
         Get dict model of environment
         :return:

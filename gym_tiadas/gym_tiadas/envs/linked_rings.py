@@ -42,13 +42,13 @@ Peter Vamplew, Rustam Issabekov, Richard Dazeley, Cameron Foale, Adam Berry,
 Tim Moore, Douglas Creighton
 Neurocomputing 263 (2017) 26-38.
 """
-
 import gym
-from gym import spaces
-from gym.utils import seeding
+
+from models import Vector
+from .environment import Environment
 
 
-class LinkedRings(gym.Env):
+class LinkedRings(Environment):
     # Possible actions
     _actions = {'CLOCKWISE': 0, 'COUNTER-CLOCKWISE': 1}
 
@@ -56,26 +56,17 @@ class LinkedRings(gym.Env):
     _icons = {'BLANK': ' ', 'BLOCK': '■', 'TREASURE': '$', 'CURRENT': '☺',
               'ENEMY': '×', 'HOME': 'µ', 'FINAL': '$'}
 
-    def __init__(self, seed=0, initial_state=0):
+    def __init__(self, seed: int = 0, initial_state: int = 0):
         """
         :param seed:
         :param initial_state:
         """
 
-        # Set action space
-        self.action_space = spaces.Discrete(len(self._actions))
-
         # Create the observation space
-        self.observation_space = spaces.Discrete(7)
+        observation_space = gym.spaces.Discrete(7)
 
-        # Prepare random seed
-        self.np_random = None
-        self.seed(seed=seed)
-
-        # Set current environment state
-        assert initial_state is None or self.observation_space.contains(initial_state)
-        self.initial_state = initial_state
-        self.current_state = self.initial_state
+        # Super call constructor
+        super().__init__(observation_space=observation_space, seed=seed, initial_state=initial_state)
 
         # Rewards dictionary
         self.rewards_dictionary = {
@@ -141,10 +132,7 @@ class LinkedRings(gym.Env):
             }
         }
 
-        # Reset environment
-        self.reset()
-
-    def step(self, action):
+    def step(self, action: int) -> (int, Vector, bool, dict):
         """
         Take a step in the environment
         :param action:
@@ -168,15 +156,6 @@ class LinkedRings(gym.Env):
 
         return new_state, reward, final, info
 
-    def seed(self, seed=None):
-        """
-        Generate seed
-        :param seed:
-        :return:
-        """
-        self.np_random, seed = seeding.np_random(seed=seed)
-        return [seed]
-
     def reset(self):
         """
         Reset environment to zero.
@@ -185,21 +164,19 @@ class LinkedRings(gym.Env):
         self.current_state = self.initial_state
         return self.current_state
 
-    def render(self, mode='human'):
+    def next_state(self, action: int, state: int = None) -> int:
         """
-        Render environment
-        :param mode:
-        :return:
-        """
-
-    def next_state(self, action) -> object:
-        """
-        Calc next state with current state and action given.
+        Calc next state with state and action given.
+        :param state: if a state is given, process next_state from that state, else get current state.
         :param action: from action_space
         :return: a new state (or old if is invalid action)
         """
 
+        # Check if a state is given.
+        state = self.current_state if state is None else state
+
         # Do movement
+
         new_state = self.possible_transitions.get(self.current_state).get(action)
 
         if not self.observation_space.contains(new_state):
@@ -209,15 +186,7 @@ class LinkedRings(gym.Env):
         # Return new state
         return new_state
 
-    @property
-    def actions(self):
-        """
-        Return a dictionary with possible actions
-        :return:
-        """
-        return self._actions
-
-    def is_final(self, state=None) -> bool:
+    def is_final(self, state: int = None) -> bool:
         """
         Checks if this is final state. 
         :param state:

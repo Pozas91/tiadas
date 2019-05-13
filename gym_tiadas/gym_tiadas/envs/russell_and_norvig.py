@@ -12,8 +12,8 @@ class RussellNorvig(EnvMesh):
     # Possible actions
     _actions = {'UP': 0, 'RIGHT': 1, 'DOWN': 2, 'LEFT': 3}
 
-    def __init__(self, transactions=(0.8, 0.1, 0., 0.1), initial_state=(0, 2),
-                 default_reward=(-0.04,), seed=0):
+    def __init__(self, transactions: tuple = (0.8, 0.1, 0., 0.1), initial_state: tuple = (0, 2), seed: int = 0,
+                 default_reward: tuple = (-0.04,)):
         """
         :param transactions:
             Probabilities to change direction of action given.
@@ -28,8 +28,9 @@ class RussellNorvig(EnvMesh):
             (3, 1): -1
         }
 
-        # List of obstacles
-        obstacles = [(1, 1)]
+        # Set of obstacles
+        obstacles = frozenset()
+        obstacles = obstacles.union([(1, 1)])
 
         # Default shape
         mesh_shape = (4, 3)
@@ -42,7 +43,7 @@ class RussellNorvig(EnvMesh):
             self._actions)
         self.transactions = transactions
 
-    def step(self, action) -> (object, VectorFloat, bool, dict):
+    def step(self, action: int) -> (tuple, VectorFloat, bool, dict):
         """
         Given an action, do a step
         :param action:
@@ -80,7 +81,7 @@ class RussellNorvig(EnvMesh):
         self.current_state = self.initial_state
         return self.current_state
 
-    def __probability_action(self, action) -> int:
+    def __probability_action(self, action: int) -> int:
         """
         Decide probability action after apply probabilistic transactions.
         :param action:
@@ -107,7 +108,7 @@ class RussellNorvig(EnvMesh):
         # Cyclic direction
         return (direction + action) % self.action_space.n
 
-    def is_final(self, state=None) -> bool:
+    def is_final(self, state: tuple = None) -> bool:
         """
         Is final if agent is on final state.
         :param state:

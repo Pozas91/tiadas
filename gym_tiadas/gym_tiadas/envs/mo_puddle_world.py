@@ -20,13 +20,13 @@ class MoPuddleWorld(EnvMesh):
     # Possible actions
     _actions = {'UP': 0, 'RIGHT': 1, 'DOWN': 2, 'LEFT': 3}
 
-    def __init__(self, default_reward=(10, 0), penalize_non_goal=-1, seed=0, final_state=(19, 0)):
+    def __init__(self, default_reward: tuple = (10, 0), penalize_non_goal: float = -1, seed: int = 0,
+                 final_state: tuple = (19, 0)):
         """
-
         :param default_reward: (non_goal_reached, puddle_penalize)
-        :param penalize_non_goal:
+        :param penalize_non_goal: While agent does not reach a final state get a penalize.
         :param seed:
-        :param final_state:
+        :param final_state: This environment only has a final state.
         """
 
         self.final_state = final_state
@@ -42,7 +42,7 @@ class MoPuddleWorld(EnvMesh):
 
         self.current_state = self.reset()
 
-    def step(self, action) -> (object, VectorFloat, bool, dict):
+    def step(self, action: int) -> (tuple, VectorFloat, bool, dict):
         """
         Given an action, do a step
         :param action:
@@ -103,7 +103,7 @@ class MoPuddleWorld(EnvMesh):
         self.current_state = random_space
         return self.current_state
 
-    def is_final(self, state=None) -> bool:
+    def is_final(self, state: tuple = None) -> bool:
         """
         Is final if agent is on final state
         :param state:
@@ -111,7 +111,7 @@ class MoPuddleWorld(EnvMesh):
         """
         return state == self.final_state
 
-    def get_dict_model(self):
+    def get_dict_model(self) -> dict:
         """
         Get dict model of environment
         :return:

@@ -43,7 +43,8 @@ Explicar como se ejecutan los test automáticos para el sistema
 Pasos adicionales que hay que seguir para desplegar el proyecto en un entorno real
 
 ## Construido con
-* [gym](https://gym.openai.com/) - Entornos y utilidades para el aprendizaje por refuerzo
+* [gym](https://gym.openai.com/) - Entornos y utilidades para el aprendizaje por refuerzo.
+* [numpy](https://www.numpy.org/) - Paquete para computación ciéntifica.
 
 ## Contribuir
 Por favor leer el fichero [CONTRIBUTING.md](contributing.md) para obtener detalles de conducta en nuestro código, y el proceso para
