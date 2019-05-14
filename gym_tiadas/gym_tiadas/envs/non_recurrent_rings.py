@@ -23,7 +23,11 @@ class NonRecurrentRings(Environment):
         # Create the observation space
         observation_space = gym.spaces.Discrete(8)
 
-        super().__init__(observation_space=observation_space, seed=seed, initial_state=initial_state)
+        # Default reward
+        default_reward = Vector(default_reward)
+
+        super().__init__(observation_space=observation_space, seed=seed, initial_state=initial_state,
+                         default_reward=default_reward)
 
         # Rewards dictionary
         self.rewards_dictionary = {
@@ -96,8 +100,6 @@ class NonRecurrentRings(Environment):
                 self.actions.get('COUNTER-CLOCKWISE'): 0
             }
         }
-
-        self.default_reward = Vector(default_reward)
 
     def step(self, action: int) -> (int, Vector, bool, dict):
         """

@@ -28,7 +28,7 @@ class Environment(gym.Env):
     # Icons to render environments
     _icons = {'BLANK': ' ', 'BLOCK': '■', 'TREASURE': '$', 'CURRENT': '☺', 'ENEMY': '×', 'HOME': 'µ', 'FINAL': '$'}
 
-    def __init__(self, observation_space: gym.spaces, default_reward: Vector = None, seed: int = None,
+    def __init__(self, observation_space: gym.spaces, default_reward: Vector, seed: int = None,
                  initial_state: object = None, obstacles: frozenset = None, finals: dict = None):
         """
         :param default_reward: Default reward that return environment when a reward is not defined.
@@ -64,9 +64,6 @@ class Environment(gym.Env):
 
         # Defaults
         self.default_reward = default_reward
-
-        # Reset environment
-        self.reset()
 
     @property
     def actions(self) -> dict:

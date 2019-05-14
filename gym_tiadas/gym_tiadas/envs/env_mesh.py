@@ -25,7 +25,7 @@ from .environment import Environment
 
 class EnvMesh(Environment):
 
-    def __init__(self, mesh_shape: tuple, default_reward: Vector = None, seed: int = None, initial_state: tuple = None,
+    def __init__(self, mesh_shape: tuple, default_reward: Vector, seed: int = None, initial_state: tuple = None,
                  obstacles: frozenset = None, finals: dict = None):
 
         """

@@ -12,7 +12,6 @@ from agents import AgentPQL, AgentMOSP, AgentQ
 # from gym_tiadas.envs import *
 from gym_tiadas.gym_tiadas.envs import *
 from models import Vector
-from utils import pareto, q_learning
 
 ENV_NAME_MESH = 'russell-norvig-v0'
 ENV_NAME_DISCRETE = 'russell-norvig-discrete-v0'
@@ -38,7 +37,7 @@ def plot_training_from_zero():
         # Training mesh agent
         agent_mesh = AgentQ(environment=environment_mesh)
         start_time = time.time()
-        q_learning.train(agent=agent_mesh, epochs=epochs)
+        agent_mesh.train(epochs=epochs)
         time_train = time.time() - start_time
         time_train_mesh.append(time_train)
         print('MESH: To {} epochs -> {} seconds.'.format(epochs, time_train))
@@ -76,7 +75,7 @@ def plot_training_accumulate():
     for epochs in epochs_list:
         # Training mesh agent
         start_time = time.time()
-        q_learning.train(agent=agent_mesh, epochs=epochs)
+        agent_mesh.train(epochs=epochs)
         time_train = time.time() - start_time
         time_train_mesh.append(time_train)
         print('MESH: To {} epochs -> {} seconds.'.format(epochs, time_train))
@@ -108,7 +107,7 @@ def plot_performance(epochs=100000):
 
     # Training mesh agent
     print("Training agent...")
-    q_learning.train(agent=agent_mesh, epochs=epochs)
+    agent_mesh.train(epochs=epochs)
     print('Training finished!')
 
     for state, data in agent_mesh.states_to_observe.items():
@@ -129,7 +128,7 @@ def plot_performance(epochs=100000):
 def russel_and_norvig():
     env = RussellNorvig()
     agent = AgentQ(environment=env)
-    q_learning.train(agent=agent, epochs=int(1e5))
+    agent.train(epochs=10000)
     agent.show_policy()
     pass
 
@@ -138,7 +137,7 @@ def deep_sea_treasure():
     env = DeepSeaTreasure()
     weights = (0., 1.)
     agent = AgentMOSP(environment=env, weights=weights, epsilon=0.8, max_iterations=1000)
-    q_learning.train(agent=agent)
+    agent.train()
     agent.show_policy()
     pass
 
@@ -147,7 +146,7 @@ def bonus_world():
     env = BonusWorld()
     weights = (0., 1., 0.)
     agent = AgentMOSP(environment=env, weights=weights, epsilon=0.5, alpha=0.2, states_to_observe=[(0, 0)])
-    q_learning.train(agent=agent)
+    agent.train()
     agent.show_policy()
     pass
 
@@ -156,7 +155,7 @@ def space_exploration():
     env = SpaceExploration()
     weights = (0.8, 0.2)
     agent = AgentMOSP(environment=env, weights=weights, epsilon=0.5, alpha=0.2, states_to_observe=[(0, 0)])
-    q_learning.train(agent=agent, epochs=int(1e5))
+    agent.train(epochs=100000)
     agent.show_policy()
     pass
 
@@ -177,10 +176,10 @@ def testing_pareto():
 
     # Search one extreme objective.
     objective = agent.process_reward(pareto_points[0])
-    q_learning.objective_training(agent=agent, objective=objective)
+    agent.objective_training(objective=objective)
 
     # Get p point from agent test.
-    p = q_learning.testing(agent=agent)
+    p = agent.testing()
 
     # Reset agent to train again with others weights
     agent.reset()
@@ -190,13 +189,13 @@ def testing_pareto():
 
     # Search the other extreme objective.
     objective = agent.process_reward(pareto_points[-1])
-    q_learning.objective_training(agent=agent, objective=objective)
+    agent.objective_training(objective=objective)
 
     # Get q point from agent test.
-    q = q_learning.testing(agent=agent)
+    q = agent.testing()
 
     # Search pareto points
-    pareto_frontier = pareto.calc_frontier_scalarized(p=p, q=q, agent=agent, solutions_known=pareto_points)
+    pareto_frontier = agent.calc_frontier_scalarized(p=p, q=q, solutions_known=pareto_points)
     pareto_frontier_np = np.array(pareto_frontier)
 
     # Calc rest of time
@@ -222,7 +221,7 @@ def resource_gathering():
     env = ResourceGathering()
     weights = (0., 0., 1.)
     agent = AgentMOSP(environment=env, weights=weights, max_iterations=1000)
-    q_learning.train(agent=agent)
+    agent.train()
     agent.show_policy()
     pass
 
@@ -231,7 +230,7 @@ def pressurized_bountiful_sea_treasure():
     env = PressurizedBountifulSeaTreasure()
     weights = (1., 0., 0.)
     agent = AgentMOSP(environment=env, weights=weights, epsilon=0.5, max_iterations=1000)
-    q_learning.train(agent=agent, epochs=int(2e5))
+    agent.train(epochs=200000)
     agent.show_policy()
     pass
 
@@ -240,7 +239,7 @@ def buridan_ass():
     env = BuridanAss()
     weights = (0.3,) * 3
     agent = AgentMOSP(environment=env, epsilon=0.3, weights=weights)
-    q_learning.train(agent=agent, epochs=int(1e4))
+    agent.train(epochs=10000)
     pass
 
 
@@ -248,7 +247,7 @@ def mo_puddle_world():
     env = MoPuddleWorld()
     weights = (0.5,) * 2
     agent = AgentMOSP(environment=env, weights=weights, epsilon=0.3, max_iterations=100)
-    q_learning.train(agent=agent, epochs=int(1e3))
+    agent.train(epochs=1000)
     agent.show_policy()
     pass
 
@@ -258,7 +257,7 @@ def linked_rings():
     weights = (0.5,) * 2
     agent = AgentMOSP(environment=env, weights=weights, epsilon=0.1, max_iterations=100,
                       states_to_observe=[0, 1, 4])
-    q_learning.train(agent=agent, epochs=int(1e3))
+    agent.train(epochs=1000)
     agent.show_raw_policy()
     agent.show_observed_states()
     pass
@@ -269,7 +268,7 @@ def non_recurrent_rings():
     weights = (0.3, 0.7)
     agent = AgentMOSP(environment=env, weights=weights, epsilon=0.1, max_iterations=100,
                       states_to_observe=[0, 7])
-    q_learning.train(agent=agent, epochs=int(1e3))
+    agent.train(epochs=1000)
     agent.show_raw_policy()
     agent.show_observed_states()
     pass
@@ -279,7 +278,7 @@ def deep_sea_treasure_simplified():
     env = DeepSeaTreasureSimplified()
     weights = (0.5,) * 2
     agent = AgentMOSP(environment=env, weights=weights, epsilon=0.5, states_to_observe=[(0, 0)])
-    q_learning.train(agent=agent, epochs=int(1e4))
+    agent.train(epochs=10000)
     agent.show_observed_states()
     agent.show_policy()
     pass
@@ -294,7 +293,7 @@ def deep_sea_treasure_simplified_mo_mp():
 
     for _ in range(4):
         agent.reset()
-        q_learning.train(agent=agent, epochs=3000)
+        agent.train(epochs=3000)
         graph.append(agent.states_to_observe.get((0, 0)))
 
     data = np.average(graph, axis=0)
@@ -325,7 +324,7 @@ def graphs_dps():
 
     evaluation_mechanisms = ['HV-PQL', 'PO-PQL', 'C-PQL']
     epochs = 3000
-    iterations = 50
+    iterations = 100
 
     # Make instance of AgentPQL
     agent = AgentPQL(environment=env, epsilon=epsilon, states_to_observe=states_to_observe,
@@ -359,7 +358,7 @@ def graphs_dps():
             agent.reset()
 
             # Train model
-            q_learning.train(agent=agent, epochs=epochs)
+            agent.train(epochs=epochs)
 
             # Get graph data
             graph.append(agent.states_to_observe.get(states_to_observe[0]))
@@ -395,7 +394,7 @@ def track_policy():
                          hv_reference=Vector([-25, 0]), evaluation_mechanism=evaluation_mechanism)
 
         # Train model
-        q_learning.train(agent=agent, epochs=3000)
+        agent.train(epochs=3000)
 
         # Save model
         agent.save()
@@ -443,8 +442,8 @@ def main():
     # russel_and_norvig()
     # deep_sea_treasure_simplified()
     # deep_sea_treasure_simplified_mo_mp()
-    track_policy()
-    # graphs_dps()
+    # track_policy()
+    graphs_dps()
     pass
 
 

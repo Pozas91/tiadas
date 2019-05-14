@@ -25,19 +25,7 @@ class TestBonusWorld(unittest.TestCase):
         :return:
         """
 
-        # All environments must be have an action_space and an observation_space attributes.
-        self.assertTrue(hasattr(self.environment, 'action_space'))
-        self.assertTrue(hasattr(self.environment, 'observation_space'))
-
-        # All environments must be have an step, seed, reset, render and _next_state methods.
-        self.assertTrue(hasattr(self.environment, 'step'))
-        self.assertTrue(hasattr(self.environment, 'seed'))
-        self.assertTrue(hasattr(self.environment, 'reset'))
-        self.assertTrue(hasattr(self.environment, 'next_state'))
-
         # This environment must have another attributes
-        self.assertTrue(hasattr(self.environment, 'finals'))
-        self.assertTrue(hasattr(self.environment, 'obstacles'))
         self.assertTrue(hasattr(self.environment, 'pits'))
         self.assertTrue(hasattr(self.environment, 'bonus'))
         self.assertTrue(hasattr(self.environment, 'bonus_activated'))
@@ -60,6 +48,7 @@ class TestBonusWorld(unittest.TestCase):
         Testing seed method
         :return:
         """
+
         self.environment.seed(seed=0)
         n1_1 = self.environment.np_random.randint(0, 10)
         n1_2 = self.environment.np_random.randint(0, 10)

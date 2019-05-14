@@ -65,8 +65,12 @@ class LinkedRings(Environment):
         # Create the observation space
         observation_space = gym.spaces.Discrete(7)
 
+        # Default reward
+        default_reward = Vector(default_reward)
+
         # Super call constructor
-        super().__init__(observation_space=observation_space, seed=seed, initial_state=initial_state)
+        super().__init__(observation_space=observation_space, seed=seed, initial_state=initial_state,
+                         default_reward=default_reward)
 
         # Rewards dictionary
         self.rewards_dictionary = {
@@ -131,8 +135,6 @@ class LinkedRings(Environment):
                 self._actions.get('COUNTER-CLOCKWISE'): 5
             }
         }
-
-        self.default_reward = Vector(default_reward)
 
     def step(self, action: int) -> (int, Vector, bool, dict):
         """

@@ -29,7 +29,7 @@ class TestDumps(unittest.TestCase):
         seed = 1
         hv_reference = Vector([-5, -5, -5])
         evaluation_mechanism = 'PO-PQL'
-        epsilon = 0.11
+        epsilon = 0.4
         states_to_observe = [(0, 0)]
         epochs = np.random.randint(10, 100)
         gamma = 0.99
@@ -382,14 +382,14 @@ class TestDumps(unittest.TestCase):
         Testing agent with MoPuddleWorld environment.
         :return:
         """
-        default_reward = (10, 1)
-        penalize_non_goal = -1.1
+        default_reward = (10, -1)
+        penalize_non_goal = -1.001
         seed = 1
-        hv_reference = Vector([-100, 0])
+        hv_reference = Vector([-100, -100])
         evaluation_mechanism = 'PO-PQL'
-        epsilon = 0.11
+        epsilon = 0.3
         states_to_observe = [(0, 0)]
-        epochs = np.random.randint(10, 100)
+        epochs = np.random.randint(10, 40)
         gamma = 0.99
         max_iterations = None
 
@@ -527,12 +527,12 @@ class TestDumps(unittest.TestCase):
         Testing agent with ResourceGatheringLimit environment.
         :return:
         """
-        default_reward = (-1, 0.1, 0.1)
+        default_reward = (-1, 0, 0)
         seed = 1
         time_limit = 50
         hv_reference = Vector([-20, -20, -20])
         evaluation_mechanism = 'PO-PQL'
-        epsilon = 0.11
+        epsilon = 0.4
         states_to_observe = [(0, 0)]
         epochs = np.random.randint(10, 100)
         gamma = 0.99

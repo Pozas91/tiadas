@@ -25,20 +25,6 @@ class TestMoPuddleWorld(unittest.TestCase):
         :return:
         """
 
-        # All environments must be have an action_space and an observation_space attributes.
-        self.assertTrue(hasattr(self.environment, 'action_space'))
-        self.assertTrue(hasattr(self.environment, 'observation_space'))
-
-        # All environments must be have an step, seed, reset, render and _next_state methods.
-        self.assertTrue(hasattr(self.environment, 'step'))
-        self.assertTrue(hasattr(self.environment, 'seed'))
-        self.assertTrue(hasattr(self.environment, 'reset'))
-        self.assertTrue(hasattr(self.environment, 'next_state'))
-
-        # This environment must have another attributes
-        self.assertTrue(hasattr(self.environment, 'final_state'))
-        self.assertTrue(hasattr(self.environment, 'obstacles'))
-
         # By default mesh shape is 20x20
         self.assertEqual(spaces.Tuple((spaces.Discrete(20), spaces.Discrete(20))), self.environment.observation_space)
 
