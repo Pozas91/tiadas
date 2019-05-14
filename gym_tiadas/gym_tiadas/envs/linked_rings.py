@@ -1,74 +1,111 @@
 """
-Simple non-episodic environment, where the agent train with a step-limit. Only two actions are possible:
+Simple deterministic bi-objective non-episodic environment.
 
-* Go to clockwise
-* Go to counter-clockwise
+STATE SPACE:
+-----------
+The space state consists of 7 states linked by actions in a two ring shape.
+State 1 is common to both rings.
 
-Given a state and a action, returns reward.
+     S2      S5
+   /    \  /   \
+S3       S1     S6
+   \    / \     /
+     S4      S7
+
+All arcs are bidirectional, except  S4 -> S1 and S7 -> S1.
+Therefore, the agent has two actions available at each state,
+
+* Move clockwise
+* Move counter-clockwise
+
+States are implemented in a discrete 0-6 range as follows,
+
+     1       4
+   /    \  /   \
+ 2       0      5
+   \    / \    /
+     3       6
+
+
+REWARDS:
+-------
+Left ring: (3,-1) moving counter-clockwise, (-1,0) otherwise.
+Right ring: (-1,3) moving clockwise, (0, -1) otherwise.
+
+FINAL STATE:
+-----------
+It is not an episodic task. Does not have finals states.
+
+Reference:
+Steering approaches to Pareto-optimal multiobjective reinforcement learning.
+Peter Vamplew, Rustam Issabekov, Richard Dazeley, Cameron Foale, Adam Berry, 
+Tim Moore, Douglas Creighton
+Neurocomputing 263 (2017) 26-38.
 """
-
 import gym
-from gym import spaces
-from gym.utils import seeding
+
+from models import Vector
+from .environment import Environment
 
 
-class LinkedRings(gym.Env):
+class LinkedRings(Environment):
     # Possible actions
     _actions = {'CLOCKWISE': 0, 'COUNTER-CLOCKWISE': 1}
 
     # Icons to render environments
-    _icons = {'BLANK': ' ', 'BLOCK': '■', 'TREASURE': '$', 'CURRENT': '☺', 'ENEMY': '×', 'HOME': 'µ', 'FINAL': '$'}
+    _icons = {'BLANK': ' ', 'BLOCK': '■', 'TREASURE': '$', 'CURRENT': '☺',
+              'ENEMY': '×', 'HOME': 'µ', 'FINAL': '$'}
 
-    def __init__(self, seed=None, initial_state=0, default_reward=(0., 0.)):
-        # Set action space
-        self.action_space = spaces.Discrete(len(self._actions))
+    def __init__(self, seed: int = 0, initial_state: int = 0, default_reward: tuple = (0, 0)):
+        """
+        :param seed:
+        :param initial_state:
+        """
 
         # Create the observation space
-        self.observation_space = spaces.Discrete(7)
+        observation_space = gym.spaces.Discrete(7)
 
-        # Prepare random seed
-        self.np_random = None
-        self.seed(seed=seed)
+        # Default reward
+        default_reward = Vector(default_reward)
 
-        # Set current environment state
-        assert initial_state is None or self.observation_space.contains(initial_state)
-        self.initial_state = initial_state
-        self.current_state = self.initial_state
+        # Super call constructor
+        super().__init__(observation_space=observation_space, seed=seed, initial_state=initial_state,
+                         default_reward=default_reward)
 
         # Rewards dictionary
         self.rewards_dictionary = {
             0: {
-                self._actions.get('COUNTER-CLOCKWISE'): (3, -1),
-                self._actions.get('CLOCKWISE'): (-1, 3)
+                self._actions.get('COUNTER-CLOCKWISE'): Vector([3, -1]),
+                self._actions.get('CLOCKWISE'): Vector([-1, 3])
             },
             1: {
-                self._actions.get('COUNTER-CLOCKWISE'): (3, -1),
-                self._actions.get('CLOCKWISE'): (-1, 0)
+                self._actions.get('COUNTER-CLOCKWISE'): Vector([3, -1]),
+                self._actions.get('CLOCKWISE'): Vector([-1, 0])
             },
             2: {
-                self._actions.get('COUNTER-CLOCKWISE'): (3, -1),
-                self._actions.get('CLOCKWISE'): (-1, 0)
+                self._actions.get('COUNTER-CLOCKWISE'): Vector([3, -1]),
+                self._actions.get('CLOCKWISE'): Vector([-1, 0])
             },
             3: {
-                self._actions.get('COUNTER-CLOCKWISE'): (3, -1),
-                self._actions.get('CLOCKWISE'): (-1, 0)
+                self._actions.get('COUNTER-CLOCKWISE'): Vector([3, -1]),
+                self._actions.get('CLOCKWISE'): Vector([-1, 0])
             },
             4: {
-                self._actions.get('CLOCKWISE'): (-1, 3),
-                self._actions.get('COUNTER-CLOCKWISE'): (0, -1)
+                self._actions.get('CLOCKWISE'): Vector([-1, 3]),
+                self._actions.get('COUNTER-CLOCKWISE'): Vector([0, -1])
             },
             5: {
-                self._actions.get('CLOCKWISE'): (-1, 3),
-                self._actions.get('COUNTER-CLOCKWISE'): (0, -1)
+                self._actions.get('CLOCKWISE'): Vector([-1, 3]),
+                self._actions.get('COUNTER-CLOCKWISE'): Vector([0, -1])
             },
             6: {
-                self._actions.get('CLOCKWISE'): (-1, 3),
-                self._actions.get('COUNTER-CLOCKWISE'): (0, -1)
+                self._actions.get('CLOCKWISE'): Vector([-1, 3]),
+                self._actions.get('COUNTER-CLOCKWISE'): Vector([0, -1])
             }
         }
 
-        # Possible transactions from a state to another
-        self.possible_transactions = {
+        # Possible transitions from a state to another
+        self.possible_transitions = {
             0: {
                 self._actions.get('COUNTER-CLOCKWISE'): 1,
                 self._actions.get('CLOCKWISE'): 4
@@ -99,21 +136,15 @@ class LinkedRings(gym.Env):
             }
         }
 
-        # Defaults
-        self.default_reward = default_reward
-
-        # Reset environment
-        self.reset()
-
-    def step(self, action):
+    def step(self, action: int) -> (int, Vector, bool, dict):
         """
-        Do a step in the environment
+        Take a step in the environment
         :param action:
         :return:
         """
 
         # Get new state
-        new_state = self._next_state(action=action)
+        new_state = self.next_state(action=action)
 
         # Get reward
         reward = self.rewards_dictionary.get(self.current_state).get(action)
@@ -121,24 +152,15 @@ class LinkedRings(gym.Env):
         # Update previous state
         self.current_state = new_state
 
-        # Check if is final state (This is a non-episodic problem, so doesn't have final states)
-        final = False
+        # Check is_final
+        final = self.is_final()
 
         # Set info
         info = {}
 
         return new_state, reward, final, info
 
-    def seed(self, seed=None):
-        """
-        Generate seed
-        :param seed:
-        :return:
-        """
-        self.np_random, seed = seeding.np_random(seed=seed)
-        return [seed]
-
-    def reset(self):
+    def reset(self) -> int:
         """
         Reset environment to zero.
         :return:
@@ -146,22 +168,19 @@ class LinkedRings(gym.Env):
         self.current_state = self.initial_state
         return self.current_state
 
-    def render(self, mode='human'):
+    def next_state(self, action: int, state: int = None) -> int:
         """
-        Render environment
-        :param mode:
-        :return:
-        """
-
-    def _next_state(self, action) -> object:
-        """
-        Calc next state with current state and action given.
+        Calc next state with state and action given.
+        :param state: if a state is given, process next_state from that state, else get current state.
         :param action: from action_space
         :return: a new state (or old if is invalid action)
         """
 
+        # Check if a state is given.
+        state = self.current_state if state is None else state
+
         # Do movement
-        new_state = self.possible_transactions.get(self.current_state, {}).get(action, self.default_reward)
+        new_state = self.possible_transitions.get(state).get(action)
 
         if not self.observation_space.contains(new_state):
             # New state is invalid, and roll back with previous.
@@ -169,3 +188,25 @@ class LinkedRings(gym.Env):
 
         # Return new state
         return new_state
+
+    def is_final(self, state: int = None) -> bool:
+        """
+        Checks if this is final state. 
+        :param state:
+        :return: Always False, since this task is not episodic.
+        """
+        return False
+
+    def get_dict_model(self) -> dict:
+        """
+        Get dict model of environment
+        :return:
+        """
+
+        data = super().get_dict_model()
+
+        # Clean specific environment data
+        del data['possible_transitions']
+        del data['rewards_dictionary']
+
+        return data

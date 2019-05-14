@@ -18,74 +18,33 @@ Obstacles is a list of states: [state_1, state_2, ...]
 
 import gym
 from gym import spaces
-from gym.utils import seeding
+
+from models import Vector
+from .environment import Environment
 
 
-class EnvMesh(gym.Env):
-    # Possible actions
-    _actions = dict()
+class EnvMesh(Environment):
 
-    # Icons to render environments
-    _icons = {'BLANK': ' ', 'BLOCK': '■', 'TREASURE': '$', 'CURRENT': '☺', 'ENEMY': '×', 'HOME': 'µ', 'FINAL': '$'}
+    def __init__(self, mesh_shape: tuple, default_reward: Vector, seed: int = None, initial_state: tuple = None,
+                 obstacles: frozenset = None, finals: dict = None):
 
-    def __init__(self, mesh_shape: tuple, seed=None, initial_state=None, obstacles=None, finals=None,
-                 default_reward=0.):
-
-        # Set action space
-        self.action_space = spaces.Discrete(len(self._actions))
+        """
+        :param mesh_shape: A tuple where first component is a x-axis, and second component is y-axis.
+        :param default_reward: Default reward that return environment when a reward is not defined.
+        :param seed: Initial seed.
+        :param initial_state: First state where agent start.
+        :param obstacles: States where agent can not to be.
+        :param finals: States where agent finish an epoch.
+        """
 
         # Create the mesh
         x, y = mesh_shape
-        self.observation_space = spaces.Tuple((spaces.Discrete(x), spaces.Discrete(y)))
+        observation_space = gym.spaces.Tuple((spaces.Discrete(x), spaces.Discrete(y)))
 
-        # Prepare random seed
-        self.np_random = None
-        self.seed(seed=seed)
+        super().__init__(observation_space=observation_space, default_reward=default_reward, seed=seed,
+                         initial_state=initial_state, obstacles=obstacles, finals=finals)
 
-        # Set current environment state
-        assert initial_state is None or self.observation_space.contains(initial_state)
-        self.initial_state = initial_state
-        self.current_state = self.initial_state
-
-        # Set finals states
-        assert finals is None or all([self.observation_space.contains(final) for final in finals.keys()])
-        self.finals = finals
-
-        # Set obstacles
-        assert obstacles is None or all([self.observation_space.contains(obstacle) for obstacle in obstacles])
-        self.obstacles = obstacles
-
-        # Defaults
-        self.default_reward = default_reward
-
-        # Reset environment
-        self.reset()
-
-    def step(self, action):
-        """
-        Do a step in the environment
-        :param action:
-        :return:
-        """
-        raise NotImplemented
-
-    def seed(self, seed=None):
-        """
-        Generate seed
-        :param seed:
-        :return:
-        """
-        self.np_random, seed = seeding.np_random(seed=seed)
-        return [seed]
-
-    def reset(self):
-        """
-        Reset environment to zero.
-        :return:
-        """
-        raise NotImplemented
-
-    def render(self, mode='human'):
+    def render(self, mode: str = 'human') -> None:
         """
         Render environment
         :param mode:
@@ -120,15 +79,16 @@ class EnvMesh(gym.Env):
             # End render
             print('')
 
-    def _next_state(self, action) -> object:
+    def next_state(self, action: int, state: tuple = None) -> tuple:
         """
         Calc next state with current state and action given. Default is 4-neighbors (UP, LEFT, DOWN, RIGHT)
+        :param state: If a state is given, do action from that state.
         :param action: from action_space
         :return: a new state (or old if is invalid action)
         """
 
         # Get my position
-        x, y = self.current_state
+        x, y = state if state else self.current_state
 
         # Do movement
         if action == self._actions.get('UP'):
@@ -143,10 +103,10 @@ class EnvMesh(gym.Env):
         # Set new state
         new_state = x, y
 
-        # If exists obstacles, then new_state must be in self.obstacles (p => q)
-        is_obstacle = not hasattr(self, 'obstacles') or new_state in self.obstacles
+        # If exists obstacles, then new_state must be in self.obstacles
+        is_obstacle = bool(self.obstacles) and new_state in self.obstacles
 
-        if not self.observation_space.contains(new_state) and not is_obstacle:
+        if not self.observation_space.contains(new_state) or is_obstacle:
             # New state is invalid.
             new_state = self.current_state
 

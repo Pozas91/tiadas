@@ -7,8 +7,12 @@ the donkey is present, f for food in the two piles, and t for the time since the
 it is not incremented and the donkey incurs a penalty of -1 per time step till it eats the food when t is reset to 0.
 The actions are move up, down, left, right, and stay. It is assumed that if the donkey chooses to stay at a square
 with food, then it eats the food. `p_stolen` is set to 0.9, `n_appear` is set to 10. The stolen penalty is -0.5 per
-plate and walking penalty is -1 per step. """
+plate and walking penalty is -1 per step.
 
+FINAL STATE: No food to eat.
+
+REF: Dynamic Preferences in Multi-Criteria Reinforcement Learning (Sriraam Natarajan)"""
+from models import VectorFloat
 from .env_mesh import EnvMesh
 
 
@@ -16,11 +20,12 @@ class BuridanAss(EnvMesh):
     # Possible actions
     _actions = {'UP': 0, 'RIGHT': 1, 'DOWN': 2, 'LEFT': 3, 'STAY': 4}
 
-    def __init__(self, mesh_shape=(3, 3), initial_state=(1, 1), default_reward=0., seed=0, p_stolen=.9,
-                 n_appear=10, stolen_penalty=-.5, walking_penalty=-1., hunger_penalty=-1., last_ate_limit=9):
+    def __init__(self, initial_state: tuple = (1, 1), default_reward: tuple = (0., 0., 0.), seed: int = 0,
+                 p_stolen: float = .9, n_appear: int = 10, stolen_penalty: float = -.5, walking_penalty: float = -1,
+                 hunger_penalty: float = -1, last_ate_limit: int = 9):
         """
         :param initial_state:
-        :param default_reward:
+        :param default_reward: (hunger, stolen, walking)
         :param seed:
         :param p_stolen: Probability to stole food if not are visible.
         :param n_appear: Number of time-steps until food is regenerated.
@@ -35,7 +40,11 @@ class BuridanAss(EnvMesh):
             (2, 2): True
         }
 
-        super().__init__(mesh_shape, seed, default_reward=default_reward, initial_state=initial_state, finals=finals)
+        mesh_shape = (3, 3)
+        default_reward = VectorFloat(default_reward)
+
+        super().__init__(mesh_shape=mesh_shape, seed=seed, default_reward=default_reward, initial_state=initial_state,
+                         finals=finals)
 
         self.p_stolen = p_stolen
         self.n_appear = n_appear
@@ -47,21 +56,21 @@ class BuridanAss(EnvMesh):
         # Last time that donkey ate.
         self.last_ate = 0
 
-    def step(self, action) -> (object, [float, float, float], bool, dict):
+    def step(self, action: int) -> (tuple, VectorFloat, bool, dict):
         """
         Given an action, do a step
         :param action:
         :return:
         """
 
-        # (hunger, stolen, walking)
-        rewards = [0., 0., 0.]
+        # Initialize rewards as vector (plus zero to fast copy)
+        rewards = self.default_reward + 0
 
         # (state, states_visible_with_food, last_ate)
         complex_state = [None, None, None]
 
         # Get new state
-        new_state = self._next_state(action=action)
+        new_state = self.next_state(action=action)
         complex_state[0] = new_state
 
         # Get all available food
@@ -106,7 +115,7 @@ class BuridanAss(EnvMesh):
             states_with_visible_food)
 
         # If action is different to stay, donkey is walking and have a penalize.
-        rewards[2] = 0. if self._actions.get('STAY') == action else -1.
+        rewards[2] = self.default_reward[2] if self._actions.get('STAY') == action else self.walking_penalty
 
         # Set last ate
         complex_state[2] = self.last_ate
@@ -117,12 +126,12 @@ class BuridanAss(EnvMesh):
         # Set info
         info = {}
 
-        # If there isn't more food left, it is a final state
-        final = any(not isinstance(self.finals.get(state), bool) for state in self.finals.keys())
+        # Check is_final
+        final = self.is_final()
 
         return tuple(complex_state), rewards, final, info
 
-    def reset(self):
+    def reset(self) -> tuple:
         self.current_state = self.initial_state
         self.last_ate = 0
 
@@ -167,7 +176,7 @@ class BuridanAss(EnvMesh):
 
         return penalize
 
-    def __regenerate_food(self):
+    def __regenerate_food(self) -> None:
         """
         Regenerate food if is necessary
         :return:
@@ -188,7 +197,7 @@ class BuridanAss(EnvMesh):
             self.finals.update({state_with_food: data})
 
     @staticmethod
-    def __are_8_neighbours(state_a, state_b) -> bool:
+    def __are_8_neighbours(state_a: tuple, state_b: tuple) -> bool:
         """
         Check if state_a and state_b are neighbours
         :param state_a:
@@ -204,3 +213,11 @@ class BuridanAss(EnvMesh):
 
         # Check if b is neighbour to a
         return state_b in a_neighbours
+
+    def is_final(self, state: tuple = None) -> bool:
+        """
+        If there is not more food left, it is a final state
+        :param state:
+        :return:
+        """
+        return all(not isinstance(self.finals.get(state), bool) for state in self.finals.keys())

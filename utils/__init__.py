@@ -1,1 +1,2 @@
-from .pareto import *
+from .hypervolume import *
+from .miscellaneous import *

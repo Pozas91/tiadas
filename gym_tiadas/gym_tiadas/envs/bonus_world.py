@@ -9,7 +9,12 @@ returns to the start state. A tabular representation of this environment has 162
 of the grid when the agent has not activated the bonus, and 81 for the same cells when the bonus has been activated.
 The set of Pareto-optimal policies and the corresponding thresholds are listed in Table 2. It can be seen that
 trade-offs exist between all three objectives. Note that not all optimal policies require the agent to activate the
-bonus. """
+bonus.
+
+FINAL STATE: To reach a final state.
+
+REF: Vamplew et al (2017b)"""
+from models import Vector
 from .env_mesh import EnvMesh
 
 
@@ -17,10 +22,10 @@ class BonusWorld(EnvMesh):
     # Possible actions
     _actions = {'UP': 0, 'RIGHT': 1, 'DOWN': 2, 'LEFT': 3}
 
-    def __init__(self, mesh_shape=(9, 9), initial_state=(0, 0), default_reward=(0., 0.), seed=0):
+    def __init__(self, initial_state: tuple = (0, 0), default_reward: tuple = (0, 0), seed: int = 0):
         """
         :param initial_state:
-        :param default_reward:
+        :param default_reward: (objective 1, objective 2)
         :param seed:
         """
 
@@ -35,14 +40,21 @@ class BonusWorld(EnvMesh):
             (0, 8): (9, 1),
             (2, 8): (9, 3),
             (4, 8): (9, 5),
-            (8, 6): (9, 7),
-            (8, 8): (9, 9),
+            (6, 8): (9, 7),
         }
 
-        obstacles = set()
-        obstacles.add((2, 2))
-        obstacles.add((2, 3))
-        obstacles.add((3, 2))
+        # Define mesh shape
+        mesh_shape = (9, 9)
+
+        # Set obstacles
+        obstacles = frozenset([(2, 2), (2, 3), (3, 2)])
+
+        # Default reward plus time (objective 1, objective 2, time)
+        default_reward += (-1,)
+        default_reward = Vector(default_reward)
+
+        super().__init__(mesh_shape=mesh_shape, seed=seed, default_reward=default_reward, initial_state=initial_state,
+                         finals=finals, obstacles=obstacles)
 
         # Pits marks which returns the agent to the start location.
         self.pits = [
@@ -57,21 +69,18 @@ class BonusWorld(EnvMesh):
         # Bonus is activated?
         self.bonus_activated = False
 
-        super().__init__(mesh_shape, seed, initial_state=initial_state, default_reward=default_reward, finals=finals,
-                         obstacles=obstacles)
-
-    def step(self, action) -> (object, [float, float], bool, dict):
+    def step(self, action: int) -> (tuple, Vector, bool, dict):
         """
         Given an action, do a step
         :param action:
         :return: (state, (time_inverted, treasure_value), final, info)
         """
 
-        # (objective 1, objective 2, time)
-        rewards = [0., 0., 0.]
+        # Initialize rewards as vector (plus zero to fast copy)
+        rewards = self.default_reward + 0
 
         # Get new state
-        new_state = self._next_state(action=action)
+        new_state = self.next_state(action=action)
 
         # Update previous state
         self.current_state = new_state
@@ -84,26 +93,23 @@ class BonusWorld(EnvMesh):
         if self.current_state in self.pits:
             self.current_state = self.initial_state
 
-        # Get time inverted
-        rewards[2] = -1
-
         # Get treasure value
-        rewards[0], rewards[1] = self.finals.get(self.current_state, self.default_reward)
+        rewards[0], rewards[1] = self.finals.get(self.current_state, (self.default_reward[0], self.default_reward[1]))
 
         # If the bonus is activated, double the reward.
         if self.bonus_activated:
-            rewards[0] *= 2.
-            rewards[1] *= 2.
+            rewards[0] *= 2
+            rewards[1] *= 2
 
         # Set info
         info = {}
 
-        # If agent is in treasure
-        final = self.current_state in self.finals.keys()
+        # Check is_final
+        final = self.is_final(self.current_state)
 
         return self.current_state, rewards, final, info
 
-    def reset(self):
+    def reset(self) -> tuple:
         """
         Reset environment to zero.
         :return:
@@ -112,3 +118,25 @@ class BonusWorld(EnvMesh):
         self.bonus_activated = False
 
         return self.current_state
+
+    def is_final(self, state: tuple = None) -> bool:
+        """
+        Is final if agent is on final state.
+        :param state:
+        :return:
+        """
+        return state in self.finals.keys()
+
+    def get_dict_model(self) -> dict:
+        """
+        Get dict model of environment
+        :return:
+        """
+
+        data = super().get_dict_model()
+
+        # Clean specific environment data
+        del data['pits']
+        del data['bonus']
+
+        return data

@@ -1,7 +1,10 @@
 """
 Such as DeepSeaTreasure environment but has a vector of transactions probabilities, which will be used when an action
 is to be taken.
+
+
 """
+from models import Vector
 from .env_mesh import EnvMesh
 
 
@@ -9,11 +12,13 @@ class DeepSeaTreasureTransactions(EnvMesh):
     # Possible actions
     _actions = {'UP': 0, 'RIGHT': 1, 'DOWN': 2, 'LEFT': 3}
 
-    def __init__(self, mesh_shape=(10, 11), initial_state=(0, 0), default_reward=0., seed=0, n_transaction=0.3):
+    def __init__(self, initial_state: tuple = (0, 0), default_reward: tuple = (0,), seed: int = 0,
+                 n_transaction: float = 0.3):
         """
         :param initial_state:
         :param default_reward:
         :param seed:
+        :param n_transaction: if is 0, the action affected by the transaction is always the same action.
         """
 
         # List of all treasures and its reward.
@@ -30,6 +35,12 @@ class DeepSeaTreasureTransactions(EnvMesh):
             (9, 10): 124,
         }
 
+        mesh_shape = (10, 11)
+
+        # Default reward plus time (time_inverted, treasure_value)
+        default_reward = (-1,) + default_reward
+        default_reward = Vector(default_reward)
+
         obstacles = frozenset()
         obstacles = obstacles.union([(0, y) for y in range(2, 11)])
         obstacles = obstacles.union([(1, y) for y in range(3, 11)])
@@ -42,14 +53,16 @@ class DeepSeaTreasureTransactions(EnvMesh):
         obstacles = obstacles.union([(8, y) for y in range(10, 11)])
 
         # Check transaction probability
-        super().__init__(mesh_shape, seed, default_reward=default_reward, initial_state=initial_state, finals=finals,
-                         obstacles=obstacles)
+        super().__init__(mesh_shape=mesh_shape, seed=seed, default_reward=default_reward, initial_state=initial_state,
+                         finals=finals, obstacles=obstacles)
 
         # Transaction
         assert 0 <= n_transaction <= 1.
-        self.transactions = [1. - n_transaction, n_transaction / 3, n_transaction / 3, n_transaction / 3]
 
-    def step(self, action) -> (object, [float, float], bool, dict):
+        # [DIR_0, DIR_90, DIR_180, DIR_270] transaction tuple
+        self.transactions = (1. - n_transaction, n_transaction / 3, n_transaction / 3, n_transaction / 3)
+
+    def step(self, action: int) -> (tuple, Vector, bool, dict):
         """
         Given an action, do a step
         :param action:
@@ -59,30 +72,27 @@ class DeepSeaTreasureTransactions(EnvMesh):
         # Get probability action
         action = self.__probability_action(action=action)
 
-        # (time_inverted, treasure_value)
-        rewards = [0., 0.]
+        # Initialize rewards as vector (plus zero to fast copy)
+        rewards = self.default_reward + 0
 
         # Get new state
-        new_state = self._next_state(action=action)
+        new_state = self.next_state(action=action)
 
         # Update previous state
         self.current_state = new_state
 
-        # Get time inverted
-        rewards[0] = -1
-
         # Get treasure value
-        rewards[1] = self.finals.get(self.current_state, self.default_reward)
+        rewards[1] = self.finals.get(self.current_state, self.default_reward[1])
 
         # Set info
         info = {}
 
-        # If agent is in treasure
-        final = self.current_state in self.finals.keys()
+        # Check is_final
+        final = self.is_final(self.current_state)
 
         return self.current_state, rewards, final, info
 
-    def reset(self):
+    def reset(self) -> tuple:
         """
         Reset environment to zero.
         :return:
@@ -91,7 +101,7 @@ class DeepSeaTreasureTransactions(EnvMesh):
 
         return self.current_state
 
-    def __probability_action(self, action) -> int:
+    def __probability_action(self, action: int) -> int:
         """
         Decide probability action after apply probabilistic transactions.
         :param action:
@@ -117,3 +127,11 @@ class DeepSeaTreasureTransactions(EnvMesh):
 
         # Cyclic direction
         return (direction + action) % self.action_space.n
+
+    def is_final(self, state: tuple = None) -> bool:
+        """
+        Is final if agent is on final state.
+        :param state:
+        :return:
+        """
+        return state in self.finals.keys()

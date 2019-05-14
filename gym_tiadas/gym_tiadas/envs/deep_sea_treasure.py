@@ -5,7 +5,14 @@ top left state, and ends when a treasure location is reached or after 1000 actio
 agent - moving one square to the left, right, up or down. Any action which would cause the agent to leave the grid
 will leave its position unchanged. The reward received by the agent is a 2-element vector. The first element is a
 time penalty, which is -1 on all turns. The second element is the treasure value which is 0 except when the agent
-moves into a treasure location, when it is the value indicated. """
+moves into a treasure location, when it is the value indicated.
+
+FINAL STATE: To reach any final state.
+
+REF: Empirical Evaluation methods for multi-objective reinforcement learning algorithms
+    (Vamplew, Dazeley, Berry, Issabekov and Dekker) 2011
+"""
+from models import Vector
 from .env_mesh import EnvMesh
 
 
@@ -18,7 +25,7 @@ class DeepSeaTreasure(EnvMesh):
         (-1, 1), (-3, 2), (-5, 3), (-7, 5), (-8, 8), (-9, 16), (-13, 24), (-14, 50), (-17, 74), (-19, 124)
     ]
 
-    def __init__(self, mesh_shape=(10, 11), initial_state=(0, 0), default_reward=0., seed=0):
+    def __init__(self, initial_state: tuple = (0, 0), default_reward: tuple = (0,), seed: int = 0):
         """
         :param initial_state:
         :param default_reward:
@@ -50,44 +57,54 @@ class DeepSeaTreasure(EnvMesh):
         obstacles = obstacles.union([(7, y) for y in range(8, 11)])
         obstacles = obstacles.union([(8, y) for y in range(10, 11)])
 
-        super().__init__(mesh_shape, seed, initial_state=initial_state, default_reward=default_reward, finals=finals,
-                         obstacles=obstacles)
+        mesh_shape = (10, 11)
 
-    def step(self, action) -> (object, [float, float], bool, dict):
+        # Default reward plus time (time_inverted, treasure_value)
+        default_reward = (-1,) + default_reward
+        default_reward = Vector(default_reward)
+
+        super().__init__(mesh_shape=mesh_shape, seed=seed, initial_state=initial_state, default_reward=default_reward,
+                         finals=finals, obstacles=obstacles)
+
+    def step(self, action: int) -> (tuple, Vector, bool, dict):
         """
         Given an action, do a step
         :param action:
         :return: (state, (time_inverted, treasure_value), final, info)
         """
 
-        # (time_inverted, treasure_value)
-        rewards = [0., 0.]
+        # Initialize rewards as vector (plus zero to fast copy)
+        rewards = self.default_reward + 0
 
         # Get new state
-        new_state = self._next_state(action=action)
+        new_state = self.next_state(action=action)
 
         # Update previous state
         self.current_state = new_state
 
-        # Get time inverted
-        rewards[0] = -1
-
         # Get treasure value
-        rewards[1] = self.finals.get(self.current_state, self.default_reward)
+        rewards[1] = self.finals.get(self.current_state, self.default_reward[1])
 
         # Set info
         info = {}
 
-        # If agent is in treasure
-        final = self.current_state in self.finals.keys()
+        # Check is_final
+        final = self.is_final(self.current_state)
 
         return self.current_state, rewards, final, info
 
-    def reset(self):
+    def reset(self) -> tuple:
         """
         Reset environment to zero.
         :return:
         """
         self.current_state = self.initial_state
-
         return self.current_state
+
+    def is_final(self, state: tuple = None) -> bool:
+        """
+        Return True if state given is terminal, False in otherwise.
+        :param state:
+        :return:
+        """
+        return state in self.finals.keys()

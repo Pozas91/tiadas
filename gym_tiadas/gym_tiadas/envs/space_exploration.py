@@ -8,8 +8,13 @@ occupied by an asteroid, the ship is destroyed, the episode ends, and the agent 
 radiation exposure subject to meeting minimum habitability requirements. in Space Exploration the agent can move to
 all eight neighbouring states (i.e. there are eight actions). Also if the agent leaves the bounds of the grid,
 it moves to the opposite edge of the grid. For example if the agent moves up from the top row of the grid,
-it will move to the bottom row of the same column). """
+it will move to the bottom row of the same column).
 
+FINAL STATES: To reach any of x-value states.
+
+REF: P. Vamplew et al. (2017)
+"""
+from models import Vector
 from .env_mesh import EnvMesh
 
 
@@ -17,10 +22,10 @@ class SpaceExploration(EnvMesh):
     # Possible actions
     _actions = {'UP': 0, 'UP RIGHT': 1, 'RIGHT': 2, 'DOWN RIGHT': 3, 'DOWN': 4, 'DOWN LEFT': 5, 'LEFT': 6, 'UP LEFT': 7}
 
-    def __init__(self, mesh_shape=(13, 5), initial_state=(5, 2), default_reward=0., seed=0):
+    def __init__(self, initial_state: tuple = (5, 2), default_reward: tuple = (0, -1), seed: int = 0):
         """
         :param initial_state:
-        :param default_reward:
+        :param default_reward: (mission_success, radiation)
         :param seed:
         """
 
@@ -30,10 +35,12 @@ class SpaceExploration(EnvMesh):
         finals.update({(9, i): 10 for i in range(3)})
         finals.update({(12, i): 30 for i in range(5)})
 
-        obstacles = dict()
+        obstacles = frozenset()
+        mesh_shape = (13, 5)
+        default_reward = Vector(default_reward)
 
-        super().__init__(mesh_shape, seed, initial_state=initial_state, default_reward=default_reward, finals=finals,
-                         obstacles=obstacles)
+        super().__init__(mesh_shape=mesh_shape, seed=seed, initial_state=initial_state, default_reward=default_reward,
+                         finals=finals, obstacles=obstacles)
 
         self.asteroids = {
             (5, 0), (4, 1), (6, 1), (3, 2), (7, 2), (4, 3), (6, 3), (5, 4)
@@ -44,42 +51,38 @@ class SpaceExploration(EnvMesh):
         self.radiations = self.radiations.union({(10, i) for i in range(5)})
         self.radiations = self.radiations.union({(11, i) for i in range(5)})
 
-    def step(self, action) -> (object, [float, float], bool, dict):
+    def step(self, action: int) -> (tuple, Vector, bool, dict):
         """
         Given an action, do a step
         :param action:
         :return: (state, (mission_success, radiation), final, info)
         """
 
-        # (mission_success, radiation)
-        rewards = [0., 0.]
+        # Initialize rewards as vector (plus zero to fast copy)
+        rewards = self.default_reward + 0
 
         # Get new state
-        new_state = self._next_state(action=action)
+        new_state = self.next_state(action=action)
 
         # Update previous state
         self.current_state = new_state
 
-        # If agent is in a radiation state, the penalty is -11, else is -1.
-        rewards[1] = -11 if self.current_state in self.radiations else -1
+        # If the ship crash with asteroid, the ship is destroyed. else mission success.
+        rewards[0] = -100 if self.current_state in self.asteroids else self.finals.get(self.current_state,
+                                                                                       self.default_reward[0])
 
-        if self.current_state in self.asteroids:
-            # If the ship enters a cell occupied by an asteroid, the ship is destroyed.
-            rewards[0] = -100
-            # And the episode ends.
-            final = True
-        else:
-            # Get mission_success
-            rewards[0] = self.finals.get(self.current_state, self.default_reward)
-            # If agent is in final state
-            final = self.current_state in self.finals.keys()
+        # If agent is in a radiation state, the penalty is -11, else is default radiation
+        rewards[1] = -11 if self.current_state in self.radiations else self.default_reward[1]
+
+        # Check if is_final
+        final = self.is_final(self.current_state)
 
         # Set info
         info = {}
 
         return self.current_state, rewards, final, info
 
-    def reset(self):
+    def reset(self) -> tuple:
         """
         Reset environment to zero.
         :return:
@@ -87,15 +90,17 @@ class SpaceExploration(EnvMesh):
         self.current_state = self.initial_state
         return self.current_state
 
-    def _next_state(self, action) -> object:
+    def next_state(self, action: int, state: tuple = None) -> tuple:
         """
         Calc next state with current state and action given, in this environment is 8-neighbors.
-        :param action:
+        :param state: If a state is given, do action from that state.
+        :param action: from action_space
         :return:
         """
 
         # Get my position
-        x, y = self.current_state
+        x, y = state if state else self.current_state
+
         # Get observations spaces
         observation_space_x, observation_space_y = self.observation_space.spaces
 
@@ -131,7 +136,8 @@ class SpaceExploration(EnvMesh):
         # Return (x, y) position
         return new_state
 
-    def __move_up(self, y, limit=5):
+    @staticmethod
+    def __move_up(y: int, limit: int = 5) -> int:
         """
         Move to up
         :param y:
@@ -140,7 +146,8 @@ class SpaceExploration(EnvMesh):
         """
         return (y if y > 0 else limit) - 1
 
-    def __move_right(self, x, limit=13):
+    @staticmethod
+    def __move_right(x: int, limit: int = 13) -> int:
         """
         Move to right
         :param x:
@@ -149,7 +156,8 @@ class SpaceExploration(EnvMesh):
         """
         return (x + 1) % limit
 
-    def __move_down(self, y, limit=5):
+    @staticmethod
+    def __move_down(y: int, limit: int = 5) -> int:
         """
         Move to down
         :param y:
@@ -158,7 +166,8 @@ class SpaceExploration(EnvMesh):
         """
         return (y + 1) % limit
 
-    def __move_left(self, x, limit=13):
+    @staticmethod
+    def __move_left(x: int, limit: int = 13) -> int:
         """
         Move to left
         :param x:
@@ -166,3 +175,31 @@ class SpaceExploration(EnvMesh):
         :return:
         """
         return (x if x > 0 else limit) - 1
+
+    def is_final(self, state: tuple = None) -> bool:
+        """
+        Is final if agent crash with asteroid or is on final state.
+        :param state:
+        :return:
+        """
+
+        # Check if agent crash with asteroid
+        crash = state in self.asteroids
+        # Check if agent is in final state
+        final = state in self.finals.keys()
+
+        return crash or final
+
+    def get_dict_model(self) -> dict:
+        """
+        Get dict model of environment
+        :return:
+        """
+
+        data = super().get_dict_model()
+
+        # Clean specific environment data
+        del data['radiations']
+        del data['asteroids']
+
+        return data
