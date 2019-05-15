@@ -316,13 +316,14 @@ def graphs_dps():
     env = DeepSeaTreasure()
     # If epsilon is greater than 0.7 program may throw an exception with reference point is invalid. (Appears a
     # vector (-26, 124))
-    epsilon = 0.70
+    epsilon = 0.65
     states_to_observe = [
         (0, 0)
     ]
     hv_reference = Vector([-25, 0])
 
-    evaluation_mechanisms = ['HV-PQL', 'PO-PQL', 'C-PQL']
+    # evaluation_mechanisms = ['HV-PQL', 'PO-PQL', 'C-PQL']
+    evaluation_mechanisms = ['C-PQL']
     epochs = 3000
     iterations = 100
 

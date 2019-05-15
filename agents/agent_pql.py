@@ -16,17 +16,41 @@ Sample call:
     
     1) train
     
-    ..........
+        # Instance of environment
+        env = DeepSeaTreasure()
+
+        # Instance of agent
+        agent = AgentPQL(environment=env)
+
+        # Train agent
+        agent.train() # Optional you can pass a number of epochs, e.g. agent.train(epochs=3000)
     
     
     2) write agent to file
     
-    .........
+        # Instance of environment
+        env = DeepSeaTreasure()
+
+        # Instance of agent
+        agent = AgentPQL(environment=env)
+
+        # Write to file
+        agent.save() # Optional you can pass a filename, e.g. agent.save(filename='my_agent')
     
     
     3) read agent from file
     
-    .........
+        # Instance of environment
+        env = DeepSeaTreasure()
+
+        # Evaluation mechanism
+        evaluation_mechanism = 'C-PQL'
+
+        # Recover agent with that features
+        agent = AgentPQL.load(environment=env, evaluation_mechanism=evaluation_mechanism)
+
+        # Optional you can pass a filename
+        agent = AgentPQL.load(filename='my_agent')
     
 
 NOTE: Each environment defines its default reward, either integer or float.
