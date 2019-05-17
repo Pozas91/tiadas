@@ -38,7 +38,7 @@ class TestBuridanAss(unittest.TestCase):
         self.assertEqual(spaces.Tuple((spaces.Discrete(3), spaces.Discrete(3))), self.environment.observation_space)
 
         # By default action space is 5 (UP, RIGHT, DOWN, LEFT, STAY)
-        self.assertEqual(spaces.Discrete(5), self.environment.action_space)
+        self.assertIsInstance(self.environment.action_space, spaces.Space)
 
         # By default initial state is (1, 1)
         self.assertEqual((1, 1), self.environment.initial_state)

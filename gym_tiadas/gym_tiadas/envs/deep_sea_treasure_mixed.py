@@ -5,6 +5,8 @@ from .deep_sea_treasure import DeepSeaTreasure
 
 
 class DeepSeaTreasureMixed(DeepSeaTreasure):
+    # Possible actions
+    _actions = {'UP': 0, 'RIGHT': 1, 'DOWN': 2, 'LEFT': 3}
 
     def __init__(self, initial_state: tuple = (0, 0), default_reward: tuple = (0,), seed: int = 0):
         """

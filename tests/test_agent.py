@@ -60,3 +60,21 @@ class TestAgent(unittest.TestCase):
         self.agent.reset_iterations()
 
         self.assertEqual(self.agent.iterations, 0)
+
+    def test_reset_states_to_observe(self):
+        """
+        Testing reset states to observe method.
+        :return:
+        """
+
+        # Set states to observe
+        self.agent.states_to_observe = {
+            (0, 0): [1, 2, 3, 4, 5, 6],
+            (1, 1): [1, 2, 30, 4, 5, 6],
+        }
+
+        # Reset states to observe
+        self.agent.reset_states_to_observe()
+
+        for state in self.agent.states_to_observe.keys():
+            self.assertEqual(list, self.agent.states_to_observe.get(state))

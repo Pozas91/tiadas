@@ -162,4 +162,4 @@ fabric.properties
 draft.py
 
 # Ignore dumps directory
-# dumps/*
+dumps/*

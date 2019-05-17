@@ -181,41 +181,6 @@ class AgentQ(Agent):
 
     def show_policy(self) -> None:
         """
-        Show policy's matrix
-        :return:
-        """
-
-        # Get rows and cols from states
-        rows, cols = self.environment.observation_space.spaces[1].n, self.environment.observation_space.spaces[0].n
-
-        for y in range(rows):
-            for x in range(cols):
-
-                state = (x, y)
-
-                # Check if our agent has obstacles attribute, if it has, check if state `state` is in an obstacle.
-                if hasattr(self.environment, 'obstacles') and state in self.environment.obstacles:
-                    icon = self.__icons.get('BLOCK')
-
-                # If state not in Q dictionary, we unknown the state.
-                elif state not in self.q.keys():
-                    icon = '-'
-
-                # Get best action
-                else:
-                    icon = self.best_action(state=state)
-
-                # Show col
-                print('| {} '.format(icon), end='')
-
-            # New row
-            print('|')
-
-        # New line
-        print('')
-
-    def show_raw_policy(self) -> None:
-        """
         Show all states with it's best action
         :return:
         """
@@ -249,7 +214,7 @@ class AgentQ(Agent):
         possible_actions = self.q.get(state, {})
 
         # Get unknown actions with default reward
-        for action in range(self.environment.action_space.n):
+        for action in self.environment.action_space:
             if action not in possible_actions:
                 possible_actions.update({action: self.environment.default_reward.zero_vector})
 
@@ -293,7 +258,7 @@ class AgentQ(Agent):
         possible_actions = self.q.get(state, {})
 
         # Get unknown actions with default reward
-        for action in range(self.environment.action_space.n):
+        for action in self.environment.action_space:
             if action not in possible_actions:
                 possible_actions.update({action: self.environment.default_reward.zero_vector})
 

@@ -63,10 +63,10 @@ This seems faster than using either deepcopy (≈ 247% faster) or copy
 import datetime
 import importlib
 import json
+import math
 import os
 from copy import deepcopy
 
-import math
 import matplotlib
 import numpy as np
 
@@ -149,8 +149,15 @@ class AgentPQL(Agent):
             # Do step on environment
             next_state, rewards, is_final, info = self.environment.step(action=action)
 
-            # Update ND policies of s' in s
-            self.update_nd_s_a(state=self.state, action=action, next_state=next_state)
+            # Check if is final
+            if is_final:
+                # ND(s, a) <- Zero vector
+                nd_s_a_dict = self.nd.get(self.state, {})
+                nd_s_a_dict.update({action: [self.environment.default_reward.zero_vector]})
+                self.nd.update({self.state: nd_s_a_dict})
+            else:
+                # Update ND policies of s' in s
+                self.update_nd_s_a(state=self.state, action=action, next_state=next_state)
 
             # Update numbers of occurrences
             n_s_a = self.get_and_update_n_s_a(state=self.state, action=action)
@@ -167,8 +174,12 @@ class AgentPQL(Agent):
 
         # Append new data for graphical output
         for state, data in self.states_to_observe.items():
+
+            # Set state
+            self.environment.current_state = state
+
             # Add to data Best value (V max)
-            value = self._best_hypervolume(state)
+            value = self._best_hypervolume()
 
             # Add to data Best value (V max)
             data.append(value)
@@ -229,7 +240,7 @@ class AgentPQL(Agent):
         union = list()
 
         # for each action in actions
-        for a in self.environment.actions.values():
+        for a in self.environment.action_space:
             # Get Q(s, a)
             q = self.q_set(state=next_state, action=a)
 
@@ -274,13 +285,10 @@ class AgentPQL(Agent):
         self.nd = dict()
         self.n = dict()
         self.state = self.environment.reset()
-        self.iterations = 0
 
-        # Reset states to observe
-        for state in self.states_to_observe:
-            self.states_to_observe.update({
-                state: list()
-            })
+        # Resets
+        self.reset_iterations()
+        self.reset_states_to_observe()
 
     def best_action(self, state: object = None) -> int:
         """
@@ -335,7 +343,7 @@ class AgentPQL(Agent):
             min_action = None
 
             # For each a in environments actions.
-            for a in self.environment.actions.values():
+            for a in self.environment.action_space:
 
                 # If path is found
                 if found:
@@ -401,18 +409,19 @@ class AgentPQL(Agent):
 
         return path
 
-    def _best_hypervolume(self, state: object) -> float:
+    def _best_hypervolume(self) -> float:
         """
         Return best hypervolume for state given.
         :param state:
         :return:
         """
 
+        # Hypervolume list
         hv = list()
 
-        for a in self.environment.actions.values():
+        for a in self.environment.action_space:
             # Get Q-set from state given for each possible action.
-            q_set = self.q_set(state=state, action=a)
+            q_set = self.q_set(state=self.environment.current_state, action=a)
 
             # Calc hypervolume of Q_set, with reference given.
             hv.append(uh.calc_hypervolume(list_of_vectors=q_set, reference=self.hv_reference))
@@ -430,7 +439,7 @@ class AgentPQL(Agent):
         max_evaluation = float('-inf')
 
         # for each a in actions
-        for a in self.environment.actions.values():
+        for a in self.environment.action_space:
 
             # Get Q-set from state given for each possible action.
             q_set = self.q_set(state=state, action=a)
@@ -463,11 +472,11 @@ class AgentPQL(Agent):
         # List of all Qs
         all_q = list()
 
-        # Get all available actions
-        available_actions = self.environment.actions.values()
+        # Getting action_space
+        action_space = self.environment.action_space
 
         # for each a in actions
-        for a in available_actions:
+        for a in action_space:
 
             # Get Q-set from state given for each possible action.
             q_set = self.q_set(state=state, action=a)
@@ -478,7 +487,7 @@ class AgentPQL(Agent):
 
         # NDQs <- ND(all_q). Keep only the non-dominating solutions
         actions = ActionVector.actions_occurrences_based_m3_with_repetitions(
-            vectors=all_q, number_of_actions=len(available_actions)
+            vectors=all_q, number_of_actions=action_space.n
         )
 
         # Get max action
@@ -500,11 +509,11 @@ class AgentPQL(Agent):
         # List of all Qs
         all_q = list()
 
-        # Get all available actions
-        available_actions = self.environment.actions.values()
+        # Getting action_space
+        action_space = self.environment.action_space
 
         # for each a in actions
-        for a in available_actions:
+        for a in action_space:
 
             # Get Q-set from state given for each possible action.
             q_set = self.q_set(state=state, action=a)
@@ -515,7 +524,7 @@ class AgentPQL(Agent):
 
         # NDQs <- ND(all_q). Keep only the non-dominating solutions
         actions = ActionVector.actions_occurrences_based_m3_with_repetitions(
-            vectors=all_q, number_of_actions=len(available_actions)
+            vectors=all_q, number_of_actions=action_space.n
         )
 
         # Get actions that have almost a non dominated vector.
@@ -523,7 +532,7 @@ class AgentPQL(Agent):
 
         # If actions is empty, get all available actions.
         if len(actions) <= 0:
-            actions = available_actions
+            actions = action_space
 
         # from best actions get one aleatory
         return self.generator.choice(actions)
@@ -717,7 +726,7 @@ class AgentPQL(Agent):
         # Set environment data
         for key, value in environment_data.items():
 
-            if 'state' in key or 'transactions' in key:
+            if 'state' in key or 'transitions' in key:
                 # Convert to tuples to hash
                 value = um.lists_to_tuples(value)
 

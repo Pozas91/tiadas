@@ -26,13 +26,13 @@ class TestRusselAndNorvig(unittest.TestCase):
         """
 
         # This environment must have another attributes
-        self.assertTrue(hasattr(self.environment, 'transactions'))
+        self.assertTrue(hasattr(self.environment, 'transitions'))
 
         # By default mesh shape is 4x3
         self.assertEqual(spaces.Tuple((spaces.Discrete(4), spaces.Discrete(3))), self.environment.observation_space)
 
         # By default action space is 4 (UP, RIGHT, DOWN, LEFT)
-        self.assertEqual(spaces.Discrete(4), self.environment.action_space)
+        self.assertIsInstance(self.environment.action_space, spaces.Space)
 
         # By default initial state is (0, 2)
         self.assertEqual((0, 2), self.environment.initial_state)
@@ -177,7 +177,7 @@ class TestRusselAndNorvig(unittest.TestCase):
         # Remember that initial state is (0, 2)
 
         # To testing force to go always in desired direction.
-        self.environment.transactions = [1, 0, 0, 0]
+        self.environment.transitions = [1, 0, 0, 0]
 
         # Reset environment
         self.environment.reset()
@@ -211,14 +211,14 @@ class TestRusselAndNorvig(unittest.TestCase):
         self.assertTrue(is_final)
 
         ################################################################################################################
-        # Testing transactions
+        # Testing transitions
         ################################################################################################################
 
         # Reset environment
         self.environment.reset()
 
-        # Force DIR_90 transaction
-        self.environment.transactions = [0, 1, 0, 0]
+        # Force DIR_90 transition
+        self.environment.transitions = [0, 1, 0, 0]
 
         # Agent turns to RIGHT
         new_state, reward, is_final, _ = self.environment.step(action=self.environment.actions.get('UP'))

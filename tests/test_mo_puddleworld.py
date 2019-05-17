@@ -29,7 +29,7 @@ class TestMoPuddleWorld(unittest.TestCase):
         self.assertEqual(spaces.Tuple((spaces.Discrete(20), spaces.Discrete(20))), self.environment.observation_space)
 
         # By default action space is 4 (UP, RIGHT, DOWN, LEFT)
-        self.assertEqual(spaces.Discrete(4), self.environment.action_space)
+        self.assertIsInstance(self.environment.action_space, spaces.Space)
 
         # Default reward is (10, 0)
         self.assertEqual((10, 0), self.environment.default_reward)

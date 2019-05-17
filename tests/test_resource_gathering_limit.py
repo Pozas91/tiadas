@@ -34,7 +34,7 @@ class TestResourceGatheringLimit(unittest.TestCase):
         self.assertEqual(spaces.Tuple((spaces.Discrete(5), spaces.Discrete(5))), self.environment.observation_space)
 
         # By default action space is 4 (UP, RIGHT, DOWN, LEFT)
-        self.assertEqual(spaces.Discrete(4), self.environment.action_space)
+        self.assertIsInstance(self.environment.action_space, spaces.Space)
 
         # By default initial state is (2, 4)
         self.assertEqual((2, 4), self.environment.initial_state)
