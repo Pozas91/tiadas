@@ -19,6 +19,7 @@ import gym
 from gym.utils import seeding
 
 from models import Vector
+from spaces import IterableDiscrete
 
 
 class Environment(gym.Env):
@@ -39,7 +40,8 @@ class Environment(gym.Env):
         """
 
         # Set action space
-        self.action_space = gym.spaces.Discrete(len(self.actions))
+        self._action_space = IterableDiscrete(len(self._actions))
+        self._action_space.seed(seed=seed)
 
         # Create the observation space
         self.observation_space = observation_space
@@ -80,6 +82,10 @@ class Environment(gym.Env):
         :return:
         """
         return self._icons
+
+    @property
+    def action_space(self) -> gym.spaces:
+        return self._action_space
 
     def step(self, action: int) -> (object, Vector, bool, dict):
         """
@@ -138,7 +144,7 @@ class Environment(gym.Env):
         data['default_reward'] = model.default_reward.tolist()
 
         # Clean Environment Data
-        del data['action_space']
+        del data['_action_space']
         del data['observation_space']
         del data['np_random']
         del data['finals']

@@ -1,8 +1,8 @@
 # Utils
 
 * [Hipervolumen `utils.hypervolume`](hypervolume.md)
-* [Pareto `utils.pareto`](pareto.md)
 * [Utilidades varias `utils.miscellaneous`](miscellaneous.md)
 * [Seeding](seeding.md)
+* [Modelos](models.md)
 
 [< Volver](../index.md)

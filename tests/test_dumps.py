@@ -231,9 +231,9 @@ class TestDumps(unittest.TestCase):
         self.assertEqual(agent.environment.initial_seed, agent_loaded.environment.initial_seed)
         self.assertEqual(agent.environment.default_reward, agent_loaded.environment.default_reward)
 
-    def test_deep_sea_treasure_transactions(self):
+    def test_deep_sea_treasure_transitions(self):
         """
-        Testing agent with DeepSeaTreasureTransactions environment.
+        Testing agent with DeepSeaTreasureTransitions environment.
         :return:
         """
         initial_state = (1, 1)
@@ -249,8 +249,8 @@ class TestDumps(unittest.TestCase):
         n_transaction = 0.33
 
         # Instance of Environment
-        env = DeepSeaTreasureTransactions(initial_state=initial_state, default_reward=default_reward, seed=seed,
-                                          n_transaction=n_transaction)
+        env = DeepSeaTreasureTransitions(initial_state=initial_state, default_reward=default_reward, seed=seed,
+                                         n_transaction=n_transaction)
 
         # Instance of AgentMOMP
         agent = AgentPQL(environment=env, epsilon=epsilon, states_to_observe=states_to_observe,
@@ -281,7 +281,7 @@ class TestDumps(unittest.TestCase):
         self.assertEqual(agent.environment.initial_state, agent_loaded.environment.initial_state)
         self.assertEqual(agent.environment.initial_seed, agent_loaded.environment.initial_seed)
         self.assertEqual(agent.environment.default_reward, agent_loaded.environment.default_reward)
-        self.assertEqual(agent.environment.transactions, agent_loaded.environment.transactions)
+        self.assertEqual(agent.environment.transitions, agent_loaded.environment.transitions)
 
     def test_linked_rings(self):
         """

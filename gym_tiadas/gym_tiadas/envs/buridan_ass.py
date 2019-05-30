@@ -63,8 +63,8 @@ class BuridanAss(EnvMesh):
         :return:
         """
 
-        # Initialize rewards as vector (plus zero to fast copy)
-        rewards = self.default_reward + 0
+        # Initialize rewards as vector
+        rewards = self.default_reward.copy()
 
         # (state, states_visible_with_food, last_ate)
         complex_state = [None, None, None]

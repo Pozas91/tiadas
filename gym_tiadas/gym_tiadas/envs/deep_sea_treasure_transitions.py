@@ -1,5 +1,5 @@
 """
-Such as DeepSeaTreasure environment but has a vector of transactions probabilities, which will be used when an action
+Such as DeepSeaTreasure environment but has a vector of transitions probabilities, which will be used when an action
 is to be taken.
 
 
@@ -8,7 +8,7 @@ from models import Vector
 from .env_mesh import EnvMesh
 
 
-class DeepSeaTreasureTransactions(EnvMesh):
+class DeepSeaTreasureTransitions(EnvMesh):
     # Possible actions
     _actions = {'UP': 0, 'RIGHT': 1, 'DOWN': 2, 'LEFT': 3}
 
@@ -60,7 +60,7 @@ class DeepSeaTreasureTransactions(EnvMesh):
         assert 0 <= n_transaction <= 1.
 
         # [DIR_0, DIR_90, DIR_180, DIR_270] transaction tuple
-        self.transactions = (1. - n_transaction, n_transaction / 3, n_transaction / 3, n_transaction / 3)
+        self.transitions = (1. - n_transaction, n_transaction / 3, n_transaction / 3, n_transaction / 3)
 
     def step(self, action: int) -> (tuple, Vector, bool, dict):
         """
@@ -72,8 +72,8 @@ class DeepSeaTreasureTransactions(EnvMesh):
         # Get probability action
         action = self.__probability_action(action=action)
 
-        # Initialize rewards as vector (plus zero to fast copy)
-        rewards = self.default_reward + 0
+        # Initialize rewards as vector
+        rewards = self.default_reward.copy()
 
         # Get new state
         new_state = self.next_state(action=action)
@@ -103,7 +103,7 @@ class DeepSeaTreasureTransactions(EnvMesh):
 
     def __probability_action(self, action: int) -> int:
         """
-        Decide probability action after apply probabilistic transactions.
+        Decide probability action after apply probabilistic transitions.
         :param action:
         :return:
         """
@@ -112,10 +112,10 @@ class DeepSeaTreasureTransactions(EnvMesh):
         random = self.np_random.uniform()
 
         # Start with first direction
-        direction = self._actions.get('UP')
+        direction = 0
 
         # Accumulate roulette
-        roulette = self.transactions[direction]
+        roulette = self.transitions[direction]
 
         # While random is greater than roulette
         while random > roulette:
@@ -123,7 +123,7 @@ class DeepSeaTreasureTransactions(EnvMesh):
             direction += 1
 
             # Increment roulette
-            roulette += self.transactions[direction]
+            roulette += self.transitions[direction]
 
         # Cyclic direction
         return (direction + action) % self.action_space.n

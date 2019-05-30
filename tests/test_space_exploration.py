@@ -33,7 +33,7 @@ class TestSpaceExploration(unittest.TestCase):
         self.assertEqual(spaces.Tuple((spaces.Discrete(13), spaces.Discrete(5))), self.environment.observation_space)
 
         # By default action space is 8 (UP, UP-RIGHT, RIGHT, DOWN-RIGHT, DOWN, DOWN-LEFT, LEFT, UP-LEFT)
-        self.assertEqual(spaces.Discrete(8), self.environment.action_space)
+        self.assertIsInstance(self.environment.action_space, spaces.Space)
 
         # By default initial state is (5, 2)
         self.assertEqual((5, 2), self.environment.initial_state)

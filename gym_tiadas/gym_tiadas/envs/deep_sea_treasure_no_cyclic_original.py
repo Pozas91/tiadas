@@ -13,12 +13,13 @@ REF: Empirical Evaluation methods for multi-objective reinforcement learning alg
     (Vamplew, Dazeley, Berry, Issabekov and Dekker) 2011
 """
 from models import Vector
+from spaces import DynamicSpace
 from .env_mesh import EnvMesh
 
 
-class DeepSeaTreasure(EnvMesh):
+class DeepSeaTreasureNoCyclicOriginal(EnvMesh):
     # Possible actions
-    _actions = {'UP': 0, 'RIGHT': 1, 'DOWN': 2, 'LEFT': 3}
+    _actions = {'RIGHT': 0, 'DOWN': 1}
 
     # Pareto optimal
     pareto_optimal = [
@@ -66,6 +67,10 @@ class DeepSeaTreasure(EnvMesh):
         super().__init__(mesh_shape=mesh_shape, seed=seed, initial_state=initial_state, default_reward=default_reward,
                          finals=finals, obstacles=obstacles)
 
+        # Trying improve performance
+        self.dynamic_action_space = DynamicSpace([])
+        self.dynamic_action_space.seed(seed=seed)
+
     def step(self, action: int) -> (tuple, Vector, bool, dict):
         """
         Given an action, do a step
@@ -108,3 +113,72 @@ class DeepSeaTreasure(EnvMesh):
         :return:
         """
         return state in self.finals.keys()
+
+    def next_state(self, action: int, state: tuple = None) -> tuple:
+        """
+        Calc next state with current state and action given. Default is 4-neighbors (UP, LEFT, DOWN, RIGHT)
+        :param state: If a state is given, do action from that state.
+        :param action: from action_space
+        :return: a new state (or old if is invalid action)
+        """
+
+        # Get my position
+        x, y = state if state else self.current_state
+
+        # Do movement
+        if action == self._actions.get('RIGHT'):
+            x += 1
+        elif action == self._actions.get('DOWN'):
+            y += 1
+
+        # Set new state
+        new_state = x, y
+
+        # If exists obstacles, then new_state must be in self.obstacles
+        is_obstacle = bool(self.obstacles) and new_state in self.obstacles
+
+        if not self.observation_space.contains(new_state) or is_obstacle or state == new_state:
+            raise ValueError("Action/State combination isn't valid.")
+
+        # Return (x, y) position
+        return new_state
+
+    @property
+    def action_space(self) -> DynamicSpace:
+        """
+        Get a dynamic action space with only valid actions.
+        :return:
+        """
+
+        # Get current state
+        x, y = self.current_state
+
+        # Setting possible actions
+        possible_actions = []
+
+        # Get all actions available
+
+        # Can we go to right?
+        x_right = x + 1
+
+        # Check that x_right is not an obstacle and is into mesh
+        if (x_right, y) not in self.obstacles and self.observation_space.contains((x_right, y)):
+            # We can go to right
+            possible_actions.append(self._actions.get('RIGHT'))
+
+        # Can we go to down?
+        y_down = y + 1
+
+        # Check that y_down is not an obstacle and is into mesh
+        if (x, y_down) not in self.obstacles and self.observation_space.contains((x, y_down)):
+            # We can go to down
+            possible_actions.append(self._actions.get('DOWN'))
+
+        # Setting to dynamic_space
+        self.dynamic_action_space.items = possible_actions
+
+        # Update n length
+        self.dynamic_action_space.n = len(possible_actions)
+
+        # Return a list of iterable valid actions
+        return self.dynamic_action_space

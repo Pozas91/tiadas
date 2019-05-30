@@ -2,7 +2,7 @@ from .bonus_world import BonusWorld
 from .buridan_ass import BuridanAss
 from .deep_sea_treasure import DeepSeaTreasure
 from .deep_sea_treasure_simplified import DeepSeaTreasureSimplified
-from .deep_sea_treasure_transactions import DeepSeaTreasureTransactions
+from .deep_sea_treasure_transitions import DeepSeaTreasureTransitions
 from .environment import Environment
 from .linked_rings import LinkedRings
 from .mo_puddle_world import MoPuddleWorld
@@ -12,3 +12,12 @@ from .resource_gathering import ResourceGathering
 from .resource_gathering_limit import ResourceGatheringLimit
 from .russell_and_norvig import RussellNorvig
 from .space_exploration import SpaceExploration
+
+# No cycles problem
+from .no_cycles_1 import NoCycles1
+from .no_cycles_2 import NoCycles2
+from .no_cycles_3 import NoCycles3
+from .deep_sea_treasure_no_cyclic_1 import DeepSeaTreasureNoCyclic1
+from .deep_sea_treasure_no_cyclic_2 import DeepSeaTreasureNoCyclic2
+from .deep_sea_treasure_no_cyclic_3 import DeepSeaTreasureNoCyclic3
+from .deep_sea_treasure_no_cyclic_4 import DeepSeaTreasureNoCyclic4

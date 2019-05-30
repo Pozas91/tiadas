@@ -29,7 +29,7 @@ class TestPressurizedBountifulSeaTreasure(unittest.TestCase):
         self.assertEqual(spaces.Tuple((spaces.Discrete(10), spaces.Discrete(11))), self.environment.observation_space)
 
         # By default action space is 4 (UP, RIGHT, DOWN, LEFT)
-        self.assertEqual(spaces.Discrete(4), self.environment.action_space)
+        self.assertIsInstance(self.environment.action_space, spaces.Space)
 
         # By default initial state is (0, 0)
         self.assertEqual((0, 0), self.environment.initial_state)

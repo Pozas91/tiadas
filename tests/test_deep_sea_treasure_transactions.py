@@ -6,16 +6,16 @@ import unittest
 
 from gym import spaces
 
-from gym_tiadas.gym_tiadas.envs import DeepSeaTreasureTransactions
+from gym_tiadas.gym_tiadas.envs import DeepSeaTreasureTransitions
 from models import Vector
 
 
-class TestDeepSeaTreasureTransactions(unittest.TestCase):
+class TestDeepSeaTreasureTransitions(unittest.TestCase):
     environment = None
 
     def setUp(self):
         # Set seed to 0 to testing.
-        self.environment = DeepSeaTreasureTransactions(seed=0)
+        self.environment = DeepSeaTreasureTransitions(seed=0)
 
     def tearDown(self):
         self.environment = None
@@ -27,13 +27,13 @@ class TestDeepSeaTreasureTransactions(unittest.TestCase):
         """
 
         # This environment must have another attributes
-        self.assertTrue(hasattr(self.environment, 'transactions'))
+        self.assertTrue(hasattr(self.environment, 'transitions'))
 
         # By default mesh shape is 10x11
         self.assertEqual(spaces.Tuple((spaces.Discrete(10), spaces.Discrete(11))), self.environment.observation_space)
 
         # By default action space is 4 (UP, RIGHT, DOWN, LEFT)
-        self.assertEqual(spaces.Discrete(4), self.environment.action_space)
+        self.assertIsInstance(self.environment.action_space, spaces.Space)
 
         # By default initial state is (0, 0)
         self.assertEqual((0, 0), self.environment.initial_state)
@@ -151,8 +151,8 @@ class TestDeepSeaTreasureTransactions(unittest.TestCase):
         :return:
         """
 
-        # Disable transactions
-        self.environment.transactions = [1, 0, 0, 0]
+        # Disable transitions
+        self.environment.transitions = [1, 0, 0, 0]
 
         # Simple valid step
         # Reward:
@@ -216,8 +216,8 @@ class TestDeepSeaTreasureTransactions(unittest.TestCase):
         # Reset environment
         self.environment.reset()
 
-        # Enable transactions (In this case always turn to direction + DIR_90, 100% probability)
-        self.environment.transactions = [0, 1, 0, 0]
+        # Enable transitions (In this case always turn to direction + DIR_90, 100% probability)
+        self.environment.transitions = [0, 1, 0, 0]
 
         # Simple valid step
         # Reward:

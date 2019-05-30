@@ -33,22 +33,6 @@ funcionalidades, con algunas diferencias que presentamos a continuación.
             * **No recibe parámetros**
         * **Salida**
             * Devuelve un `Vector`, vector que representa a un vector entero.
-    * `all_close(self, v2) -> bool`
-        * **Descripción**
-            * Devuelve un booleano que indica si dos vectores son cercanos, en caso de los flotantes, son cercanos si
-            son iguales o parecidos con un margen establecido en la variable `self.relative`.
-        * **Parámetros**
-            * `v2` - Vector con el cual vamos a comparar el nuestro.
-        * **Salida**
-            * Devuelve un `bool`, booleano que indica si son parecidos o no.
-    * `dominance(self, v2) -> Dominance`
-        * **Descripción**
-            * Devuelve un objeto de la clase [`Dominance`](dominance.md), con la dominancia entre vectores, a diferencia
-            de los vectores enteros, aquí se permite cierto margen establecido por la variable `self.relative`.
-        * **Parámetros**
-            * `v2` - Vector con el cual vamos a comprar el nuestro.
-        * **Salida**
-            * Devuelve un `Dominance`, objeto que indica la dominancia entre vectores.
     * **Estáticos**
         * `m3_max_2_sets_not_duplicates(vectors: list) -> (list, list)`
             * **Descripción**

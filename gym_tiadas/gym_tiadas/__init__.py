@@ -26,8 +26,8 @@ register(
 )
 
 register(
-    id='deep-sea-treasure-transactions-v0',
-    entry_point='gym_tiadas.envs:DeepSeaTreasureTransactions'
+    id='deep-sea-treasure-transitions-v0',
+    entry_point='gym_tiadas.envs:DeepSeaTreasureTransitions'
 )
 
 register(

@@ -103,6 +103,13 @@ class Agent:
         """
         self.iterations = 0
 
+    def reset_states_to_observe(self):
+        """
+        Reset states to observe
+        :return:
+        """
+        self.states_to_observe.update({state: list for state in self.states_to_observe})
+
     def show_observed_states(self) -> None:
         """
         Show graph of observed states

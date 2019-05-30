@@ -4,8 +4,10 @@ This class have a vector of integers (int32).
 """
 
 import math
+
 import numpy as np
 
+import utils.models as um
 from .dominance import Dominance
 
 
@@ -17,7 +19,7 @@ class Vector:
     # Convert float vectors to int vectors
     decimals = 10 ** 2
 
-    # Relative margin to compare of similarity of two float elements.
+    # Relative margin to compare of similarity of two float elements
     relative = 1 / decimals
 
     def __init__(self, components, dtype=int):
@@ -195,7 +197,7 @@ class Vector:
         """
         return np.all(np.less_equal(self.components, other.components))
 
-    @property
+    @um.lazy_property
     def magnitude(self) -> float:
         """
         Return magnitude of vector
@@ -203,13 +205,20 @@ class Vector:
         """
         return math.sqrt(np.sum(self.components ** 2))
 
-    @property
+    @um.lazy_property
     def zero_vector(self):
         """
         Return a zero vector of same type and len that this vector
         :return:
         """
         return self.__class__(np.zeros_like(self.components))
+
+    def copy(self):
+        """
+        Return a copy of this vector
+        :return:
+        """
+        return self.__class__(self.components)
 
     def tolist(self):
         """
@@ -218,22 +227,28 @@ class Vector:
         """
         return self.components.tolist()
 
-    def all_close(self, v2) -> bool:
+    def all_close(self, v2, relative=None) -> bool:
         """
         Returns True if two arrays are element-wise equal within a tolerance.
 
         If either array contains one or more NaNs, False is returned.
 
         As this vector is integer, the tolerance is 0, so this method is like equal comparision.
+        :param relative:
         :param v2:
         :return:
         """
-        return np.array_equal(self, v2)
 
-    def dominance(self, v2) -> Dominance:
+        # Use relative given or self.relative
+        relative = self.relative if not relative else relative
+
+        return np.allclose(self, v2, rtol=relative)
+
+    def dominance(self, v2, relative=None) -> Dominance:
         """
         Check dominance between two Vector objects. Float values are allowed
         and treated with precision according to Vector.relative.
+        :param relative:
         :param v2: a Vector object
         :return: an output value according to the Dominance enum.
         """
@@ -241,22 +256,28 @@ class Vector:
         v1_dominate = False
         v2_dominate = False
 
-        for idx, component in enumerate(self.components):
+        # Use relative given or self.relative
+        relative = self.relative if not relative else relative
 
-            if self.components[idx] > v2.components[idx]:
-                v1_dominate = True
+        # Check if all components are similar
+        if not self.all_close(v2=v2, relative=relative):
 
-                # If already dominate v2, then both vectors are independent.
-                if v2_dominate:
-                    return Dominance.otherwise
+            for idx, component in enumerate(self.components):
 
-            # In this component dominates v2
-            elif self.components[idx] < v2.components[idx]:
-                v2_dominate = True
+                if self.components[idx] > v2.components[idx]:
+                    v1_dominate = True
 
-                # If already dominate v1, then both vectors are independent.
-                if v1_dominate:
-                    return Dominance.otherwise
+                    # If already dominate v2, then both vectors are independent.
+                    if v2_dominate:
+                        return Dominance.otherwise
+
+                # v1's component is dominated by v2
+                elif self.components[idx] < v2.components[idx]:
+                    v2_dominate = True
+
+                    # If already dominate v1, then both vectors are independent.
+                    if v1_dominate:
+                        return Dominance.otherwise
 
         if v1_dominate == v2_dominate:
             # If both dominate, then both vectors are independent.

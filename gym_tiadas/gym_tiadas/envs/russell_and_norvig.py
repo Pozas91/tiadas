@@ -1,5 +1,5 @@
 """
-Mesh problem with a 4x3 grid. We have an agent that try reached goal avoiding a trap. The environment has a transactions
+Mesh problem with a 4x3 grid. We have an agent that try reached goal avoiding a trap. The environment has a transitions
 list of probabilities that can change agent's action to another.
 """
 import numpy as np
@@ -12,10 +12,10 @@ class RussellNorvig(EnvMesh):
     # Possible actions
     _actions = {'UP': 0, 'RIGHT': 1, 'DOWN': 2, 'LEFT': 3}
 
-    def __init__(self, transactions: tuple = (0.8, 0.1, 0., 0.1), initial_state: tuple = (0, 2), seed: int = 0,
+    def __init__(self, transitions: tuple = (0.8, 0.1, 0., 0.1), initial_state: tuple = (0, 2), seed: int = 0,
                  default_reward: tuple = (-0.04,)):
         """
-        :param transactions:
+        :param transitions:
             Probabilities to change direction of action given.
             [DIR_0, DIR_90, DIR_180, DIR_270]
         :param initial_state:
@@ -39,9 +39,9 @@ class RussellNorvig(EnvMesh):
         super().__init__(mesh_shape=mesh_shape, seed=seed, initial_state=initial_state, obstacles=obstacles,
                          finals=finals, default_reward=default_reward)
 
-        assert isinstance(transactions, tuple) and np.isclose(np.sum(transactions), 1) and len(transactions) == len(
+        assert isinstance(transitions, tuple) and np.isclose(np.sum(transitions), 1) and len(transitions) == len(
             self._actions)
-        self.transactions = transactions
+        self.transitions = transitions
 
     def step(self, action: int) -> (tuple, VectorFloat, bool, dict):
         """
@@ -50,8 +50,8 @@ class RussellNorvig(EnvMesh):
         :return:
         """
 
-        # Initialize rewards as vector (plus zero to fast copy)
-        reward = self.default_reward + 0
+        # Initialize rewards as vector
+        reward = self.default_reward.copy()
 
         # Get probability action
         action = self.__probability_action(action=action)
@@ -83,7 +83,7 @@ class RussellNorvig(EnvMesh):
 
     def __probability_action(self, action: int) -> int:
         """
-        Decide probability action after apply probabilistic transactions.
+        Decide probability action after apply probabilistic transitions.
         :param action:
         :return:
         """
@@ -92,10 +92,10 @@ class RussellNorvig(EnvMesh):
         random = self.np_random.uniform()
 
         # Start with first direction
-        direction = self._actions.get('UP')
+        direction = 0
 
         # Accumulate roulette
-        roulette = self.transactions[direction]
+        roulette = self.transitions[direction]
 
         # While random is greater than roulette
         while random > roulette:
@@ -103,7 +103,7 @@ class RussellNorvig(EnvMesh):
             direction += 1
 
             # Increment roulette
-            roulette += self.transactions[direction]
+            roulette += self.transitions[direction]
 
         # Cyclic direction
         return (direction + action) % self.action_space.n

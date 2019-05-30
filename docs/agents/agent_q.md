@@ -49,7 +49,7 @@ cualquier acción que se pueda realizar.
             * **No recibe parámetros**
         * **Salida**
             * **No ofrece salida**
-    * `_update_q_dictionary(self, reward: `[`Vector`](../models/vector.md)`, action: int, next_state: object) -> None`
+    * `_update_q_values(self, reward: `[`Vector`](../models/vector.md)`, action: int, next_state: object) -> None`
         * **Descripción**
             * Este método aplica la fórmula del `Q-Learning` y actualiza los valores esperados en `Q`.
         * **Parámetros**

@@ -73,68 +73,6 @@ class VectorFloat(Vector):
         """
         return Vector((self.components * self.decimals).astype(int))
 
-    def all_close(self, v2) -> bool:
-        """
-        Returns True if two arrays are element-wise equal within a tolerance.
-
-        If either array contains one or more NaNs, False is returned.
-        :param v2:
-        :return:
-        """
-
-        return np.allclose(self, v2, rtol=self.relative)
-
-    def dominance(self, v2) -> Dominance:
-        """
-        Check dominance between two Vector objects. Float values are allowed
-        and treated with precision according to Vector.relative.
-        :param v2: a Vector object
-        :return: an output value according to the Dominance enum.
-        """
-
-        v1_dominate = False
-        v2_dominate = False
-
-        for idx, component in enumerate(self.components):
-
-            # Are equals or close...
-            if np.isclose(self.components[idx], v2.components[idx], rtol=self.relative):
-                # Nothing to do at moment
-                pass
-
-            # In this component dominates v1
-            elif self.components[idx] > v2.components[idx]:
-                v1_dominate = True
-
-                # If already dominate v2, then both vectors are independent.
-                if v2_dominate:
-                    return Dominance.otherwise
-
-            # In this component dominates v2
-            elif self.components[idx] < v2.components[idx]:
-                v2_dominate = True
-
-                # If already dominate v1, then both vectors are independent.
-                if v1_dominate:
-                    return Dominance.otherwise
-
-        if v1_dominate == v2_dominate:
-            # If both dominate, then both vectors are independent.
-            if v1_dominate:
-                return Dominance.otherwise
-
-            # Are equals
-            else:
-                return Dominance.equals
-
-        # v1 dominate to v2
-        elif v1_dominate:
-            return Dominance.dominate
-
-        # v2 dominate to v1
-        else:
-            return Dominance.is_dominated
-
     @staticmethod
     def m3_max_2_sets_not_duplicates(vectors: list) -> (list, list):
         """

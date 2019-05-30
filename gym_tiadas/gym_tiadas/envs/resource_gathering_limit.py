@@ -11,9 +11,6 @@ class ResourceGatheringLimit(EnvMesh):
     # Possible actions
     _actions = {'UP': 0, 'RIGHT': 1, 'DOWN': 2, 'LEFT': 3}
 
-    # Treasures
-    _treasures = {'GOLD': 0, 'GEM': 1}
-
     def __init__(self, initial_state: tuple = (2, 4), default_reward: tuple = (0, 0, 0), seed: int = 0,
                  p_attack: float = 0.1, time_limit: int = 100):
         """
@@ -52,8 +49,8 @@ class ResourceGatheringLimit(EnvMesh):
         :return:
         """
 
-        # Initialize rewards as vector (plus zero to fast copy)
-        rewards = self.default_reward + 0
+        # Initialize rewards as vector
+        rewards = self.default_reward.copy()
 
         # Get new state
         new_state = self.next_state(action=action)
@@ -96,7 +93,7 @@ class ResourceGatheringLimit(EnvMesh):
         :return:
         """
         self.current_state = self.initial_state
-        self.state = self.default_reward + 0
+        self.state = self.default_reward.copy()
 
         # Reset golds positions
         for gold_state in self.gold_states.keys():

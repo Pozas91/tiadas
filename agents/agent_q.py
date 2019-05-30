@@ -14,6 +14,7 @@ from copy import deepcopy
 
 import numpy as np
 
+import utils.models as um
 from gym_tiadas.gym_tiadas.envs import Environment
 from models import Vector
 from .agent import Agent
@@ -29,7 +30,6 @@ class AgentQ(Agent):
     def __init__(self, environment: Environment, alpha: float = 0.1, epsilon: float = 0.1, gamma: float = 1.,
                  seed: int = 0, states_to_observe: list = None, max_iterations: int = None):
         """
-
         :param environment: An environment where agent does any operation.
         :param alpha: Learning rate
         :param epsilon: Epsilon using in e-greedy policy, to explore more states.
@@ -46,7 +46,7 @@ class AgentQ(Agent):
         assert 0 < alpha <= 1
         self.alpha = alpha
 
-        # Initialize to Q-Learning Dictionary
+        # Initialize to Q-Learning values
         self.q = dict()
 
         # Rewards history data
@@ -118,8 +118,8 @@ class AgentQ(Agent):
             history = self.process_reward(reward=reward)
             self.rewards_history.append(history)
 
-            # Update Q-Dictionary
-            self._update_q_dictionary(reward=reward, action=action, next_state=next_state)
+            # Update Q-Values
+            self._update_q_values(reward=reward, action=action, next_state=next_state)
 
             # Update state
             self.state = next_state
@@ -142,7 +142,7 @@ class AgentQ(Agent):
             # Update dictionary
             self.states_to_observe.update({state: data})
 
-    def _update_q_dictionary(self, reward: Vector, action: int, next_state: object) -> None:
+    def _update_q_values(self, reward: Vector, action: int, next_state: object) -> None:
         """
         Update Q-Dictionary with new data
         :param reward:
@@ -181,41 +181,6 @@ class AgentQ(Agent):
 
     def show_policy(self) -> None:
         """
-        Show policy's matrix
-        :return:
-        """
-
-        # Get rows and cols from states
-        rows, cols = self.environment.observation_space.spaces[1].n, self.environment.observation_space.spaces[0].n
-
-        for y in range(rows):
-            for x in range(cols):
-
-                state = (x, y)
-
-                # Check if our agent has obstacles attribute, if it has, check if state `state` is in an obstacle.
-                if hasattr(self.environment, 'obstacles') and state in self.environment.obstacles:
-                    icon = self.__icons.get('BLOCK')
-
-                # If state not in Q dictionary, we unknown the state.
-                elif state not in self.q.keys():
-                    icon = '-'
-
-                # Get best action
-                else:
-                    icon = self.best_action(state=state)
-
-                # Show col
-                print('| {} '.format(icon), end='')
-
-            # New row
-            print('|')
-
-        # New line
-        print('')
-
-    def show_raw_policy(self) -> None:
-        """
         Show all states with it's best action
         :return:
         """
@@ -249,7 +214,7 @@ class AgentQ(Agent):
         possible_actions = self.q.get(state, {})
 
         # Get unknown actions with default reward
-        for action in range(self.environment.action_space.n):
+        for action in self.environment.action_space:
             if action not in possible_actions:
                 possible_actions.update({action: self.environment.default_reward.zero_vector})
 
@@ -293,7 +258,7 @@ class AgentQ(Agent):
         possible_actions = self.q.get(state, {})
 
         # Get unknown actions with default reward
-        for action in range(self.environment.action_space.n):
+        for action in self.environment.action_space:
             if action not in possible_actions:
                 possible_actions.update({action: self.environment.default_reward.zero_vector})
 
@@ -303,7 +268,7 @@ class AgentQ(Agent):
 
         return reward
 
-    @property
+    @um.lazy_property
     def v(self) -> Vector:
         """
         Get best value from initial state -> V_max(0, 0)

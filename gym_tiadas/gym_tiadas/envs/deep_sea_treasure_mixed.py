@@ -5,6 +5,8 @@ from .deep_sea_treasure import DeepSeaTreasure
 
 
 class DeepSeaTreasureMixed(DeepSeaTreasure):
+    # Possible actions
+    _actions = {'UP': 0, 'RIGHT': 1, 'DOWN': 2, 'LEFT': 3}
 
     def __init__(self, initial_state: tuple = (0, 0), default_reward: tuple = (0,), seed: int = 0):
         """
@@ -40,8 +42,8 @@ class DeepSeaTreasureMixed(DeepSeaTreasure):
         :return: (state, (time_inverted, treasure_value), final, info)
         """
 
-        # Initialize rewards as vector (plus zero to fast copy)
-        rewards = self.default_reward + 0
+        # Initialize rewards as vector
+        rewards = self.default_reward.copy()
 
         # Get new state
         new_state = self.next_state(action=action)

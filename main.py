@@ -258,7 +258,7 @@ def linked_rings():
     agent = AgentMOSP(environment=env, weights=weights, epsilon=0.1, max_iterations=100,
                       states_to_observe=[0, 1, 4])
     agent.train(epochs=1000)
-    agent.show_raw_policy()
+    agent.show_policy()
     agent.show_observed_states()
     pass
 
@@ -269,7 +269,7 @@ def non_recurrent_rings():
     agent = AgentMOSP(environment=env, weights=weights, epsilon=0.1, max_iterations=100,
                       states_to_observe=[0, 7])
     agent.train(epochs=1000)
-    agent.show_raw_policy()
+    agent.show_policy()
     agent.show_observed_states()
     pass
 
@@ -422,6 +422,29 @@ def track_policy():
     pass
 
 
+def no_cycles_environment():
+    # Instance of environment
+    env = NoCyclesEnvironment()
+
+    # State
+    state = 0
+
+    # Agent
+    agent = AgentPQL(environment=env, states_to_observe=[state], epsilon=0.4)
+
+    # Train
+    agent.train(epochs=5000)
+
+    # Observed states
+    agent.show_observed_states()
+
+    # Policies
+    policies = agent.non_dominated_vectors_from_state(state=state)
+
+    # Show policies
+    print(policies)
+
+
 def main():
     # plot_training_from_zero()
     # plot_training_accumulate()
@@ -443,7 +466,8 @@ def main():
     # deep_sea_treasure_simplified()
     # deep_sea_treasure_simplified_mo_mp()
     # track_policy()
-    graphs_dps()
+    # graphs_dps()
+    no_cycles_environment()
     pass
 
 
