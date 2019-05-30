@@ -97,7 +97,7 @@ class AgentMOSP(AgentQ):
         # original, but with only one component.
         return reward.__class__(float(np.sum(reward * self.weights)))
 
-    def _update_q_dictionary(self, reward: Vector, action: int, next_state: object) -> None:
+    def _update_q_values(self, reward: Vector, action: int, next_state: object) -> None:
         """
         Update Q-Dictionary with new data
         :param reward:
@@ -110,7 +110,7 @@ class AgentMOSP(AgentQ):
         reward = self.process_reward(reward=reward)
 
         # Super call
-        super()._update_q_dictionary(reward=reward, action=action, next_state=next_state)
+        super()._update_q_values(reward=reward, action=action, next_state=next_state)
 
     def find_c_vector(self, w1: float, w2: float, solutions_known: list = None) -> Vector:
         """

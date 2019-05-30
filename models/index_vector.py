@@ -1,5 +1,5 @@
 """
-Such as Vector class, but has information about the action associate with this vector.
+Such as Vector class, but has information about a index (can be an action) associate with this vector.
 """
 import numpy as np
 
@@ -7,60 +7,67 @@ from .dominance import Dominance
 from .vector import Vector
 
 
-class ActionVector:
+class IndexVector:
     """
-    Class ActionVector with functions to work with int vectors.
+    Class IndexVector with functions to work with int vectors.
     """
 
-    def __init__(self, action: int, vector: Vector):
+    def __init__(self, index: int, vector: Vector):
         """
 
-        :param action: Action to associate a vector.
+        :param index: Index to associate a vector.
         :param vector: Vector instance, could be int or float vector.
         """
 
         # Action associate
-        self.action = action
+        self.index = index
 
         # Vector associate
         self.vector = vector
 
     def __str__(self):
         """
-        Return a string representation of the data in an array, with action associate.
+        Return a string representation of the data in an array, with index associate.
         :return:
         """
-        return 'A: {}, V: {}'.format(self.action, np.array_str(self.vector.components))
+        return 'I: {}, V: {}'.format(self.index, np.array_str(self.vector.components))
+
+    def __mul__(self, other):
+        """
+        Multiply a index vector by other.
+        :param other:
+        :return:
+        """
+        return IndexVector(index=self.index, vector=self.vector * other)
 
     def __repr__(self):
         """
-        Return the string representation of an array, with action associate.
+        Return the string representation of an array, with index associate.
         :return:
         """
-        return 'A: {}, V: {}'.format(self.action, np.array_repr(self.vector.components))
+        return '{} - {}'.format(self.index, np.array_repr(self.vector.components))
 
     def dominance(self, v2) -> Dominance:
         """
-        Check dominance between two ActionVector objects.
+        Check dominance between two IndexVector objects.
         :param v2:
         :return:
         """
         return self.vector.dominance(v2.vector)
 
     @staticmethod
-    def actions_occurrences_based_m3_with_repetitions(vectors: list, number_of_actions: int) -> list:
+    def actions_occurrences_based_m3_with_repetitions(vectors: list, actions: list) -> dict:
         """
-        :param number_of_actions:
+        :param actions:
         :param vectors: list of Vector objects.
 
-        :return: Return a list of non_dominated vectors occurrences per action. Applying the m3 algorithm of
+        :return: Return a dictionary with each action given and ocurrences of that action. Applying the m3 algorithm of
         Bentley, Clarkson and Levine (1990).
             We assume that:
                 - We attempt to MAXIMIZE the value of each vector element.
         """
 
         non_dominated = list()
-        actions = [0] * number_of_actions
 
         for idx_i, vector_i in enumerate(vectors):
 
@@ -126,11 +133,14 @@ class ActionVector:
                 # Add list at end
                 non_dominated.append(aux)
 
+        # Prepare actions dict
+        actions_dict = {action: 0 for action in actions}
+
         # for each bucket in non_dominated
         for bucket in non_dominated:
             # for each vector in bucket
             for vector in bucket:
                 # Increment vector action
-                actions[vector.action] += 1
+                actions_dict[vector.index] += 1
 
-        return actions
+        return actions_dict

@@ -50,8 +50,8 @@ class RussellNorvig(EnvMesh):
         :return:
         """
 
-        # Initialize rewards as vector (plus zero to fast copy)
-        reward = self.default_reward + 0
+        # Initialize rewards as vector
+        reward = self.default_reward.copy()
 
         # Get probability action
         action = self.__probability_action(action=action)

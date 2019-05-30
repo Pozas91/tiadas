@@ -8,9 +8,9 @@ from spaces import DynamicSpace
 from .environment import Environment
 
 
-class NoCyclesEnvironment(Environment):
+class NoCycles1(Environment):
     # Possible actions
-    _actions = {'a1': 0, 'a2': 1, 'a3': 2, 'a4': 3, 'a5': 4, 'a6': 5, 'a7': 6, 'a8': 7, 'a9': 8}
+    _actions = {'a0': 0, 'a1': 1, 'a2': 2}
 
     # Icons to render environments
     _icons = {}
@@ -22,7 +22,7 @@ class NoCyclesEnvironment(Environment):
         """
 
         # Create the observation space
-        observation_space = gym.spaces.Discrete(7)
+        observation_space = gym.spaces.Discrete(5)
 
         # Default reward
         default_reward = Vector(default_reward)
@@ -34,47 +34,30 @@ class NoCyclesEnvironment(Environment):
         # Available transitions
         self.transitions = {
             0: {
-                self._actions.get('a1'): [
+                self._actions.get('a0'): [
                     1, 2
-                ],
-                self._actions.get('a2'): [
-                    2, 3
                 ]
             },
             1: {
-                self._actions.get('a3'): [
-                    4
+                self._actions.get('a1'): [
+                    3, 4
                 ]
             },
             2: {
-                self._actions.get('a5'): [
-                    4, 5
-                ],
-                self._actions.get('a6'): [
-                    3
-                ]
-            },
-            3: {
-                self._actions.get('a7'): [
-                    5
-                ]
-            },
-            5: {
-                self._actions.get('a8'): [
-                    6
-                ],
-                self._actions.get('a9'): [
-                    7
+                self._actions.get('a2'): [
+                    3, 4
                 ]
             }
         }
 
         # Rewards
         self.rewards = {
-            4: Vector([0, 3]),
-            6: Vector([0, 8]),
-            7: Vector([0, 20])
+            3: Vector([0, 4]),
+            4: Vector([-1, 5]),
         }
+
+        # Trying improve performance
+        self.dynamic_action_space = DynamicSpace([])
 
     def step(self, action: int) -> (int, Vector, bool, dict):
         """
@@ -160,8 +143,14 @@ class NoCyclesEnvironment(Environment):
         # Get all actions available
         keys = self.transitions.get(state, {}).keys()
 
-        # Return complete valid_actions
-        valid_actions = DynamicSpace([value for value in self._action_space if value in keys])
+        # Getting possible actions to transition
+        possible_actions = [value for value in self._action_space if value in keys]
 
-        # Return and list of iterable valid actions
-        return valid_actions
+        # Setting to dynamic_space
+        self.dynamic_action_space.items = possible_actions
+
+        # Update n length
+        self.dynamic_action_space.n = len(possible_actions)
+
+        # Return a list of iterable valid actions
+        return self.dynamic_action_space

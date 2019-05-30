@@ -41,6 +41,7 @@ class Environment(gym.Env):
 
         # Set action space
         self._action_space = IterableDiscrete(len(self._actions))
+        self._action_space.seed(seed=seed)
 
         # Create the observation space
         self.observation_space = observation_space

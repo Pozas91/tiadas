@@ -13,16 +13,17 @@ REF: Empirical Evaluation methods for multi-objective reinforcement learning alg
     (Vamplew, Dazeley, Berry, Issabekov and Dekker) 2011
 """
 from models import Vector
+from spaces import DynamicSpace
 from .env_mesh import EnvMesh
 
 
-class DeepSeaTreasure(EnvMesh):
+class DeepSeaTreasureNoCyclic4(EnvMesh):
     # Possible actions
-    _actions = {'UP': 0, 'RIGHT': 1, 'DOWN': 2, 'LEFT': 3}
+    _actions = {'RIGHT': 0, 'DOWN': 1}
 
     # Pareto optimal
     pareto_optimal = [
-        (-1, 1), (-3, 2), (-5, 3), (-7, 5), (-8, 8), (-9, 16), (-13, 24), (-14, 50), (-17, 74), (-19, 124)
+        (-1, 5), (-3, 10), (-5, 20), (-7, 40), (-9, 50)
     ]
 
     def __init__(self, initial_state: tuple = (0, 0), default_reward: tuple = (0,), seed: int = 0):
@@ -34,30 +35,17 @@ class DeepSeaTreasure(EnvMesh):
 
         # List of all treasures and its reward.
         finals = {
-            (0, 1): 1,
-            (1, 2): 2,
-            (2, 3): 3,
-            (3, 4): 5,
-            (4, 4): 8,
-            (5, 4): 16,
-            (6, 7): 24,
-            (7, 7): 50,
-            (8, 9): 74,
-            (9, 10): 124,
+            (0, 1): 5,
+            (1, 2): 10,
+            (2, 3): 20,
+            (3, 4): 40,
+            (4, 4): 50,
         }
 
         obstacles = frozenset()
-        obstacles = obstacles.union([(0, y) for y in range(2, 11)])
-        obstacles = obstacles.union([(1, y) for y in range(3, 11)])
-        obstacles = obstacles.union([(2, y) for y in range(4, 11)])
-        obstacles = obstacles.union([(3, y) for y in range(5, 11)])
-        obstacles = obstacles.union([(4, y) for y in range(5, 11)])
-        obstacles = obstacles.union([(5, y) for y in range(5, 11)])
-        obstacles = obstacles.union([(6, y) for y in range(8, 11)])
-        obstacles = obstacles.union([(7, y) for y in range(8, 11)])
-        obstacles = obstacles.union([(8, y) for y in range(10, 11)])
+        obstacles = obstacles.union([(0, 2), (0, 3), (0, 4), (1, 3), (1, 4), (2, 4)])
 
-        mesh_shape = (10, 11)
+        mesh_shape = (5, 5)
 
         # Default reward plus time (time_inverted, treasure_value)
         default_reward = (-1,) + default_reward
@@ -65,6 +53,10 @@ class DeepSeaTreasure(EnvMesh):
 
         super().__init__(mesh_shape=mesh_shape, seed=seed, initial_state=initial_state, default_reward=default_reward,
                          finals=finals, obstacles=obstacles)
+
+        # Trying improve performance
+        self.dynamic_action_space = DynamicSpace([])
+        self.dynamic_action_space.seed(seed=seed)
 
     def step(self, action: int) -> (tuple, Vector, bool, dict):
         """
@@ -108,3 +100,72 @@ class DeepSeaTreasure(EnvMesh):
         :return:
         """
         return state in self.finals.keys()
+
+    def next_state(self, action: int, state: tuple = None) -> tuple:
+        """
+        Calc next state with current state and action given. Default is 4-neighbors (UP, LEFT, DOWN, RIGHT)
+        :param state: If a state is given, do action from that state.
+        :param action: from action_space
+        :return: a new state (or old if is invalid action)
+        """
+
+        # Get my position
+        x, y = state if state else self.current_state
+
+        # Do movement
+        if action == self._actions.get('RIGHT'):
+            x += 1
+        elif action == self._actions.get('DOWN'):
+            y += 1
+
+        # Set new state
+        new_state = x, y
+
+        # If exists obstacles, then new_state must be in self.obstacles
+        is_obstacle = bool(self.obstacles) and new_state in self.obstacles
+
+        if not self.observation_space.contains(new_state) or is_obstacle or state == new_state:
+            raise ValueError("Action/State combination isn't valid.")
+
+        # Return (x, y) position
+        return new_state
+
+    @property
+    def action_space(self) -> DynamicSpace:
+        """
+        Get a dynamic action space with only valid actions.
+        :return:
+        """
+
+        # Get current state
+        x, y = self.current_state
+
+        # Setting possible actions
+        possible_actions = []
+
+        # Get all actions available
+
+        # Can we go to right?
+        x_right = x + 1
+
+        # Check that x_right is not an obstacle and is into mesh
+        if (x_right, y) not in self.obstacles and self.observation_space.contains((x_right, y)):
+            # We can go to right
+            possible_actions.append(self._actions.get('RIGHT'))
+
+        # Can we go to down?
+        y_down = y + 1
+
+        # Check that y_down is not an obstacle and is into mesh
+        if (x, y_down) not in self.obstacles and self.observation_space.contains((x, y_down)):
+            # We can go to down
+            possible_actions.append(self._actions.get('DOWN'))
+
+        # Setting to dynamic_space
+        self.dynamic_action_space.items = possible_actions
+
+        # Update n length
+        self.dynamic_action_space.n = len(possible_actions)
+
+        # Return a list of iterable valid actions
+        return self.dynamic_action_space

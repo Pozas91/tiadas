@@ -73,7 +73,7 @@ import numpy as np
 import utils.hypervolume as uh
 import utils.miscellaneous as um
 from gym_tiadas.gym_tiadas.envs import Environment
-from models import ActionVector
+from models import IndexVector
 from models.vector import Vector
 from models.vector_float import VectorFloat
 from .agent import Agent
@@ -483,21 +483,21 @@ class AgentPQL(Agent):
 
             # for each Q in Q_set(s, a)
             for q in q_set:
-                all_q.append(ActionVector(action=a, vector=q))
+                all_q.append(IndexVector(index=a, vector=q))
 
         # NDQs <- ND(all_q). Keep only the non-dominating solutions
-        actions = ActionVector.actions_occurrences_based_m3_with_repetitions(
-            vectors=all_q, number_of_actions=action_space.n
+        actions = IndexVector.actions_occurrences_based_m3_with_repetitions(
+            vectors=all_q, actions=action_space
         )
 
         # Get max action
-        max_cardinality = max(actions)
+        max_cardinality = max(actions.values())
 
         # Get all max actions
-        actions = [action for action, cardinality in enumerate(actions) if cardinality == max_cardinality]
+        filter_actions = [action for action in actions.keys() if actions[action] == max_cardinality]
 
         # from best actions get one aleatory
-        return self.generator.choice(actions)
+        return self.generator.choice(filter_actions)
 
     def pareto_evaluation(self, state: object) -> int:
         """
@@ -520,22 +520,22 @@ class AgentPQL(Agent):
 
             # for each Q in Q_set(s, a)
             for q in q_set:
-                all_q.append(ActionVector(action=a, vector=q))
+                all_q.append(IndexVector(index=a, vector=q))
 
         # NDQs <- ND(all_q). Keep only the non-dominating solutions
-        actions = ActionVector.actions_occurrences_based_m3_with_repetitions(
-            vectors=all_q, number_of_actions=action_space.n
+        actions = IndexVector.actions_occurrences_based_m3_with_repetitions(
+            vectors=all_q, actions=action_space
         )
 
-        # Get actions that have almost a non dominated vector.
-        actions = [action for action, cardinality in enumerate(actions) if cardinality > 0]
+        # Get all max actions
+        filter_actions = [action for action in actions.keys() if actions[action] > 0]
 
         # If actions is empty, get all available actions.
-        if len(actions) <= 0:
-            actions = action_space
+        if len(filter_actions) <= 0:
+            filter_actions = action_space
 
         # from best actions get one aleatory
-        return self.generator.choice(actions)
+        return self.generator.choice(filter_actions)
 
     def get_dict_model(self) -> dict:
         """
@@ -760,7 +760,7 @@ class AgentPQL(Agent):
         evaluation_mechanism = data.get('evaluation_mechanism')
 
         # default_reward is reference so, reset components (multiply by zero) and add hv_reference to get hv_reference.
-        hv_reference = (default_reward * 0) + data.get('hv_reference')
+        hv_reference = default_reward.zero_vector + data.get('hv_reference')
 
         # Update 'states_to_observe' data
         states_to_observe = dict()
@@ -779,7 +779,7 @@ class AgentPQL(Agent):
             key = um.lists_to_tuples(item.get('key'))
             value = item.get('value')
             action = value.get('key')
-            value = (default_reward * 0) + value.get('value')
+            value = default_reward.zero_vector + value.get('value')
 
             if key not in r.keys():
                 r.update({key: dict()})
@@ -793,7 +793,7 @@ class AgentPQL(Agent):
             key = um.lists_to_tuples(item.get('key'))
             value = item.get('value')
             action = value.get('key')
-            value = [(default_reward * 0) + v for v in value.get('value')]
+            value = [default_reward.zero_vector + v for v in value.get('value')]
 
             if key not in nd.keys():
                 nd.update({key: dict()})

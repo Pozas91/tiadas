@@ -42,8 +42,8 @@ class DeepSeaTreasureMixed(DeepSeaTreasure):
         :return: (state, (time_inverted, treasure_value), final, info)
         """
 
-        # Initialize rewards as vector (plus zero to fast copy)
-        rewards = self.default_reward + 0
+        # Initialize rewards as vector
+        rewards = self.default_reward.copy()
 
         # Get new state
         new_state = self.next_state(action=action)

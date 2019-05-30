@@ -13,6 +13,7 @@ vector y un número, multiplicación, division, obtención de valores, establece
     eficientes.
     
     * **Propiedades**
+        * **Estas propiedades son perezosas, para evitar el cálculo si no es necesario** 
         * `magnitude` - Devuelve la magnitud del vector.
         * `zero_vector` - Devuelve un vector de la misma longitud y tipo que el vector actual, pero con todas las
         componentes a cero.
@@ -60,19 +61,28 @@ vector y un número, multiplicación, division, obtención de valores, establece
             * **No recibe parámetros**
         * **Salida**
             * Devuelve un `iterable`, que puede ser tratado como una lista de los componentes.
-    * `all_close(self, v2) -> bool`
+    * `copy(self)`
         * **Descripción**
-            * Devuelve un booleano que indica si dos vectores son cercanos, en caso de los enteros, son cercanos si son
-            iguales.
+            * Devuelve una copia del vector.
+        * **Parámetros**
+            * **No recibe parámetros**
+        * **Salida**
+            * Devuelve un `Vector`, instancia nueva del vector actual.
+    * `all_close(self, v2, relative=None) -> bool`
+        * **Descripción**
+            * Devuelve un booleano que indica si dos vectores son cercanos, con una cierta tolerancia.
         * **Parámetros**
             * `v2` - Vector con el cual vamos a comparar el nuestro.
+            * `relative=None` - Tolerancia para la comparación.
         * **Salida**
             * Devuelve un `bool`, booleano que indica si son parecidos o no.
-    * `dominance(self, v2) -> Dominance`
+    * `dominance(self, v2, relative=None) -> Dominance`
         * **Descripción**
-            * Devuelve un objeto de la clase [`Dominance`](dominance.md), con la dominancia entre vectores.
+            * Devuelve un objeto de la clase [`Dominance`](dominance.md), con la dominancia entre vectores, con cierta
+            tolerancia.
         * **Parámetros**
             * `v2` - Vector con el cual vamos a comprar el nuestro.
+            * `relative=None` - Tolerancia para la comparación.
         * **Salida**
             * Devuelve un `Dominance`, objeto que indica la dominancia entre vectores.
     * **Estáticos**

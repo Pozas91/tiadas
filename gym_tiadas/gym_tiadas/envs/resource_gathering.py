@@ -61,8 +61,8 @@ class ResourceGathering(EnvMesh):
         :return:
         """
 
-        # Initialize rewards as vector (plus zero to fast copy)
-        rewards = self.default_reward + 0
+        # Initialize rewards as vector
+        rewards = self.default_reward.copy()
 
         # Get new state
         new_state = self.next_state(action=action)
@@ -100,7 +100,7 @@ class ResourceGathering(EnvMesh):
         :return:
         """
         self.current_state = self.initial_state
-        self.status = self.default_reward + 0
+        self.status = self.default_reward.copy()
 
         # Reset golds positions
         for gold_state in self.gold_states.keys():
