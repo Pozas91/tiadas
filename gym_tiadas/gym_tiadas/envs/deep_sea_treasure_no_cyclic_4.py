@@ -23,7 +23,7 @@ class DeepSeaTreasureNoCyclic4(EnvMesh):
 
     # Pareto optimal
     pareto_optimal = [
-        (-1, 5), (-3, 10), (-5, 20), (-7, 40), (-9, 50)
+        (-1, 5), (-3, 10), (-5, 20), (-7, 40), (-8, 50)
     ]
 
     def __init__(self, initial_state: tuple = (0, 0), default_reward: tuple = (0,), seed: int = 0):

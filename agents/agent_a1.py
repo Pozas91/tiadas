@@ -1,3 +1,7 @@
+"""
+First version of algorithm 1, in this version we are "similar" vector in V(s)
+"""
+
 import itertools
 import math
 from copy import deepcopy
@@ -46,8 +50,8 @@ class AgentA1(Agent):
         # Counter to indexes used by each pair (state, action)
         self.indexes_counter = dict()
 
-        # HV reference
-        self.hv_reference = hv_reference * 100
+        # Hypervolume reference
+        self.hv_reference = hv_reference
 
         # Evaluation mechanism
         if evaluation_mechanism in ('HV-PQL', 'PO-PQL', 'C-PQL'):
@@ -93,17 +97,11 @@ class AgentA1(Agent):
 
             # END TODO
 
-            # Check if is necessary update V(s) to improve the performance
-            self.check_if_need_update_v()
-
             # Get an action
             action = self.select_action()
 
             # Do step on environment
             next_state, reward, is_final_state, info = self.environment.step(action=action)
-
-            # Transform to operate with int vectors getting some decimals
-            reward *= Vector.decimals
 
             # If next_state is a final state and not is register
             if is_final_state:
@@ -135,6 +133,9 @@ class AgentA1(Agent):
             elif next_state_is_in_states_known:
                 # Q_n = U_n(s, a)
                 self.update_operation(state=self.state, action=action, reward=reward, next_state=next_state)
+
+            # Check if is necessary update V(s) to improve the performance
+            self.check_if_need_update_v()
 
             # Update state
             self.state = next_state
@@ -447,7 +448,14 @@ class AgentA1(Agent):
                     q_list += q_s.get(a, dict()).values()
 
                 # Get all non dominated vectors -> V(s)
-                v = self.environment.default_reward.m3_max(vectors=q_list)
+                non_dominated_vectors, _ = self.environment.default_reward.m3_max_2_sets_with_buckets(vectors=q_list)
+
+                # Sort keys of buckets
+                for bucket in non_dominated_vectors:
+                    bucket.sort(key=lambda x: x.index)
+
+                # Set V values (Getting vector with lower index)
+                v = [bucket[0] for bucket in non_dominated_vectors]
 
                 # Update V(s)
                 self.v.update({state: {index_vector.index: index_vector.vector for index_vector in v}})

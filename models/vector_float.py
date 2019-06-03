@@ -30,7 +30,8 @@ class VectorFloat(Vector):
         """
 
         return np.all([
-            a > b or np.isclose(a, b, rtol=self.relative) for a, b in zip(self.components, other.components)
+            a > b or np.isclose(a, b, atol=self.absolute_tolerance, rtol=self.relative_tolerance) for a, b in
+            zip(self.components, other.components)
         ])
 
     def __gt__(self, other):
@@ -41,7 +42,8 @@ class VectorFloat(Vector):
         :return:
         """
         return np.all([
-            a > b and not np.isclose(a, b, rtol=self.relative) for a, b in zip(self.components, other.components)
+            a > b and not np.isclose(a, b, atol=self.absolute_tolerance, rtol=self.relative_tolerance) for a, b in
+            zip(self.components, other.components)
         ])
 
     def __lt__(self, other):
@@ -52,7 +54,8 @@ class VectorFloat(Vector):
         :return:
         """
         return np.all([
-            a < b and not np.isclose(a, b, rtol=self.relative) for a, b in zip(self.components, other.components)
+            a < b and not np.isclose(a, b, atol=self.absolute_tolerance, rtol=self.relative_tolerance) for a, b in
+            zip(self.components, other.components)
         ])
 
     def __le__(self, other):
@@ -63,7 +66,8 @@ class VectorFloat(Vector):
         :return:
         """
         return np.all([
-            a < b or np.isclose(a, b, rtol=self.relative) for a, b in zip(self.components, other.components)
+            a < b or np.isclose(a, b, atol=self.absolute_tolerance, rtol=self.relative_tolerance) for a, b in
+            zip(self.components, other.components)
         ])
 
     def to_int(self) -> Vector:
