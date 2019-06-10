@@ -1,18 +1,28 @@
+"""
+First version of algorithm 1, in this version we are "similar" vector in V(s)
+"""
+import datetime
 import itertools
 import math
+import time
 from copy import deepcopy
 
+import gym
+import numpy as np
+
 import utils.hypervolume as uh
+import utils.miscellaneous as um
 from agents import Agent
 from gym_tiadas.gym_tiadas.envs import Environment
-from models import Vector, IndexVector, VectorFloat
+from models import Vector, IndexVector, VectorFloat, GraphType
 
 
 class AgentA1(Agent):
 
     def __init__(self, environment: Environment, alpha: float = 0.1, epsilon: float = 0.1, gamma: float = 1.,
-                 seed: int = 0, states_to_observe: list = None, max_iterations: int = None,
-                 evaluation_mechanism: str = 'HV-PQL', hv_reference: Vector = None):
+                 seed: int = 0, states_to_observe: list = None, max_steps: int = None,
+                 evaluation_mechanism: str = 'HV-PQL', hv_reference: Vector = None,
+                 graph_types: tuple = (GraphType.STEPS, GraphType.EPOCHS)):
         """
         :param environment: An environment where agent does any operation.
         :param alpha: Learning rate
@@ -20,15 +30,16 @@ class AgentA1(Agent):
         :param gamma: Discount factor
         :param seed: Seed used for np.random.RandomState method.
         :param states_to_observe: List of states from that we want to get a graphical output.
-        :param max_iterations: Limits of iterations per episode.
+        :param max_steps: Limits of steps per episode.
         :param hv_reference: Reference vector to calc hypervolume
         :param evaluation_mechanism: Evaluation mechanism used to calc best action to choose. Three values are
             available: 'C-PQL', 'PO-PQL', 'HV-PQL'
+        :param graph_types: Type of graph to generate.
         """
 
         # Super call __init__
         super().__init__(environment=environment, epsilon=epsilon, gamma=gamma, seed=seed,
-                         states_to_observe=states_to_observe, max_iterations=max_iterations)
+                         states_to_observe=states_to_observe, max_steps=max_steps, graph_types=graph_types)
 
         # Learning factor
         assert 0 < alpha <= 1
@@ -46,8 +57,8 @@ class AgentA1(Agent):
         # Counter to indexes used by each pair (state, action)
         self.indexes_counter = dict()
 
-        # HV reference
-        self.hv_reference = hv_reference * 100
+        # Hypervolume reference
+        self.hv_reference = hv_reference
 
         # Evaluation mechanism
         if evaluation_mechanism in ('HV-PQL', 'PO-PQL', 'C-PQL'):
@@ -61,21 +72,19 @@ class AgentA1(Agent):
         :return:
         """
 
+        # Increment epochs
+        self.total_epochs += 1
+
         # Reset environment
         self.state = self.environment.reset()
 
         # Condition to stop episode
         is_final_state = False
 
-        # Reset iterations
-        self.reset_iterations()
+        # Reset steps
+        self.reset_steps()
 
         while not is_final_state:
-
-            # Increment iterations
-            self.iterations += 1
-
-            # TODO: Optimize this part of initialization
 
             # If the state is unknown, register it.
             if self.state not in self.q:
@@ -91,19 +100,15 @@ class AgentA1(Agent):
                 # Initialize counters
                 self.indexes_counter.update({self.state: 0})
 
-            # END TODO
-
-            # Check if is necessary update V(s) to improve the performance
-            self.check_if_need_update_v()
-
             # Get an action
             action = self.select_action()
 
             # Do step on environment
             next_state, reward, is_final_state, info = self.environment.step(action=action)
 
-            # Transform to operate with int vectors getting some decimals
-            reward *= Vector.decimals
+            # Increment steps done
+            self.total_steps += 1
+            self.steps += 1
 
             # If next_state is a final state and not is register
             if is_final_state:
@@ -136,12 +141,161 @@ class AgentA1(Agent):
                 # Q_n = U_n(s, a)
                 self.update_operation(state=self.state, action=action, reward=reward, next_state=next_state)
 
+            # Check if is necessary update V(s) to improve the performance
+            self.check_if_need_update_v()
+
             # Update state
             self.state = next_state
 
             # Check timeout
-            if self.max_iterations is not None and not is_final_state:
-                is_final_state = self.iterations >= self.max_iterations
+            if self.max_steps is not None and not is_final_state:
+                is_final_state = self.total_steps >= self.max_steps
+
+            if GraphType.STEPS in self.states_to_observe and self.total_steps % self.steps_to_calc_hypervolume == 0:
+                # Append new data
+                self.update_graph(graph_type=GraphType.STEPS)
+
+            if GraphType.TIME in self.states_to_observe and (
+                    time.time() - self.last_time) > self.seconds_to_calc_hypervolume:
+                # Append new data
+                self.update_graph(graph_type=GraphType.TIME)
+
+                # Update last execution
+                self.last_time = time.time()
+
+        if GraphType.EPOCHS in self.states_to_observe:
+            # Append new data
+            self.update_graph(graph_type=GraphType.EPOCHS)
+
+    def update_graph(self, graph_type: GraphType):
+        """
+        Update specific graph type
+        :param graph_type:
+        :return:
+        """
+
+        for state, data in self.states_to_observe.get(graph_type).items():
+            # Add to data Best value (V max)
+            value = self._best_hypervolume(state=state)
+
+            # Add to data Best value (V max)
+            data.append(value)
+
+            # Update dictionary
+            self.states_to_observe.get(graph_type).update({state: data})
+
+    def _best_hypervolume(self, state: object = None) -> float:
+        """
+        Return best hypervolume for state given.
+        :return:
+        """
+
+        # Check if a state is given
+        state = state if state else self.environment.current_state
+
+        # Get Q-set from state given for each possible action
+        v = list(self.v.get(state, {}).values())
+
+        # If v is empty, default is zero vector
+        v = v if v else [self.environment.default_reward.zero_vector]
+
+        # Getting hypervolume
+        hv = uh.calc_hypervolume(list_of_vectors=v, reference=self.hv_reference)
+
+        return hv
+
+    def reverse_episode(self, state: object) -> None:
+        """
+        Run an episode complete until get a final step
+        :return:
+        """
+
+        # Increment epochs counter
+        self.total_epochs += 1
+
+        # Reset environment
+        self.environment.reset()
+
+        # Set a given state
+        self.environment.current_state = state
+        self.state = state
+
+        # Condition to stop episode
+        is_final_state = False
+
+        # Reset steps
+        self.reset_steps()
+
+        while not is_final_state:
+
+            # TODO: Optimize this part of initialization
+
+            # If the state is unknown, register it.
+            if self.state not in self.q:
+                self.q.update({self.state: {'updated': True}})
+
+            if self.state not in self.s:
+                self.s.update({self.state: dict()})
+
+            if self.state not in self.v:
+                self.v.update({self.state: dict()})
+
+            if self.state not in self.indexes_counter:
+                # Initialize counters
+                self.indexes_counter.update({self.state: 0})
+
+            # END TODO
+
+            # Get an action
+            action = self.select_action()
+
+            # Do step on environment
+            next_state, reward, is_final_state, info = self.environment.step(action=action)
+
+            # Increment steps
+            self.total_steps += 1
+            self.steps += 1
+
+            # If next_state is a final state and not is register
+            if is_final_state:
+
+                # If not is register in V, register it
+                if not self.v.get(next_state):
+                    self.v.update({next_state: {
+                        # By default finals states has a zero vector with a zero index
+                        0: self.environment.default_reward.zero_vector
+                    }})
+
+            # S(s) -> All known states with its action for the state given.
+            pair_action_states_known_by_state = self.s.get(self.state)
+
+            # S(s, a) -> All known states for state and action given.
+            states_known_by_state = pair_action_states_known_by_state.get(action, list())
+
+            # I_s_k
+            relevant_indexes_of_next_state = self.relevant_indexes_of_state(state=next_state)
+
+            # S_k in S_{n - 1}
+            next_state_is_in_states_known = next_state in states_known_by_state
+
+            # Check if sk not in S, and I_s_k is not empty
+            if not next_state_is_in_states_known and relevant_indexes_of_next_state:
+                # Q_n = N_n(s, a)
+                self.new_operation(state=self.state, action=action, reward=reward, next_state=next_state)
+
+            elif next_state_is_in_states_known:
+                # Q_n = U_n(s, a)
+                self.update_operation(state=self.state, action=action, reward=reward, next_state=next_state)
+
+            # Check if is necessary update V(s) to improve the performance
+            self.check_if_need_update_v()
+
+            # Update state
+            self.state = next_state
+
+            # Check timeout
+            if self.max_steps is not None and not is_final_state:
+                is_final_state = self.steps >= self.max_steps
 
     def best_action(self, state: object = None) -> int:
         """
@@ -446,8 +600,17 @@ class AgentA1(Agent):
                     # Q(s, a)
                     q_list += q_s.get(a, dict()).values()
 
-                # Get all non dominated vectors -> V(s)
                 v = self.environment.default_reward.m3_max(vectors=q_list)
+
+                # Get all non dominated vectors -> V(s)
+                # non_dominated_vectors, _ = self.environment.default_reward.m3_max_2_sets_with_buckets(vectors=q_list)
+
+                # Sort keys of buckets
+                # for bucket in non_dominated_vectors:
+                #     bucket.sort(key=lambda x: x.index)
+
+                # Set V values (Getting vector with lower index)
+                # v = [bucket[0] for bucket in non_dominated_vectors]
 
                 # Update V(s)
                 self.v.update({state: {index_vector.index: index_vector.vector for index_vector in v}})
@@ -534,3 +697,76 @@ class AgentA1(Agent):
                 v.update({state: vectors})
 
         return v
+
+    def inverse_train(self, epochs=1000):
+        """
+        Return this agent trained with `epochs` epochs.
+        :param epochs:
+        :return:
+        """
+
+        finals_states = self.environment.finals.keys()
+
+        for _ in range(epochs):
+            # Do an episode
+            self.reverse_episode()
+
+    def objective_training(self, list_of_vectors: list):
+        """
+        Train until agent V(0, 0) value is close to objective value.
+        :param list_of_vectors:
+        :return:
+        """
+
+        # Calc current hypervolume
+        current_hypervolume = self._best_hypervolume(self.environment.initial_state)
+
+        objective_hypervolume = uh.calc_hypervolume(list_of_vectors=list_of_vectors, reference=self.hv_reference)
+
+        while not np.isclose(a=current_hypervolume, b=objective_hypervolume, rtol=0.02):
+            # Do an episode
+            self.episode()
+
+            # Update hypervolume
+            current_hypervolume = self._best_hypervolume(self.environment.initial_state)
+
+    def json_filename(self) -> str:
+        """
+        Generate a filename for json dump file
+        :return:
+        """
+        # Get environment name in snake case
+        environment = um.str_to_snake_case(self.environment.__class__.__name__)
+
+        # Get evaluation mechanism in snake case
+        agent = um.str_to_snake_case(self.__class__.__name__)
+
+        # Get evaluation mechanism in snake case
+        evaluation_mechanism = um.str_to_snake_case(self.evaluation_mechanism)
+
+        # Get date
+        date = datetime.datetime.now().timestamp()
+
+        return '{}_{}_{}_{}'.format(agent, environment, evaluation_mechanism, date)
+
+    def initialize_dictionaries(self):
+        """
+        Function to initialize all possible states in this problem
+        :return:
+        """
+        states = list()
+
+        if isinstance(self.environment.observation_space, gym.spaces.Tuple):
+
+            for x in range(self.environment.observation_space.spaces[0].n):
+                for y in range(self.environment.observation_space.spaces[1].n):
+                    states.append((x, y))
+
+        elif isinstance(self.environment.observation_space, gym.spaces.Discrete):
+            states.append(range(self.environment.observation_space.n))
+
+        for state in states:
+            self.q.update({state: {'updated': True}})
+            self.s.update({state: dict()})
+            self.v.update({state: dict()})
+            self.indexes_counter.update({state: 0})

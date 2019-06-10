@@ -14,7 +14,6 @@ class IndexVector:
 
     def __init__(self, index: int, vector: Vector):
         """
-
         :param index: Index to associate a vector.
         :param vector: Vector instance, could be int or float vector.
         """

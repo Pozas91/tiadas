@@ -1,8 +1,8 @@
 import timeit
 
-number = 30
+number = 100
 
-time_main = timeit.timeit("from draft_main import main; main()", number=number)
+time_main = timeit.timeit("from draft_main import agent_int; agent_int()", number=number)
 
 # time_a1 = timeit.timeit("from draft import a1; a1()", number=number)
 # time_a2 = timeit.timeit("from draft import a2; a2()", number=number)

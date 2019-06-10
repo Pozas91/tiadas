@@ -28,7 +28,7 @@ class AgentQ(Agent):
     }
 
     def __init__(self, environment: Environment, alpha: float = 0.1, epsilon: float = 0.1, gamma: float = 1.,
-                 seed: int = 0, states_to_observe: list = None, max_iterations: int = None):
+                 seed: int = 0, states_to_observe: list = None, max_steps: int = None):
         """
         :param environment: An environment where agent does any operation.
         :param alpha: Learning rate
@@ -36,11 +36,11 @@ class AgentQ(Agent):
         :param gamma: Discount factor
         :param seed: Seed used for np.random.RandomState method.
         :param states_to_observe: List of states from that we want to get a graphical output.
-        :param max_iterations: Limits of iterations per episode.
+        :param max_steps: Limits of steps per episode.
         """
 
         # Super call __init__
-        super().__init__(environment, epsilon, gamma, seed, states_to_observe, max_iterations)
+        super().__init__(environment, epsilon, gamma, seed, states_to_observe, max_steps)
 
         # Learning factor
         assert 0 < alpha <= 1
@@ -64,15 +64,15 @@ class AgentQ(Agent):
         # Condition to stop walk
         is_final_state = False
 
-        # Reset iterations
-        self.reset_iterations()
+        # Reset steps
+        self.reset_steps()
 
         # Rewards history
         history = list()
 
         while not is_final_state:
-            # Increment iterations
-            self.iterations += 1
+            # Increment steps
+            self.steps += 1
 
             # Get an action
             action = self.best_action()
@@ -94,25 +94,29 @@ class AgentQ(Agent):
         :return:
         """
 
+        # Increment epochs counter
+        self.total_epochs += 1
+
         # Reset environment
         self.state = self.environment.reset()
 
         # Condition to stop episode
         is_final_state = False
 
-        # Reset iterations
-        self.reset_iterations()
+        # Reset steps
+        self.reset_steps()
 
         while not is_final_state:
-
-            # Increment iterations
-            self.iterations += 1
 
             # Get an action
             action = self.select_action()
 
             # Do step on environment
             next_state, reward, is_final_state, info = self.environment.step(action=action)
+
+            # Increment steps
+            self.total_steps += 1
+            self.steps += 1
 
             # Append to rewards history
             history = self.process_reward(reward=reward)
@@ -125,8 +129,8 @@ class AgentQ(Agent):
             self.state = next_state
 
             # Check timeout
-            if self.max_iterations is not None and not is_final_state:
-                is_final_state = self.iterations >= self.max_iterations
+            if self.max_steps is not None and not is_final_state:
+                is_final_state = self.steps >= self.max_steps
 
         # Append new data
         for state, data in self.states_to_observe.items():
@@ -198,7 +202,7 @@ class AgentQ(Agent):
         self.rewards_history = list()
         self.q = dict()
         self.state = self.environment.reset()
-        self.iterations = 0
+        self.steps = 0
 
     def best_action(self, state: object = None) -> int:
         """
@@ -321,13 +325,13 @@ class AgentQ(Agent):
 
         # Initialize variables
         q_previous = dict()
-        iterations = 0
-        iterations_margin = 0
+        steps = 0
+        steps_margin = 0
 
         # First check
         are_similar = self.policies_are_similar(q_previous, self.q)
 
-        while not are_similar or iterations_margin < 20:
+        while not are_similar or steps_margin < 20:
 
             # Get previous Q-Values
             q_previous = deepcopy(self.q)
@@ -335,19 +339,19 @@ class AgentQ(Agent):
             # Do an episode
             self.episode()
 
-            # Increment iterations
-            iterations += 1
+            # Increment steps
+            steps += 1
 
             # Check again
             are_similar = self.policies_are_similar(q_previous, self.q)
 
             # Control false positive
             if are_similar:
-                iterations_margin += 1
+                steps_margin += 1
             else:
-                iterations_margin = 0
+                steps_margin = 0
 
-        print(iterations)
+        print(steps)
 
     def testing(self) -> Vector:
         """

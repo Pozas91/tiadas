@@ -16,11 +16,12 @@ class Vector:
     Class Vector with functions to work with int vectors.
     """
 
-    # Convert float vectors to int vectors
+    # Number to multiply int vector to allow some decimals (If decimals = 100, two decimals are allowed).
     decimals = 10 ** 2
 
-    # Relative margin to compare of similarity of two float elements
-    relative = 1 / decimals
+    # Relative margin to compare of similarity of two elements.
+    relative_tolerance = 0.00
+    absolute_tolerance = 0
 
     def __init__(self, components, dtype=int):
         """
@@ -211,14 +212,22 @@ class Vector:
         Return a zero vector of same type and len that this vector
         :return:
         """
-        return self.__class__(np.zeros_like(self.components))
+        x = self.__class__(np.zeros_like(self.components))
+        x.relative_tolerance = self.relative_tolerance
+        x.decimals = self.decimals
+
+        return x
 
     def copy(self):
         """
         Return a copy of this vector
         :return:
         """
-        return self.__class__(self.components)
+        x = self.__class__(self.components)
+        x.relative_tolerance = self.relative_tolerance
+        x.decimals = self.decimals
+
+        return x
 
     def tolist(self):
         """
@@ -227,28 +236,23 @@ class Vector:
         """
         return self.components.tolist()
 
-    def all_close(self, v2, relative=None) -> bool:
+    def all_close(self, v2) -> bool:
         """
         Returns True if two arrays are element-wise equal within a tolerance.
 
         If either array contains one or more NaNs, False is returned.
 
         As this vector is integer, the tolerance is 0, so this method is like equal comparision.
-        :param relative:
         :param v2:
         :return:
         """
+        return np.allclose(a=self.components, b=v2.components, rtol=self.relative_tolerance,
+                           atol=self.absolute_tolerance)
 
-        # Use relative given or self.relative
-        relative = self.relative if not relative else relative
-
-        return np.allclose(self, v2, rtol=relative)
-
-    def dominance(self, v2, relative=None) -> Dominance:
+    def dominance(self, v2) -> Dominance:
         """
         Check dominance between two Vector objects. Float values are allowed
         and treated with precision according to Vector.relative.
-        :param relative:
         :param v2: a Vector object
         :return: an output value according to the Dominance enum.
         """
@@ -256,28 +260,28 @@ class Vector:
         v1_dominate = False
         v2_dominate = False
 
-        # Use relative given or self.relative
-        relative = self.relative if not relative else relative
+        for idx, component in enumerate(self.components):
 
-        # Check if all components are similar
-        if not self.all_close(v2=v2, relative=relative):
+            # Are equals or close...
+            if np.isclose(a=self.components[idx], b=v2.components[idx], rtol=self.relative_tolerance,
+                          atol=self.absolute_tolerance):
+                # Nothing to do at moment
+                pass
 
-            for idx, component in enumerate(self.components):
+            elif self.components[idx] > v2.components[idx]:
+                v1_dominate = True
 
-                if self.components[idx] > v2.components[idx]:
-                    v1_dominate = True
+                # If already dominate v2, then both vectors are independent.
+                if v2_dominate:
+                    return Dominance.otherwise
 
-                    # If already dominate v2, then both vectors are independent.
-                    if v2_dominate:
-                        return Dominance.otherwise
+            # v1's component is dominated by v2
+            elif self.components[idx] < v2.components[idx]:
+                v2_dominate = True
 
-                # v1's component is dominated by v2
-                elif self.components[idx] < v2.components[idx]:
-                    v2_dominate = True
-
-                    # If already dominate v1, then both vectors are independent.
-                    if v1_dominate:
-                        return Dominance.otherwise
+                # If already dominate v1, then both vectors are independent.
+                if v1_dominate:
+                    return Dominance.otherwise
 
         if v1_dominate == v2_dominate:
             # If both dominate, then both vectors are independent.
@@ -529,6 +533,97 @@ class Vector:
             else:
                 # Add vector at end
                 non_dominated.append(vector_i)
+
+        return non_dominated, dominated
+
+    @staticmethod
+    def m3_max_2_sets_with_buckets(vectors: list) -> (list, list):
+        """
+        :param vectors: list of Vector objects.
+
+        :return: a list with non-dominated vectors applying the m3 algorithm of
+        Bentley, Clarkson and Levine (1990).
+            We assume that:
+                - We attempt to MAXIMIZE the value of each vector element.
+
+            Return a tuple with a first list with the non-dominated bucket list, and a
+            second list with the dominated list..
+        """
+
+        non_dominated = list()
+        dominated = list()
+
+        for idx_i, vector_i in enumerate(vectors):
+
+            discarded = False
+            idx_j = 0
+            included_in_bucket = False
+            bucket = None
+
+            # While has more elements
+            while idx_j < len(non_dominated) and not discarded and not included_in_bucket:
+
+                # Get vector and index
+                bucket = non_dominated[idx_j]
+
+                # Get first
+                vector_j = bucket[0]
+
+                # Vector dominance
+                dominance = vector_i.dominance(v2=vector_j)
+
+                # `vector_i` dominate `vector_j`
+                if dominance == Dominance.dominate:
+
+                    # Remove non-dominated vector
+                    non_dominated.pop(idx_j)
+
+                    # All vectors in bucket are added in dominated list
+                    for vector_j in bucket:
+                        # Add dominated vector
+                        dominated.append(vector_j)
+
+                # `vector_j` dominate `vector_i`
+                elif dominance == Dominance.is_dominated:
+
+                    # Remove non-dominated vector
+                    non_dominated.pop(idx_j)
+
+                    # Set discarded to True
+                    discarded = True
+
+                    # Add dominated vector
+                    dominated.append(vector_i)
+
+                # `vector_i` and `vector_j` are similar or equals
+                elif dominance == Dominance.equals:
+
+                    # Remove non-dominated vector
+                    non_dominated.pop(idx_j)
+
+                    # Vector include in bucket
+                    included_in_bucket = True
+
+                    # Add vector_i to exists bucket.
+                    bucket.append(vector_i)
+
+                # If dominance is otherwise, continue searching
+                if dominance == Dominance.otherwise:
+                    # Search in next element
+                    idx_j += 1
+                else:
+                    # Begin again
+                    idx_j = 0
+
+            if discarded or included_in_bucket:
+                # Add all bucket at first of non_dominated list (bucket[:] is to pass value and not reference)
+                non_dominated.insert(0, bucket[:])
+            else:
+                # List of vectors
+                aux = [vector_i]
+
+                # Add list at end
+                non_dominated.append(aux)
 
         return non_dominated, dominated
 

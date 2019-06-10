@@ -8,7 +8,8 @@ vector y un número, multiplicación, division, obtención de valores, establece
     * `decimals` - Variable que indica el número por el que tenemos que multiplicar un vector flotante para convertirlo
     en entero y eliminar los decimales restantes. Dicho de otra forma, si tenemos el número `12.345` y `decimals` vale
     `100`, obtendremos el entero `1234`.
-    * `relative` - operación inversa a la anterior, y lo usamos como margen para comparar dos números flotantes.
+    * `relative_tolerance` - Tolerancia relativa que se usará para comparar la igualdad entre vectores.
+    * `absolute_tolerance` - Tolerancia absoluta que se usará para comparar la igualdad entre vectores.
     * `components` - Atributo de la clase `np.array` donde almacenaremos los números para que las operaciones sean más 
     eficientes.
     

@@ -67,9 +67,6 @@ import math
 import os
 from copy import deepcopy
 
-import matplotlib
-import numpy as np
-
 import utils.hypervolume as uh
 import utils.miscellaneous as um
 from gym_tiadas.gym_tiadas.envs import Environment
@@ -80,20 +77,16 @@ from .agent import Agent
 
 
 class AgentPQL(Agent):
-    # Indent of the JSON file where the agent will be saved
-    json_indent = 2
-    # Get dumps path from this file path
-    dumps_path = '{}/../dumps'.format(os.path.dirname(os.path.abspath(__file__)))
 
     def __init__(self, environment: Environment, epsilon: float = 0.1, gamma: float = 1., seed: int = 0,
-                 max_iterations: int = None, hv_reference: Vector = None, evaluation_mechanism: str = 'HV-PQL',
+                 max_steps: int = None, hv_reference: Vector = None, evaluation_mechanism: str = 'HV-PQL',
                  states_to_observe: list = None):
         """
         :param environment: instance of any environment class.
         :param epsilon: Epsilon used in epsilon-greedy policy, to explore more states.
         :param gamma: Discount factor
         :param seed: Seed used for np.random.RandomState method.
-        :param max_iterations: Limits of iterations per episode.
+        :param max_steps: Limits of steps per episode.
         :param hv_reference: Reference vector to calc hypervolume
         :param evaluation_mechanism: Evaluation mechanism used to calc best action to choose. Three values are
             available: 'C-PQL', 'PO-PQL', 'HV-PQL'
@@ -102,7 +95,7 @@ class AgentPQL(Agent):
 
         # Super call __init__
         super().__init__(environment=environment, epsilon=epsilon, gamma=gamma, seed=seed,
-                         states_to_observe=states_to_observe, max_iterations=max_iterations)
+                         states_to_observe=states_to_observe, max_steps=max_steps)
 
         # Average observed immediate reward vector.
         self.r = dict()
@@ -130,24 +123,29 @@ class AgentPQL(Agent):
         :return:
         """
 
+        # Increment epochs counter
+        self.total_epochs += 1
+
         # Reset environment
         self.state = self.environment.reset()
 
         # Condition to stop episode
         is_final = False
 
-        # Reset iterations
-        self.reset_iterations()
+        # Reset steps
+        self.reset_steps()
 
         while not is_final:
-            # Increment iterations
-            self.iterations += 1
 
             # Choose action a from s using a policy derived from the Q-set
             action = self.select_action()
 
             # Do step on environment
             next_state, rewards, is_final, info = self.environment.step(action=action)
+
+            # Increment steps
+            self.total_steps += 1
+            self.steps += 1
 
             # Check if is final
             if is_final:
@@ -169,12 +167,11 @@ class AgentPQL(Agent):
             self.state = next_state
 
             # Check timeout
-            if self.max_iterations is not None and not is_final:
-                is_final = self.iterations >= self.max_iterations
+            if self.max_steps is not None and not is_final:
+                is_final = self.steps >= self.max_steps
 
         # Append new data for graphical output
         for state, data in self.states_to_observe.items():
-
             # Set state
             self.environment.current_state = state
 
@@ -287,7 +284,7 @@ class AgentPQL(Agent):
         self.state = self.environment.reset()
 
         # Resets
-        self.reset_iterations()
+        self.reset_steps()
         self.reset_states_to_observe()
 
     def best_action(self, state: object = None) -> int:
@@ -412,7 +409,6 @@ class AgentPQL(Agent):
     def _best_hypervolume(self) -> float:
         """
         Return best hypervolume for state given.
-        :param state:
         :return:
         """
 
@@ -543,81 +539,36 @@ class AgentPQL(Agent):
         In JSON serialize only is valid strings as key on dict, so we convert all numeric keys in strings keys.
         :return:
         """
-        model = {
-            'meta': {
-                'class': self.__class__.__name__,
-                'module': self.__module__,
-                'dependencies': {
-                    'numpy': np.__version__,
-                    'matplotlib': matplotlib.__version__
-                }
-            },
-            'data': {
-                'epsilon': self.epsilon,
-                'gamma': self.gamma,
-                'environment': {
-                    'meta': {
-                        'class': self.environment.__class__.__name__,
-                        'module': self.environment.__module__,
-                    },
-                    'data': self.environment.get_dict_model()
-                },
-                'max_iterations': self.max_iterations,
-                'states_to_observe': [{'key': k, 'value': v} for k, v in self.states_to_observe.items()],
-                'seed': self.seed,
-                'r': [
-                    {'key': k, 'value': {'key': int(k2), 'value': v2.tolist()}}
-                    for k, v in self.r.items() for k2, v2 in v.items()
-                ],
-                'nd': [
-                    {'key': k, 'value': {'key': int(k2), 'value': [vector.tolist() for vector in v2]}}
-                    for k, v in self.nd.items() for k2, v2 in v.items()
-                ],
-                'n': [
-                    {'key': k, 'value': {'key': int(k2), 'value': v2}}
-                    for k, v in self.n.items() for k2, v2 in v.items()
-                ],
-                'hv_reference': self.hv_reference.tolist(),
-                'evaluation_mechanism': self.evaluation_mechanism
-            }
-        }
+
+        # Get parent's model
+        model = super().get_dict_model()
+
+        # Own properties
+        model['data'].update({
+            'r': [
+                {'key': k, 'value': {'key': int(k2), 'value': v2.tolist()}}
+                for k, v in self.r.items() for k2, v2 in v.items()
+            ]
+        })
+
+        model['data'].update({
+            'nd': [
+                {'key': k, 'value': {'key': int(k2), 'value': [vector.tolist() for vector in v2]}}
+                for k, v in self.nd.items() for k2, v2 in v.items()
+            ]
+        })
+
+        model['data'].update({
+            'n': [
+                {'key': k, 'value': {'key': int(k2), 'value': v2}}
+                for k, v in self.n.items() for k2, v2 in v.items()
+            ]
+        })
+
+        model['data'].update({'hv_reference': self.hv_reference.tolist()})
+        model['data'].update({'evaluation_mechanism': self.evaluation_mechanism})
 
         return model
-
-    def to_json(self) -> str:
-        """
-        Get a dict model from current object and return as json string.
-        :return:
-        """
-        model = self.get_dict_model()
-        return json.dumps(model, indent=self.json_indent)
-
-    def save(self, filename: str = None) -> None:
-        """
-        Save model into json file.
-        :param filename: If is None, then get current timestamp as filename (defaults 'dumps' dir).
-        :return:
-        """
-
-        if filename is None:
-            # Get environment name in snake case
-            environment = um.str_to_snake_case(self.environment.__class__.__name__)
-
-            # Get evaluation mechanism in snake case
-            evaluation_mechanism = um.str_to_snake_case(self.evaluation_mechanism)
-
-            # Prepare file name
-            filename = '{}_{}_{}'.format(environment, evaluation_mechanism, datetime.datetime.now().timestamp())
-
-        # Prepare file path
-        file_path = AgentPQL.dumps_file_path(filename=filename)
-
-        # Get dict model
-        model = self.get_dict_model()
-
-        # Open file with filename in write mode with UTF-8 encoding.
-        with open(file_path, 'w', encoding='UTF-8') as file:
-            json.dump(model, file, indent=self.json_indent)
 
     def non_dominated_vectors_from_state(self, state: object) -> list:
         """
@@ -640,6 +591,25 @@ class AgentPQL(Agent):
 
         print("Hypervolume reference: {}".format(self.hv_reference))
         print('Evaluation mechanism: {}'.format(self.evaluation_mechanism))
+
+    def json_filename(self) -> str:
+        """
+        Generate a filename for json dump file
+        :return:
+        """
+        # Get environment name in snake case
+        environment = um.str_to_snake_case(self.environment.__class__.__name__)
+
+        # Get evaluation mechanism in snake case
+        agent = um.str_to_snake_case(self.__class__.__name__)
+
+        # Get evaluation mechanism in snake case
+        evaluation_mechanism = um.str_to_snake_case(self.evaluation_mechanism)
+
+        # Get date
+        date = datetime.datetime.now().timestamp()
+
+        return '{}_{}_{}_{}'.format(agent, environment, evaluation_mechanism, date)
 
     @staticmethod
     def load(filename: str = None, environment: Environment = None, evaluation_mechanism: str = None):
@@ -755,7 +725,7 @@ class AgentPQL(Agent):
         # Data
         epsilon = data.get('epsilon')
         gamma = data.get('gamma')
-        max_iterations = data.get('max_iterations')
+        max_steps = data.get('max_steps')
         seed = data.get('seed')
         evaluation_mechanism = data.get('evaluation_mechanism')
 
@@ -816,7 +786,7 @@ class AgentPQL(Agent):
 
         # Prepare an instance of model.
         model = class_(environment=environment, epsilon=epsilon, gamma=gamma, seed=seed,
-                       max_iterations=max_iterations, hv_reference=hv_reference,
+                       max_steps=max_steps, hv_reference=hv_reference,
                        evaluation_mechanism=evaluation_mechanism)
 
         # Set finals settings and return it.
@@ -826,8 +796,3 @@ class AgentPQL(Agent):
         model.states_to_observe = states_to_observe
 
         return model
-
-    @staticmethod
-    def dumps_file_path(filename: str) -> str:
-        # Return path from file name
-        return '{}/{}.json'.format(AgentPQL.dumps_path, filename)

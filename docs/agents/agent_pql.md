@@ -15,8 +15,6 @@ La diferencia principal con los otros agentes, es que este agente realmente no a
 encontrados.
 
 * **Atributos**
-    * `json_indent` - Tabulación que tendrán las líneas en los ficheros json.
-    * `dumps_path` - Ruta relativa hacia el directorio de volcado de datos.
     * `r` - Diccionario de diccionario, donde se almacena la recompensa inmediata media observada:
         ```json
         {
@@ -104,9 +102,9 @@ encontrados.
             * **No recibe parámetros**
         * **Salida**
             * **No ofrece salida**
-    * `reset_iterations(self) -> None`
+    * `reset_steps(self) -> None`
         * **Descripción**
-            * Resetea el número de iteraciones a 0.
+            * Resetea el número de pasos a 0.
         * **Parámetros**
             * **No recibe parámetros**
         * **Salida**

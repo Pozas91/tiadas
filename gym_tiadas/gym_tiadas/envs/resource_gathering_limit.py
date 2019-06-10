@@ -18,7 +18,7 @@ class ResourceGatheringLimit(EnvMesh):
         :param default_reward: (enemy_attack, gold, gems)
         :param seed:
         :param p_attack: Probability that a enemy attacks when agent stay in an enemy state.
-        :param time_limit: When agent does `time_limit` iterations terminate current episode.
+        :param time_limit: When agent does `time_limit` steps terminate current episode.
         """
 
         self.state = VectorFloat(default_reward)
