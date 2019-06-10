@@ -30,8 +30,8 @@ class TestAgent(unittest.TestCase):
         self.assertTrue(hasattr(self.agent, 'gamma'))
         self.assertTrue(hasattr(self.agent, 'epsilon'))
         self.assertTrue(hasattr(self.agent, 'environment'))
-        self.assertTrue(hasattr(self.agent, 'max_iterations'))
-        self.assertTrue(hasattr(self.agent, 'iterations'))
+        self.assertTrue(hasattr(self.agent, 'max_steps'))
+        self.assertTrue(hasattr(self.agent, 'steps'))
         self.assertTrue(hasattr(self.agent, 'states_to_observe'))
         self.assertTrue(hasattr(self.agent, 'state'))
         self.assertTrue(hasattr(self.agent, 'seed'))
@@ -42,24 +42,24 @@ class TestAgent(unittest.TestCase):
         self.assertTrue(hasattr(self.agent, 'episode'))
         self.assertTrue(hasattr(self.agent, 'reset'))
         self.assertTrue(hasattr(self.agent, 'best_action'))
-        self.assertTrue(hasattr(self.agent, 'reset_iterations'))
+        self.assertTrue(hasattr(self.agent, 'reset_steps'))
         self.assertTrue(hasattr(self.agent, 'show_observed_states'))
         self.assertTrue(hasattr(self.agent, 'print_information'))
         self.assertTrue(hasattr(self.agent, 'train'))
 
-    def test_reset_iterations(self):
+    def test_reset_steps(self):
         """
-        Testing reset iterations method.
+        Testing reset steps method.
         :return:
         """
 
-        # Set any iterations
-        self.agent.iterations = np.random.randint(10, 1000)
+        # Set any steps
+        self.agent.steps = np.random.randint(10, 1000)
 
-        # Reset iterations
-        self.agent.reset_iterations()
+        # Reset steps
+        self.agent.reset_steps()
 
-        self.assertEqual(self.agent.iterations, 0)
+        self.assertEqual(self.agent.steps, 0)
 
     def test_reset_states_to_observe(self):
         """

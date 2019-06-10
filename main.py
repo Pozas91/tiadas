@@ -113,7 +113,7 @@ def plot_performance(epochs=100000):
     for state, data in agent_mesh.states_to_observe.items():
         plt.plot(data, label='State: {}'.format(state))
 
-    plt.xlabel('Iterations')
+    plt.xlabel('Steps')
     plt.ylabel('V max')
 
     plt.legend(loc='upper left')
@@ -136,7 +136,7 @@ def russel_and_norvig():
 def deep_sea_treasure():
     env = DeepSeaTreasure()
     weights = (0., 1.)
-    agent = AgentMOSP(environment=env, weights=weights, epsilon=0.8, max_iterations=1000)
+    agent = AgentMOSP(environment=env, weights=weights, epsilon=0.8, max_steps=1000)
     agent.train()
     agent.show_policy()
     pass
@@ -220,7 +220,7 @@ def testing_pareto():
 def resource_gathering():
     env = ResourceGathering()
     weights = (0., 0., 1.)
-    agent = AgentMOSP(environment=env, weights=weights, max_iterations=1000)
+    agent = AgentMOSP(environment=env, weights=weights, max_steps=1000)
     agent.train()
     agent.show_policy()
     pass
@@ -229,7 +229,7 @@ def resource_gathering():
 def pressurized_bountiful_sea_treasure():
     env = PressurizedBountifulSeaTreasure()
     weights = (1., 0., 0.)
-    agent = AgentMOSP(environment=env, weights=weights, epsilon=0.5, max_iterations=1000)
+    agent = AgentMOSP(environment=env, weights=weights, epsilon=0.5, max_steps=1000)
     agent.train(epochs=200000)
     agent.show_policy()
     pass
@@ -246,7 +246,7 @@ def buridan_ass():
 def mo_puddle_world():
     env = MoPuddleWorld()
     weights = (0.5,) * 2
-    agent = AgentMOSP(environment=env, weights=weights, epsilon=0.3, max_iterations=100)
+    agent = AgentMOSP(environment=env, weights=weights, epsilon=0.3, max_steps=100)
     agent.train(epochs=1000)
     agent.show_policy()
     pass
@@ -255,7 +255,7 @@ def mo_puddle_world():
 def linked_rings():
     env = LinkedRings()
     weights = (0.5,) * 2
-    agent = AgentMOSP(environment=env, weights=weights, epsilon=0.1, max_iterations=100,
+    agent = AgentMOSP(environment=env, weights=weights, epsilon=0.1, max_steps=100,
                       states_to_observe=[0, 1, 4])
     agent.train(epochs=1000)
     agent.show_policy()
@@ -266,7 +266,7 @@ def linked_rings():
 def non_recurrent_rings():
     env = NonRecurrentRings()
     weights = (0.3, 0.7)
-    agent = AgentMOSP(environment=env, weights=weights, epsilon=0.1, max_iterations=100,
+    agent = AgentMOSP(environment=env, weights=weights, epsilon=0.1, max_steps=100,
                       states_to_observe=[0, 7])
     agent.train(epochs=1000)
     agent.show_policy()
@@ -304,7 +304,7 @@ def deep_sea_treasure_simplified_mo_mp():
     plt.errorbar(x=y, y=data, yerr=error, errorevery=500, label='Second')
     # plt.plot(data)
 
-    plt.xlabel('Iterations')
+    plt.xlabel('Steps')
     plt.ylabel('HV max')
     plt.legend(loc='upper left')
     plt.show()
@@ -324,7 +324,7 @@ def graphs_dps():
 
     evaluation_mechanisms = ['HV-PQL', 'PO-PQL', 'C-PQL']
     epochs = 3000
-    iterations = 100
+    steps = 100
 
     # Make instance of AgentPQL
     agent = AgentPQL(environment=env, epsilon=epsilon, states_to_observe=states_to_observe,
@@ -353,7 +353,7 @@ def graphs_dps():
         # Set evaluation mechanism
         agent.evaluation_mechanism = evaluation_mechanism
 
-        for i in range(iterations):
+        for i in range(steps):
             # Reset agent
             agent.reset()
 
@@ -372,7 +372,7 @@ def graphs_dps():
         plt.errorbar(x=y, y=data, yerr=error, errorevery=epochs * 0.1, label=evaluation_mechanism)
 
     # Show data
-    plt.xlabel('Iterations')
+    plt.xlabel('Steps')
     plt.ylabel('HV max')
     plt.legend(loc='upper left')
     plt.show()

@@ -1,47 +1,63 @@
-"""The environment is a grid of 10 rows and 11 columns. The agent controls a submarine searching for undersea
-treasure. There are multiple treasure locations with varying values. There are two objectives - to minimise the time
-taken to reach the treasure, and to maximise the value of the treasure. Each episode commences with the vessel in the
-top left state, and ends when a treasure location is reached or after 1000 actions. Four actions are available to the
-agent - moving one square to the left, right, up or down. Any action which would cause the agent to leave the grid
-will leave its position unchanged. The reward received by the agent is a 2-element vector. The first element is a
-time penalty, which is -1 on all turns. The second element is the treasure value which is 0 except when the agent
-moves into a treasure location, when it is the value indicated.
-
-FINAL STATE: To reach any final state.
-
-REF: Empirical Evaluation methods for multi-objective reinforcement learning algorithms
-    (Vamplew, Dazeley, Berry, Issabekov and Dekker) 2011
+"""
+This is a variant of original problem of DeepSeaTreasure where we only take two actions, RIGHT and DOWN, and in the last
+column we only go to DOWN.
 """
 from models import Vector
 from spaces import DynamicSpace
 from .env_mesh import EnvMesh
 
 
-class DeepSeaTreasureNoCyclic1(EnvMesh):
+class DeepSeaTreasureRightDown(EnvMesh):
     # Possible actions
     _actions = {'RIGHT': 0, 'DOWN': 1}
 
     # Pareto optimal
     pareto_optimal = [
-        (-2, 5)
+        (-1, 1), (-3, 2), (-5, 3), (-7, 5), (-8, 8), (-9, 16), (-13, 24), (-14, 50), (-17, 74), (-19, 124)
     ]
 
-    def __init__(self, initial_state: tuple = (0, 0), default_reward: tuple = (0,), seed: int = 0):
+    def __init__(self, initial_state: tuple = (0, 0), default_reward: tuple = (0,), seed: int = 0, columns: int = 0):
         """
         :param initial_state:
         :param default_reward:
         :param seed:
+        :param columns: Number of columns to use with this environment.
         """
+
+        original_mesh_shape = (10, 11)
+
+        if columns < 1 or columns > original_mesh_shape[0]:
+            columns = original_mesh_shape[0]
 
         # List of all treasures and its reward.
         finals = {
-            (1, 1): 5,
+            (0, 1): 1,
+            (1, 2): 2,
+            (2, 3): 3,
+            (3, 4): 5,
+            (4, 4): 8,
+            (5, 4): 16,
+            (6, 7): 24,
+            (7, 7): 50,
+            (8, 9): 74,
+            (9, 10): 124,
         }
 
-        obstacles = frozenset()
-        obstacles = obstacles.union([(0, 1)])
+        finals = dict(filter(lambda x: x[0][0] < columns, finals.items()))
 
-        mesh_shape = (2, 2)
+        obstacles = frozenset()
+        obstacles = obstacles.union([(0, y) for y in range(2, 11)])
+        obstacles = obstacles.union([(1, y) for y in range(3, 11)])
+        obstacles = obstacles.union([(2, y) for y in range(4, 11)])
+        obstacles = obstacles.union([(3, y) for y in range(5, 11)])
+        obstacles = obstacles.union([(4, y) for y in range(5, 11)])
+        obstacles = obstacles.union([(5, y) for y in range(5, 11)])
+        obstacles = obstacles.union([(6, y) for y in range(8, 11)])
+        obstacles = obstacles.union([(7, y) for y in range(8, 11)])
+        obstacles = obstacles.union([(8, y) for y in range(10, 11)])
+        obstacles = frozenset(filter(lambda x: x[0] < columns, obstacles))
+
+        mesh_shape = (columns, 11)
 
         # Default reward plus time (time_inverted, treasure_value)
         default_reward = (-1,) + default_reward
@@ -139,23 +155,16 @@ class DeepSeaTreasureNoCyclic1(EnvMesh):
         # Setting possible actions
         possible_actions = []
 
-        # Get all actions available
-
         # Can we go to right?
         x_right = x + 1
 
         # Check that x_right is not an obstacle and is into mesh
-        if (x_right, y) not in self.obstacles and self.observation_space.contains((x_right, y)):
+        if self.observation_space.contains((x_right, y)):
             # We can go to right
             possible_actions.append(self._actions.get('RIGHT'))
 
-        # Can we go to down?
-        y_down = y + 1
-
-        # Check that y_down is not an obstacle and is into mesh
-        if (x, y_down) not in self.obstacles and self.observation_space.contains((x, y_down)):
-            # We can go to down
-            possible_actions.append(self._actions.get('DOWN'))
+        # We always can go to down (Because an final state stop the problem)
+        possible_actions.append(self._actions.get('DOWN'))
 
         # Setting to dynamic_space
         self.dynamic_action_space.items = possible_actions
@@ -165,3 +174,16 @@ class DeepSeaTreasureNoCyclic1(EnvMesh):
 
         # Return a list of iterable valid actions
         return self.dynamic_action_space
+
+    def get_dict_model(self) -> dict:
+        """
+        Get dict model of environment
+        :return:
+        """
+
+        data = super().get_dict_model()
+
+        # Clean specific environment data
+        del data['dynamic_action_space']
+
+        return data

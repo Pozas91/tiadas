@@ -20,7 +20,7 @@ class Vector:
     decimals = 10 ** 2
 
     # Relative margin to compare of similarity of two elements.
-    relative_tolerance = 0.15
+    relative_tolerance = 0.00
     absolute_tolerance = 0
 
     def __init__(self, components, dtype=int):

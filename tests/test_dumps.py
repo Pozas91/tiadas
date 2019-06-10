@@ -33,7 +33,7 @@ class TestDumps(unittest.TestCase):
         states_to_observe = [(0, 0)]
         epochs = np.random.randint(10, 100)
         gamma = 0.99
-        max_iterations = None
+        max_steps = None
 
         # Instance of Environment
         env = BonusWorld(initial_state=initial_state, default_reward=default_reward, seed=seed)
@@ -41,7 +41,7 @@ class TestDumps(unittest.TestCase):
         # Instance of AgentMOMP
         agent = AgentPQL(environment=env, epsilon=epsilon, states_to_observe=states_to_observe,
                          hv_reference=hv_reference, evaluation_mechanism=evaluation_mechanism, gamma=gamma,
-                         max_iterations=max_iterations)
+                         max_steps=max_steps)
 
         # Train to modify data.
         agent.train(epochs=epochs)
@@ -54,7 +54,7 @@ class TestDumps(unittest.TestCase):
         self.assertEqual(type(agent), type(agent_loaded))
         self.assertEqual(agent.epsilon, agent_loaded.epsilon)
         self.assertEqual(agent.gamma, agent_loaded.gamma)
-        self.assertEqual(agent.max_iterations, agent_loaded.max_iterations)
+        self.assertEqual(agent.max_steps, agent_loaded.max_steps)
         self.assertEqual(agent.states_to_observe, agent_loaded.states_to_observe)
         self.assertEqual(agent.seed, agent_loaded.seed)
         self.assertEqual(agent.r, agent_loaded.r)
@@ -83,7 +83,7 @@ class TestDumps(unittest.TestCase):
         states_to_observe = [(1, 1)]
         epochs = np.random.randint(10, 100)
         gamma = 0.99
-        max_iterations = None
+        max_steps = None
         p_stolen = .8
         n_appear = 15
         stolen_penalty = -.3
@@ -100,7 +100,7 @@ class TestDumps(unittest.TestCase):
         # Instance of AgentMOMP
         agent = AgentPQL(environment=env, epsilon=epsilon, states_to_observe=states_to_observe,
                          hv_reference=hv_reference, evaluation_mechanism=evaluation_mechanism, gamma=gamma,
-                         max_iterations=max_iterations)
+                         max_steps=max_steps)
 
         # Train to modify data.
         agent.train(epochs=epochs)
@@ -113,7 +113,7 @@ class TestDumps(unittest.TestCase):
         self.assertEqual(type(agent), type(agent_loaded))
         self.assertEqual(agent.epsilon, agent_loaded.epsilon)
         self.assertEqual(agent.gamma, agent_loaded.gamma)
-        self.assertEqual(agent.max_iterations, agent_loaded.max_iterations)
+        self.assertEqual(agent.max_steps, agent_loaded.max_steps)
         self.assertEqual(agent.states_to_observe, agent_loaded.states_to_observe)
         self.assertEqual(agent.seed, agent_loaded.seed)
         self.assertEqual(agent.r, agent_loaded.r)
@@ -147,7 +147,7 @@ class TestDumps(unittest.TestCase):
         states_to_observe = [(0, 0)]
         epochs = np.random.randint(10, 100)
         gamma = 0.99
-        max_iterations = None
+        max_steps = None
 
         # Instance of Environment
         env = DeepSeaTreasure(initial_state=initial_state, default_reward=default_reward, seed=seed)
@@ -155,7 +155,7 @@ class TestDumps(unittest.TestCase):
         # Instance of AgentMOMP
         agent = AgentPQL(environment=env, epsilon=epsilon, states_to_observe=states_to_observe,
                          hv_reference=hv_reference, evaluation_mechanism=evaluation_mechanism, gamma=gamma,
-                         max_iterations=max_iterations)
+                         max_steps=max_steps)
 
         # Train to modify data.
         agent.train(epochs=epochs)
@@ -168,7 +168,7 @@ class TestDumps(unittest.TestCase):
         self.assertEqual(type(agent), type(agent_loaded))
         self.assertEqual(agent.epsilon, agent_loaded.epsilon)
         self.assertEqual(agent.gamma, agent_loaded.gamma)
-        self.assertEqual(agent.max_iterations, agent_loaded.max_iterations)
+        self.assertEqual(agent.max_steps, agent_loaded.max_steps)
         self.assertEqual(agent.states_to_observe, agent_loaded.states_to_observe)
         self.assertEqual(agent.seed, agent_loaded.seed)
         self.assertEqual(agent.r, agent_loaded.r)
@@ -196,7 +196,7 @@ class TestDumps(unittest.TestCase):
         states_to_observe = [(0, 0)]
         epochs = np.random.randint(10, 100)
         gamma = 0.99
-        max_iterations = None
+        max_steps = None
 
         # Instance of Environment
         env = DeepSeaTreasureSimplified(initial_state=initial_state, default_reward=default_reward, seed=seed)
@@ -204,7 +204,7 @@ class TestDumps(unittest.TestCase):
         # Instance of AgentMOMP
         agent = AgentPQL(environment=env, epsilon=epsilon, states_to_observe=states_to_observe,
                          hv_reference=hv_reference, evaluation_mechanism=evaluation_mechanism, gamma=gamma,
-                         max_iterations=max_iterations)
+                         max_steps=max_steps)
 
         # Train to modify data.
         agent.train(epochs=epochs)
@@ -217,7 +217,7 @@ class TestDumps(unittest.TestCase):
         self.assertEqual(type(agent), type(agent_loaded))
         self.assertEqual(agent.epsilon, agent_loaded.epsilon)
         self.assertEqual(agent.gamma, agent_loaded.gamma)
-        self.assertEqual(agent.max_iterations, agent_loaded.max_iterations)
+        self.assertEqual(agent.max_steps, agent_loaded.max_steps)
         self.assertEqual(agent.states_to_observe, agent_loaded.states_to_observe)
         self.assertEqual(agent.seed, agent_loaded.seed)
         self.assertEqual(agent.r, agent_loaded.r)
@@ -245,7 +245,7 @@ class TestDumps(unittest.TestCase):
         states_to_observe = [(0, 0)]
         epochs = np.random.randint(10, 100)
         gamma = 0.99
-        max_iterations = None
+        max_steps = None
         n_transaction = 0.33
 
         # Instance of Environment
@@ -255,7 +255,7 @@ class TestDumps(unittest.TestCase):
         # Instance of AgentMOMP
         agent = AgentPQL(environment=env, epsilon=epsilon, states_to_observe=states_to_observe,
                          hv_reference=hv_reference, evaluation_mechanism=evaluation_mechanism, gamma=gamma,
-                         max_iterations=max_iterations)
+                         max_steps=max_steps)
 
         # Train to modify data.
         agent.train(epochs=epochs)
@@ -268,7 +268,7 @@ class TestDumps(unittest.TestCase):
         self.assertEqual(type(agent), type(agent_loaded))
         self.assertEqual(agent.epsilon, agent_loaded.epsilon)
         self.assertEqual(agent.gamma, agent_loaded.gamma)
-        self.assertEqual(agent.max_iterations, agent_loaded.max_iterations)
+        self.assertEqual(agent.max_steps, agent_loaded.max_steps)
         self.assertEqual(agent.states_to_observe, agent_loaded.states_to_observe)
         self.assertEqual(agent.seed, agent_loaded.seed)
         self.assertEqual(agent.r, agent_loaded.r)
@@ -295,7 +295,7 @@ class TestDumps(unittest.TestCase):
         states_to_observe = [0]
         epochs = np.random.randint(10, 100)
         gamma = 0.99
-        max_iterations = 10
+        max_steps = 10
         initial_state = 1
 
         # Instance of Environment
@@ -304,7 +304,7 @@ class TestDumps(unittest.TestCase):
         # Instance of AgentMOMP
         agent = AgentPQL(environment=env, epsilon=epsilon, states_to_observe=states_to_observe,
                          hv_reference=hv_reference, evaluation_mechanism=evaluation_mechanism, gamma=gamma,
-                         max_iterations=max_iterations)
+                         max_steps=max_steps)
 
         # Train to modify data.
         agent.train(epochs=epochs)
@@ -317,7 +317,7 @@ class TestDumps(unittest.TestCase):
         self.assertEqual(type(agent), type(agent_loaded))
         self.assertEqual(agent.epsilon, agent_loaded.epsilon)
         self.assertEqual(agent.gamma, agent_loaded.gamma)
-        self.assertEqual(agent.max_iterations, agent_loaded.max_iterations)
+        self.assertEqual(agent.max_steps, agent_loaded.max_steps)
         self.assertEqual(agent.states_to_observe, agent_loaded.states_to_observe)
         self.assertEqual(agent.seed, agent_loaded.seed)
         self.assertEqual(agent.r, agent_loaded.r)
@@ -342,7 +342,7 @@ class TestDumps(unittest.TestCase):
         states_to_observe = [0]
         epochs = np.random.randint(10, 100)
         gamma = 0.99
-        max_iterations = 10
+        max_steps = 10
         initial_state = 1
 
         # Instance of Environment
@@ -351,7 +351,7 @@ class TestDumps(unittest.TestCase):
         # Instance of AgentMOMP
         agent = AgentPQL(environment=env, epsilon=epsilon, states_to_observe=states_to_observe,
                          hv_reference=hv_reference, evaluation_mechanism=evaluation_mechanism, gamma=gamma,
-                         max_iterations=max_iterations)
+                         max_steps=max_steps)
 
         # Train to modify data.
         agent.train(epochs=epochs)
@@ -364,7 +364,7 @@ class TestDumps(unittest.TestCase):
         self.assertEqual(type(agent), type(agent_loaded))
         self.assertEqual(agent.epsilon, agent_loaded.epsilon)
         self.assertEqual(agent.gamma, agent_loaded.gamma)
-        self.assertEqual(agent.max_iterations, agent_loaded.max_iterations)
+        self.assertEqual(agent.max_steps, agent_loaded.max_steps)
         self.assertEqual(agent.states_to_observe, agent_loaded.states_to_observe)
         self.assertEqual(agent.seed, agent_loaded.seed)
         self.assertEqual(agent.r, agent_loaded.r)
@@ -391,7 +391,7 @@ class TestDumps(unittest.TestCase):
         states_to_observe = [(0, 0)]
         epochs = np.random.randint(10, 40)
         gamma = 0.99
-        max_iterations = None
+        max_steps = None
 
         # Instance of Environment
         env = MoPuddleWorld(default_reward=default_reward, seed=seed, penalize_non_goal=penalize_non_goal)
@@ -399,7 +399,7 @@ class TestDumps(unittest.TestCase):
         # Instance of AgentMOMP
         agent = AgentPQL(environment=env, epsilon=epsilon, states_to_observe=states_to_observe,
                          hv_reference=hv_reference, evaluation_mechanism=evaluation_mechanism, gamma=gamma,
-                         max_iterations=max_iterations)
+                         max_steps=max_steps)
 
         # Train to modify data.
         agent.train(epochs=epochs)
@@ -412,7 +412,7 @@ class TestDumps(unittest.TestCase):
         self.assertEqual(type(agent), type(agent_loaded))
         self.assertEqual(agent.epsilon, agent_loaded.epsilon)
         self.assertEqual(agent.gamma, agent_loaded.gamma)
-        self.assertEqual(agent.max_iterations, agent_loaded.max_iterations)
+        self.assertEqual(agent.max_steps, agent_loaded.max_steps)
         self.assertEqual(agent.states_to_observe, agent_loaded.states_to_observe)
         self.assertEqual(agent.seed, agent_loaded.seed)
         self.assertEqual(agent.r, agent_loaded.r)
@@ -439,7 +439,7 @@ class TestDumps(unittest.TestCase):
         states_to_observe = [(0, 0)]
         epochs = np.random.randint(10, 100)
         gamma = 0.99
-        max_iterations = None
+        max_steps = None
 
         # Instance of Environment
         env = PressurizedBountifulSeaTreasure(default_reward=default_reward, seed=seed)
@@ -447,7 +447,7 @@ class TestDumps(unittest.TestCase):
         # Instance of AgentMOMP
         agent = AgentPQL(environment=env, epsilon=epsilon, states_to_observe=states_to_observe,
                          hv_reference=hv_reference, evaluation_mechanism=evaluation_mechanism, gamma=gamma,
-                         max_iterations=max_iterations)
+                         max_steps=max_steps)
 
         # Train to modify data.
         agent.train(epochs=epochs)
@@ -460,7 +460,7 @@ class TestDumps(unittest.TestCase):
         self.assertEqual(type(agent), type(agent_loaded))
         self.assertEqual(agent.epsilon, agent_loaded.epsilon)
         self.assertEqual(agent.gamma, agent_loaded.gamma)
-        self.assertEqual(agent.max_iterations, agent_loaded.max_iterations)
+        self.assertEqual(agent.max_steps, agent_loaded.max_steps)
         self.assertEqual(agent.states_to_observe, agent_loaded.states_to_observe)
         self.assertEqual(agent.seed, agent_loaded.seed)
         self.assertEqual(agent.r, agent_loaded.r)
@@ -486,7 +486,7 @@ class TestDumps(unittest.TestCase):
         states_to_observe = [(0, 0)]
         epochs = np.random.randint(10, 100)
         gamma = 0.99
-        max_iterations = None
+        max_steps = None
         p_attack = 0.2
 
         # Instance of Environment
@@ -495,7 +495,7 @@ class TestDumps(unittest.TestCase):
         # Instance of AgentMOMP
         agent = AgentPQL(environment=env, epsilon=epsilon, states_to_observe=states_to_observe,
                          hv_reference=hv_reference, evaluation_mechanism=evaluation_mechanism, gamma=gamma,
-                         max_iterations=max_iterations)
+                         max_steps=max_steps)
 
         # Train to modify data.
         agent.train(epochs=epochs)
@@ -508,7 +508,7 @@ class TestDumps(unittest.TestCase):
         self.assertEqual(type(agent), type(agent_loaded))
         self.assertEqual(agent.epsilon, agent_loaded.epsilon)
         self.assertEqual(agent.gamma, agent_loaded.gamma)
-        self.assertEqual(agent.max_iterations, agent_loaded.max_iterations)
+        self.assertEqual(agent.max_steps, agent_loaded.max_steps)
         self.assertEqual(agent.states_to_observe, agent_loaded.states_to_observe)
         self.assertEqual(agent.seed, agent_loaded.seed)
         self.assertEqual(agent.r, agent_loaded.r)
@@ -536,7 +536,7 @@ class TestDumps(unittest.TestCase):
         states_to_observe = [(0, 0)]
         epochs = np.random.randint(10, 100)
         gamma = 0.99
-        max_iterations = None
+        max_steps = None
         p_attack = 0.2
 
         # Instance of Environment
@@ -546,7 +546,7 @@ class TestDumps(unittest.TestCase):
         # Instance of AgentMOMP
         agent = AgentPQL(environment=env, epsilon=epsilon, states_to_observe=states_to_observe,
                          hv_reference=hv_reference, evaluation_mechanism=evaluation_mechanism, gamma=gamma,
-                         max_iterations=max_iterations)
+                         max_steps=max_steps)
 
         # Train to modify data.
         agent.train(epochs=epochs)
@@ -559,7 +559,7 @@ class TestDumps(unittest.TestCase):
         self.assertEqual(type(agent), type(agent_loaded))
         self.assertEqual(agent.epsilon, agent_loaded.epsilon)
         self.assertEqual(agent.gamma, agent_loaded.gamma)
-        self.assertEqual(agent.max_iterations, agent_loaded.max_iterations)
+        self.assertEqual(agent.max_steps, agent_loaded.max_steps)
         self.assertEqual(agent.states_to_observe, agent_loaded.states_to_observe)
         self.assertEqual(agent.seed, agent_loaded.seed)
         self.assertEqual(agent.r, agent_loaded.r)
@@ -587,7 +587,7 @@ class TestDumps(unittest.TestCase):
         states_to_observe = [(0, 0)]
         epochs = np.random.randint(10, 100)
         gamma = 0.99
-        max_iterations = None
+        max_steps = None
 
         # Instance of Environment
         env = SpaceExploration(default_reward=default_reward, seed=seed)
@@ -595,7 +595,7 @@ class TestDumps(unittest.TestCase):
         # Instance of AgentMOMP
         agent = AgentPQL(environment=env, epsilon=epsilon, states_to_observe=states_to_observe,
                          hv_reference=hv_reference, evaluation_mechanism=evaluation_mechanism, gamma=gamma,
-                         max_iterations=max_iterations)
+                         max_steps=max_steps)
 
         # Train to modify data.
         agent.train(epochs=epochs)
@@ -608,7 +608,7 @@ class TestDumps(unittest.TestCase):
         self.assertEqual(type(agent), type(agent_loaded))
         self.assertEqual(agent.epsilon, agent_loaded.epsilon)
         self.assertEqual(agent.gamma, agent_loaded.gamma)
-        self.assertEqual(agent.max_iterations, agent_loaded.max_iterations)
+        self.assertEqual(agent.max_steps, agent_loaded.max_steps)
         self.assertEqual(agent.states_to_observe, agent_loaded.states_to_observe)
         self.assertEqual(agent.seed, agent_loaded.seed)
         self.assertEqual(agent.r, agent_loaded.r)

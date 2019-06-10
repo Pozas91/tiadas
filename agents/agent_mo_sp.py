@@ -64,7 +64,7 @@ from .agent_q import AgentQ
 class AgentMOSP(AgentQ):
 
     def __init__(self, environment: Environment, alpha: float = 0.1, epsilon: float = 0.1, gamma: float = 1.,
-                 seed: int = 0, states_to_observe: list = None, max_iterations: int = None, weights: tuple = None):
+                 seed: int = 0, states_to_observe: list = None, max_steps: int = None, weights: tuple = None):
         """
         :param environment: An environment where agent does any operation.
         :param alpha: Learning rate
@@ -72,7 +72,7 @@ class AgentMOSP(AgentQ):
         :param gamma: Discount factor
         :param seed: Seed used for np.random.RandomState method.
         :param states_to_observe: List of states from that we want to get a graphical output.
-        :param max_iterations: Limits of iterations per episode.
+        :param max_steps: Limits of steps per episode.
         :param weights: Tuple of weights to multiply per reward vector.
         """
 
@@ -81,7 +81,7 @@ class AgentMOSP(AgentQ):
 
         # Super call init
         super().__init__(environment=environment, alpha=alpha, epsilon=epsilon, gamma=gamma, seed=seed,
-                         states_to_observe=states_to_observe, max_iterations=max_iterations)
+                         states_to_observe=states_to_observe, max_steps=max_steps)
 
         # Set weights
         self.weights = weights
