@@ -6,16 +6,16 @@ import unittest
 
 from gym import spaces
 
-from gym_tiadas.gym_tiadas.envs import DeepSeaTreasureTransitions
+from gym_tiadas.gym_tiadas.envs import DeepSeaTreasureStochastic
 from models import Vector
 
 
-class TestDeepSeaTreasureTransitions(unittest.TestCase):
+class TestDeepSeaTreasureStochastic(unittest.TestCase):
     environment = None
 
     def setUp(self):
         # Set seed to 0 to testing.
-        self.environment = DeepSeaTreasureTransitions(seed=0)
+        self.environment = DeepSeaTreasureStochastic(seed=0)
 
     def tearDown(self):
         self.environment = None

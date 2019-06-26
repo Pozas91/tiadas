@@ -179,7 +179,7 @@ def testing_pareto():
     agent.objective_training(objective=objective)
 
     # Get p point from agent test.
-    p = agent.testing()
+    p = agent.get_accumulated_reward()
 
     # Reset agent to train again with others weights
     agent.reset()
@@ -192,7 +192,7 @@ def testing_pareto():
     agent.objective_training(objective=objective)
 
     # Get q point from agent test.
-    q = agent.testing()
+    q = agent.get_accumulated_reward()
 
     # Search pareto points
     pareto_frontier = agent.calc_frontier_scalarized(p=p, q=q, solutions_known=pareto_points)

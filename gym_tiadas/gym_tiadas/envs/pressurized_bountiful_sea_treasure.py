@@ -16,7 +16,8 @@ class PressurizedBountifulSeaTreasure(EnvMesh):
 
     # Pareto optimal
     pareto_optimal = [
-        (-1, 5), (-3, 80), (-5, 120), (-7, 120), (-8, 145), (-9, 150), (-13, 163), (-14, 166), (-17, 173), (-19, 175)
+        (-1, 5, -2), (-3, 80, -3), (-5, 120, -4), (-7, 140, -5), (-8, 145, -6), (-9, 150, -6), (-13, 163, -8),
+        (-14, 166, -8), (-17, 173, -10), (-19, 175, -11)
     ]
 
     def __init__(self, initial_state: tuple = (0, 0), default_reward: tuple = (0,), seed: int = 0):

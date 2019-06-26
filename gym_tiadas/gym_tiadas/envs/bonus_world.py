@@ -1,3 +1,4 @@
+# coding=utf-8
 """Like DST it is a 2D episodic grid environment, but it has three objectives rather than two. Each episode starts
 with the agent in the location marked ’S’. The agent can move in the four cardinal directions, and receives a reward
 of −1 for the time objective on every time-step. When reaching a terminal state the agent receives the rewards
@@ -31,16 +32,16 @@ class BonusWorld(EnvMesh):
 
         # List of all treasures and its reward.
         finals = {
-            (8, 0): (1, 9),
-            (8, 2): (3, 9),
-            (8, 4): (5, 9),
-            (8, 6): (7, 9),
-            (8, 8): (9, 9),
+            (8, 0): Vector([1, 9]),
+            (8, 2): Vector([3, 9]),
+            (8, 4): Vector([5, 9]),
+            (8, 6): Vector([7, 9]),
+            (8, 8): Vector([9, 9]),
 
-            (0, 8): (9, 1),
-            (2, 8): (9, 3),
-            (4, 8): (9, 5),
-            (6, 8): (9, 7),
+            (0, 8): Vector([9, 1]),
+            (2, 8): Vector([9, 3]),
+            (4, 8): Vector([9, 5]),
+            (6, 8): Vector([9, 7]),
         }
 
         # Define mesh shape
@@ -73,7 +74,7 @@ class BonusWorld(EnvMesh):
         """
         Given an action, do a step
         :param action:
-        :return: (state, (time_inverted, treasure_value), final, info)
+        :return: (state, (objective 1, objective 2, time), final, info)
         """
 
         # Initialize rewards as vector

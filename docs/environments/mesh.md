@@ -10,7 +10,7 @@ trataremos serán del tipo `tuple`.
     
 * **Métodos**
             
-    * `render(self, mode='human')`
+    * `render(self, mode:str = 'human')`
         * **Descripción**
             * Su finalidad es devolver de manera visual el estado en el que se encuentra el entorno.
         * **Parámetros**

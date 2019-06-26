@@ -11,7 +11,7 @@ class DeepSeaTreasureSimplified(EnvMesh):
 
     # Pareto optimal
     pareto_optimal = [
-        (-1, 5), (-3, 80), (-5, 120)
+        Vector([-1, 5]), Vector([-3, 80]), Vector([-5, 120])
     ]
 
     def __init__(self, initial_state: tuple = (0, 0), default_reward: tuple = (0,), seed: int = 0):

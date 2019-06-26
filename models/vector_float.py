@@ -13,6 +13,8 @@ class VectorFloat(Vector):
     Class Vector with functions to work with float vectors.
     """
 
+    relative_tolerance = 0.02
+
     def __init__(self, components, dtype=float):
         """
         Vector's init
@@ -69,13 +71,6 @@ class VectorFloat(Vector):
             a < b or np.isclose(a, b, atol=self.absolute_tolerance, rtol=self.relative_tolerance) for a, b in
             zip(self.components, other.components)
         ])
-
-    def to_int(self) -> Vector:
-        """
-        Parse Vector to int vector
-        :return:
-        """
-        return Vector((self.components * self.decimals).astype(int))
 
     @staticmethod
     def m3_max_2_sets_not_duplicates(vectors: list) -> (list, list):

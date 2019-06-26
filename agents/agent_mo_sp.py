@@ -19,7 +19,7 @@ EXAMPLE OF USE OF AgentMOSP:
     q_learning.objective_training(agent=agent, objective=objective, close_margin=1e-2)
 
     # Get p point from agent test.
-    p = q_learning.testing(agent=agent)
+    p = q_learning.get_accumulated_reward(agent=agent)
 
     # Reset agent to train again with others weights
     agent.reset()
@@ -32,7 +32,7 @@ EXAMPLE OF USE OF AgentMOSP:
     q_learning.objective_training(agent=agent, objective=objective, close_margin=1e-1)
 
     # Get q point from agent test.
-    q = q_learning.testing(agent=agent)
+    q = q_learning.get_accumulated_reward(agent=agent)
 
     # Search pareto points (THIS IS THE CALL OF THESE FUNCTIONS)
     pareto_frontier = pareto.calc_frontier_scalarized(p=p, q=q, problem=agent, solutions_known=pareto_points)
@@ -55,16 +55,18 @@ EXAMPLE OF USE OF AgentMOSP:
 """
 import numpy as np
 
+import utils.hypervolume as uh
 import utils.miscellaneous as um
 from gym_tiadas.gym_tiadas.envs import Environment
-from models import Vector, VectorFloat
+from models import Vector, VectorFloat, GraphType
 from .agent_q import AgentQ
 
 
 class AgentMOSP(AgentQ):
 
     def __init__(self, environment: Environment, alpha: float = 0.1, epsilon: float = 0.1, gamma: float = 1.,
-                 seed: int = 0, states_to_observe: list = None, max_steps: int = None, weights: tuple = None):
+                 seed: int = 0, states_to_observe: list = None, max_steps: int = None, weights: tuple = None,
+                 graph_types: tuple = (GraphType.EPOCHS, GraphType.STEPS), hv_reference: Vector = None):
         """
         :param environment: An environment where agent does any operation.
         :param alpha: Learning rate
@@ -76,28 +78,35 @@ class AgentMOSP(AgentQ):
         :param weights: Tuple of weights to multiply per reward vector.
         """
 
-        # Sum of weights must be 1.
-        assert weights is not None and np.sum(weights) == 1.
+        # Weights must be setting
+        assert weights is not None
 
         # Super call init
         super().__init__(environment=environment, alpha=alpha, epsilon=epsilon, gamma=gamma, seed=seed,
-                         states_to_observe=states_to_observe, max_steps=max_steps)
+                         states_to_observe=states_to_observe, max_steps=max_steps, graph_types=graph_types)
 
         # Set weights
         self.weights = weights
 
-    def process_reward(self, reward: Vector) -> Vector:
+        # Pareto's frontier found
+        self.pareto_frontier_found = list()
+        self.hv_reference = hv_reference
+
+    def process_reward(self, reward: Vector) -> float:
         """
         Processing reward function.
         :param reward:
         :return:
         """
 
+        # Convert to float vector
+        reward = VectorFloat(reward.components)
+
         # Multiply the reward for the vector weights, sum all components and return a reward of the same type as the
         # original, but with only one component.
-        return reward.__class__(float(np.sum(reward * self.weights)))
+        return float(np.sum(reward * self.weights))
 
-    def _update_q_values(self, reward: Vector, action: int, next_state: object) -> None:
+    def _update_q_values(self, reward: float, action: int, next_state: object) -> None:
         """
         Update Q-Dictionary with new data
         :param reward:
@@ -106,13 +115,10 @@ class AgentMOSP(AgentQ):
         :return:
         """
 
-        # Apply function
-        reward = self.process_reward(reward=reward)
-
         # Super call
         super()._update_q_values(reward=reward, action=action, next_state=next_state)
 
-    def find_c_vector(self, w1: float, w2: float, solutions_known: list = None) -> Vector:
+    def find_c_vector(self, w1: float, w2: float, solutions_known: list = None) -> VectorFloat:
         """
         This method is called from calc_frontier_scalarized method.
 
@@ -139,7 +145,7 @@ class AgentMOSP(AgentQ):
             objectives = np.sum(np.multiply(solutions_known, [w1, w2]), axis=1)
 
             # Get max of these sums (That is the objective).
-            objective = VectorFloat(np.max(objectives))
+            objective = float(np.max(objectives))
 
             # Train agent searching that objective.
             self.objective_training(objective=objective)
@@ -148,7 +154,7 @@ class AgentMOSP(AgentQ):
             self.train()
 
         # Get point c from agent's test.
-        c = self.testing()
+        c = self.get_accumulated_reward()
 
         return c
 
@@ -179,8 +185,15 @@ class AgentMOSP(AgentQ):
             # Pop the next pair of points from the stack.
             a, b = accumulate.pop()
 
-            # Order points nearest to the center using euclidean distance.
-            a, b = tuple(um.order_vectors_by_origin_nearest([a, b]))
+            try:
+                # Order points nearest to the center using euclidean distance.
+                a, b = tuple(um.order_vectors_by_origin_nearest([a, b]))
+            except ValueError:
+                print('Error to unpack {} and {}'.format(a, b))
+                continue
+
+            # Convert to vectors
+            a, b = VectorFloat(a), VectorFloat(b)
 
             # Decompose points
             a_x, a_y = a
@@ -197,7 +210,7 @@ class AgentMOSP(AgentQ):
             # Decompose c vector.
             c_x, c_y = c
 
-            if (w1 * a_x + w2 * a_y) != (w1 * c_x + w2 * c_y):
+            if (w1 * a_x + w2 * a_y) != (w1 * c_x + w2 * c_y) and c not in result:
                 # c is the cost of a new supported solution
 
                 # Push new pair in the stack
@@ -209,4 +222,30 @@ class AgentMOSP(AgentQ):
                 # Add c to the result
                 result.append(c)
 
+                # Pareto's frontier found
+                self.pareto_frontier_found.append(c)
+
         return result
+
+    def update_graph(self, graph_type: GraphType):
+        """
+        Update specific graph type
+        :param graph_type:
+        :return:
+        """
+
+        for state, data in self.states_to_observe.get(graph_type).items():
+            # Calc pareto's frontier found
+
+            if not self.pareto_frontier_found:
+                value = 0.
+            else:
+                value = uh.calc_hypervolume(list_of_vectors=self.pareto_frontier_found, reference=self.hv_reference)
+
+            # Add to graph data
+            data.append(value)
+
+            # Update dictionary
+            self.states_to_observe.get(graph_type).update({
+                state: data
+            })

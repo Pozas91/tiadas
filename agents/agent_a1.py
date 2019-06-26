@@ -3,11 +3,11 @@ First version of algorithm 1, in this version we are "similar" vector in V(s)
 """
 import datetime
 import itertools
-import math
 import time
 from copy import deepcopy
 
 import gym
+import math
 import numpy as np
 
 import utils.hypervolume as uh
@@ -151,17 +151,17 @@ class AgentA1(Agent):
             if self.max_steps is not None and not is_final_state:
                 is_final_state = self.total_steps >= self.max_steps
 
-            if GraphType.STEPS in self.states_to_observe and self.total_steps % self.steps_to_calc_hypervolume == 0:
+            if GraphType.STEPS in self.states_to_observe and self.total_steps % self.steps_to_get_graph_data == 0:
                 # Append new data
                 self.update_graph(graph_type=GraphType.STEPS)
 
             if GraphType.TIME in self.states_to_observe and (
-                    time.time() - self.last_time) > self.seconds_to_calc_hypervolume:
+                    time.time() - self.last_time_to_get_graph_data) > self.seconds_to_get_graph_data:
                 # Append new data
                 self.update_graph(graph_type=GraphType.TIME)
 
                 # Update last execution
-                self.last_time = time.time()
+                self.last_time_to_get_graph_data = time.time()
 
         if GraphType.EPOCHS in self.states_to_observe:
             # Append new data
@@ -228,8 +228,6 @@ class AgentA1(Agent):
 
         while not is_final_state:
 
-            # TODO: Optimize this part of initialization
-
             # If the state is unknown, register it.
             if self.state not in self.q:
                 self.q.update({self.state: {'updated': True}})
@@ -243,8 +241,6 @@ class AgentA1(Agent):
             if self.state not in self.indexes_counter:
                 # Initialize counters
                 self.indexes_counter.update({self.state: 0})
-
-            # END TODO
 
             # Get an action
             action = self.select_action()
@@ -698,18 +694,18 @@ class AgentA1(Agent):
 
         return v
 
-    def inverse_train(self, epochs=1000):
-        """
-        Return this agent trained with `epochs` epochs.
-        :param epochs:
-        :return:
-        """
-
-        finals_states = self.environment.finals.keys()
-
-        for _ in range(epochs):
-            # Do an episode
-            self.reverse_episode()
+    # def inverse_train(self, epochs=1000):
+    #     """
+    #     Return this agent trained with `epochs` epochs.
+    #     :param epochs:
+    #     :return:
+    #     """
+    #
+    #     finals_states = self.environment.finals.keys()
+    #
+    #     for _ in range(epochs):
+    #         # Do an episode
+    #         self.reverse_episode()
 
     def objective_training(self, list_of_vectors: list):
         """

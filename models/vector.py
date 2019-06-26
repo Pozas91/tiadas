@@ -199,14 +199,6 @@ class Vector:
         return np.all(np.less_equal(self.components, other.components))
 
     @um.lazy_property
-    def magnitude(self) -> float:
-        """
-        Return magnitude of vector
-        :return:
-        """
-        return math.sqrt(np.sum(self.components ** 2))
-
-    @um.lazy_property
     def zero_vector(self):
         """
         Return a zero vector of same type and len that this vector
@@ -235,6 +227,13 @@ class Vector:
         :return:
         """
         return self.components.tolist()
+
+    def magnitude(self) -> float:
+        """
+        Return magnitude of vector
+        :return:
+        """
+        return math.sqrt(np.sum(self.components ** 2))
 
     def all_close(self, v2) -> bool:
         """

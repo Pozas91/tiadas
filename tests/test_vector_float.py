@@ -18,9 +18,9 @@ class TestVectorFloat(unittest.TestCase):
     third_quadrant = None
     fourth_quadrant = None
 
-    def setUp(self):
-        relative = VectorFloat.relative_tolerance
+    difference = 0.01
 
+    def setUp(self):
         self.first_quadrant = (
             [
                 # Problem
@@ -41,8 +41,8 @@ class TestVectorFloat(unittest.TestCase):
                 VectorFloat([4, 1]),
 
                 # Similar
-                VectorFloat([5 + relative, 3 - relative]),
-                VectorFloat([2 + relative, 4 - relative]),
+                VectorFloat([5 + self.difference, 3 - self.difference]),
+                VectorFloat([2 + self.difference, 4 - self.difference]),
             ],
             [
                 # Non-dominated VectorFloats
@@ -79,8 +79,8 @@ class TestVectorFloat(unittest.TestCase):
                 VectorFloat([-6, 6]),
 
                 # Similar
-                VectorFloat([-4 + relative, 2 + relative]),
-                VectorFloat([-4 - relative, 7 + relative]),
+                VectorFloat([-4 + self.difference, 2 + self.difference]),
+                VectorFloat([-4 - self.difference, 7 + self.difference]),
             ],
             [
                 # Non-dominated
@@ -112,8 +112,8 @@ class TestVectorFloat(unittest.TestCase):
                 VectorFloat([-7, -1]),
 
                 # Similar
-                VectorFloat([-2 - relative, -1 - relative]),
-                VectorFloat([-4 + relative, -2 + relative]),
+                VectorFloat([-2 - self.difference, -1 - self.difference]),
+                VectorFloat([-4 + self.difference, -2 + self.difference]),
             ],
             [
                 # Non-dominated
@@ -145,8 +145,8 @@ class TestVectorFloat(unittest.TestCase):
                 VectorFloat([10, -1]),
 
                 # Similar
-                VectorFloat([7 + relative, -3 - relative]),
-                VectorFloat([10 + relative, -1 + relative]),
+                VectorFloat([7 + self.difference, -3 - self.difference]),
+                VectorFloat([10 + self.difference, -1 + self.difference]),
             ],
             [
                 # Non-dominated
@@ -252,7 +252,7 @@ class TestVectorFloat(unittest.TestCase):
         :return:
         """
 
-        x = VectorFloat([5 + VectorFloat.relative_tolerance, 3 + VectorFloat.relative_tolerance])
+        x = VectorFloat([5 + self.difference, 3 + self.difference])
         y = VectorFloat([4, 4])
         z = VectorFloat([5, 3])
         w = VectorFloat([6, 4])
@@ -289,7 +289,7 @@ class TestVectorFloat(unittest.TestCase):
         :return:
         """
 
-        x = VectorFloat([5 + VectorFloat.relative_tolerance, 3 + VectorFloat.relative_tolerance])
+        x = VectorFloat([5 + self.difference, 3 + self.difference])
         y = VectorFloat([4, 4])
         z = VectorFloat([5, 3])
         w = VectorFloat([6, 4])
@@ -326,7 +326,7 @@ class TestVectorFloat(unittest.TestCase):
         :return:
         """
 
-        x = VectorFloat([5 + VectorFloat.relative_tolerance, 3 + VectorFloat.relative_tolerance])
+        x = VectorFloat([5 + self.difference, 3 + self.difference])
         y = VectorFloat([4, 4])
         z = VectorFloat([5, 3])
         w = VectorFloat([6, 4])
@@ -363,7 +363,7 @@ class TestVectorFloat(unittest.TestCase):
         :return:
         """
 
-        x = VectorFloat([5 + VectorFloat.relative_tolerance, 3 + VectorFloat.relative_tolerance])
+        x = VectorFloat([5 + self.difference, 3 + self.difference])
         y = VectorFloat([4, 4])
         z = VectorFloat([5, 3])
         w = VectorFloat([6, 4])
@@ -560,17 +560,17 @@ class TestVectorFloat(unittest.TestCase):
         """
 
         x = VectorFloat([1, 2, 3.])
-        self.assertEqual(math.sqrt((1 * 1) + (2 * 2) + (3 * 3)), x.magnitude)
+        self.assertEqual(math.sqrt((1 * 1) + (2 * 2) + (3 * 3)), x.magnitude())
 
         ################################################################################################################
 
         x = VectorFloat([1., -2.])
-        self.assertEqual(math.sqrt((1 * 1) + (-2 * -2)), x.magnitude)
+        self.assertEqual(math.sqrt((1 * 1) + (-2 * -2)), x.magnitude())
 
         ################################################################################################################
 
         x = VectorFloat([rnd.uniform(-100., 100.) for _ in range(6)])
-        self.assertEqual(math.sqrt(sum(component ** 2 for component in x.components)), x.magnitude)
+        self.assertEqual(math.sqrt(sum(component ** 2 for component in x.components)), x.magnitude())
 
     def test_all_close(self):
         """
@@ -590,14 +590,14 @@ class TestVectorFloat(unittest.TestCase):
 
         ################################################################################################################
 
-        x = VectorFloat([1.2, 10 + VectorFloat.relative_tolerance])
-        y = VectorFloat([1.2 + VectorFloat.relative_tolerance, 10.])
+        x = VectorFloat([1.2, 10 + self.difference])
+        y = VectorFloat([1.2 + self.difference, 10.])
         self.assertTrue(VectorFloat.all_close(x, y))
 
         ################################################################################################################
 
-        x = VectorFloat([1.2 + VectorFloat.relative_tolerance, 10])
-        y = VectorFloat([1.2, 10. + VectorFloat.relative_tolerance])
+        x = VectorFloat([1.2 + self.difference, 10])
+        y = VectorFloat([1.2, 10. + self.difference])
         self.assertTrue(VectorFloat.all_close(x, y))
 
         ################################################################################################################
@@ -675,7 +675,7 @@ class TestVectorFloat(unittest.TestCase):
 
             # While not is empty
             while non_dominated:
-                # Extract from non_dominated list and remove from solution list
+                # Extract from non_dominated list and remove it from solution list
                 solution.remove(non_dominated.pop())
 
             # After previous process if solution list have any element, then assert is failed.
@@ -696,8 +696,8 @@ class TestVectorFloat(unittest.TestCase):
                 self.first_quadrant[1],
                 # Dominated (duplicates included)
                 self.first_quadrant[2] + [
-                    VectorFloat([2 + VectorFloat.relative_tolerance, 4 - VectorFloat.relative_tolerance]), VectorFloat([0, 6]),
-                    VectorFloat([4, 1])
+                    VectorFloat([2 + self.difference, 4 - self.difference]),
+                    VectorFloat([0, 6]), VectorFloat([4, 1])
                 ],
             ),
             (
@@ -707,7 +707,8 @@ class TestVectorFloat(unittest.TestCase):
                 self.second_quadrant[1],
                 # Dominated (duplicates included)
                 self.second_quadrant[2] + [VectorFloat([-6, 6]),
-                                           VectorFloat([-4 + VectorFloat.relative_tolerance, 2 + VectorFloat.relative_tolerance])],
+                                           VectorFloat([-4 + self.difference,
+                                                        2 + self.difference])],
             ),
             (
                 # Problem
@@ -716,7 +717,8 @@ class TestVectorFloat(unittest.TestCase):
                 self.third_quadrant[1],
                 # Dominated (duplicates included)
                 self.third_quadrant[2] + [VectorFloat([-7, -1]),
-                                          VectorFloat([-4 + VectorFloat.relative_tolerance, -2 + VectorFloat.relative_tolerance])],
+                                          VectorFloat([-4 + self.difference,
+                                                       -2 + self.difference])],
             ),
             (
                 # Problem
@@ -724,8 +726,9 @@ class TestVectorFloat(unittest.TestCase):
                 # Non-dominated uniques
                 self.fourth_quadrant[1],
                 # Dominated (duplicates included)
-                self.fourth_quadrant[2] + [VectorFloat([7 + VectorFloat.relative_tolerance, -3 - VectorFloat.relative_tolerance]),
-                                           VectorFloat([2, -1])],
+                self.fourth_quadrant[2] + [
+                    VectorFloat([7 + self.difference, -3 - self.difference]),
+                    VectorFloat([2, -1])],
             ),
             (
                 # Problem
@@ -734,12 +737,17 @@ class TestVectorFloat(unittest.TestCase):
                 self.all_quadrants[1],
                 # Dominated (duplicates included)
                 self.all_quadrants[2] + [
-                    VectorFloat([7 + VectorFloat.relative_tolerance, -3 - VectorFloat.relative_tolerance]), VectorFloat([-7, -1]),
-                    VectorFloat([-4 + VectorFloat.relative_tolerance, -2 + VectorFloat.relative_tolerance]), VectorFloat([-6, 6]),
-                    VectorFloat([-4 + VectorFloat.relative_tolerance, 2 + VectorFloat.relative_tolerance]), VectorFloat([0, 6]),
+                    VectorFloat([7 + self.difference, -3 - self.difference]),
+                    VectorFloat([-7, -1]),
+                    VectorFloat([-4 + self.difference, -2 + self.difference]),
+                    VectorFloat([-6, 6]),
+                    VectorFloat([-4 + self.difference, 2 + self.difference]),
+                    VectorFloat([0, 6]),
                     VectorFloat([4, 1]),
-                    VectorFloat([2 + VectorFloat.relative_tolerance, 4 - VectorFloat.relative_tolerance]), VectorFloat([2, -1]),
-                    VectorFloat([-2 - VectorFloat.relative_tolerance, -1 - VectorFloat.relative_tolerance]), VectorFloat([-1, -4]),
+                    VectorFloat([2 + self.difference, 4 - self.difference]),
+                    VectorFloat([2, -1]),
+                    VectorFloat([-2 - self.difference, -1 - self.difference]),
+                    VectorFloat([-1, -4]),
                     VectorFloat([-1, 0])
                 ],
             )
@@ -810,12 +818,13 @@ class TestVectorFloat(unittest.TestCase):
                 self.first_quadrant[1],
                 # Dominated (duplicates included)
                 self.first_quadrant[2] + [
-                    VectorFloat([2 + VectorFloat.relative_tolerance, 4 - VectorFloat.relative_tolerance]), VectorFloat([0, 6]),
+                    VectorFloat([2 + self.difference, 4 - self.difference]),
+                    VectorFloat([0, 6]),
                     VectorFloat([4, 1])
                 ],
                 # Non-dominated repeated
                 [
-                    VectorFloat([5 + VectorFloat.relative_tolerance, 3 - VectorFloat.relative_tolerance])
+                    VectorFloat([5 + self.difference, 3 - self.difference])
                 ]
             ),
             (
@@ -825,11 +834,13 @@ class TestVectorFloat(unittest.TestCase):
                 self.second_quadrant[1],
                 # Dominated (duplicates included)
                 self.second_quadrant[2] + [
-                    VectorFloat([-6, 6]), VectorFloat([-4 + VectorFloat.relative_tolerance, 2 + VectorFloat.relative_tolerance])
+                    VectorFloat([-6, 6]),
+                    VectorFloat([-4 + self.difference, 2 + self.difference])
                 ],
                 # Non-dominated repeated
                 [
-                    VectorFloat([-4 - VectorFloat.relative_tolerance, 7 + VectorFloat.relative_tolerance]), VectorFloat([-1, 0])
+                    VectorFloat([-4 - self.difference, 7 + self.difference]),
+                    VectorFloat([-1, 0])
                 ]
             ),
             (
@@ -839,11 +850,13 @@ class TestVectorFloat(unittest.TestCase):
                 self.third_quadrant[1],
                 # Dominated (duplicates included)
                 self.third_quadrant[2] + [
-                    VectorFloat([-7, -1]), VectorFloat([-4 + VectorFloat.relative_tolerance, -2 + VectorFloat.relative_tolerance])
+                    VectorFloat([-7, -1]),
+                    VectorFloat([-4 + self.difference, -2 + self.difference])
                 ],
                 # Non-dominated repeated
                 [
-                    VectorFloat([-2 - VectorFloat.relative_tolerance, -1 - VectorFloat.relative_tolerance]), VectorFloat([-1, -4])
+                    VectorFloat([-2 - self.difference, -1 - self.difference]),
+                    VectorFloat([-1, -4])
                 ]
             ),
             (
@@ -853,11 +866,13 @@ class TestVectorFloat(unittest.TestCase):
                 self.fourth_quadrant[1],
                 # Dominated (duplicates included)
                 self.fourth_quadrant[2] + [
-                    VectorFloat([7 + VectorFloat.relative_tolerance, -3 - VectorFloat.relative_tolerance]), VectorFloat([2, -1])
+                    VectorFloat([7 + self.difference, -3 - self.difference]),
+                    VectorFloat([2, -1])
                 ],
                 # Non-dominated repeated
                 [
-                    VectorFloat([10 + VectorFloat.relative_tolerance, -1 + VectorFloat.relative_tolerance]), VectorFloat([10, -1])
+                    VectorFloat([10 + self.difference, -1 + self.difference]),
+                    VectorFloat([10, -1])
                 ]
             ),
             (
@@ -867,18 +882,24 @@ class TestVectorFloat(unittest.TestCase):
                 self.all_quadrants[1],
                 # Dominated (duplicates included)
                 self.all_quadrants[2] + [
-                    VectorFloat([7 + VectorFloat.relative_tolerance, -3 - VectorFloat.relative_tolerance]), VectorFloat([-7, -1]),
-                    VectorFloat([-4 + VectorFloat.relative_tolerance, -2 + VectorFloat.relative_tolerance]), VectorFloat([-6, 6]),
-                    VectorFloat([-4 + VectorFloat.relative_tolerance, 2 + VectorFloat.relative_tolerance]), VectorFloat([0, 6]),
+                    VectorFloat([7 + self.difference, -3 - self.difference]),
+                    VectorFloat([-7, -1]),
+                    VectorFloat([-4 + self.difference, -2 + self.difference]),
+                    VectorFloat([-6, 6]),
+                    VectorFloat([-4 + self.difference, 2 + self.difference]),
+                    VectorFloat([0, 6]),
                     VectorFloat([4, 1]), VectorFloat([-1, 0]),
-                    VectorFloat([2 + VectorFloat.relative_tolerance, 4 - VectorFloat.relative_tolerance]), VectorFloat([2, -1]),
-                    VectorFloat([-2 - VectorFloat.relative_tolerance, -1 - VectorFloat.relative_tolerance]), VectorFloat([-1, -4]),
+                    VectorFloat([2 + self.difference, 4 - self.difference]),
+                    VectorFloat([2, -1]),
+                    VectorFloat([-2 - self.difference, -1 - self.difference]),
+                    VectorFloat([-1, -4]),
                 ],
                 # Non-dominated repeated
                 [
-                    VectorFloat([10 + VectorFloat.relative_tolerance, -1 + VectorFloat.relative_tolerance]), VectorFloat([10, -1]),
-                    VectorFloat([-4 - VectorFloat.relative_tolerance, 7 + VectorFloat.relative_tolerance]),
-                    VectorFloat([5 + VectorFloat.relative_tolerance, 3 - VectorFloat.relative_tolerance])
+                    VectorFloat([10 + self.difference, -1 + self.difference]),
+                    VectorFloat([10, -1]),
+                    VectorFloat([-4 - self.difference, 7 + self.difference]),
+                    VectorFloat([5 + self.difference, 3 - self.difference])
                 ]
             )
         ]

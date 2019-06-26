@@ -22,10 +22,12 @@ class DeepSeaTreasure(EnvMesh):
 
     # Pareto optimal
     pareto_optimal = [
-        (-1, 1), (-3, 2), (-5, 3), (-7, 5), (-8, 8), (-9, 16), (-13, 24), (-14, 50), (-17, 74), (-19, 124)
+        Vector([-1, 1]), Vector([-3, 2]), Vector([-5, 3]), Vector([-7, 5]), Vector([-8, 8]), Vector([-9, 16]),
+        Vector([-13, 24]), Vector([-14, 50]), Vector([-17, 74]), Vector([-19, 124])
     ]
 
-    def __init__(self, initial_state: tuple = (0, 0), default_reward: tuple = (0,), seed: int = 0):
+    def __init__(self, initial_state: tuple = (0, 0), default_reward: tuple = (0,), seed: int = 0,
+                 steps_limit: int = 1000):
         """
         :param initial_state:
         :param default_reward:
@@ -66,12 +68,19 @@ class DeepSeaTreasure(EnvMesh):
         super().__init__(mesh_shape=mesh_shape, seed=seed, initial_state=initial_state, default_reward=default_reward,
                          finals=finals, obstacles=obstacles)
 
+        # Steps
+        self.steps_limit = steps_limit
+        self.steps = 0
+
     def step(self, action: int) -> (tuple, Vector, bool, dict):
         """
         Given an action, do a step
         :param action:
         :return: (state, (time_inverted, treasure_value), final, info)
         """
+
+        # Increment steps
+        self.steps += 1
 
         # Initialize rewards as vector
         rewards = self.default_reward.copy()
@@ -98,6 +107,7 @@ class DeepSeaTreasure(EnvMesh):
         Reset environment to zero.
         :return:
         """
+        self.steps = 0
         self.current_state = self.initial_state
         return self.current_state
 
@@ -107,4 +117,4 @@ class DeepSeaTreasure(EnvMesh):
         :param state:
         :return:
         """
-        return state in self.finals.keys()
+        return state in self.finals.keys() or self.steps >= self.steps_limit

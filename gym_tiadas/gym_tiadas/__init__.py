@@ -1,8 +1,8 @@
 from gym.envs.registration import register
 
 register(
-    id='russell-norvig-v0',
-    entry_point='gym_tiadas.envs:RussellNorvig'
+    id='bonus-world-v0',
+    entry_point='gym_tiadas.envs:BonusWorld'
 )
 
 register(
@@ -16,23 +16,8 @@ register(
 )
 
 register(
-    id='resource-gathering-v0',
-    entry_point='gym_tiadas.envs:ResourceGathering'
-)
-
-register(
-    id='pressurized-bountiful-sea-treasure-v0',
-    entry_point='gym_tiadas.envs:PressurizedBountifulSeaTreasure'
-)
-
-register(
-    id='deep-sea-treasure-transitions-v0',
-    entry_point='gym_tiadas.envs:DeepSeaTreasureTransitions'
-)
-
-register(
-    id='mo-puddle-word-v0',
-    entry_point='gym_tiadas.envs:MoPuddleWorld'
+    id='deep-sea-treasure-mixed-v0',
+    entry_point='gym_tiadas.envs:DeepSeaTreasureMixed'
 )
 
 register(
@@ -41,13 +26,8 @@ register(
 )
 
 register(
-    id='bonus-world-v0',
-    entry_point='gym_tiadas.envs:BonusWorld'
-)
-
-register(
-    id='space-exploration-v0',
-    entry_point='gym_tiadas.envs:SpaceExploration'
+    id='deep-sea-treasure-stochastic-v0',
+    entry_point='gym_tiadas.envs:DeepSeaTreasureStochastic'
 )
 
 register(
@@ -56,6 +36,36 @@ register(
 )
 
 register(
+    id='mo-puddle-word-v0',
+    entry_point='gym_tiadas.envs:MoPuddleWorld'
+)
+
+register(
     id='non-recurrent-rings-v0',
     entry_point='gym_tiadas.envs:NonRecurrentRings'
+)
+
+register(
+    id='pressurized-bountiful-sea-treasure-v0',
+    entry_point='gym_tiadas.envs:PressurizedBountifulSeaTreasure'
+)
+
+register(
+    id='resource-gathering-v0',
+    entry_point='gym_tiadas.envs:ResourceGathering'
+)
+
+register(
+    id='resource-gathering-limit-v0',
+    entry_point='gym_tiadas.envs:ResourceGatheringLimit'
+)
+
+register(
+    id='russell-norvig-v0',
+    entry_point='gym_tiadas.envs:RussellNorvig'
+)
+
+register(
+    id='space-exploration-v0',
+    entry_point='gym_tiadas.envs:SpaceExploration'
 )

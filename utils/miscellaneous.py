@@ -48,7 +48,7 @@ def distance_to_origin(a: Vector) -> float:
     :param a:
     :return:
     """
-    return euclidean_distance(a=a, b=a * 0)
+    return euclidean_distance(a=a, b=a.zero_vector)
 
 
 def order_vectors_by_origin_nearest(vectors: list) -> list:
@@ -59,7 +59,7 @@ def order_vectors_by_origin_nearest(vectors: list) -> list:
     """
 
     # Get all vectors with its distance to origin.
-    distances = {vector: distance_to_origin(vector) for vector in vectors}
+    distances = {tuple(vector.components.tolist()): distance_to_origin(vector) for vector in vectors}
 
     # Sort dictionary by value from lower to higher.
     return sorted(distances, key=distances.get, reverse=False)

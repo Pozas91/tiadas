@@ -6,14 +6,14 @@ import numpy as np
 
 import utils.miscellaneous as um
 from agents import AgentA1
-from gym_tiadas.gym_tiadas.envs import DeepSeaTreasureRightDownStochastic, \
-    PressurizedBountifulSeaTreasureRightDownStochastic
+from gym_tiadas.gym_tiadas.envs import PressurizedBountifulSeaTreasureRightDownStochastic
 from models import Vector, GraphType
 
 
 def experiment_dps_with_agent_a1(environment_variant, columns=range(1, 11), epsilon: float = 0.7, alpha: float = 0.8,
                                  states_to_observe=None, hv_reference: Vector = Vector([-25, 0]),
-                                 graph_types: tuple = (GraphType.STEPS, GraphType.EPOCHS), number_of_agents: int = 50):
+                                 graph_types: tuple = (GraphType.STEPS, GraphType.EPOCHS), number_of_agents: int = 50,
+                                 epochs: int = 100):
     # Parameters
     if states_to_observe is None:
         states_to_observe = [(0, 0)]
@@ -25,8 +25,8 @@ def experiment_dps_with_agent_a1(environment_variant, columns=range(1, 11), epsi
 
     sub_problems_graph = dict()
 
-    path = '.\\dumps\\experiments_a1\\graphs\\{}_{}_{}_{}.{}'
-    config_path = '.\\dumps\experiments_a1\\graphs\\{}.{}'
+    path = '.\\dumps\\experiments_a1\\graphs\\{}_{}_{}_{}_{}_{}.{}'
+    config_path = '.\\dumps\experiments_a1\\graphs\\{}_{}_{}.{}'
 
     sub_problems_graph.update({
         'STEPS': {i_columns: list() for i_columns in columns},
@@ -34,14 +34,15 @@ def experiment_dps_with_agent_a1(environment_variant, columns=range(1, 11), epsi
     })
 
     filename_config = Path(
-        config_path.format(env_name_snake, 'config').lower()
+        config_path.format(number_of_agents, epochs, env_name_snake, 'config').lower()
     )
 
     with filename_config.open(mode='w+') as file:
-        file_data = "seeds = [{}]\n".format(','.join(range(number_of_agents)))
+        file_data = "seeds = [{}]\n".format(','.join(map(str, range(number_of_agents))))
         file_data += "epsilon = {}\n".format(epsilon)
         file_data += "alpha = {}\n".format(alpha)
         file_data += "hv_reference = [{}]\n".format(','.join(map(str, hv_reference.components)))
+        file_data += "epochs = {}\n".format(epochs)
 
         file.write(file_data)
 
@@ -82,7 +83,7 @@ def experiment_dps_with_agent_a1(environment_variant, columns=range(1, 11), epsi
 
                 # Train the agent
                 # agent.objective_training(list_of_vectors=pareto_frontier)
-                agent.train(epochs=100)
+                agent.train(epochs=epochs)
 
                 # Restore STEPS last data
                 last_data = sub_problems_graph.get('STEPS').get(i_columns)
@@ -119,7 +120,7 @@ def experiment_dps_with_agent_a1(environment_variant, columns=range(1, 11), epsi
                 data = graphs.get(graph).get(evaluation_mechanism)
 
                 # Calc max length data
-                epochs = max([len(x) if len(x) > 0 else 1 for x in data])
+                data_max_len = max([len(x) if len(x) > 0 else 1 for x in data])
 
                 # Change to same length at all arrays
                 for i, x_steps in enumerate(data):
@@ -127,7 +128,7 @@ def experiment_dps_with_agent_a1(environment_variant, columns=range(1, 11), epsi
                     len_x = len(x_steps)
 
                     # Difference
-                    difference = epochs - len_x
+                    difference = data_max_len - len_x
 
                     # If x is not empty
                     if len_x > 0:
@@ -137,17 +138,18 @@ def experiment_dps_with_agent_a1(environment_variant, columns=range(1, 11), epsi
 
                 process_data = np.average(data, axis=0)
                 error = np.std(data, axis=0)
-                x = np.arange(0, epochs, 1)
+                x = np.arange(0, data_max_len, 1)
 
                 # Set graph to current evaluation mechanism
-                plt.errorbar(x=x, y=process_data, yerr=error, errorevery=math.ceil(epochs * 0.1),
+                plt.errorbar(x=x, y=process_data, yerr=error, errorevery=math.ceil(data_max_len * 0.1),
                              label=evaluation_mechanism)
 
                 evaluation_mechanism_name = evaluation_mechanism.split('-')[0]
                 graph_name = graph.name
 
                 filename_m = Path(
-                    path.format(env_name_snake, i_columns, graph_name, evaluation_mechanism_name, 'm').lower()
+                    path.format(number_of_agents, epochs, env_name_snake, i_columns, graph_name,
+                                evaluation_mechanism_name, 'm').lower()
                 )
 
                 with filename_m.open(mode='w+') as file:
@@ -160,9 +162,9 @@ def experiment_dps_with_agent_a1(environment_variant, columns=range(1, 11), epsi
 
             # Show data
             if graph == GraphType.STEPS:
-                plt.xlabel('{} x{}'.format(graph.name, AgentA1.steps_to_calc_hypervolume))
+                plt.xlabel('{} x{}'.format(graph.name, AgentA1.steps_to_get_graph_data))
             elif graph == GraphType.TIME:
-                plt.xlabel('{} x{}s'.format(graph.name, AgentA1.seconds_to_calc_hypervolume))
+                plt.xlabel('{} x{}s'.format(graph.name, AgentA1.seconds_to_get_graph_data))
             else:
                 plt.xlabel(graph.name)
 
@@ -193,15 +195,25 @@ def experiment_dps_with_agent_a1(environment_variant, columns=range(1, 11), epsi
 
 
 def main():
+    columns = range(1, 11)
+    alpha = 0.8
+    number_of_agents = 10
+    epochs = 100
+
+    # hv_reference = Vector([-25, 0])
+
     # environment_variant = DeepSeaTreasureRightDown
-    environment_variant = DeepSeaTreasureRightDownStochastic
-    # environment_variant = PressurizedBountifulSeaTreasureRightDownStochastic
+    # experiment_dps_with_agent_a1(environment_variant=environment_variant, columns=columns, alpha=alpha,
+    #                              hv_reference=hv_reference, number_of_agents=number_of_agents, epochs=epochs)
 
-    # hv_reference = Vector([-25, 0, -120])
-    hv_reference = Vector([-25, 0])
+    # environment_variant = DeepSeaTreasureRightDownStochastic
+    # experiment_dps_with_agent_a1(environment_variant=environment_variant, columns=columns, alpha=alpha,
+    #                              hv_reference=hv_reference, number_of_agents=number_of_agents, epochs=epochs)
 
-    experiment_dps_with_agent_a1(environment_variant=environment_variant, columns=range(1, 6), alpha=0.8,
-                                 hv_reference=hv_reference, number_of_agents=20)
+    hv_reference = Vector([-25, 0, -120])
+    environment_variant = PressurizedBountifulSeaTreasureRightDownStochastic
+    experiment_dps_with_agent_a1(environment_variant=environment_variant, columns=columns, alpha=alpha,
+                                 hv_reference=hv_reference, number_of_agents=number_of_agents, epochs=epochs)
 
 
 if __name__ == '__main__':

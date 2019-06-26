@@ -40,6 +40,13 @@ cualquier acción que se pueda realizar.
             * **No recibe parámetros**
         * **Salida**
             * Devuelve un `list`, lista de las recompensas recibidas.
+    * `objective_train(self, objective: Vector) -> None`
+        * **Descripción**
+            * Si conocemos el vector objetivo que queremos obtener del agente en $V(s_0)$, podemos usar este método, ya que el agente estará entrando hasta que el objetivo sea igual al estado $V(s_0)$ de nuestro agente con cierta tolerancia.
+        * **Parámetros**
+            * **No recibe parámetros**
+        * **Salida**
+            * **No ofrece salida**
     * `episode(self) -> None`
         * **Descripción**
             * Realiza un episodio completo en el entorno hasta encontrar un estado fina. A medida que se realizan 
@@ -67,7 +74,7 @@ cualquier acción que se pueda realizar.
             * Escribe por pantalla los valores de `Q`
     * `show_policy(self) -> None`
         * **Descripción**
-            * Muestra las políticas que se van a tomar para cada estado en forma de tabla.
+            * Muestra la polítics que se va a tomar para cada estado.
         * **Parámetros**
             * **No recibe parámetros**
         * **Salida**
@@ -124,5 +131,13 @@ cualquier acción que se pueda realizar.
             * **No recibe parámetros**
         * **Salida**
             * Muestra por consola una lista de todos los estados con el `V` máximo.
+    * `get_accumulated_reward(self) -> Vector`
+        * **Descripción**
+            * Cuando el agente está entrenado, si realizamos un paseo (`walk`), podemos obtener un vector de recompensas
+            acumulado sumando el historial de recompensas adquirido.
+        * **Parámetros**
+            * **No recibe parámetros**
+        * **Salida**
+            * Devuelve un [`Vector`](../models/vector.md), vector que representa la recompensa acumulada.
  
 [< Volver](index.md)

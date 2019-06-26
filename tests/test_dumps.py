@@ -8,7 +8,7 @@ import numpy as np
 
 from agents import AgentPQL
 from gym_tiadas.gym_tiadas.envs import *
-from models import Vector
+from models import Vector, EvaluationMechanism
 
 
 class TestDumps(unittest.TestCase):
@@ -28,7 +28,7 @@ class TestDumps(unittest.TestCase):
         default_reward = (1, 1)
         seed = 1
         hv_reference = Vector([-5, -5, -5])
-        evaluation_mechanism = 'PO-PQL'
+        evaluation_mechanism = EvaluationMechanism.PO
         epsilon = 0.4
         states_to_observe = [(0, 0)]
         epochs = np.random.randint(10, 100)
@@ -78,7 +78,7 @@ class TestDumps(unittest.TestCase):
         default_reward = (1., 1., 1.)
         seed = 1
         hv_reference = Vector([-5, -5, -5])
-        evaluation_mechanism = 'PO-PQL'
+        evaluation_mechanism = EvaluationMechanism.PO
         epsilon = 0.11
         states_to_observe = [(1, 1)]
         epochs = np.random.randint(10, 100)
@@ -142,7 +142,7 @@ class TestDumps(unittest.TestCase):
         default_reward = (1,)
         seed = 1
         hv_reference = Vector([-20, 0])
-        evaluation_mechanism = 'PO-PQL'
+        evaluation_mechanism = EvaluationMechanism.PO
         epsilon = 0.4
         states_to_observe = [(0, 0)]
         epochs = np.random.randint(10, 100)
@@ -191,7 +191,7 @@ class TestDumps(unittest.TestCase):
         default_reward = (1,)
         seed = 1
         hv_reference = Vector([-20, 0])
-        evaluation_mechanism = 'PO-PQL'
+        evaluation_mechanism = EvaluationMechanism.PO
         epsilon = 0.11
         states_to_observe = [(0, 0)]
         epochs = np.random.randint(10, 100)
@@ -231,7 +231,7 @@ class TestDumps(unittest.TestCase):
         self.assertEqual(agent.environment.initial_seed, agent_loaded.environment.initial_seed)
         self.assertEqual(agent.environment.default_reward, agent_loaded.environment.default_reward)
 
-    def test_deep_sea_treasure_transitions(self):
+    def test_deep_sea_treasure_stochastic(self):
         """
         Testing agent with DeepSeaTreasureTransitions environment.
         :return:
@@ -240,7 +240,7 @@ class TestDumps(unittest.TestCase):
         default_reward = (1,)
         seed = 1
         hv_reference = Vector([-20, 0])
-        evaluation_mechanism = 'PO-PQL'
+        evaluation_mechanism = EvaluationMechanism.PO
         epsilon = 0.11
         states_to_observe = [(0, 0)]
         epochs = np.random.randint(10, 100)
@@ -249,8 +249,8 @@ class TestDumps(unittest.TestCase):
         n_transaction = 0.33
 
         # Instance of Environment
-        env = DeepSeaTreasureTransitions(initial_state=initial_state, default_reward=default_reward, seed=seed,
-                                         n_transaction=n_transaction)
+        env = DeepSeaTreasureStochastic(initial_state=initial_state, default_reward=default_reward, seed=seed,
+                                        n_transition=n_transaction)
 
         # Instance of AgentMOMP
         agent = AgentPQL(environment=env, epsilon=epsilon, states_to_observe=states_to_observe,
@@ -290,7 +290,7 @@ class TestDumps(unittest.TestCase):
         """
         seed = 1
         hv_reference = Vector([-100, -100])
-        evaluation_mechanism = 'PO-PQL'
+        evaluation_mechanism = EvaluationMechanism.PO
         epsilon = 0.11
         states_to_observe = [0]
         epochs = np.random.randint(10, 100)
@@ -337,7 +337,7 @@ class TestDumps(unittest.TestCase):
         """
         seed = 1
         hv_reference = Vector([-100, -100])
-        evaluation_mechanism = 'PO-PQL'
+        evaluation_mechanism = EvaluationMechanism.PO
         epsilon = 0.11
         states_to_observe = [0]
         epochs = np.random.randint(10, 100)
@@ -386,7 +386,7 @@ class TestDumps(unittest.TestCase):
         penalize_non_goal = -1.001
         seed = 1
         hv_reference = Vector([-100, -100])
-        evaluation_mechanism = 'PO-PQL'
+        evaluation_mechanism = EvaluationMechanism.PO
         epsilon = 0.3
         states_to_observe = [(0, 0)]
         epochs = np.random.randint(10, 40)
@@ -434,7 +434,7 @@ class TestDumps(unittest.TestCase):
         default_reward = (-1,)
         seed = 1
         hv_reference = Vector([-20, -20, -20])
-        evaluation_mechanism = 'PO-PQL'
+        evaluation_mechanism = EvaluationMechanism.PO
         epsilon = 0.11
         states_to_observe = [(0, 0)]
         epochs = np.random.randint(10, 100)
@@ -481,7 +481,7 @@ class TestDumps(unittest.TestCase):
         default_reward = (-1, 0.1, 0.1)
         seed = 1
         hv_reference = Vector([-20, -20, -20])
-        evaluation_mechanism = 'PO-PQL'
+        evaluation_mechanism = EvaluationMechanism.PO
         epsilon = 0.11
         states_to_observe = [(0, 0)]
         epochs = np.random.randint(10, 100)
@@ -531,7 +531,7 @@ class TestDumps(unittest.TestCase):
         seed = 1
         time_limit = 50
         hv_reference = Vector([-20, -20, -20])
-        evaluation_mechanism = 'PO-PQL'
+        evaluation_mechanism = EvaluationMechanism.PO
         epsilon = 0.4
         states_to_observe = [(0, 0)]
         epochs = np.random.randint(10, 100)
@@ -582,7 +582,7 @@ class TestDumps(unittest.TestCase):
         default_reward = (1, 0)
         seed = 1
         hv_reference = Vector([-20, -20])
-        evaluation_mechanism = 'PO-PQL'
+        evaluation_mechanism = EvaluationMechanism.PO
         epsilon = 0.11
         states_to_observe = [(0, 0)]
         epochs = np.random.randint(10, 100)

@@ -485,17 +485,17 @@ class TestVectors(unittest.TestCase):
         """
 
         x = Vector([1, 2, 3])
-        self.assertEqual(math.sqrt(1 ** 2 + 2 ** 2 + 3 ** 2), x.magnitude)
+        self.assertEqual(math.sqrt(1 ** 2 + 2 ** 2 + 3 ** 2), x.magnitude())
 
         ################################################################################################################
 
         x = Vector([1, -2])
-        self.assertEqual(math.sqrt(1 ** 2 + (-2) ** 2), x.magnitude)
+        self.assertEqual(math.sqrt(1 ** 2 + (-2) ** 2), x.magnitude())
 
         ################################################################################################################
 
         x = Vector([rnd.randint(-100, 100) for _ in range(6)])
-        self.assertEqual(math.sqrt(sum(component ** 2 for component in x.components)), x.magnitude)
+        self.assertEqual(math.sqrt(sum(component ** 2 for component in x.components)), x.magnitude())
 
     def test_dominance(self):
         """

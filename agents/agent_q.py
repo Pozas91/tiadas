@@ -10,25 +10,20 @@ The data structure of q dictionary is as follows:
     ...
 }
 """
+import time
 from copy import deepcopy
 
 import numpy as np
 
-import utils.models as um
 from gym_tiadas.gym_tiadas.envs import Environment
-from models import Vector
+from models import Vector, GraphType, VectorFloat
 from .agent import Agent
 
 
 class AgentQ(Agent):
-    # Different icons
-    __icons = {
-        'BLANK': ' ', 'BLOCK': '■', 'FINAL': '$', 'CURRENT': '☺', 'UP': '↑', 'RIGHT': '→', 'DOWN': '↓', 'LEFT': '←',
-        'STAY': '×'
-    }
-
     def __init__(self, environment: Environment, alpha: float = 0.1, epsilon: float = 0.1, gamma: float = 1.,
-                 seed: int = 0, states_to_observe: list = None, max_steps: int = None):
+                 seed: int = 0, states_to_observe: list = None, max_steps: int = None,
+                 graph_types: tuple = (GraphType.EPOCHS, GraphType.STEPS)):
         """
         :param environment: An environment where agent does any operation.
         :param alpha: Learning rate
@@ -37,10 +32,12 @@ class AgentQ(Agent):
         :param seed: Seed used for np.random.RandomState method.
         :param states_to_observe: List of states from that we want to get a graphical output.
         :param max_steps: Limits of steps per episode.
+        :param graph_types: Types of graphs to generate.
         """
 
         # Super call __init__
-        super().__init__(environment, epsilon, gamma, seed, states_to_observe, max_steps)
+        super().__init__(environment=environment, epsilon=epsilon, gamma=gamma, seed=seed,
+                         states_to_observe=states_to_observe, max_steps=max_steps, graph_types=graph_types)
 
         # Learning factor
         assert 0 < alpha <= 1
@@ -52,7 +49,7 @@ class AgentQ(Agent):
         # Rewards history data
         self.rewards_history = list()
 
-    def walk(self) -> list:
+    def walk(self, from_state: object = None) -> list:
         """
         Do a walk follows best current policy
         :return:
@@ -60,6 +57,10 @@ class AgentQ(Agent):
 
         # Reset mesh
         self.state = self.environment.reset()
+
+        # Check if other initial state is selected
+        if from_state:
+            self.state = from_state
 
         # Condition to stop walk
         is_final_state = False
@@ -85,6 +86,10 @@ class AgentQ(Agent):
 
             # Update state
             self.state = next_state
+
+            # Check timeout
+            if self.max_steps is not None and not is_final_state:
+                is_final_state = self.steps >= self.max_steps
 
         return history
 
@@ -119,8 +124,10 @@ class AgentQ(Agent):
             self.steps += 1
 
             # Append to rewards history
-            history = self.process_reward(reward=reward)
-            self.rewards_history.append(history)
+            self.rewards_history.append(reward)
+
+            # Processing reward
+            reward = self.process_reward(reward=reward)
 
             # Update Q-Values
             self._update_q_values(reward=reward, action=action, next_state=next_state)
@@ -132,21 +139,53 @@ class AgentQ(Agent):
             if self.max_steps is not None and not is_final_state:
                 is_final_state = self.steps >= self.max_steps
 
-        # Append new data
-        for state, data in self.states_to_observe.items():
-            # Add to data Best value (V max)
-            value = self._best_reward(state)
+            if GraphType.STEPS in self.states_to_observe and self.total_steps % self.steps_to_get_graph_data == 0:
+                # Append new data
+                self.update_graph(graph_type=GraphType.STEPS)
 
-            # Apply function
-            value = self.process_reward(value)
+            if GraphType.TIME in self.states_to_observe and (
+                    time.time() - self.last_time_to_get_graph_data) > self.seconds_to_get_graph_data:
+                # Append new data
+                self.update_graph(graph_type=GraphType.TIME)
+
+                # Update last execution
+                self.last_time_to_get_graph_data = time.time()
+
+        if GraphType.EPOCHS in self.states_to_observe:
+            # Append new data
+            self.update_graph(graph_type=GraphType.EPOCHS)
+
+        # Save last register data
+        if GraphType.STEPS in self.states_to_observe:
+            # Append new data
+            self.update_graph(graph_type=GraphType.STEPS)
+
+        # Save last register data
+        if GraphType.TIME in self.states_to_observe:
+            # Append new data
+            self.update_graph(graph_type=GraphType.TIME)
+
+            # Update last execution
+            self.last_time_to_get_graph_data = time.time()
+
+    def update_graph(self, graph_type: GraphType):
+        """
+        Update specific graph type
+        :param graph_type:
+        :return:
+        """
+
+        for state, data in self.states_to_observe.get(graph_type).items():
+            # Add to data Best value (V max)
+            value = self._best_reward(state=state)
 
             # Add to data Best value (V max)
             data.append(value)
 
             # Update dictionary
-            self.states_to_observe.update({state: data})
+            self.states_to_observe.get(graph_type).update({state: data})
 
-    def _update_q_values(self, reward: Vector, action: int, next_state: object) -> None:
+    def _update_q_values(self, reward: float, action: int, next_state: object) -> None:
         """
         Update Q-Dictionary with new data
         :param reward:
@@ -156,7 +195,7 @@ class AgentQ(Agent):
         """
 
         # Get old value
-        old_value = self.q.get(self.state, {}).get(action, self.environment.default_reward.zero_vector)
+        old_value = self.q.get(self.state, {}).get(action, 0.)
 
         # Get next max value
         next_max = self._best_reward(state=next_state)
@@ -220,7 +259,9 @@ class AgentQ(Agent):
         # Get unknown actions with default reward
         for action in self.environment.action_space:
             if action not in possible_actions:
-                possible_actions.update({action: self.environment.default_reward.zero_vector})
+                possible_actions.update({
+                    action: 0.
+                })
 
         # Get max by value, and get it's action
         actions = list()
@@ -233,7 +274,7 @@ class AgentQ(Agent):
             reward = possible_actions.get(possible_action)
 
             # If current value is close to new value
-            if reward.all_close(v2=max_reward):
+            if np.allclose(a=reward, b=max_reward, rtol=Vector.relative_tolerance, atol=Vector.absolute_tolerance):
 
                 # Append another possible action
                 actions.append(possible_action)
@@ -252,7 +293,7 @@ class AgentQ(Agent):
 
         return action
 
-    def _best_reward(self, state: object) -> Vector:
+    def _best_reward(self, state: object) -> float:
         """
         Return best reward for q and state given
         :return:
@@ -264,7 +305,7 @@ class AgentQ(Agent):
         # Get unknown actions with default reward
         for action in self.environment.action_space:
             if action not in possible_actions:
-                possible_actions.update({action: self.environment.default_reward.zero_vector})
+                possible_actions.update({action: 0.})
 
         # Get best action and use it to get best reward.
         action = self.best_action(state=state)
@@ -272,8 +313,8 @@ class AgentQ(Agent):
 
         return reward
 
-    @um.lazy_property
-    def v(self) -> Vector:
+    @property
+    def v(self) -> float:
         """
         Get best value from initial state -> V_max(0, 0)
         :return:
@@ -287,7 +328,7 @@ class AgentQ(Agent):
         """
         self.rewards_history = list()
 
-    def process_reward(self, reward: Vector) -> Vector:
+    def process_reward(self, reward: float) -> float:
         """
         Processing reward function.
         :param reward:
@@ -307,17 +348,18 @@ class AgentQ(Agent):
             # Print result
             print('State: {} -> V: {}'.format(state, max(rewards)))
 
-    def objective_training(self, objective: Vector):
+    def objective_training(self, objective: float) -> None:
         """
         Train until agent V(0, 0) value is close to objective value.
         :param objective:
         :return:
         """
-        while not self.v.all_close(v2=objective):
+
+        while not np.isclose(a=self.v, b=objective, rtol=0.01, atol=0.00):
             # Do an episode
             self.episode()
 
-    def exhaustive_train(self):
+    def exhaustive_train(self) -> None:
         """
         Train until Agent is stabilized
         :return:
@@ -353,21 +395,21 @@ class AgentQ(Agent):
 
         print(steps)
 
-    def testing(self) -> Vector:
+    def get_accumulated_reward(self, from_state: object = None) -> VectorFloat:
         """
-        Test policy
+        When the agent is trained, do a walk, and return the sum of vectors recovered.
         :return:
         """
         self.state = self.environment.reset()
 
         # Get history of walk
-        history = self.walk()
+        history = self.walk(from_state=from_state)
 
         # Sum history to get total reward
         result = np.sum(history, axis=0)
 
-        # Return a vector
-        return self.environment.default_reward.zero_vector + result
+        # Return a vector float
+        return VectorFloat(result)
 
     @staticmethod
     def policies_are_similar(a: dict, b: dict) -> bool:

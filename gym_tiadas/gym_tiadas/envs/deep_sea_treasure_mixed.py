@@ -1,12 +1,18 @@
 """
 Variant of the Deep Sea Treasure environment.
 """
+from models import VectorFloat
 from .deep_sea_treasure import DeepSeaTreasure
 
 
 class DeepSeaTreasureMixed(DeepSeaTreasure):
     # Possible actions
     _actions = {'UP': 0, 'RIGHT': 1, 'DOWN': 2, 'LEFT': 3}
+
+    # Pareto optimal
+    pareto_optimal = [
+        (-1, 1), (-3, 2), (-5, 10), (-7, 11), (-8, 12), (-9, 13), (-13, 15), (-14, 18.5), (-17, 19), (-19, 20)
+    ]
 
     def __init__(self, initial_state: tuple = (0, 0), default_reward: tuple = (0,), seed: int = 0):
         """

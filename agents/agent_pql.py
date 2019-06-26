@@ -63,14 +63,17 @@ This seems faster than using either deepcopy (≈ 247% faster) or copy
 import datetime
 import importlib
 import json
-import math
 import os
+import time
 from copy import deepcopy
+
+import math
+import numpy as np
 
 import utils.hypervolume as uh
 import utils.miscellaneous as um
 from gym_tiadas.gym_tiadas.envs import Environment
-from models import IndexVector
+from models import IndexVector, GraphType, EvaluationMechanism
 from models.vector import Vector
 from models.vector_float import VectorFloat
 from .agent import Agent
@@ -79,8 +82,9 @@ from .agent import Agent
 class AgentPQL(Agent):
 
     def __init__(self, environment: Environment, epsilon: float = 0.1, gamma: float = 1., seed: int = 0,
-                 max_steps: int = None, hv_reference: Vector = None, evaluation_mechanism: str = 'HV-PQL',
-                 states_to_observe: list = None):
+                 max_steps: int = None, hv_reference: Vector = None,
+                 evaluation_mechanism: EvaluationMechanism = EvaluationMechanism.HV, states_to_observe: list = None,
+                 graph_types: tuple = (GraphType.EPOCHS, GraphType.STEPS)):
         """
         :param environment: instance of any environment class.
         :param epsilon: Epsilon used in epsilon-greedy policy, to explore more states.
@@ -89,13 +93,13 @@ class AgentPQL(Agent):
         :param max_steps: Limits of steps per episode.
         :param hv_reference: Reference vector to calc hypervolume
         :param evaluation_mechanism: Evaluation mechanism used to calc best action to choose. Three values are
-            available: 'C-PQL', 'PO-PQL', 'HV-PQL'
+            available: EvaluationMechanism.{C, PO, HV}
         :param states_to_observe: List of states from that we want to get a graphical output.
         """
 
         # Super call __init__
         super().__init__(environment=environment, epsilon=epsilon, gamma=gamma, seed=seed,
-                         states_to_observe=states_to_observe, max_steps=max_steps)
+                         states_to_observe=states_to_observe, max_steps=max_steps, graph_types=graph_types)
 
         # Average observed immediate reward vector.
         self.r = dict()
@@ -110,7 +114,7 @@ class AgentPQL(Agent):
         self.hv_reference = hv_reference
 
         # Evaluation mechanism
-        if evaluation_mechanism in ('HV-PQL', 'PO-PQL', 'C-PQL'):
+        if evaluation_mechanism in (EvaluationMechanism.HV, EvaluationMechanism.PO, EvaluationMechanism.C):
             self.evaluation_mechanism = evaluation_mechanism
         else:
             raise ValueError('Evaluation mechanism does not valid.')
@@ -170,19 +174,51 @@ class AgentPQL(Agent):
             if self.max_steps is not None and not is_final:
                 is_final = self.steps >= self.max_steps
 
-        # Append new data for graphical output
-        for state, data in self.states_to_observe.items():
-            # Set state
-            self.environment.current_state = state
+            if GraphType.STEPS in self.states_to_observe and self.total_steps % self.steps_to_get_graph_data == 0:
+                # Append new data
+                self.update_graph(graph_type=GraphType.STEPS)
 
+            if GraphType.TIME in self.states_to_observe and (
+                    time.time() - self.last_time_to_get_graph_data) > self.seconds_to_get_graph_data:
+                # Append new data
+                self.update_graph(graph_type=GraphType.TIME)
+
+                # Update last execution
+                self.last_time_to_get_graph_data = time.time()
+
+        if GraphType.EPOCHS in self.states_to_observe:
+            # Append new data
+            self.update_graph(graph_type=GraphType.EPOCHS)
+
+        # Save last register data
+        if GraphType.STEPS in self.states_to_observe:
+            # Append new data
+            self.update_graph(graph_type=GraphType.STEPS)
+
+        # Save last register data
+        if GraphType.TIME in self.states_to_observe:
+            # Append new data
+            self.update_graph(graph_type=GraphType.TIME)
+
+            # Update last execution
+            self.last_time_to_get_graph_data = time.time()
+
+    def update_graph(self, graph_type: GraphType):
+        """
+        Update specific graph type
+        :param graph_type:
+        :return:
+        """
+
+        for state, data in self.states_to_observe.get(graph_type).items():
             # Add to data Best value (V max)
-            value = self._best_hypervolume()
+            value = self._best_hypervolume(state=state)
 
             # Add to data Best value (V max)
             data.append(value)
 
             # Update dictionary
-            self.states_to_observe.update({state: data})
+            self.states_to_observe.get(graph_type).update({state: data})
 
     def get_and_update_n_s_a(self, state: object, action: int) -> int:
         """
@@ -299,9 +335,9 @@ class AgentPQL(Agent):
             state = self.state
 
         # Use the selected evaluation
-        if self.evaluation_mechanism == 'HV-PQL':
+        if self.evaluation_mechanism == EvaluationMechanism.HV:
             action = self.hypervolume_evaluation(state=state)
-        elif self.evaluation_mechanism == 'C-PQL':
+        elif self.evaluation_mechanism == EvaluationMechanism.C:
             action = self.cardinality_evaluation(state=state)
         else:
             action = self.pareto_evaluation(state=state)
@@ -406,18 +442,21 @@ class AgentPQL(Agent):
 
         return path
 
-    def _best_hypervolume(self) -> float:
+    def _best_hypervolume(self, state: object = None) -> float:
         """
         Return best hypervolume for state given.
         :return:
         """
+
+        # Check if a state is given
+        state = state if state else self.environment.current_state
 
         # Hypervolume list
         hv = list()
 
         for a in self.environment.action_space:
             # Get Q-set from state given for each possible action.
-            q_set = self.q_set(state=self.environment.current_state, action=a)
+            q_set = self.q_set(state=state, action=a)
 
             # Calc hypervolume of Q_set, with reference given.
             hv.append(uh.calc_hypervolume(list_of_vectors=q_set, reference=self.hv_reference))
@@ -426,7 +465,7 @@ class AgentPQL(Agent):
 
     def hypervolume_evaluation(self, state: object) -> int:
         """
-        Calc the hypervolume for each action in state given. (HV-PQL)
+        Calc the hypervolume for each action in state given. (EvaluationMechanism.HV)
         :param state:
         :return:
         """
@@ -460,7 +499,7 @@ class AgentPQL(Agent):
 
     def cardinality_evaluation(self, state: object) -> int:
         """
-        Calc the cardinality for each action in state given. (C-PQL)
+        Calc the cardinality for each action in state given. (EvaluationMechanism.C)
         :param state:
         :return:
         """
@@ -497,7 +536,7 @@ class AgentPQL(Agent):
 
     def pareto_evaluation(self, state: object) -> int:
         """
-        Calc the pareto for each action in state given. (PO-PQL)
+        Calc the pareto for each action in state given. (EvaluationMechanism.PO)
         :param state:
         :return:
         """
@@ -546,27 +585,36 @@ class AgentPQL(Agent):
         # Own properties
         model['data'].update({
             'r': [
-                {'key': k, 'value': {'key': int(k2), 'value': v2.tolist()}}
-                for k, v in self.r.items() for k2, v2 in v.items()
+                {
+                    'key': k, 'value': {
+                        'key': int(k2), 'value': v2.tolist()
+                    }
+                } for k, v in self.r.items() for k2, v2 in v.items()
             ]
         })
 
         model['data'].update({
             'nd': [
-                {'key': k, 'value': {'key': int(k2), 'value': [vector.tolist() for vector in v2]}}
-                for k, v in self.nd.items() for k2, v2 in v.items()
+                {
+                    'key': k, 'value': {
+                        'key': int(k2), 'value': [vector.tolist() for vector in v2]
+                    }
+                } for k, v in self.nd.items() for k2, v2 in v.items()
             ]
         })
 
         model['data'].update({
             'n': [
-                {'key': k, 'value': {'key': int(k2), 'value': v2}}
-                for k, v in self.n.items() for k2, v2 in v.items()
+                {
+                    'key': k, 'value': {
+                        'key': int(k2), 'value': v2
+                    }
+                } for k, v in self.n.items() for k2, v2 in v.items()
             ]
         })
 
         model['data'].update({'hv_reference': self.hv_reference.tolist()})
-        model['data'].update({'evaluation_mechanism': self.evaluation_mechanism})
+        model['data'].update({'evaluation_mechanism': str(self.evaluation_mechanism)})
 
         return model
 
@@ -604,7 +652,7 @@ class AgentPQL(Agent):
         agent = um.str_to_snake_case(self.__class__.__name__)
 
         # Get evaluation mechanism in snake case
-        evaluation_mechanism = um.str_to_snake_case(self.evaluation_mechanism)
+        evaluation_mechanism = um.str_to_snake_case(str(self.evaluation_mechanism.value))
 
         # Get date
         date = datetime.datetime.now().timestamp()
@@ -612,7 +660,7 @@ class AgentPQL(Agent):
         return '{}_{}_{}_{}'.format(agent, environment, evaluation_mechanism, date)
 
     @staticmethod
-    def load(filename: str = None, environment: Environment = None, evaluation_mechanism: str = None):
+    def load(filename: str = None, environment: Environment = None, evaluation_mechanism: EvaluationMechanism = None):
         """
         Load json string from file and convert to dictionary.
         :param evaluation_mechanism: It is an evaluation mechanism that you want load
@@ -636,7 +684,7 @@ class AgentPQL(Agent):
             environment = um.str_to_snake_case(environment.__class__.__name__)
 
             # Get evaluation mechanism name in snake case
-            evaluation_mechanism = um.str_to_snake_case(evaluation_mechanism)
+            evaluation_mechanism = um.str_to_snake_case(str(evaluation_mechanism.value))
 
             # Filter str
             filter_str = '{}_{}'.format(environment, evaluation_mechanism)
@@ -727,7 +775,7 @@ class AgentPQL(Agent):
         gamma = data.get('gamma')
         max_steps = data.get('max_steps')
         seed = data.get('seed')
-        evaluation_mechanism = data.get('evaluation_mechanism')
+        evaluation_mechanism = EvaluationMechanism.from_string(evaluation_mechanism=data.get('evaluation_mechanism'))
 
         # default_reward is reference so, reset components (multiply by zero) and add hv_reference to get hv_reference.
         hv_reference = default_reward.zero_vector + data.get('hv_reference')
@@ -735,12 +783,22 @@ class AgentPQL(Agent):
         # Update 'states_to_observe' data
         states_to_observe = dict()
         for item in data.get('states_to_observe'):
-            # Convert to tuples to hash
-            key = um.lists_to_tuples(item.get('key'))
+
+            # Get graph type
+            key = GraphType.from_string(item.get('key'))
 
             value = item.get('value')
+            state = um.lists_to_tuples(value.get('key'))
+            value = value.get('value')
 
-            states_to_observe.update({key: value})
+            if key not in states_to_observe.keys():
+                states_to_observe.update({
+                    key: dict()
+                })
+
+            states_to_observe.get(key).update({
+                state: value
+            })
 
         # Unpack 'r' data
         r = dict()
@@ -796,3 +854,24 @@ class AgentPQL(Agent):
         model.states_to_observe = states_to_observe
 
         return model
+
+    def objective_training(self, list_of_vectors: list):
+        """
+        Train until V(s0) value is close to objective value.
+        :param list_of_vectors:
+        :return:
+        """
+
+        # Calc current hypervolume
+        current_hypervolume = self._best_hypervolume(self.environment.initial_state)
+
+        objective_hypervolume = uh.calc_hypervolume(list_of_vectors=list_of_vectors, reference=self.hv_reference)
+
+        while not np.isclose(a=current_hypervolume, b=objective_hypervolume, rtol=0.01, atol=0.0):
+            # Do an episode
+            self.episode()
+
+            # Update hypervolume
+            current_hypervolume = self._best_hypervolume(self.environment.initial_state)
+
+        pass

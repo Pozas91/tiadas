@@ -9,8 +9,6 @@ Este agente se llama `Agent`, y es una abstracción para los agentes definidos e
 la  siguiente estructura básica común:
 
 * **Atributos**
-    * `_icons` - Diccionario de los posibles iconos usados por el agente, donde la clave es un texto identificable y el
-    valor es un caracter que representa al icono.
     * `gamma` - Factor de descuento.
     * `epsilon` - Epsilon usado para la exploración del agente (política e-greedy).
     * `environment` - Entorno de la clase [`Environment`](../environments/environment.md), sobre el que el agente
@@ -28,8 +26,8 @@ la  siguiente estructura básica común:
     [`numpy.random.RandomState()`](https://docs.scipy.org/doc/numpy/reference/generated/numpy.random.RandomState.html).
     * `json_indent` - Tabulación que tendrán las líneas en los ficheros json.
     * `dumps_path` - Ruta relativa hacia el directorio de volcado de datos.
-    * `steps_to_calc_value` - Cada cuantos pasos se calculará el valor máximo de V(s0).
-    * `epochs_to_calc_value` - Cada cuantos episodios se calculará el valor máximo de V(s0).
+    * `steps_to_get_graph_data` - Cada cuantos pasos se calculará el valor máximo de los estados observados.
+    * `seconds_to_get_graph_data` - Cada cuantos episodios se calculará el valor máximo de los estados observados.
     
 * **Métodos**
     * `select_action(self, state: object = None) -> int`
@@ -122,8 +120,8 @@ la  siguiente estructura básica común:
             * Devuelve un `str`, una cadena de texto con el nombre del fichero.
     * `save(self, filename: str = None) -> None`
         * **Descripción**
-            * Guarda el fichero `JSON` con la información del modelo, si no se le pasa un nombre de fichero, se cogerá
-            el nombre por defecto.
+            * Guarda el fichero JSON con la información del modelo, si no se le indica un nombre de fichero, se generará
+             uno por defecto.
         * **Parámetros**
             * `filename: str = None` - Nombre del fichero con que se guardará el modelo.
         * **Salida**

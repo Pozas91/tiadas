@@ -16,20 +16,14 @@ from models import GraphType
 
 
 class Agent:
-    # Different icons
-    __icons = {
-        'BLANK': ' ', 'BLOCK': '■', 'FINAL': '$', 'CURRENT': '☺', 'UP': '↑', 'RIGHT': '→', 'DOWN': '↓', 'LEFT': '←',
-        'STAY': '×'
-    }
-
     # Indent of the JSON file where the agent will be saved
     json_indent = 2
     # Get dumps path from this file path
     dumps_path = '{}/../dumps'.format(os.path.dirname(os.path.abspath(__file__)))
-    # Each steps to calc hypervolume
-    steps_to_calc_hypervolume = 10
-    # Each seconds to calc hypervolume
-    seconds_to_calc_hypervolume = 0.001
+    # Each steps to calc graph data
+    steps_to_get_graph_data = 10
+    # Each seconds to calc graph data
+    seconds_to_get_graph_data = 0.001
 
     def __init__(self, environment: Environment, epsilon: float = 0.1, gamma: float = 1., seed: int = 0,
                  states_to_observe: list = None, max_steps: int = None,
@@ -78,7 +72,7 @@ class Agent:
         self.steps = 0
 
         # Initial execution time
-        self.last_time = time.time()
+        self.last_time_to_get_graph_data = time.time()
 
         # Total of this agent
         self.total_epochs = 0
@@ -200,7 +194,13 @@ class Agent:
                     'data': self.environment.get_dict_model()
                 },
                 'max_steps': self.max_steps,
-                'states_to_observe': [{'key': k, 'value': v} for k, v in self.states_to_observe.items()],
+                'states_to_observe': [
+                    {
+                        'key': str(k), 'value': {
+                            'key': k2 if isinstance(k2, int) else list(k2), 'value': v2
+                        }
+                    } for k, v in self.states_to_observe.items() for k2, v2 in v.items()
+                ],
                 'seed': self.seed
             }
         }
