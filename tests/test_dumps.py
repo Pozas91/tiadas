@@ -31,7 +31,7 @@ class TestDumps(unittest.TestCase):
         evaluation_mechanism = EvaluationMechanism.PO
         epsilon = 0.4
         states_to_observe = [(0, 0)]
-        epochs = np.random.randint(10, 100)
+        epochs = np.random.randint(10, 50)
         gamma = 0.99
         max_steps = None
 
@@ -81,7 +81,7 @@ class TestDumps(unittest.TestCase):
         evaluation_mechanism = EvaluationMechanism.PO
         epsilon = 0.11
         states_to_observe = [(1, 1)]
-        epochs = np.random.randint(10, 100)
+        epochs = np.random.randint(10, 50)
         gamma = 0.99
         max_steps = None
         p_stolen = .8
@@ -145,7 +145,7 @@ class TestDumps(unittest.TestCase):
         evaluation_mechanism = EvaluationMechanism.PO
         epsilon = 0.4
         states_to_observe = [(0, 0)]
-        epochs = np.random.randint(10, 100)
+        epochs = np.random.randint(10, 50)
         gamma = 0.99
         max_steps = None
 
@@ -194,7 +194,7 @@ class TestDumps(unittest.TestCase):
         evaluation_mechanism = EvaluationMechanism.PO
         epsilon = 0.11
         states_to_observe = [(0, 0)]
-        epochs = np.random.randint(10, 100)
+        epochs = np.random.randint(10, 50)
         gamma = 0.99
         max_steps = None
 
@@ -243,7 +243,7 @@ class TestDumps(unittest.TestCase):
         evaluation_mechanism = EvaluationMechanism.PO
         epsilon = 0.11
         states_to_observe = [(0, 0)]
-        epochs = np.random.randint(10, 100)
+        epochs = np.random.randint(10, 50)
         gamma = 0.99
         max_steps = None
         n_transaction = 0.33
@@ -293,7 +293,7 @@ class TestDumps(unittest.TestCase):
         evaluation_mechanism = EvaluationMechanism.PO
         epsilon = 0.11
         states_to_observe = [0]
-        epochs = np.random.randint(10, 100)
+        epochs = np.random.randint(10, 50)
         gamma = 0.99
         max_steps = 10
         initial_state = 1
@@ -340,7 +340,7 @@ class TestDumps(unittest.TestCase):
         evaluation_mechanism = EvaluationMechanism.PO
         epsilon = 0.11
         states_to_observe = [0]
-        epochs = np.random.randint(10, 100)
+        epochs = np.random.randint(10, 50)
         gamma = 0.99
         max_steps = 10
         initial_state = 1
@@ -437,7 +437,7 @@ class TestDumps(unittest.TestCase):
         evaluation_mechanism = EvaluationMechanism.PO
         epsilon = 0.11
         states_to_observe = [(0, 0)]
-        epochs = np.random.randint(10, 100)
+        epochs = np.random.randint(10, 50)
         gamma = 0.99
         max_steps = None
 
@@ -484,7 +484,7 @@ class TestDumps(unittest.TestCase):
         evaluation_mechanism = EvaluationMechanism.PO
         epsilon = 0.11
         states_to_observe = [(0, 0)]
-        epochs = np.random.randint(10, 100)
+        epochs = np.random.randint(10, 50)
         gamma = 0.99
         max_steps = None
         p_attack = 0.2
@@ -534,7 +534,7 @@ class TestDumps(unittest.TestCase):
         evaluation_mechanism = EvaluationMechanism.PO
         epsilon = 0.4
         states_to_observe = [(0, 0)]
-        epochs = np.random.randint(10, 100)
+        epochs = np.random.randint(10, 50)
         gamma = 0.99
         max_steps = None
         p_attack = 0.2
@@ -585,7 +585,7 @@ class TestDumps(unittest.TestCase):
         evaluation_mechanism = EvaluationMechanism.PO
         epsilon = 0.11
         states_to_observe = [(0, 0)]
-        epochs = np.random.randint(10, 100)
+        epochs = np.random.randint(10, 50)
         gamma = 0.99
         max_steps = None
 

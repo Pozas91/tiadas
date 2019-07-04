@@ -32,20 +32,23 @@ class TestAgent(unittest.TestCase):
         self.assertTrue(hasattr(self.agent, 'environment'))
         self.assertTrue(hasattr(self.agent, 'max_steps'))
         self.assertTrue(hasattr(self.agent, 'steps'))
+        self.assertTrue(hasattr(self.agent, 'total_steps'))
+        self.assertTrue(hasattr(self.agent, 'total_epochs'))
         self.assertTrue(hasattr(self.agent, 'states_to_observe'))
         self.assertTrue(hasattr(self.agent, 'state'))
         self.assertTrue(hasattr(self.agent, 'seed'))
         self.assertTrue(hasattr(self.agent, 'generator'))
 
         # All agents must be have next methods.
-        self.assertTrue(hasattr(self.agent, 'select_action'))
-        self.assertTrue(hasattr(self.agent, 'episode'))
-        self.assertTrue(hasattr(self.agent, 'reset'))
-        self.assertTrue(hasattr(self.agent, 'best_action'))
+        self.assertTrue(hasattr(self.agent, 'get_dict_model'))
         self.assertTrue(hasattr(self.agent, 'reset_steps'))
         self.assertTrue(hasattr(self.agent, 'show_observed_states'))
         self.assertTrue(hasattr(self.agent, 'print_information'))
         self.assertTrue(hasattr(self.agent, 'train'))
+        self.assertTrue(hasattr(self.agent, 'episode'))
+        self.assertTrue(hasattr(self.agent, 'select_action'))
+        self.assertTrue(hasattr(self.agent, 'reset'))
+        self.assertTrue(hasattr(self.agent, 'best_action'))
 
     def test_reset_steps(self):
         """

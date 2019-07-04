@@ -1,10 +1,9 @@
 """
 Base Agent class, other agent classes inherited from this.
 """
-import datetime
 import json
-import os
 import time
+from pathlib import Path
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -19,15 +18,15 @@ class Agent:
     # Indent of the JSON file where the agent will be saved
     json_indent = 2
     # Get dumps path from this file path
-    dumps_path = '{}/../dumps'.format(os.path.dirname(os.path.abspath(__file__)))
+    dumps_path = Path('{}/../../dumps'.format(__file__))
     # Each steps to calc graph data
-    steps_to_get_graph_data = 10
+    steps_to_get_graph_data = 1
     # Each seconds to calc graph data
     seconds_to_get_graph_data = 0.001
 
     def __init__(self, environment: Environment, epsilon: float = 0.1, gamma: float = 1., seed: int = 0,
                  states_to_observe: list = None, max_steps: int = None,
-                 graph_types: tuple = (GraphType.EPOCHS, GraphType.STEPS)):
+                 graph_types=None):
         """
         :param environment: An environment where agent does any operation.
         :param epsilon: Epsilon using in e-greedy policy, to explore more states.
@@ -37,6 +36,10 @@ class Agent:
         :param max_steps: Limits of steps per episode.
         :
         """
+
+        # Types to make graphs
+        if graph_types is None:
+            graph_types = {GraphType.EPOCHS, GraphType.STEPS}
 
         # Discount factor
         assert 0 < gamma <= 1
@@ -102,6 +105,64 @@ class Agent:
         Run an episode complete until get a final step
         :return:
         """
+
+        # Increment total epochs
+        self.total_epochs += 1
+
+        # Reset environment
+        self.state = self.environment.reset()
+
+        # Condition to stop episode
+        is_final_state = False
+
+        # Reset steps
+        self.reset_steps()
+
+        while not is_final_state:
+            is_final_state = self.do_iteration()
+
+            # Check timeout
+            if self.max_steps is not None and not is_final_state:
+                is_final_state = self.steps >= self.max_steps
+
+            # Check if is necessary update graph
+            if GraphType.STEPS in self.states_to_observe and self.total_steps % self.steps_to_get_graph_data == 0:
+                # Append new data
+                self.update_graph(graph_type=GraphType.STEPS)
+
+            current_time = time.time()
+
+            if GraphType.TIME in self.states_to_observe and (
+                    current_time - self.last_time_to_get_graph_data) > self.seconds_to_get_graph_data:
+                # Append new data
+                self.update_graph(graph_type=GraphType.TIME)
+
+                # Update last execution
+                self.last_time_to_get_graph_data = current_time
+
+        if GraphType.EPOCHS in self.states_to_observe:
+            # Append new data
+            self.update_graph(graph_type=GraphType.EPOCHS)
+
+        # Save last register data
+        if GraphType.STEPS in self.states_to_observe:
+            # Append new data
+            self.update_graph(graph_type=GraphType.STEPS)
+
+        # Save last register data
+        if GraphType.TIME in self.states_to_observe:
+            # Append new data
+            self.update_graph(graph_type=GraphType.TIME)
+
+            # Update last execution
+            self.last_time_to_get_graph_data = time.time()
+
+    def update_graph(self, graph_type: GraphType) -> None:
+        """
+        Update specific graph type
+        :param graph_type:
+        :return:
+        """
         raise NotImplemented
 
     def reset(self) -> None:
@@ -125,6 +186,14 @@ class Agent:
         """
         self.steps = 0
 
+    def reset_totals(self) -> None:
+        """
+        Reset totals counters
+        :return:
+        """
+        self.total_steps = 0
+        self.total_epochs = 0
+
     def reset_states_to_observe(self):
         """
         Reset states to observe
@@ -137,15 +206,17 @@ class Agent:
         Show graph of observed states
         :return:
         """
-        for state, data in self.states_to_observe.items():
-            plt.plot(data, label='State: {}'.format(state))
 
-        plt.xlabel('Steps')
-        plt.ylabel('V max')
+        for graph_type, states in self.states_to_observe.items():
+            for state, data in states.items():
+                plt.plot(data, label='State: {}'.format(state))
 
-        plt.legend(loc='upper left')
+            plt.xlabel(str(graph_type))
+            plt.ylabel('data')
 
-        plt.show()
+            plt.legend(loc='lower center')
+
+            plt.show()
 
     def print_information(self) -> None:
         """
@@ -196,9 +267,7 @@ class Agent:
                 'max_steps': self.max_steps,
                 'states_to_observe': [
                     {
-                        'key': str(k), 'value': {
-                            'key': k2 if isinstance(k2, int) else list(k2), 'value': v2
-                        }
+                        'key': str(k), 'value': {'key': k2 if isinstance(k2, int) else list(k2), 'value': v2}
                     } for k, v in self.states_to_observe.items() for k2, v2 in v.items()
                 ],
                 'seed': self.seed
@@ -226,10 +295,10 @@ class Agent:
         # Get evaluation mechanism in snake case
         agent = um.str_to_snake_case(self.__class__.__name__)
 
-        # Get date
-        date = datetime.datetime.now().timestamp()
+        # Get timestamp
+        timestamp = int(time.time())
 
-        return '{}_{}_{}'.format(agent, environment, date)
+        return '{}_{}_{}'.format(agent, environment, timestamp)
 
     def save(self, filename: str = None) -> None:
         """
@@ -248,10 +317,17 @@ class Agent:
         model = self.get_dict_model()
 
         # Open file with filename in write mode with UTF-8 encoding.
-        with open(file_path, 'w', encoding='UTF-8') as file:
+        with open(str(file_path), 'w', encoding='UTF-8') as file:
             json.dump(model, file, indent=self.json_indent)
 
     @staticmethod
-    def dumps_file_path(filename: str) -> str:
+    def dumps_file_path(filename: str) -> Path:
         # Return path from file name
-        return '{}/{}.json'.format(Agent.dumps_path, filename)
+        return Agent.dumps_path.joinpath(filename)
+
+    def do_iteration(self) -> bool:
+        """
+        Does an iteration in an episode, and return if the process continues.
+        :return:
+        """
+        raise NotImplemented

@@ -64,7 +64,6 @@ import datetime
 import importlib
 import json
 import os
-import time
 from copy import deepcopy
 
 import math
@@ -82,9 +81,10 @@ from .agent import Agent
 class AgentPQL(Agent):
 
     def __init__(self, environment: Environment, epsilon: float = 0.1, gamma: float = 1., seed: int = 0,
-                 max_steps: int = None, hv_reference: Vector = None,
+                 max_steps: int = None, hv_reference: Vector = None, graph_types: set = None,
                  evaluation_mechanism: EvaluationMechanism = EvaluationMechanism.HV, states_to_observe: list = None,
-                 graph_types: tuple = (GraphType.EPOCHS, GraphType.STEPS)):
+                 integer_mode: bool = True):
+
         """
         :param environment: instance of any environment class.
         :param epsilon: Epsilon used in epsilon-greedy policy, to explore more states.
@@ -96,6 +96,10 @@ class AgentPQL(Agent):
             available: EvaluationMechanism.{C, PO, HV}
         :param states_to_observe: List of states from that we want to get a graphical output.
         """
+
+        # Types to make graphs
+        if graph_types is None:
+            graph_types = {GraphType.EPOCHS, GraphType.STEPS}
 
         # Super call __init__
         super().__init__(environment=environment, epsilon=epsilon, gamma=gamma, seed=seed,
@@ -110,98 +114,54 @@ class AgentPQL(Agent):
         # Occurrences
         self.n = dict()
 
-        # HV reference
-        self.hv_reference = hv_reference
-
         # Evaluation mechanism
         if evaluation_mechanism in (EvaluationMechanism.HV, EvaluationMechanism.PO, EvaluationMechanism.C):
             self.evaluation_mechanism = evaluation_mechanism
         else:
             raise ValueError('Evaluation mechanism does not valid.')
 
-    def episode(self) -> None:
-        """
-        Run an complete episode using the agent's epsilon-greedy policy
-        until a final state is reached.
-        The agent updates R(s,a), ND(s,a) and n(s,a) values.
-        :return:
-        """
+        # if integer mode is True, all reward vectors received will be converted.
+        self.integer_mode = integer_mode
 
-        # Increment epochs counter
-        self.total_epochs += 1
+        if self.integer_mode:
+            hv_reference = hv_reference.to_decimals()
 
-        # Reset environment
-        self.state = self.environment.reset()
+        self.hv_reference = hv_reference
 
-        # Condition to stop episode
-        is_final = False
+    def do_iteration(self) -> bool:
+        # Choose action a from s using a policy derived from the Q-set
+        action = self.select_action()
 
-        # Reset steps
-        self.reset_steps()
+        # Do step on environment
+        next_state, reward, is_final, info = self.environment.step(action=action)
 
-        while not is_final:
+        if self.integer_mode:
+            reward = reward.to_decimals()
 
-            # Choose action a from s using a policy derived from the Q-set
-            action = self.select_action()
+        # Increment steps
+        self.total_steps += 1
+        self.steps += 1
 
-            # Do step on environment
-            next_state, rewards, is_final, info = self.environment.step(action=action)
+        # Check if is final
+        if is_final:
+            # ND(s, a) <- Zero vector
+            nd_s_a_dict = self.nd.get(self.state, {})
+            nd_s_a_dict.update({action: [self.environment.default_reward.zero_vector]})
+            self.nd.update({self.state: nd_s_a_dict})
+        else:
+            # Update ND policies of s' in s
+            self.update_nd_s_a(state=self.state, action=action, next_state=next_state)
 
-            # Increment steps
-            self.total_steps += 1
-            self.steps += 1
+        # Update numbers of occurrences
+        n_s_a = self.get_and_update_n_s_a(state=self.state, action=action)
 
-            # Check if is final
-            if is_final:
-                # ND(s, a) <- Zero vector
-                nd_s_a_dict = self.nd.get(self.state, {})
-                nd_s_a_dict.update({action: [self.environment.default_reward.zero_vector]})
-                self.nd.update({self.state: nd_s_a_dict})
-            else:
-                # Update ND policies of s' in s
-                self.update_nd_s_a(state=self.state, action=action, next_state=next_state)
+        # Update average immediate rewards
+        self.update_r_s_a(state=self.state, action=action, reward=reward, occurrences=n_s_a)
 
-            # Update numbers of occurrences
-            n_s_a = self.get_and_update_n_s_a(state=self.state, action=action)
+        # Proceed to next state
+        self.state = next_state
 
-            # Update average immediate rewards
-            self.update_r_s_a(state=self.state, action=action, reward=rewards, occurrences=n_s_a)
-
-            # Proceed to next state
-            self.state = next_state
-
-            # Check timeout
-            if self.max_steps is not None and not is_final:
-                is_final = self.steps >= self.max_steps
-
-            if GraphType.STEPS in self.states_to_observe and self.total_steps % self.steps_to_get_graph_data == 0:
-                # Append new data
-                self.update_graph(graph_type=GraphType.STEPS)
-
-            if GraphType.TIME in self.states_to_observe and (
-                    time.time() - self.last_time_to_get_graph_data) > self.seconds_to_get_graph_data:
-                # Append new data
-                self.update_graph(graph_type=GraphType.TIME)
-
-                # Update last execution
-                self.last_time_to_get_graph_data = time.time()
-
-        if GraphType.EPOCHS in self.states_to_observe:
-            # Append new data
-            self.update_graph(graph_type=GraphType.EPOCHS)
-
-        # Save last register data
-        if GraphType.STEPS in self.states_to_observe:
-            # Append new data
-            self.update_graph(graph_type=GraphType.STEPS)
-
-        # Save last register data
-        if GraphType.TIME in self.states_to_observe:
-            # Append new data
-            self.update_graph(graph_type=GraphType.TIME)
-
-            # Update last execution
-            self.last_time_to_get_graph_data = time.time()
+        return is_final
 
     def update_graph(self, graph_type: GraphType):
         """
@@ -213,6 +173,11 @@ class AgentPQL(Agent):
         for state, data in self.states_to_observe.get(graph_type).items():
             # Add to data Best value (V max)
             value = self._best_hypervolume(state=state)
+
+            # If integer mode is True, is necessary divide value by increment
+            if self.integer_mode:
+                # Divide value by two powered numbers (hv_reference and reward)
+                value /= 10 ** (Vector.decimals_allowed * 2)
 
             # Add to data Best value (V max)
             data.append(value)
@@ -301,11 +266,9 @@ class AgentPQL(Agent):
 
         # Get ND(s, a)
         non_dominated_vectors = self.nd.get(state, {}).get(action, [self.environment.default_reward.zero_vector])
-        q_set = list()
 
         # R(s, a) + y*ND
-        for non_dominated in non_dominated_vectors:
-            q_set.append(r_s_a + (non_dominated * self.gamma))
+        q_set = [r_s_a + (non_dominated * self.gamma) for non_dominated in non_dominated_vectors]
 
         return q_set
 
@@ -586,9 +549,7 @@ class AgentPQL(Agent):
         model['data'].update({
             'r': [
                 {
-                    'key': k, 'value': {
-                        'key': int(k2), 'value': v2.tolist()
-                    }
+                    'key': k, 'value': {'key': int(k2), 'value': v2.tolist()}
                 } for k, v in self.r.items() for k2, v2 in v.items()
             ]
         })
@@ -596,9 +557,7 @@ class AgentPQL(Agent):
         model['data'].update({
             'nd': [
                 {
-                    'key': k, 'value': {
-                        'key': int(k2), 'value': [vector.tolist() for vector in v2]
-                    }
+                    'key': k, 'value': {'key': int(k2), 'value': [vector.tolist() for vector in v2]}
                 } for k, v in self.nd.items() for k2, v2 in v.items()
             ]
         })
@@ -606,15 +565,17 @@ class AgentPQL(Agent):
         model['data'].update({
             'n': [
                 {
-                    'key': k, 'value': {
-                        'key': int(k2), 'value': v2
-                    }
+                    'key': k, 'value': {'key': int(k2), 'value': v2}
                 } for k, v in self.n.items() for k2, v2 in v.items()
             ]
         })
 
         model['data'].update({'hv_reference': self.hv_reference.tolist()})
         model['data'].update({'evaluation_mechanism': str(self.evaluation_mechanism)})
+        model['data'].update({'integer_mode': self.integer_mode})
+        model['data'].update({'total_epochs': self.total_epochs})
+        model['data'].update({'total_steps': self.total_steps})
+        model['data'].update({'state': list(self.state)})
 
         return model
 
@@ -634,7 +595,6 @@ class AgentPQL(Agent):
         return self.environment.default_reward.m3_max(nd)
 
     def print_information(self) -> None:
-
         super().print_information()
 
         print("Hypervolume reference: {}".format(self.hv_reference))
@@ -689,28 +649,27 @@ class AgentPQL(Agent):
             # Filter str
             filter_str = '{}_{}'.format(environment, evaluation_mechanism)
 
-            for root, directories, files in os.walk(AgentPQL.dumps_path):
+            # Filter files with that environment and evaluation mechanism
+            files = filter(lambda f: filter_str in f,
+                           [path.name for path in os.scandir(AgentPQL.dumps_path) if path.is_file()])
 
-                # Filter files with that environment and evaluation mechanism
-                files = filter(lambda f: filter_str in f, files)
+            # Files to list
+            files = list(files)
 
-                # Files to list
-                files = list(files)
+            # Sort list of files
+            files.sort()
 
-                # Sort list of files
-                files.sort()
-
-                # At least must have a file
-                if files:
-                    # Get last filename
-                    filename = files[-1].split('.json')[0]
+            # At least must have a file
+            if files:
+                # Get last filename
+                filename = files[-1]
 
         # Prepare file path
         file_path = AgentPQL.dumps_file_path(filename)
 
         # Read file from path
         try:
-            file = open(file_path, 'r', encoding='UTF-8')
+            file = file_path.open(mode='r', encoding='UTF-8')
         except FileNotFoundError:
             return None
 
@@ -723,10 +682,10 @@ class AgentPQL(Agent):
         # Get meta-data
         meta = model.get('meta')
         # Get data
-        data = model.get('data')
+        model_data = model.get('data')
 
         # ENVIRONMENT
-        environment = data.get('environment')
+        environment = model_data.get('environment')
 
         # Meta
         environment_meta = environment.get('meta')
@@ -771,21 +730,32 @@ class AgentPQL(Agent):
         class_ = getattr(module, class_name)
 
         # Data
-        epsilon = data.get('epsilon')
-        gamma = data.get('gamma')
-        max_steps = data.get('max_steps')
-        seed = data.get('seed')
-        evaluation_mechanism = EvaluationMechanism.from_string(evaluation_mechanism=data.get('evaluation_mechanism'))
+        epsilon = model_data.get('epsilon')
+        gamma = model_data.get('gamma')
+        integer_mode = model_data.get('integer_mode')
+        total_epochs = model_data.get('total_epochs')
+        total_steps = model_data.get('total_steps')
+        state = tuple(model_data.get('state'))
+        max_steps = model_data.get('max_steps')
+        seed = model_data.get('seed')
+
+        # Recover evaluation mechanism from string
+        evaluation_mechanism = EvaluationMechanism.from_string(
+            evaluation_mechanism=model_data.get('evaluation_mechanism'))
 
         # default_reward is reference so, reset components (multiply by zero) and add hv_reference to get hv_reference.
-        hv_reference = default_reward.zero_vector + data.get('hv_reference')
+        hv_reference = default_reward.zero_vector + model_data.get('hv_reference')
+
+        # Prepare Graph Types
+        graph_types = set()
 
         # Update 'states_to_observe' data
         states_to_observe = dict()
-        for item in data.get('states_to_observe'):
+        for item in model_data.get('states_to_observe'):
 
             # Get graph type
             key = GraphType.from_string(item.get('key'))
+            graph_types.add(key)
 
             value = item.get('value')
             state = um.lists_to_tuples(value.get('key'))
@@ -802,7 +772,7 @@ class AgentPQL(Agent):
 
         # Unpack 'r' data
         r = dict()
-        for item in data.get('r'):
+        for item in model_data.get('r'):
             # Convert to tuples to hash
             key = um.lists_to_tuples(item.get('key'))
             value = item.get('value')
@@ -816,7 +786,7 @@ class AgentPQL(Agent):
 
         # Unpack 'nd' data
         nd = dict()
-        for item in data.get('nd'):
+        for item in model_data.get('nd'):
             # Convert to tuples to hash
             key = um.lists_to_tuples(item.get('key'))
             value = item.get('value')
@@ -830,7 +800,7 @@ class AgentPQL(Agent):
 
         # Unpack 'n' data
         n = dict()
-        for item in data.get('n'):
+        for item in model_data.get('n'):
             # Convert to tuples to hash
             key = um.lists_to_tuples(item.get('key'))
             value = item.get('value')
@@ -843,15 +813,18 @@ class AgentPQL(Agent):
             n.get(key).update({action: value})
 
         # Prepare an instance of model.
-        model = class_(environment=environment, epsilon=epsilon, gamma=gamma, seed=seed,
-                       max_steps=max_steps, hv_reference=hv_reference,
-                       evaluation_mechanism=evaluation_mechanism)
+        model = AgentPQL(environment=environment, epsilon=epsilon, gamma=gamma, seed=seed,
+                         max_steps=max_steps, hv_reference=hv_reference,
+                         evaluation_mechanism=evaluation_mechanism, integer_mode=integer_mode, graph_types=graph_types)
 
         # Set finals settings and return it.
         model.r = r
         model.nd = nd
         model.n = n
         model.states_to_observe = states_to_observe
+        model.state = state
+        model.total_epochs = total_epochs
+        model.total_steps = total_steps
 
         return model
 

@@ -2,8 +2,11 @@
 First version of algorithm 1, in this version we are "similar" vector in V(s)
 """
 import datetime
+import importlib
 import itertools
-import time
+import json
+import os
+import random
 from copy import deepcopy
 
 import gym
@@ -14,15 +17,15 @@ import utils.hypervolume as uh
 import utils.miscellaneous as um
 from agents import Agent
 from gym_tiadas.gym_tiadas.envs import Environment
-from models import Vector, IndexVector, VectorFloat, GraphType
+from models import Vector, IndexVector, VectorFloat, GraphType, EvaluationMechanism
 
 
 class AgentA1(Agent):
 
-    def __init__(self, environment: Environment, alpha: float = 0.1, epsilon: float = 0.1, gamma: float = 1.,
-                 seed: int = 0, states_to_observe: list = None, max_steps: int = None,
-                 evaluation_mechanism: str = 'HV-PQL', hv_reference: Vector = None,
-                 graph_types: tuple = (GraphType.STEPS, GraphType.EPOCHS)):
+    def __init__(self, environment: Environment, hv_reference: Vector, alpha: float = 0.1, epsilon: float = 0.1,
+                 gamma: float = 1., seed: int = 0, states_to_observe: list = None, max_steps: int = None,
+                 evaluation_mechanism: EvaluationMechanism = EvaluationMechanism.HV,
+                 graph_types: set = None, integer_mode: bool = True):
         """
         :param environment: An environment where agent does any operation.
         :param alpha: Learning rate
@@ -36,6 +39,10 @@ class AgentA1(Agent):
             available: 'C-PQL', 'PO-PQL', 'HV-PQL'
         :param graph_types: Type of graph to generate.
         """
+
+        # Types to show a graphs
+        if graph_types is None:
+            graph_types = {GraphType.STEPS, GraphType.EPOCHS}
 
         # Super call __init__
         super().__init__(environment=environment, epsilon=epsilon, gamma=gamma, seed=seed,
@@ -57,115 +64,146 @@ class AgentA1(Agent):
         # Counter to indexes used by each pair (state, action)
         self.indexes_counter = dict()
 
-        # Hypervolume reference
-        self.hv_reference = hv_reference
-
         # Evaluation mechanism
-        if evaluation_mechanism in ('HV-PQL', 'PO-PQL', 'C-PQL'):
+        if evaluation_mechanism in (EvaluationMechanism.HV, EvaluationMechanism.PO, EvaluationMechanism.C):
             self.evaluation_mechanism = evaluation_mechanism
         else:
             raise ValueError('Evaluation mechanism does not valid.')
 
-    def episode(self) -> None:
+        # if integer mode is True, all reward vectors received will be converted.
+        self.integer_mode = integer_mode
+
+        # Hypervolume reference
+        if self.integer_mode:
+            hv_reference = hv_reference.to_decimals()
+
+        self.hv_reference = hv_reference
+
+    def get_dict_model(self) -> dict:
         """
-        Run an episode complete until get a final step
+        Get a dictionary of model
+        In JSON serialize only is valid strings as key on dict, so we convert all numeric keys in strings keys.
         :return:
         """
 
-        # Increment epochs
-        self.total_epochs += 1
+        # Get parent's model
+        model = super().get_dict_model()
 
-        # Reset environment
-        self.state = self.environment.reset()
+        # Own properties
+        model.get('data').update({
+            'indexes_counter': [
+                {
+                    'key': list(k), 'value': v
+                } for k, v in self.indexes_counter.items()
+            ]
+        })
 
-        # Condition to stop episode
-        is_final_state = False
+        model.get('data').update({
+            'q': [
+                dict(key=list(state), value={
+                    'key': int(action), 'value': {
+                        'key': list(table_index), 'value': (v3.index, v3.vector.tolist())
+                    }
+                }) for state, v in self.q.items() for action, v2 in v.items() if action != 'updated' for table_index, v3
+                in v2.items()
+            ]
+        })
 
-        # Reset steps
-        self.reset_steps()
+        model.get('data').update({
+            's': [
+                dict(key=list(state), value={
+                    'key': int(action), 'value': v2
+                }) for state, v in self.s.items() for action, v2 in v.items()
+            ]
+        })
 
-        while not is_final_state:
+        model.get('data').update({
+            'v': [
+                dict(key=list(state), value={
+                    'key': int(vector_index), 'value': v2.tolist()
+                }) for state, v in self.v.items() for vector_index, v2 in v.items()
+            ]
+        })
 
-            # If the state is unknown, register it.
-            if self.state not in self.q:
-                self.q.update({self.state: {'updated': True}})
+        model.get('data').update({'alpha': self.alpha})
+        model.get('data').update({'hv_reference': self.hv_reference.tolist()})
+        model.get('data').update({'evaluation_mechanism': str(self.evaluation_mechanism)})
+        model.get('data').update({'integer_mode': self.integer_mode})
+        model.get('data').update({'total_epochs': self.total_epochs})
+        model.get('data').update({'total_steps': self.total_steps})
+        model.get('data').update({'state': list(self.state)})
 
-            if self.state not in self.s:
-                self.s.update({self.state: dict()})
+        return model
 
-            if self.state not in self.v:
-                self.v.update({self.state: dict()})
+    def do_iteration(self) -> bool:
 
-            if self.state not in self.indexes_counter:
-                # Initialize counters
-                self.indexes_counter.update({self.state: 0})
+        # If the state is unknown, register it.
+        if self.state not in self.q:
+            self.q.update({self.state: {'updated': True}})
 
-            # Get an action
-            action = self.select_action()
+        if self.state not in self.s:
+            self.s.update({self.state: dict()})
 
-            # Do step on environment
-            next_state, reward, is_final_state, info = self.environment.step(action=action)
+        if self.state not in self.v:
+            self.v.update({self.state: dict()})
 
-            # Increment steps done
-            self.total_steps += 1
-            self.steps += 1
+        if self.state not in self.indexes_counter:
+            # Initialize counters
+            self.indexes_counter.update({self.state: 0})
 
-            # If next_state is a final state and not is register
-            if is_final_state:
+        # Get an action
+        action = self.select_action()
 
-                # If not is register in V, register it
-                if not self.v.get(next_state):
-                    self.v.update({next_state: {
+        # Do step on environment
+        next_state, reward, is_final_state, info = self.environment.step(action=action)
+
+        if self.integer_mode:
+            reward = reward.to_decimals()
+
+        # Increment steps done
+        self.total_steps += 1
+        self.steps += 1
+
+        # If next_state is a final state and not is register
+        if is_final_state:
+
+            # If not is register in V, register it
+            if not self.v.get(next_state):
+                self.v.update({
+                    next_state: {
                         # By default finals states has a zero vector with a zero index
                         0: self.environment.default_reward.zero_vector
-                    }})
+                    }
+                })
 
-            # S(s) -> All known states with its action for the state given.
-            pair_action_states_known_by_state = self.s.get(self.state)
+        # S(s) -> All known states with its action for the state given.
+        pair_action_states_known_by_state = self.s.get(self.state)
 
-            # S(s, a) -> All known states for state and action given.
-            states_known_by_state = pair_action_states_known_by_state.get(action, list())
+        # S(s, a) -> All known states for state and action given.
+        states_known_by_state = pair_action_states_known_by_state.get(action, list())
 
-            # I_s_k
-            relevant_indexes_of_next_state = self.relevant_indexes_of_state(state=next_state)
+        # I_s_k
+        relevant_indexes_of_next_state = self.relevant_indexes_of_state(state=next_state)
 
-            # S_k in S_{n - 1}
-            next_state_is_in_states_known = next_state in states_known_by_state
+        # S_k in S_{n - 1}
+        next_state_is_in_states_known = next_state in states_known_by_state
 
-            # Check if sk not in S, and I_s_k is not empty
-            if not next_state_is_in_states_known and relevant_indexes_of_next_state:
-                # Q_n = N_n(s, a)
-                self.new_operation(state=self.state, action=action, reward=reward, next_state=next_state)
+        # Check if sk not in S, and I_s_k is not empty
+        if not next_state_is_in_states_known and relevant_indexes_of_next_state:
+            # Q_n = N_n(s, a)
+            self.new_operation(state=self.state, action=action, reward=reward, next_state=next_state)
 
-            elif next_state_is_in_states_known:
-                # Q_n = U_n(s, a)
-                self.update_operation(state=self.state, action=action, reward=reward, next_state=next_state)
+        elif next_state_is_in_states_known:
+            # Q_n = U_n(s, a)
+            self.update_operation(state=self.state, action=action, reward=reward, next_state=next_state)
 
-            # Check if is necessary update V(s) to improve the performance
-            self.check_if_need_update_v()
+        # Check if is necessary update V(s) to improve the performance
+        self.check_if_need_update_v()
 
-            # Update state
-            self.state = next_state
+        # Update state
+        self.state = next_state
 
-            # Check timeout
-            if self.max_steps is not None and not is_final_state:
-                is_final_state = self.total_steps >= self.max_steps
-
-            if GraphType.STEPS in self.states_to_observe and self.total_steps % self.steps_to_get_graph_data == 0:
-                # Append new data
-                self.update_graph(graph_type=GraphType.STEPS)
-
-            if GraphType.TIME in self.states_to_observe and (
-                    time.time() - self.last_time_to_get_graph_data) > self.seconds_to_get_graph_data:
-                # Append new data
-                self.update_graph(graph_type=GraphType.TIME)
-
-                # Update last execution
-                self.last_time_to_get_graph_data = time.time()
-
-        if GraphType.EPOCHS in self.states_to_observe:
-            # Append new data
-            self.update_graph(graph_type=GraphType.EPOCHS)
+        return is_final_state
 
     def update_graph(self, graph_type: GraphType):
         """
@@ -177,6 +215,11 @@ class AgentA1(Agent):
         for state, data in self.states_to_observe.get(graph_type).items():
             # Add to data Best value (V max)
             value = self._best_hypervolume(state=state)
+
+            # If integer mode is True, is necessary divide value by increment
+            if self.integer_mode:
+                # Divide value by two powered numbers (hv_reference and reward)
+                value /= 10 ** (Vector.decimals_allowed * 2)
 
             # Add to data Best value (V max)
             data.append(value)
@@ -204,94 +247,80 @@ class AgentA1(Agent):
 
         return hv
 
-    def reverse_episode(self, state: object) -> None:
+    def reverse_episode(self, epochs_per_state: int = 10) -> None:
         """
         Run an episode complete until get a final step
         :return:
         """
 
-        # Increment epochs counter
-        self.total_epochs += 1
+        objective_states = set(self.environment.finals.keys())
+        invalid_states = objective_states.union(self.environment.obstacles)
 
-        # Reset environment
-        self.environment.reset()
+        visited_states = {key: set() for key in objective_states}
 
-        # Set a given state
-        self.environment.current_state = state
-        self.state = state
+        counter_visited_states = dict()
 
-        # Condition to stop episode
-        is_final_state = False
+        more_valid_states = True
+        distance = 1
 
-        # Reset steps
-        self.reset_steps()
+        while more_valid_states:
 
-        while not is_final_state:
+            # Neighbours by objective state
+            all_neighbours = dict()
 
-            # If the state is unknown, register it.
-            if self.state not in self.q:
-                self.q.update({self.state: {'updated': True}})
+            # Get all neighbours from known objectives
+            for state in objective_states:
+                # Getting nearest neighbours (removing visited_states)
+                neighbours = set(filter(
+                    lambda x: self.environment.observation_space.contains(x) and x not in invalid_states,
+                    self.calc_neighbours(from_state=state, distance=distance)
+                )) - visited_states.get(state)
 
-            if self.state not in self.s:
-                self.s.update({self.state: dict()})
+                all_neighbours.update({state: neighbours})
 
-            if self.state not in self.v:
-                self.v.update({self.state: dict()})
+            # Getting total states to visit
+            states_to_visit = set().union(*all_neighbours.values())
+            number_of_states_to_visit = len(states_to_visit)
 
-            if self.state not in self.indexes_counter:
-                # Initialize counters
-                self.indexes_counter.update({self.state: 0})
+            # Check if there are more valid states pending
+            more_valid_states = number_of_states_to_visit > 0
 
-            # Get an action
-            action = self.select_action()
+            # Number of states to visit per epochs per state
+            total_epochs = number_of_states_to_visit * epochs_per_state
 
-            # Do step on environment
-            next_state, reward, is_final_state, info = self.environment.step(action=action)
+            for epoch in range(total_epochs):
 
-            # Increment steps
-            self.total_steps += 1
-            self.steps += 1
+                if not states_to_visit:
+                    print('Not more states to visit. Stop in epoch {}'.format(epoch))
+                    break
 
-            # If next_state is a final state and not is register
-            if is_final_state:
+                # Get possible combinations
+                possible_neighbours = filter(lambda x: len(x[1]) > 0, all_neighbours.items())
 
-                # If not is register in V, register it
-                if not self.v.get(next_state):
-                    self.v.update({next_state: {
-                        # By default finals states has a zero vector with a zero index
-                        0: self.environment.default_reward.zero_vector
-                    }})
+                # Get random state
+                objective_state, associate_states = random.choice(tuple(possible_neighbours))
+                selected_state = random.choice(tuple(associate_states))
 
-            # S(s) -> All known states with its action for the state given.
-            pair_action_states_known_by_state = self.s.get(self.state)
+                # Interesting counter
+                if selected_state not in counter_visited_states:
+                    counter_visited_states.update({
+                        selected_state: 1
+                    })
+                else:
+                    counter_visited_states.update({
+                        selected_state: counter_visited_states.get(selected_state) + 1
+                    })
 
-            # S(s, a) -> All known states for state and action given.
-            states_known_by_state = pair_action_states_known_by_state.get(action, list())
+                # Change initial state for train
+                self.environment.initial_state = selected_state
 
-            # I_s_k
-            relevant_indexes_of_next_state = self.relevant_indexes_of_state(state=next_state)
+                # Do an episode
+                self.episode()
 
-            # S_k in S_{n - 1}
-            next_state_is_in_states_known = next_state in states_known_by_state
+                # Do while any objective has any state not empty
+                states_to_visit = any([x for x in all_neighbours.values()])
 
-            # Check if sk not in S, and I_s_k is not empty
-            if not next_state_is_in_states_known and relevant_indexes_of_next_state:
-                # Q_n = N_n(s, a)
-                self.new_operation(state=self.state, action=action, reward=reward, next_state=next_state)
-
-            elif next_state_is_in_states_known:
-                # Q_n = U_n(s, a)
-                self.update_operation(state=self.state, action=action, reward=reward, next_state=next_state)
-
-            # Check if is necessary update V(s) to improve the performance
-            self.check_if_need_update_v()
-
-            # Update state
-            self.state = next_state
-
-            # Check timeout
-            if self.max_steps is not None and not is_final_state:
-                is_final_state = self.steps >= self.max_steps
+            distance += 1
 
     def best_action(self, state: object = None) -> int:
         """
@@ -304,9 +333,9 @@ class AgentA1(Agent):
             state = self.state
 
         # Use the selected evaluation
-        if self.evaluation_mechanism == 'HV-PQL':
+        if self.evaluation_mechanism == EvaluationMechanism.HV:
             action = self.hypervolume_evaluation(state=state)
-        elif self.evaluation_mechanism == 'C-PQL':
+        elif self.evaluation_mechanism == EvaluationMechanism.C:
             action = self.cardinality_evaluation(state=state)
         else:
             action = self.pareto_evaluation(state=state)
@@ -596,20 +625,26 @@ class AgentA1(Agent):
                     # Q(s, a)
                     q_list += q_s.get(a, dict()).values()
 
-                v = self.environment.default_reward.m3_max(vectors=q_list)
+                # v = self.environment.default_reward.m3_max(vectors=q_list)
 
                 # Get all non dominated vectors -> V(s)
-                # non_dominated_vectors, _ = self.environment.default_reward.m3_max_2_sets_with_buckets(vectors=q_list)
+                non_dominated_vectors, _ = self.environment.default_reward.m3_max_2_sets_with_buckets(vectors=q_list)
+
+                v = dict()
 
                 # Sort keys of buckets
-                # for bucket in non_dominated_vectors:
-                #     bucket.sort(key=lambda x: x.index)
+                for bucket in non_dominated_vectors:
+                    bucket.sort(key=lambda x: x.index)
 
-                # Set V values (Getting vector with lower index)
-                # v = [bucket[0] for bucket in non_dominated_vectors]
+                    # Set V values (Getting vector with lower index) (simplified)
+                    v.update({bucket[0].index: bucket[0].vector})
 
-                # Update V(s)
-                self.v.update({state: {index_vector.index: index_vector.vector for index_vector in v}})
+                # # Set V values (Getting vector with lower index)
+                # v = {bucket[0] for bucket in non_dominated_vectors}
+
+                # # Update V(s)
+                # self.v.update({state: {index_vector.index: index_vector.vector for index_vector in v}})
+                self.v.update({state: v})
 
                 # V(s) already updated
                 self.q.get(state).update({'updated': True})
@@ -686,26 +721,15 @@ class AgentA1(Agent):
             # For each index with it vector
             for index, vector in vectors.items():
                 # Divide that vector by Vector.decimals to convert in original float vector
-                vectors.update({index: VectorFloat(
-                    vector.components / self.environment.default_reward.decimals
-                )})
+                vectors.update({
+                    index: VectorFloat(
+                        vector.components / self.environment.default_reward.decimals
+                    )
+                })
                 # Update V-values dictionary
                 v.update({state: vectors})
 
         return v
-
-    # def inverse_train(self, epochs=1000):
-    #     """
-    #     Return this agent trained with `epochs` epochs.
-    #     :param epochs:
-    #     :return:
-    #     """
-    #
-    #     finals_states = self.environment.finals.keys()
-    #
-    #     for _ in range(epochs):
-    #         # Do an episode
-    #         self.reverse_episode()
 
     def objective_training(self, list_of_vectors: list):
         """
@@ -738,7 +762,7 @@ class AgentA1(Agent):
         agent = um.str_to_snake_case(self.__class__.__name__)
 
         # Get evaluation mechanism in snake case
-        evaluation_mechanism = um.str_to_snake_case(self.evaluation_mechanism)
+        evaluation_mechanism = um.str_to_snake_case(str(self.evaluation_mechanism))
 
         # Get date
         date = datetime.datetime.now().timestamp()
@@ -766,3 +790,280 @@ class AgentA1(Agent):
             self.s.update({state: dict()})
             self.v.update({state: dict()})
             self.indexes_counter.update({state: 0})
+
+    @staticmethod
+    def load(filename: str = None, environment: Environment = None, evaluation_mechanism: EvaluationMechanism = None):
+        """
+        Load json string from file and convert to dictionary.
+        :param evaluation_mechanism: It is an evaluation mechanism that you want load
+        :param environment: It is an environment that you want load.
+        :param filename: If is None, then get last timestamp file from 'dumps' dir.
+        :return:
+        """
+
+        # Check if filename is None
+        if filename is None:
+
+            # Check if environment is also None
+            if environment is None:
+                raise ValueError('If you has not indicated a filename, you must indicate a environment.')
+
+            # Check if evaluation mechanism is also None
+            if evaluation_mechanism is None:
+                raise ValueError('If you has not indicated a filename, you must indicate a evaluation mechanism.')
+
+            # Get environment name in snake case
+            environment = um.str_to_snake_case(environment.__class__.__name__)
+
+            # Get evaluation mechanism name in snake case
+            evaluation_mechanism_value = um.str_to_snake_case(str(evaluation_mechanism.value))
+
+            # Filter str
+            filter_str = '{}_{}'.format(environment, evaluation_mechanism_value)
+
+            # Filter files with that environment and evaluation mechanism
+            files = filter(lambda f: filter_str in f,
+                           [path.name for path in os.scandir(AgentA1.dumps_path) if path.is_file()])
+
+            # Files to list
+            files = list(files)
+
+            # Sort list of files
+            files.sort()
+
+            # At least must have a file
+            if files:
+                # Get last filename
+                filename = files[-1]
+
+        # Prepare file path
+        file_path = AgentA1.dumps_file_path(filename)
+
+        # Read file from path
+        try:
+            file = file_path.open(mode='r', encoding='UTF-8')
+        except FileNotFoundError:
+            return None
+
+        # Load structured data from indicated file.
+        model = json.load(file)
+
+        # Close file
+        file.close()
+
+        # Get meta-data
+        # model_meta = model.get('meta')
+
+        # Get data
+        model_data = model.get('data')
+
+        # ENVIRONMENT
+        environment = model_data.get('environment')
+
+        # Meta
+        environment_meta = environment.get('meta')
+        environment_class_name = environment_meta.get('class')
+        environment_module_name = environment_meta.get('module')
+        environment_module = importlib.import_module(environment_module_name)
+        environment_class_ = getattr(environment_module, environment_class_name)
+
+        # Data
+        environment_data = environment.get('data')
+
+        # Instance
+        environment = environment_class_()
+
+        # Set environment data
+        for key, value in environment_data.items():
+
+            if 'state' in key or 'transitions' in key:
+                # Convert to tuples to hash
+                value = um.lists_to_tuples(value)
+
+            elif 'default_reward' in key:
+                # If all elements are int, then default_reward is a integer Vector, otherwise float Vector
+                value = Vector(value) if (all([isinstance(x, int) for x in value])) else VectorFloat(value)
+
+            vars(environment)[key] = value
+
+        # Set seed
+        environment.seed(seed=environment.initial_seed)
+
+        # Get default reward as reference
+        default_reward = environment.default_reward
+
+        # AgentA1
+
+        # Meta
+
+        # Prepare module and class to make an instance.
+        # class_name = model_meta.get('class')
+        # module_name = model_meta.get('module')
+        # module = importlib.import_module(module_name)
+        # class_ = getattr(module, class_name)
+
+        # Data
+        epsilon = model_data.get('epsilon')
+        gamma = model_data.get('gamma')
+        alpha = model_data.get('alpha')
+        integer_mode = model_data.get('integer_mode')
+        total_epochs = model_data.get('total_epochs')
+        total_steps = model_data.get('total_steps')
+        state = tuple(model_data.get('state'))
+        max_steps = model_data.get('max_steps')
+        seed = model_data.get('seed')
+
+        # Recover evaluation mechanism from string
+        evaluation_mechanism = EvaluationMechanism.from_string(
+            evaluation_mechanism=model_data.get('evaluation_mechanism'))
+
+        # default_reward is reference so, reset components (multiply by zero) and add hv_reference to get hv_reference.
+        hv_reference = default_reward.zero_vector + model_data.get('hv_reference')
+
+        # Prepare Graph Types
+        graph_types = set()
+
+        # Update 'states_to_observe' data
+        states_to_observe = dict()
+        for item in model_data.get('states_to_observe'):
+
+            # Get graph type
+            key = GraphType.from_string(item.get('key'))
+            graph_types.add(key)
+
+            value = item.get('value')
+            key_state = um.lists_to_tuples(value.get('key'))
+            value = value.get('value')
+
+            if key not in states_to_observe.keys():
+                states_to_observe.update({
+                    key: dict()
+                })
+
+            states_to_observe.get(key).update({
+                key_state: value
+            })
+
+        # Unpack 'indexes_counter' data
+        indexes_counter = dict()
+        for item in model_data.get('indexes_counter'):
+            # Convert to tuples for hashing
+            key = um.lists_to_tuples(item.get('key'))
+            value = item.get('value')
+
+            indexes_counter.update({key: value})
+
+        # Unpack 'v' data
+        v = dict()
+        for item in model_data.get('v'):
+            # Convert to tuples to hash
+            key = um.lists_to_tuples(item.get('key'))
+            value = item.get('value')
+            vector_index = value.get('key')
+            value = default_reward.zero_vector + value.get('value')
+
+            vector_index = IndexVector(index=vector_index, vector=value)
+
+            if key not in v.keys():
+                v.update({key: [vector_index]})
+            else:
+                previous_data = v.get(key)
+                previous_data.append(vector_index)
+                v.update({key: previous_data})
+
+        # Unpack 's' data
+        s = dict()
+        for item in model_data.get('s'):
+            # Convert to tuples to hash
+            key = um.lists_to_tuples(item.get('key'))
+            value = item.get('value')
+            action = value.get('key')
+            values = [um.lists_to_tuples(x) for x in value.get('value')]
+
+            if key not in s.keys():
+                s.update({
+                    key: {
+                        action: values
+                    }
+                })
+            else:
+                previous_data = s.get(key)
+                previous_data.update({action: values})
+                s.update({key: previous_data})
+
+        # Unpack 'q' data
+        q = dict()
+        for item in model_data.get('q'):
+            # Convert to tuples to hash
+            q_state = um.lists_to_tuples(item.get('key'))
+            value = item.get('value')
+            q_action = value.get('key')
+            value = value.get('value')
+            q_index = um.lists_to_tuples(value.get('key'))
+            value = value.get('value')
+
+            index_vector = IndexVector(index=value[0], vector=default_reward.zero_vector + value[1])
+
+            if q_state not in q.keys():
+                q.update({
+                    q_state: {
+                        'updated': True
+                    }
+                })
+
+            q_dict_state = q.get(q_state)
+
+            if q_action not in q_dict_state.keys():
+                q_dict_state.update({
+                    q_action: {
+                        q_index: index_vector
+                    }
+                })
+            else:
+                q_dict_state.get(q_action).update({
+                    q_index: index_vector
+                })
+
+        # Prepare an instance of model.
+        model = AgentA1(environment=environment, epsilon=epsilon, alpha=alpha, gamma=gamma, seed=seed,
+                        max_steps=max_steps, hv_reference=hv_reference, evaluation_mechanism=evaluation_mechanism,
+                        graph_types=graph_types, integer_mode=integer_mode)
+
+        # Set finals settings and return it.
+        model.v = v
+        model.s = s
+        model.q = q
+        model.states_to_observe = states_to_observe
+        model.state = state
+        model.total_epochs = total_epochs
+        model.total_steps = total_steps
+
+        return model
+
+    def calc_neighbours(self, from_state: tuple, distance: int = 1) -> set:
+        """
+        Only to mesh environments with actions RIGHT and DOWN (TODO: do generic method)
+        :param from_state:
+        :param distance:
+        :return:
+        """
+        # Decompose from state
+        x_state, y_state = from_state
+
+        current_neighbours = {
+            (x_state, y_state - 1),
+            # (x_state, y_state + 1),
+            (x_state - 1, y_state),
+            # (x_state + 1, y_state)
+        }
+
+        if distance < 1:
+            return set()
+        elif distance < 2:
+            return current_neighbours
+        else:
+            all_neighbours = set().union(
+                *map(lambda x: self.calc_neighbours(from_state=x, distance=distance - 1), current_neighbours)
+            ) - {from_state}
+
+        return all_neighbours

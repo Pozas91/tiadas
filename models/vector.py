@@ -4,7 +4,6 @@ This class have a vector of integers (int32).
 """
 
 import math
-
 import numpy as np
 
 import utils.models as um
@@ -16,11 +15,11 @@ class Vector:
     Class Vector with functions to work with int vectors.
     """
 
-    # Number to multiply int vector to allow some decimals (If decimals = 100, two decimals are allowed).
-    decimals = 10 ** 2
+    # Number of decimals allowed by int numbers
+    decimals_allowed = 2
 
     # Relative margin to compare of similarity of two elements.
-    relative_tolerance = 0.00
+    relative_tolerance = 0
     absolute_tolerance = 0
 
     def __init__(self, components, dtype=int):
@@ -198,28 +197,34 @@ class Vector:
         """
         return np.all(np.less_equal(self.components, other.components))
 
+    def to_decimals(self):
+        """
+        Multiply current class by 10^decimals_allowed attribute to allow a specific number of decimals
+        :return:
+        """
+        return self.__class__(np.multiply(self.components, 10 ** self.decimals_allowed))
+
+    def by_decimals(self):
+        """
+        Divide current class to rollback to_decimals() operation
+        :return:
+        """
+        return self.__class__(np.divide(self.components, 10 ** self.decimals_allowed))
+
     @um.lazy_property
     def zero_vector(self):
         """
         Return a zero vector of same type and len that this vector
         :return:
         """
-        x = self.__class__(np.zeros_like(self.components))
-        x.relative_tolerance = self.relative_tolerance
-        x.decimals = self.decimals
-
-        return x
+        return self.__class__(np.zeros_like(self.components))
 
     def copy(self):
         """
         Return a copy of this vector
         :return:
         """
-        x = self.__class__(self.components)
-        x.relative_tolerance = self.relative_tolerance
-        x.decimals = self.decimals
-
-        return x
+        return self.__class__(self.components)
 
     def tolist(self):
         """

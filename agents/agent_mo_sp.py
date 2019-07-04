@@ -66,7 +66,7 @@ class AgentMOSP(AgentQ):
 
     def __init__(self, environment: Environment, alpha: float = 0.1, epsilon: float = 0.1, gamma: float = 1.,
                  seed: int = 0, states_to_observe: list = None, max_steps: int = None, weights: tuple = None,
-                 graph_types: tuple = (GraphType.EPOCHS, GraphType.STEPS), hv_reference: Vector = None):
+                 graph_types: set = None, hv_reference: Vector = None):
         """
         :param environment: An environment where agent does any operation.
         :param alpha: Learning rate
@@ -80,6 +80,10 @@ class AgentMOSP(AgentQ):
 
         # Weights must be setting
         assert weights is not None
+
+        # Types to make graphs
+        if graph_types is None:
+            graph_types = {GraphType.EPOCHS, GraphType.STEPS}
 
         # Super call init
         super().__init__(environment=environment, alpha=alpha, epsilon=epsilon, gamma=gamma, seed=seed,
@@ -135,6 +139,7 @@ class AgentMOSP(AgentQ):
 
         # Reset agent (forget q-values, initial_state, etc.).
         self.reset()
+        self.reset_totals()
 
         # Set news weights to get the new solution.
         self.weights = [w1, w2]

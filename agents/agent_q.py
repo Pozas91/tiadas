@@ -10,7 +10,6 @@ The data structure of q dictionary is as follows:
     ...
 }
 """
-import time
 from copy import deepcopy
 
 import numpy as np
@@ -23,7 +22,7 @@ from .agent import Agent
 class AgentQ(Agent):
     def __init__(self, environment: Environment, alpha: float = 0.1, epsilon: float = 0.1, gamma: float = 1.,
                  seed: int = 0, states_to_observe: list = None, max_steps: int = None,
-                 graph_types: tuple = (GraphType.EPOCHS, GraphType.STEPS)):
+                 graph_types=None):
         """
         :param environment: An environment where agent does any operation.
         :param alpha: Learning rate
@@ -34,6 +33,10 @@ class AgentQ(Agent):
         :param max_steps: Limits of steps per episode.
         :param graph_types: Types of graphs to generate.
         """
+
+        # Types to make graphs
+        if graph_types is None:
+            graph_types = {GraphType.EPOCHS, GraphType.STEPS}
 
         # Super call __init__
         super().__init__(environment=environment, epsilon=epsilon, gamma=gamma, seed=seed,
@@ -93,80 +96,31 @@ class AgentQ(Agent):
 
         return history
 
-    def episode(self) -> None:
-        """
-        Run an episode complete until get a final step
-        :return:
-        """
+    def do_iteration(self) -> bool:
 
-        # Increment epochs counter
-        self.total_epochs += 1
+        # Get an action
+        action = self.select_action()
 
-        # Reset environment
-        self.state = self.environment.reset()
+        # Do step on environment
+        next_state, reward, is_final_state, info = self.environment.step(action=action)
 
-        # Condition to stop episode
-        is_final_state = False
+        # Increment steps
+        self.total_steps += 1
+        self.steps += 1
 
-        # Reset steps
-        self.reset_steps()
+        # Append to rewards history
+        self.rewards_history.append(reward)
 
-        while not is_final_state:
+        # Processing reward
+        reward = self.process_reward(reward=reward)
 
-            # Get an action
-            action = self.select_action()
+        # Update Q-Values
+        self._update_q_values(reward=reward, action=action, next_state=next_state)
 
-            # Do step on environment
-            next_state, reward, is_final_state, info = self.environment.step(action=action)
+        # Update state
+        self.state = next_state
 
-            # Increment steps
-            self.total_steps += 1
-            self.steps += 1
-
-            # Append to rewards history
-            self.rewards_history.append(reward)
-
-            # Processing reward
-            reward = self.process_reward(reward=reward)
-
-            # Update Q-Values
-            self._update_q_values(reward=reward, action=action, next_state=next_state)
-
-            # Update state
-            self.state = next_state
-
-            # Check timeout
-            if self.max_steps is not None and not is_final_state:
-                is_final_state = self.steps >= self.max_steps
-
-            if GraphType.STEPS in self.states_to_observe and self.total_steps % self.steps_to_get_graph_data == 0:
-                # Append new data
-                self.update_graph(graph_type=GraphType.STEPS)
-
-            if GraphType.TIME in self.states_to_observe and (
-                    time.time() - self.last_time_to_get_graph_data) > self.seconds_to_get_graph_data:
-                # Append new data
-                self.update_graph(graph_type=GraphType.TIME)
-
-                # Update last execution
-                self.last_time_to_get_graph_data = time.time()
-
-        if GraphType.EPOCHS in self.states_to_observe:
-            # Append new data
-            self.update_graph(graph_type=GraphType.EPOCHS)
-
-        # Save last register data
-        if GraphType.STEPS in self.states_to_observe:
-            # Append new data
-            self.update_graph(graph_type=GraphType.STEPS)
-
-        # Save last register data
-        if GraphType.TIME in self.states_to_observe:
-            # Append new data
-            self.update_graph(graph_type=GraphType.TIME)
-
-            # Update last execution
-            self.last_time_to_get_graph_data = time.time()
+        return is_final_state
 
     def update_graph(self, graph_type: GraphType):
         """
