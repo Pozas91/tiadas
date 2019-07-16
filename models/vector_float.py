@@ -2,6 +2,7 @@
 This class represent a vector with some features necessaries for our program.
 This class have a vector of floats (float64).
 """
+import math
 import numpy as np
 
 from .dominance import Dominance
@@ -31,9 +32,14 @@ class VectorFloat(Vector):
         :return:
         """
 
+        # return np.all([
+        #     a > b or np.isclose(a, b, atol=self.absolute_tolerance, rtol=self.relative_tolerance) for a, b in
+        #     zip(self.components, other.components)
+        # ])
+
         return np.all([
-            a > b or np.isclose(a, b, atol=self.absolute_tolerance, rtol=self.relative_tolerance) for a, b in
-            zip(self.components, other.components)
+            a > b or math.isclose(a=a, b=b, abs_tol=self.absolute_tolerance, rel_tol=self.relative_tolerance) for a, b
+            in zip(self.components, other.components)
         ])
 
     def __gt__(self, other):
@@ -43,9 +49,14 @@ class VectorFloat(Vector):
         :param other:
         :return:
         """
+        # return np.all([
+        #     a > b and not np.isclose(a, b, atol=self.absolute_tolerance, rtol=self.relative_tolerance) for a, b in
+        #     zip(self.components, other.components)
+        # ])
+
         return np.all([
-            a > b and not np.isclose(a, b, atol=self.absolute_tolerance, rtol=self.relative_tolerance) for a, b in
-            zip(self.components, other.components)
+            a > b and not math.isclose(a=a, b=b, abs_tol=self.absolute_tolerance, rel_tol=self.relative_tolerance) for
+            a, b in zip(self.components, other.components)
         ])
 
     def __lt__(self, other):
@@ -55,9 +66,14 @@ class VectorFloat(Vector):
         :param other:
         :return:
         """
+        # return np.all([
+        #     a < b and not np.isclose(a, b, atol=self.absolute_tolerance, rtol=self.relative_tolerance) for a, b in
+        #     zip(self.components, other.components)
+        # ])
+
         return np.all([
-            a < b and not np.isclose(a, b, atol=self.absolute_tolerance, rtol=self.relative_tolerance) for a, b in
-            zip(self.components, other.components)
+            a < b and not math.isclose(a=a, b=b, abs_tol=self.absolute_tolerance, rel_tol=self.relative_tolerance) for
+            a, b in zip(self.components, other.components)
         ])
 
     def __le__(self, other):
@@ -67,9 +83,14 @@ class VectorFloat(Vector):
         :param other:
         :return:
         """
+        # return np.all([
+        #     a < b or np.isclose(a, b, atol=self.absolute_tolerance, rtol=self.relative_tolerance) for a, b in
+        #     zip(self.components, other.components)
+        # ])
+
         return np.all([
-            a < b or np.isclose(a, b, atol=self.absolute_tolerance, rtol=self.relative_tolerance) for a, b in
-            zip(self.components, other.components)
+            a < b or math.isclose(a=a, b=b, abs_tol=self.absolute_tolerance, rel_tol=self.relative_tolerance) for a, b
+            in zip(self.components, other.components)
         ])
 
     @staticmethod

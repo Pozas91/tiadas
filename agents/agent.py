@@ -18,7 +18,7 @@ class Agent:
     # Indent of the JSON file where the agent will be saved
     json_indent = 2
     # Get dumps path from this file path
-    dumps_path = Path('{}/../../dumps'.format(__file__))
+    dumps_path = Path('{}/../../dumps/models'.format(__file__))
     # Each steps to calc graph data
     steps_to_get_graph_data = 1
     # Each seconds to calc graph data

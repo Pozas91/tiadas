@@ -1,4 +1,5 @@
 import time
+from enum import Enum
 from pathlib import Path
 
 import math
@@ -8,8 +9,14 @@ import numpy as np
 import utils.hypervolume as uh
 import utils.miscellaneous as um
 from agents import Agent, AgentPQL, AgentMOSP, AgentA1
-from gym_tiadas.gym_tiadas.envs import Environment, DeepSeaTreasure
+from gym_tiadas.gym_tiadas.envs import Environment, DeepSeaTreasure, SpaceExplorationAcyclic
 from models import Vector, EvaluationMechanism, GraphType
+
+
+class AgentType(Enum):
+    A1 = 'a1'
+    PQL = 'pql'
+    SCALARIZED = 'scalarized'
 
 
 def experiment_dst_agent_a1(dst_variant, columns=range(1, 11), epsilon: float = 0.7, alpha: float = 0.8,
@@ -34,12 +41,12 @@ def experiment_dst_agent_a1(dst_variant, columns=range(1, 11), epsilon: float = 
     # File timestamp
     timestamp = time.time()
 
-    graph_path = '.\\dumps\\experiments_a1\\graphs\\{}_{}_{}_{}_{}_{}_{}.m'
-    v_s_0_path = '.\\dumps\\experiments_a1\\data\\{}_{}_{}.yml'
+    graph_path = '.\\dumps\\a1\\graphs\\{}_{}_{}_{}_{}_{}_{}.m'
+    v_s_0_path = '.\\dumps\\a1\\data\\{}_{}_{}.yml'
     config_path = '.\\dumps\experiments_a1\\graphs\\{}_{}_{}_{}.config'
 
     sub_problems_graph.update({
-        GraphType.STEPS: {i_columns: list() for i_columns in columns},
+        GraphType.STEPS:  {i_columns: list() for i_columns in columns},
         GraphType.EPOCHS: {i_columns: list() for i_columns in columns},
     })
 
@@ -114,7 +121,7 @@ def experiment_dst_agent_a1(dst_variant, columns=range(1, 11), epsilon: float = 
 
                 # Save trained model
                 # filename = agent.json_filename()
-                # agent.save(filename='{}\\{}'.format('experiments_a1', filename))
+                # agent.save(filename='{}\\{}'.format('a1', filename))
 
                 for graph in graphs:
                     # Recover old data
@@ -433,7 +440,7 @@ def dst(epsilon: float = 0.7, alpha: float = 0.9, states_to_observe: list = None
 
 def write_config_file(timestamp: int, number_of_agents: int, env_name_snake: str, **kwargs):
     # Path to save file
-    config_path = '.\\dumps\\pql\\config\\{}_{}_{}.config'
+    config_path = './dumps/config/{}_{}_{}.config'
 
     filename_config = Path(
         config_path.format(timestamp, number_of_agents, env_name_snake).lower()
@@ -449,15 +456,26 @@ def write_config_file(timestamp: int, number_of_agents: int, env_name_snake: str
 
 
 def write_v_s_0_file(timestamp: int, evaluation_mechanism: EvaluationMechanism, i_agent: int, env_name_snake: str,
-                     v_s_0: list):
+                     v_s_0: list, agent_type: AgentType):
+    """
+    Write V(s0) data.
+    :param timestamp:
+    :param evaluation_mechanism:
+    :param i_agent:
+    :param env_name_snake:
+    :param v_s_0:
+    :param agent_type:
+    :return:
+    """
     # Path to save file
-    v_s_0_path = '.\\dumps\\pql\\data\\{}_{}_{}_{}.yml'
+    v_s_0_path = './dumps/{}/data/{}_{}_{}_{}.yml'
 
     # Order vectors by origin Vec(0) nearest
     v_s_0 = um.order_vectors_by_origin_nearest(vectors=v_s_0)
 
     v_s_0_filename = Path(
-        v_s_0_path.format(timestamp, str(evaluation_mechanism.name), i_agent, env_name_snake).lower()
+        v_s_0_path.format(str(agent_type.value), timestamp, str(evaluation_mechanism.value), i_agent,
+                          env_name_snake).lower()
     )
 
     with v_s_0_filename.open(mode='w+') as file:
@@ -467,30 +485,43 @@ def write_v_s_0_file(timestamp: int, evaluation_mechanism: EvaluationMechanism, 
         file.write(file_data)
 
 
-def initialize_graph_data(graph_types: set, evaluation_mechanisms: set) -> dict:
+def initialize_graph_data(graph_types: set, agents_configuration: dict) -> dict:
+    """
+    Initialize graph data dictionary
+
+    :param graph_types:
+    :param agents_configuration:
+    :return:
+    """
+
     # Create graphs structure
     graphs = dict()
 
     for graph_type in graph_types:
 
-        graph_evaluations = dict()
+        data_types = dict()
 
-        for evaluation_mechanism in evaluation_mechanisms:
-            data = list()
+        for agent_type in agents_configuration:
 
-            graph_evaluations.update({evaluation_mechanism: data})
+            data_evaluations = dict()
 
-        graphs.update({graph_type: graph_evaluations})
+            for evaluation_mechanism in agents_configuration[agent_type]:
+                data_evaluations.update({evaluation_mechanism: list()})
+
+            data_types.update({agent_type: data_evaluations})
+
+        graphs.update({graph_type: data_types})
 
     return graphs
 
 
-def run_experiment(environment: Environment, hv_reference: Vector, epsilon: float = 0.1, alpha: float = 1.,
-                   states_to_observe: list = None, epochs: int = 1000, integer_mode: bool = False,
-                   graph_types: set = None, number_of_agents: int = 50,
-                   evaluation_mechanisms: set = None, gamma: float = 1., max_steps: int = None):
+def test_agents(environment: Environment, hv_reference: Vector, epsilon: float = 0.1, alpha: float = 1.,
+                states_to_observe: list = None, epochs: int = 1000, integer_mode: bool = False,
+                graph_types: set = None, number_of_agents: int = 30, agents_configuration: dict = None,
+                gamma: float = 1., max_steps: int = None):
     """
     This method run an experiment with the parameters and environment given
+    :param agents_configuration:
     :param integer_mode:
     :param environment:
     :param hv_reference:
@@ -500,20 +531,20 @@ def run_experiment(environment: Environment, hv_reference: Vector, epsilon: floa
     :param epochs:
     :param graph_types:
     :param number_of_agents:
-    :param evaluation_mechanisms:
     :param gamma:
     :param max_steps:
     :return:
     """
+
     # Parameters
     if graph_types is None:
         graph_types = {GraphType.STEPS, GraphType.EPOCHS}
 
-    if evaluation_mechanisms is None:
-        evaluation_mechanisms = {EvaluationMechanism.HV}
-
     if states_to_observe is None:
         states_to_observe = [environment.initial_state]
+
+    if agents_configuration is None:
+        agents_configuration = dict()
 
     # Build environment
     env_name = environment.__class__.__name__
@@ -526,96 +557,130 @@ def run_experiment(environment: Environment, hv_reference: Vector, epsilon: floa
                       seed=','.join(map(str, range(number_of_agents))), epsilon=epsilon, alpha=alpha)
 
     # Create graphs structure
-    graphs = initialize_graph_data(graph_types=graph_types, evaluation_mechanisms=evaluation_mechanisms)
+    graphs = initialize_graph_data(graph_types=graph_types, agents_configuration=agents_configuration)
 
     # Data max length
     data_max_len = float('-inf')
 
     for i_agent in range(number_of_agents):
 
-        print("Iteration: {}".format(i_agent + 1))
+        print("Execution: {}".format(i_agent + 1))
 
         # Set a seed
         seed = i_agent
 
-        for evaluation_mechanism in evaluation_mechanisms:
+        for agent_type in agents_configuration:
 
-            print("\tEvaluation Mechanism: {}".format(evaluation_mechanism.name))
+            print('\tAgent: {}'.format(agent_type.value))
 
-            # Build an instance of environment
-            environment.reset()
-            environment.seed(seed=seed)
+            for evaluation_mechanism in agents_configuration[agent_type]:
 
-            if evaluation_mechanism == EvaluationMechanism.SCALARIZED:
+                print('\t\tEvaluation Mechanism: {}'.format(evaluation_mechanism.value), end=' ')
 
-                # Set weights
-                weights = (.99, .01)
+                # Mark of time
+                t0 = time.time()
 
-                # Build agent
-                agent = AgentMOSP(seed=seed, environment=environment, weights=weights,
-                                  states_to_observe=states_to_observe, epsilon=epsilon, alpha=alpha,
-                                  graph_types=graph_types, hv_reference=hv_reference, gamma=gamma, max_steps=max_steps)
+                # Reset environment
+                environment.reset()
+                environment.seed(seed=seed)
 
-                # Search one extreme objective
-                agent.train(epochs=epochs)
+                # Default values
+                v_s_0 = None
+                agent = None
 
-                # Get p point from agent test
-                p = agent.get_accumulated_reward(from_state=states_to_observe[0])
+                if agent_type == AgentType.SCALARIZED:
+                    # Set weights
+                    weights = (.99, .01)
 
-                # Add point found to pareto's frontier found
-                agent.pareto_frontier_found.append(p)
+                    # Build agent
+                    agent = AgentMOSP(seed=seed, environment=environment, weights=weights,
+                                      states_to_observe=states_to_observe, epsilon=epsilon, alpha=alpha,
+                                      graph_types=graph_types, hv_reference=hv_reference, gamma=gamma,
+                                      max_steps=max_steps)
 
-                # Reset agent to train again with others weights
-                agent.reset()
-                agent.reset_totals()
+                    # Search one extreme objective
+                    agent.train(epochs=epochs)
 
-                # Set weights to find another extreme point
-                agent.weights = (.01, .99)
+                    # Get p point from agent test
+                    p = agent.get_accumulated_reward(from_state=states_to_observe[0])
 
-                # Search the other extreme objective
-                agent.train(epochs=epochs)
+                    # Add point found to pareto's frontier found
+                    agent.pareto_frontier_found.append(p)
 
-                # Get q point from agent test.
-                q = agent.get_accumulated_reward(from_state=states_to_observe[0])
+                    # Reset agent to train again with others weights
+                    agent.reset()
+                    agent.reset_totals()
 
-                # Add point found to pareto's frontier found
-                agent.pareto_frontier_found.append(q)
+                    # Set weights to find another extreme point
+                    agent.weights = (.01, .99)
 
-                # Search pareto points
-                agent.calc_frontier_scalarized(p=p, q=q)
+                    # Search the other extreme objective
+                    agent.train(epochs=epochs)
 
-                # Non-dominated vectors found in V(s0)
-                v_s_0 = agent.pareto_frontier_found
+                    # Get q point from agent test.
+                    q = agent.get_accumulated_reward(from_state=states_to_observe[0])
 
-            else:
+                    # Add point found to pareto's frontier found
+                    agent.pareto_frontier_found.append(q)
 
-                # Build an instance of agent
-                agent = AgentPQL(environment=environment, epsilon=epsilon, seed=seed, hv_reference=hv_reference,
-                                 evaluation_mechanism=evaluation_mechanism, graph_types=graph_types,
-                                 states_to_observe=states_to_observe, max_steps=max_steps, gamma=gamma,
-                                 integer_mode=integer_mode)
+                    # Search pareto points
+                    agent.calc_frontier_scalarized(p=p, q=q)
 
-                # Train the agent
-                agent.train(epochs=epochs)
+                    # Non-dominated vectors found in V(s0)
+                    v_s_0 = agent.pareto_frontier_found
 
-                # Non-dominated vectors found in V(s0)
-                v_s_0 = agent.non_dominated_vectors_from_state(state=agent.environment.initial_state)
+                elif agent_type == AgentType.PQL:
 
-            write_v_s_0_file(timestamp=timestamp, evaluation_mechanism=evaluation_mechanism, i_agent=i_agent,
-                             env_name_snake=env_name_snake, v_s_0=v_s_0)
+                    # Build an instance of agent
+                    agent = AgentPQL(environment=environment, epsilon=epsilon, seed=seed, hv_reference=hv_reference,
+                                     evaluation_mechanism=evaluation_mechanism, graph_types=graph_types,
+                                     states_to_observe=states_to_observe, max_steps=max_steps, gamma=gamma,
+                                     integer_mode=integer_mode)
 
-            data_max_len = update_graph(agent=agent, data_max_len=data_max_len,
-                                        evaluation_mechanism=evaluation_mechanism, graphs=graphs,
-                                        states_to_observe=states_to_observe)
+                    # Train the agent
+                    agent.train(epochs=epochs)
+
+                    # Non-dominated vectors found in V(s0)
+                    v_s_0 = agent.non_dominated_vectors_from_state(state=agent.environment.initial_state)
+
+                elif agent_type == AgentType.A1:
+                    # Build an instance of agent
+                    agent = AgentA1(environment=environment, epsilon=epsilon, seed=seed, hv_reference=hv_reference,
+                                    evaluation_mechanism=evaluation_mechanism, graph_types=graph_types,
+                                    states_to_observe=states_to_observe, max_steps=max_steps, gamma=gamma,
+                                    integer_mode=integer_mode, alpha=alpha)
+
+                    # Train the agent
+                    agent.train(epochs=epochs)
+
+                    # Non-dominated vectors found in V(s0)
+                    v_s_0 = agent.v_real().get(agent.environment.initial_state,
+                                               {0: agent.environment.default_reward.zero_vector}).values()
+
+                else:
+                    ValueError("Agent type does not valid!")
+
+                print('-> {:.2f}s'.format(time.time() - t0))
+
+                # Write vectors found into file
+                write_v_s_0_file(timestamp=timestamp, evaluation_mechanism=evaluation_mechanism, i_agent=i_agent,
+                                 env_name_snake=env_name_snake, v_s_0=v_s_0, agent_type=agent_type)
+
+                # Calc data maximum length
+                data_max_len = update_graph(agent=agent, data_max_len=data_max_len,
+                                            evaluation_mechanism=evaluation_mechanism, graphs=graphs,
+                                            states_to_observe=states_to_observe, agent_type=agent_type)
 
     prepare_data_and_show_graph(timestamp=timestamp, data_max_len=data_max_len, env_name=env_name,
-                                env_name_snake=env_name_snake, graphs=graphs, number_of_agents=number_of_agents)
+                                env_name_snake=env_name_snake, graphs=graphs, number_of_agents=number_of_agents,
+                                agents_configuration=agents_configuration)
 
 
 def update_graph(agent: Agent, data_max_len: int, evaluation_mechanism: EvaluationMechanism, graphs: dict,
-                 states_to_observe: list):
+                 states_to_observe: list, agent_type: AgentType):
     """
     Update graph to show
+    :param agent_type:
     :param agent:
     :param data_max_len:
     :param evaluation_mechanism:
@@ -623,16 +688,17 @@ def update_graph(agent: Agent, data_max_len: int, evaluation_mechanism: Evaluati
     :param states_to_observe:
     :return:
     """
-    for graph in graphs:
+
+    for graph_type in graphs:
         # Recover old data
-        data = graphs.get(graph).get(evaluation_mechanism)
+        data = graphs[graph_type][agent_type][evaluation_mechanism]
 
         # Prepare new data
-        agent_data = agent.states_to_observe.get(graph).get(states_to_observe[0])
+        agent_data = agent.states_to_observe[graph_type][states_to_observe[0]]
         data.append(agent_data)
 
         # Update data in the dictionary
-        graphs.get(graph).update({
+        graphs[graph_type][agent_type].update({
             evaluation_mechanism: data
         })
 
@@ -641,62 +707,76 @@ def update_graph(agent: Agent, data_max_len: int, evaluation_mechanism: Evaluati
     return data_max_len
 
 
-def prepare_data_and_show_graph(timestamp: int, data_max_len: int, env_name: str, env_name_snake: str, graphs,
-                                number_of_agents):
-    graph_path = '.\\dumps\\pql\\graphs\\{}_{}_{}_{}.m'
+def prepare_data_and_show_graph(timestamp: int, data_max_len: int, env_name: str, env_name_snake: str, graphs: dict,
+                                number_of_agents: int, agents_configuration: dict):
+    """
+    Prepare data to show a graph with the information about results
+    :param agents_configuration:
+    :param timestamp:
+    :param data_max_len:
+    :param env_name:
+    :param env_name_snake:
+    :param graphs:
+    :param number_of_agents:
+    :return:
+    """
+    graph_path = './dumps/{}/graphs/{}_{}_{}_{}_{}.m'
 
-    for graph in graphs:
+    for graph_type in graphs:
 
-        for evaluation_mechanism in graphs.get(graph).keys():
+        for agent_type in graphs[graph_type]:
 
-            # Recover old data
-            data = graphs.get(graph).get(evaluation_mechanism)
+            for evaluation_mechanism in graphs[graph_type][agent_type].keys():
 
-            # Change to same length at all arrays
-            for i, x_steps in enumerate(data):
-                # Length of x
-                len_x = len(x_steps)
+                # Recover old data
+                data = graphs[graph_type][agent_type][evaluation_mechanism]
+                color = agents_configuration[agent_type][evaluation_mechanism]
 
-                # Difference
-                difference = data_max_len - len_x
+                # Change to same length at all arrays
+                for i, x_steps in enumerate(data):
+                    # Length of x
+                    len_x = len(x_steps)
 
-                # If x is not empty
-                if len_x > 0:
-                    data[i] = np.append(x_steps, [x_steps[-1]] * difference)
-                else:
-                    data[i] = [0] * difference
+                    # Difference
+                    difference = data_max_len - len_x
 
-            process_data = np.average(data, axis=0)
-            error = np.std(data, axis=0)
-            x = np.arange(0, data_max_len, 1)
+                    # If x is not empty
+                    if len_x > 0:
+                        data[i] = np.append(x_steps, [x_steps[-1]] * difference)
+                    else:
+                        data[i] = [0] * difference
 
-            # Set graph to current evaluation mechanism
-            plt.errorbar(x=x, y=process_data, yerr=error, errorevery=math.ceil(data_max_len * 0.1),
-                         label=evaluation_mechanism.value)
+                process_data = np.average(data, axis=0)
+                error = np.std(data, axis=0)
+                x = np.arange(0, data_max_len, 1)
 
-            evaluation_mechanism_name = str(evaluation_mechanism.value).split('-')[0]
-            graph_name = graph.name
+                # Set graph to current evaluation mechanism
+                plt.errorbar(x=x, y=process_data, yerr=error, errorevery=math.ceil(data_max_len * 0.1),
+                             label='{} {}'.format(agent_type.value, evaluation_mechanism.value), color=color)
 
-            filename_m = Path(
-                graph_path.format(timestamp, number_of_agents, env_name_snake, graph_name,
-                                  evaluation_mechanism_name).lower()
-            )
+                evaluation_mechanism_name = evaluation_mechanism.value
+                graph_name = graph_type.value
 
-            with filename_m.open(mode='w+') as file:
-                file_data = "x = [{}]\n".format(', '.join(map(str, x)))
-                file_data += "Y = [\n{}\n]\n".format(';\n'.join([', '.join(map(str, x)) for x in data]))
-                file_data += "means = mean(Y);\n"
-                file_data += 'figure;\n'
-                file_data += 'plot(x, means);\n'
-                file.write(file_data)
+                filename_m = Path(
+                    graph_path.format(agent_type.value, timestamp, number_of_agents, env_name_snake, graph_name,
+                                      evaluation_mechanism_name).lower()
+                )
 
-        # Show data
-        if graph == GraphType.STEPS:
-            plt.xlabel('{} x{}'.format(graph.name, AgentPQL.steps_to_get_graph_data))
-        elif graph == GraphType.TIME:
-            plt.xlabel('{} x{}s'.format(graph.name, AgentPQL.seconds_to_get_graph_data))
-        else:
-            plt.xlabel(graph.name)
+                with filename_m.open(mode='w+') as file:
+                    file_data = "x = [{}]\n".format(', '.join(map(str, x)))
+                    file_data += "Y = [\n{}\n]\n".format(';\n'.join([', '.join(map(str, x)) for x in data]))
+                    file_data += "means = mean(Y);\n"
+                    file_data += 'figure;\n'
+                    file_data += 'plot(x, means);\n'
+                    file.write(file_data)
+
+            # Show data
+            if graph_type == GraphType.STEPS:
+                plt.xlabel('{} x{}'.format(graph_type.value, AgentPQL.steps_to_get_graph_data))
+            elif graph_type == GraphType.TIME:
+                plt.xlabel('{} x{}s'.format(graph_type.value, AgentPQL.seconds_to_get_graph_data))
+            else:
+                plt.xlabel(graph_type.value)
 
         plt.ylabel('HV max')
         plt.title('{} environment'.format(env_name))
@@ -706,34 +786,29 @@ def prepare_data_and_show_graph(timestamp: int, data_max_len: int, env_name: str
 
 def main():
     columns = range(1, 11)
-    alpha = 1
+    alpha = 1.
     number_of_agents = 30
-    epochs = 100
+    epochs = 2000
 
-    evaluation_mechanisms = {
-        EvaluationMechanism.HV,
-        EvaluationMechanism.C,
-        EvaluationMechanism.PO,
-        EvaluationMechanism.SCALARIZED,
+    agents_configuration = {
+        AgentType.A1:  {
+            EvaluationMechanism.HV: 'yellow',
+            EvaluationMechanism.C:  'orange',
+            EvaluationMechanism.PO: 'blue'
+        },
+        AgentType.PQL: {
+            EvaluationMechanism.HV: 'pink',
+            EvaluationMechanism.C:  'red',
+            EvaluationMechanism.PO: 'green'
+        },
+        AgentType.SCALARIZED: {
+            EvaluationMechanism.SCALARIZED: 'cyan'
+        }
     }
 
-    # hv_reference = Vector([-25, 0])
-
-    # environment_variant = DeepSeaTreasureRightDown
-    # experiment_dps_with_agent_a1(environment_variant=environment_variant, columns=columns, alpha=alpha,
-    #                              hv_reference=hv_reference, number_of_agents=number_of_agents, epochs=epochs)
-
-    # environment_variant = DeepSeaTreasureRightDownStochastic
-    # experiment_dps_with_agent_a1(environment_variant=environment_variant, columns=columns, alpha=alpha,
-    #                              hv_reference=hv_reference, number_of_agents=number_of_agents, epochs=epochs)
-
-    # hv_reference = Vector([-25, 0])
-    # dst_variant = DeepSeaTreasureRightDown
-    # experiment_dst_agent_a1(dst_variant=dst_variant, columns=columns, alpha=alpha,
-    #                         hv_reference=hv_reference, number_of_agents=number_of_agents, epochs=epochs,
-    #                         evaluation_mechanisms=evaluation_mechanisms)
-
-    ####################################################################################################################
+    graph_types = {
+        GraphType.EPOCHS
+    }
 
     # dst(epsilon=0.7, alpha=alpha, states_to_observe=[(0, 0)], graph_types={GraphType.STEPS},
     #     number_of_agents=number_of_agents, evaluation_mechanisms=evaluation_mechanisms, integer_mode=False)
@@ -741,36 +816,40 @@ def main():
     # dst(epsilon=0.7, alpha=alpha, states_to_observe=[(0, 0)], graph_types={GraphType.TIME},
     #     number_of_agents=number_of_agents, evaluation_mechanisms=evaluation_mechanisms, integer_mode=False)
 
-    ####################################################################################################################
+    # test_agents(environment=DeepSeaTreasureRightDown(), hv_reference=Vector([-25, 0]), epsilon=0.7,
+    #             states_to_observe=[(0, 0)], epochs=epochs, graph_types=graph_types, number_of_agents=number_of_agents,
+    #             gamma=1., integer_mode=True, agents_configuration=agents_configuration, alpha=alpha)
 
-    # run_experiment(environment=MoPuddleWorld(), hv_reference=Vector([-50, -150]), epsilon=0.15,
-    #                alpha=1, states_to_observe=[(2, 8)], epochs=1000, graph_types={GraphType.STEPS}, number_of_agents=30,
-    #                evaluation_mechanisms=evaluation_mechanisms, gamma=1., max_steps=40, integer_mode=False)
-    #
-    # run_experiment(environment=MoPuddleWorld(), hv_reference=Vector([-50, -150]), epsilon=0.15,
-    #                alpha=1, states_to_observe=[(2, 8)], epochs=1000, graph_types={GraphType.TIME}, number_of_agents=30,
-    #                evaluation_mechanisms=evaluation_mechanisms, gamma=1., max_steps=40, integer_mode=False)
+    # test_agents(environment=DeepSeaTreasureRightDown(), hv_reference=Vector([-25, 0]), epsilon=0.7,
+    #             states_to_observe=[(0, 0)], epochs=epochs, graph_types=graph_types, number_of_agents=number_of_agents,
+    #             gamma=1., integer_mode=True, agents_configuration=agents_configuration, alpha=alpha)
 
-    ####################################################################################################################
+    # test_agents(environment=BonusWorldAcyclic(), hv_reference=Vector([-101, -101, -150]), epsilon=0.4,
+    #             states_to_observe=[(0, 0)], epochs=epochs, graph_types=graph_types, number_of_agents=number_of_agents,
+    #             gamma=1., integer_mode=True, agents_configuration=agents_configuration, alpha=alpha)
 
-    # run_experiment(environment=SpaceExploration(), hv_reference=Vector([-100, -150]), epsilon=0.4,
-    #                alpha=1, states_to_observe=[(5, 2)], epochs=1000, graph_types={GraphType.STEPS}, number_of_agents=30,
-    #                evaluation_mechanisms=evaluation_mechanisms, gamma=1., max_steps=20, integer_mode=False)
-    #
-    # run_experiment(environment=SpaceExploration(), hv_reference=Vector([-100, -150]), epsilon=0.4,
+    # test_agents(environment=MoPuddleWorldAcyclic(), hv_reference=Vector([-50, -150]), epsilon=0.15,
+    #             states_to_observe=[(2, 8)], epochs=epochs, graph_types=graph_types, number_of_agents=number_of_agents,
+    #             gamma=1., integer_mode=True, agents_configuration=agents_configuration, alpha=alpha)
+
+    test_agents(environment=SpaceExplorationAcyclic(), hv_reference=Vector([-150, -150]), epsilon=0.4,
+                states_to_observe=[(0, 0)], epochs=epochs, graph_types=graph_types, number_of_agents=number_of_agents,
+                gamma=1., integer_mode=True, agents_configuration=agents_configuration, alpha=alpha)
+
+    # test_agents(environment=SpaceExploration(), hv_reference=Vector([-100, -150]), epsilon=0.4,
     #                alpha=1, states_to_observe=[(5, 2)], epochs=1000, graph_types={GraphType.TIME}, number_of_agents=30,
     #                evaluation_mechanisms=evaluation_mechanisms, gamma=1., max_steps=20, integer_mode=False)
 
     ####################################################################################################################
 
-    evaluation_mechanisms = evaluation_mechanisms - {EvaluationMechanism.SCALARIZED}
+    # evaluation_mechanisms = evaluation_mechanisms - {EvaluationMechanism.SCALARIZED}
 
-    # run_experiment(environment=BonusWorld(), hv_reference=Vector([0, 0, -150]), epsilon=0.2,
+    # test_agents(environment=BonusWorld(), hv_reference=Vector([0, 0, -150]), epsilon=0.2,
     #                alpha=1, states_to_observe=[(5, 2)], epochs=epochs, graph_types={GraphType.STEPS},
     #                number_of_agents=number_of_agents, evaluation_mechanisms=evaluation_mechanisms, gamma=1.,
     #                integer_mode=False)
     #
-    # run_experiment(environment=BonusWorld(), hv_reference=Vector([0, 0, -150]), epsilon=0.2,
+    # test_agents(environment=BonusWorld(), hv_reference=Vector([0, 0, -150]), epsilon=0.2,
     #                alpha=1, states_to_observe=[(0, 0)], epochs=epochs, graph_types={GraphType.TIME},
     #                number_of_agents=number_of_agents, evaluation_mechanisms=evaluation_mechanisms, gamma=1.,
     #                integer_mode=False)

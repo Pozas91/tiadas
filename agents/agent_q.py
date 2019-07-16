@@ -12,6 +12,7 @@ The data structure of q dictionary is as follows:
 """
 from copy import deepcopy
 
+import math
 import numpy as np
 
 from gym_tiadas.gym_tiadas.envs import Environment
@@ -253,17 +254,22 @@ class AgentQ(Agent):
         :return:
         """
 
-        # Get information about possible actions
-        possible_actions = self.q.get(state, {})
+        # If this state is a final state, then reward is zero.
+        if self.environment.is_final(state):
+            reward = 0.0
+        else:
 
-        # Get unknown actions with default reward
-        for action in self.environment.action_space:
-            if action not in possible_actions:
-                possible_actions.update({action: 0.})
+            # Get information about possible actions
+            possible_actions = self.q.get(state, {})
 
-        # Get best action and use it to get best reward.
-        action = self.best_action(state=state)
-        reward = possible_actions.get(action)
+            # Get unknown actions with default reward
+            for action in self.environment.action_space:
+                if action not in possible_actions:
+                    possible_actions.update({action: 0.})
+
+            # Get best action and use it to get best reward.
+            action = self.best_action(state=state)
+            reward = possible_actions.get(action)
 
         return reward
 
@@ -309,7 +315,8 @@ class AgentQ(Agent):
         :return:
         """
 
-        while not np.isclose(a=self.v, b=objective, rtol=0.01, atol=0.00):
+        # while not np.isclose(a=self.v, b=objective, rtol=0.01, atol=0.00):
+        while not math.isclose(a=self.v, b=objective, rel_tol=0.01, abs_tol=0.0):
             # Do an episode
             self.episode()
 

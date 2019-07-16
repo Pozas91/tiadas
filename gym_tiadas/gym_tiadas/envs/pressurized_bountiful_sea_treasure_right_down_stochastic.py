@@ -85,7 +85,7 @@ class PressurizedBountifulSeaTreasureRightDownStochastic(EnvMesh):
         self.dynamic_action_space.seed(seed=seed)
 
         # Prepare stochastic transitions
-        assert isinstance(transitions, tuple) and np.isclose(np.sum(transitions), 1) and len(transitions) == 2
+        assert isinstance(transitions, tuple) and math.isclose(a=np.sum(transitions), b=1) and len(transitions) == 2
 
         self.transitions = transitions
 

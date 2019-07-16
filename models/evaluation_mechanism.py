@@ -2,9 +2,9 @@ from enum import Enum
 
 
 class EvaluationMechanism(Enum):
-    C = 'C-PQL'
-    PO = 'PO-PQL'
-    HV = 'HV-PQL'
+    C = 'C'
+    PO = 'PO'
+    HV = 'HV'
     PARETO = 'Pareto'
     SCALARIZED = 'Linear Scalarized'
 

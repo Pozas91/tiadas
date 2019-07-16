@@ -67,7 +67,6 @@ import os
 from copy import deepcopy
 
 import math
-import numpy as np
 
 import utils.hypervolume as uh
 import utils.miscellaneous as um
@@ -417,12 +416,19 @@ class AgentPQL(Agent):
         # Hypervolume list
         hv = list()
 
+        # Save previous state
+        previous_state = self.environment.current_state
+        self.environment.current_state = state
+
         for a in self.environment.action_space:
             # Get Q-set from state given for each possible action.
             q_set = self.q_set(state=state, action=a)
 
             # Calc hypervolume of Q_set, with reference given.
             hv.append(uh.calc_hypervolume(list_of_vectors=q_set, reference=self.hv_reference))
+
+        # Restore environment correct state
+        self.environment.current_state = previous_state
 
         return max(hv)
 
@@ -840,7 +846,8 @@ class AgentPQL(Agent):
 
         objective_hypervolume = uh.calc_hypervolume(list_of_vectors=list_of_vectors, reference=self.hv_reference)
 
-        while not np.isclose(a=current_hypervolume, b=objective_hypervolume, rtol=0.01, atol=0.0):
+        # while not np.isclose(a=current_hypervolume, b=objective_hypervolume, rtol=0.01, atol=0.0):
+        while not math.isclose(a=current_hypervolume, b=objective_hypervolume, rel_tol=0.01, abs_tol=0.0):
             # Do an episode
             self.episode()
 

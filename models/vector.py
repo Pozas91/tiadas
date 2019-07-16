@@ -267,10 +267,16 @@ class Vector:
         for idx, component in enumerate(self.components):
 
             # Are equals or close...
-            if np.isclose(a=self.components[idx], b=v2.components[idx], rtol=self.relative_tolerance,
-                          atol=self.absolute_tolerance):
+            if math.isclose(a=self.components[idx], b=v2.components[idx], rel_tol=self.relative_tolerance,
+                            abs_tol=self.absolute_tolerance):
                 # Nothing to do at moment
                 pass
+
+            # # Are equals or close...
+            # if np.isclose(a=self.components[idx], b=v2.components[idx], rtol=self.relative_tolerance,
+            #               atol=self.absolute_tolerance):
+            #     # Nothing to do at moment
+            #     pass
 
             elif self.components[idx] > v2.components[idx]:
                 v1_dominate = True

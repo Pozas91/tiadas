@@ -1,24 +1,16 @@
 """
-PuddleWorld is a two-dimensional environment. The agent starts each episode at a random, non-goal state and has to move
-to the goal in the top-right corner of the world, while avoiding the puddles. At each step selects between four actions
-(left, right, up or down) which move it by 1 desired direction.
-The mesh is 20x20 grid.
-The reward structure for PuddleWorld is a tuple of two elements. First element is a penalty if goal is not reached, and
-second element is a penalize by stay in a puddle, the penalize is the nearest distance to an edge of the puddle.
-
-FINAL STATE: To reach (19, 0) state.
-
-REF: Empirical evaluation methods for multi-objective reinforcement learning algorithms (2011).
+Variant of Mo Puddle World for Acyclic agents.
 """
 from scipy.spatial import distance
 
 from models import VectorFloat
+from spaces import DynamicSpace
 from .env_mesh import EnvMesh
 
 
-class MoPuddleWorld(EnvMesh):
+class MoPuddleWorldAcyclic(EnvMesh):
     # Possible actions
-    _actions = {'UP': 0, 'RIGHT': 1, 'DOWN': 2, 'LEFT': 3}
+    _actions = {'UP': 0, 'RIGHT': 1}
 
     def __init__(self, default_reward: tuple = (10, 0), penalize_non_goal: float = -1, seed: int = 0,
                  final_state: tuple = (19, 0)):
@@ -41,6 +33,10 @@ class MoPuddleWorld(EnvMesh):
         self.penalize_non_goal = penalize_non_goal
 
         self.current_state = self.reset()
+
+        # Trying improve performance
+        self.dynamic_action_space = DynamicSpace([])
+        self.dynamic_action_space.seed(seed=seed)
 
         # Unpack spaces
         x_space, y_space = self.observation_space.spaces
@@ -109,6 +105,70 @@ class MoPuddleWorld(EnvMesh):
         """
         return state == self.final_state
 
+    def next_state(self, action: int, state: tuple = None) -> tuple:
+        """
+        Calc next state with current state and action given. Default is 2-neighbors (UP, RIGHT)
+        :param state: If a state is given, do action from that state.
+        :param action: from action_space
+        :return: a new state (or old if is invalid action)
+        """
+
+        # Get my position
+        x, y = state if state else self.current_state
+
+        # Do movement
+        if action == self._actions['RIGHT']:
+            x += 1
+        elif action == self._actions['UP']:
+            y -= 1
+
+        # Set new state
+        new_state = x, y
+
+        if not self.observation_space.contains(new_state) or state == new_state:
+            raise ValueError("Action/State combination isn't valid.")
+
+        # Return (x, y) position
+        return new_state
+
+    @property
+    def action_space(self) -> DynamicSpace:
+        """
+        Get a dynamic action space with only valid actions.
+        :return:
+        """
+
+        # Get current state
+        x, y = self.current_state
+
+        # Setting possible actions
+        possible_actions = []
+
+        # Can we go to RIGHT?
+        x_right = x + 1
+
+        # Check that x_right is not an obstacle and is into mesh
+        if self.observation_space.contains((x_right, y)):
+            # We can go to right
+            possible_actions.append(self._actions['RIGHT'])
+
+        # Can we go to UP?
+        y_up = y - 1
+
+        # Check that y_down is not and obstacle and is into mesh
+        if self.observation_space.contains((x, y_up)):
+            # We can go to down
+            possible_actions.append(self._actions['UP'])
+
+        # Setting to dynamic_space
+        self.dynamic_action_space.items = possible_actions
+
+        # Update n length
+        self.dynamic_action_space.n = len(possible_actions)
+
+        # Return a list of iterable valid actions
+        return self.dynamic_action_space
+
     def get_dict_model(self) -> dict:
         """
         Get dict model of environment
@@ -120,5 +180,6 @@ class MoPuddleWorld(EnvMesh):
         # Clean specific environment data
         del data['puddles']
         del data['initial_state']
+        del data['dynamic_action_space']
 
         return data

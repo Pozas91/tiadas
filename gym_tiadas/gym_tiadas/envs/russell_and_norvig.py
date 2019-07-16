@@ -39,7 +39,7 @@ class RussellNorvig(EnvMesh):
         super().__init__(mesh_shape=mesh_shape, seed=seed, initial_state=initial_state, obstacles=obstacles,
                          finals=finals, default_reward=default_reward)
 
-        assert isinstance(transitions, tuple) and np.isclose(np.sum(transitions), 1) and len(transitions) == len(
+        assert isinstance(transitions, tuple) and math.isclose(a=np.sum(transitions), b=1) and len(transitions) == len(
             self._actions)
         self.transitions = transitions
 

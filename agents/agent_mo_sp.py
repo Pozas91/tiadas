@@ -124,7 +124,7 @@ class AgentMOSP(AgentQ):
 
     def find_c_vector(self, w1: float, w2: float, solutions_known: list = None) -> VectorFloat:
         """
-        This method is called from calc_frontier_scalarized method.
+        This method is called from calc_frontier_scalarized method.age
 
         Try to find an c point to add to the pareto's frontier. There are two options:
             * We know the solutions of pareto's frontier, and training the agent until get max solution.

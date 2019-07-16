@@ -695,7 +695,7 @@ class AgentA1(Agent):
                 for index, index_vector in indexes_dict.items():
                     # Divide that vector by Vector.decimals to convert in original float vector
                     index_vector.vector = VectorFloat(
-                        index_vector.vector.components / self.environment.default_reward.decimals
+                        index_vector.vector.components / (10 ** self.environment.default_reward.decimals_allowed)
                     )
 
                     # Update Q-table dictionary
@@ -706,7 +706,7 @@ class AgentA1(Agent):
         # Return Q-table transformed
         return q
 
-    def v_real(self):
+    def v_real(self) -> dict:
         """
         Return a real values of V-values
         :return:
@@ -723,7 +723,7 @@ class AgentA1(Agent):
                 # Divide that vector by Vector.decimals to convert in original float vector
                 vectors.update({
                     index: VectorFloat(
-                        vector.components / self.environment.default_reward.decimals
+                        vector.components / (10 ** self.environment.default_reward.decimals_allowed)
                     )
                 })
                 # Update V-values dictionary
@@ -743,7 +743,8 @@ class AgentA1(Agent):
 
         objective_hypervolume = uh.calc_hypervolume(list_of_vectors=list_of_vectors, reference=self.hv_reference)
 
-        while not np.isclose(a=current_hypervolume, b=objective_hypervolume, rtol=0.02):
+        # while not np.isclose(a=current_hypervolume, b=objective_hypervolume, rtol=0.02):
+        while not math.isclose(a=current_hypervolume, b=objective_hypervolume, rel_tol=0.02):
             # Do an episode
             self.episode()
 

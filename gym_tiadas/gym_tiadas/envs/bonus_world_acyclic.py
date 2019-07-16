@@ -1,70 +1,69 @@
+# coding=utf-8
 """
-This is a variant of original problem of DeepSeaTreasure where we only take two actions, RIGHT and DOWN, and in the last
-column we only go to DOWN.
+Variant of BonusWorld environment to acyclic agents. If agent there on pit state, episode ends and agent receives
+(-50, -50) reward.
 """
 from models import Vector
 from spaces import DynamicSpace
 from .env_mesh import EnvMesh
 
 
-class DeepSeaTreasureRightDown(EnvMesh):
+class BonusWorldAcyclic(EnvMesh):
     # Possible actions
     _actions = {'RIGHT': 0, 'DOWN': 1}
 
-    # Pareto optimal
-    pareto_optimal = [
-        (-1, 1), (-3, 2), (-5, 3), (-7, 5), (-8, 8), (-9, 16), (-13, 24), (-14, 50), (-17, 74), (-19, 124)
-    ]
-
-    def __init__(self, initial_state: tuple = (0, 0), default_reward: tuple = (0,), seed: int = 0, columns: int = 0):
+    def __init__(self, initial_state: tuple = (0, 0), default_reward: tuple = (0, 0), seed: int = 0):
         """
         :param initial_state:
-        :param default_reward:
+        :param default_reward: (objective 1, objective 2)
         :param seed:
-        :param columns: Number of columns to use with this environment.
         """
-
-        original_mesh_shape = (10, 11)
-
-        if columns < 1 or columns > original_mesh_shape[0]:
-            columns = original_mesh_shape[0]
 
         # List of all treasures and its reward.
         finals = {
-            (0, 1): 1,
-            (1, 2): 2,
-            (2, 3): 3,
-            (3, 4): 5,
-            (4, 4): 8,
-            (5, 4): 16,
-            (6, 7): 24,
-            (7, 7): 50,
-            (8, 9): 74,
-            (9, 10): 124,
+            (8, 0): Vector([1, 9]),
+            (8, 2): Vector([3, 9]),
+            (8, 4): Vector([5, 9]),
+            (8, 6): Vector([7, 9]),
+            (8, 8): Vector([9, 9]),
+
+            (0, 8): Vector([9, 1]),
+            (2, 8): Vector([9, 3]),
+            (4, 8): Vector([9, 5]),
+            (6, 8): Vector([9, 7]),
         }
 
-        finals = dict(filter(lambda x: x[0][0] < columns, finals.items()))
+        # Define mesh shape
+        mesh_shape = (9, 9)
 
-        obstacles = frozenset()
-        obstacles = obstacles.union([(0, y) for y in range(2, 11)])
-        obstacles = obstacles.union([(1, y) for y in range(3, 11)])
-        obstacles = obstacles.union([(2, y) for y in range(4, 11)])
-        obstacles = obstacles.union([(3, y) for y in range(5, 11)])
-        obstacles = obstacles.union([(4, y) for y in range(5, 11)])
-        obstacles = obstacles.union([(5, y) for y in range(5, 11)])
-        obstacles = obstacles.union([(6, y) for y in range(8, 11)])
-        obstacles = obstacles.union([(7, y) for y in range(8, 11)])
-        obstacles = obstacles.union([(8, y) for y in range(10, 11)])
-        obstacles = frozenset(filter(lambda x: x[0] < columns, obstacles))
+        # Set obstacles
+        # obstacles = frozenset([(2, 2), (2, 3), (3, 2)])
+        obstacles = frozenset([
+            (2, 2)
+        ])
 
-        mesh_shape = (columns, 11)
-
-        # Default reward plus time (time_inverted, treasure_value)
-        default_reward = (-1,) + default_reward
+        # Default reward plus time (objective 1, objective 2, time)
+        default_reward += (-1,)
         default_reward = Vector(default_reward)
 
-        super().__init__(mesh_shape=mesh_shape, seed=seed, initial_state=initial_state, default_reward=default_reward,
+        super().__init__(mesh_shape=mesh_shape, seed=seed, default_reward=default_reward, initial_state=initial_state,
                          finals=finals, obstacles=obstacles)
+
+        # Pits marks which returns the agent to the start location.
+        self.pits = [
+            (7, 1), (7, 3), (7, 5), (1, 7), (3, 7), (5, 7)
+        ]
+
+        # X2 bonus
+        self.bonus = [
+            (3, 3)
+        ]
+
+        # Bonus is activated?
+        self.bonus_activated = False
+
+        # Pits penalize
+        self.pits_penalize = Vector([-50, -50, -1])
 
         # Trying improve performance
         self.dynamic_action_space = DynamicSpace([])
@@ -74,7 +73,7 @@ class DeepSeaTreasureRightDown(EnvMesh):
         """
         Given an action, do a step
         :param action:
-        :return: (state, (time_inverted, treasure_value), final, info)
+        :return: (state, (objective 1, objective 2, time), final, info)
         """
 
         # Initialize rewards as vector
@@ -86,8 +85,22 @@ class DeepSeaTreasureRightDown(EnvMesh):
         # Update previous state
         self.current_state = new_state
 
+        # Check if the agent has activated the bonus
+        if self.current_state in self.bonus:
+            self.bonus_activated = True
+
         # Get treasure value
-        rewards[1] = self.finals.get(self.current_state, self.default_reward[1])
+        rewards[0], rewards[1] = self.finals.get(self.current_state, (self.default_reward[0], self.default_reward[1]))
+
+        # If the bonus is activated, double the reward.
+        if self.bonus_activated:
+            rewards[0] *= 2
+            rewards[1] *= 2
+
+        # If agent is in pit, it's returned at initial state.
+        if self.current_state in self.pits:
+            self.current_state = self.initial_state
+            rewards = self.pits_penalize
 
         # Set info
         info = {}
@@ -103,19 +116,21 @@ class DeepSeaTreasureRightDown(EnvMesh):
         :return:
         """
         self.current_state = self.initial_state
+        self.bonus_activated = False
+
         return self.current_state
 
     def is_final(self, state: tuple = None) -> bool:
         """
-        Return True if state given is terminal, False in otherwise.
+        Is final if agent is on final state.
         :param state:
         :return:
         """
-        return state in self.finals.keys()
+        return state in self.finals.keys() or state in self.pits
 
     def next_state(self, action: int, state: tuple = None) -> tuple:
         """
-        Calc next state with current state and action given. Default is 4-neighbors (UP, LEFT, DOWN, RIGHT)
+        Calc next state with current state and action given. Default is 2-neighbors (DOWN, RIGHT)
         :param state: If a state is given, do action from that state.
         :param action: from action_space
         :return: a new state (or old if is invalid action)
@@ -159,12 +174,17 @@ class DeepSeaTreasureRightDown(EnvMesh):
         x_right = x + 1
 
         # Check that x_right is not an obstacle and is into mesh
-        if self.observation_space.contains((x_right, y)):
+        if self.observation_space.contains((x_right, y)) and (x_right, y) not in self.obstacles:
             # We can go to right
             possible_actions.append(self._actions['RIGHT'])
 
-        # We always can go to down (Because an final state stop the problem)
-        possible_actions.append(self._actions['DOWN'])
+        # Can we go to down?
+        y_down = y + 1
+
+        # Check that y_down is not and obstacle and is into mesh
+        if self.observation_space.contains((x, y_down)) and (x, y_down) not in self.obstacles:
+            # We can go to down
+            possible_actions.append(self._actions['DOWN'])
 
         # Setting to dynamic_space
         self.dynamic_action_space.items = possible_actions
@@ -184,6 +204,8 @@ class DeepSeaTreasureRightDown(EnvMesh):
         data = super().get_dict_model()
 
         # Clean specific environment data
+        del data['pits']
+        del data['bonus']
         del data['dynamic_action_space']
 
         return data
