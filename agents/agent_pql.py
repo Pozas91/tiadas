@@ -70,10 +70,9 @@ import math
 
 import utils.hypervolume as uh
 import utils.miscellaneous as um
+from configurations import VectorConfiguration
 from gym_tiadas.gym_tiadas.envs import Environment
-from models import IndexVector, GraphType, EvaluationMechanism
-from models.vector import Vector
-from models.vector_float import VectorFloat
+from models import IndexVector, GraphType, EvaluationMechanism, Vector, VectorFloat
 from .agent import Agent
 
 
@@ -176,7 +175,7 @@ class AgentPQL(Agent):
             # If integer mode is True, is necessary divide value by increment
             if self.integer_mode:
                 # Divide value by two powered numbers (hv_reference and reward)
-                value /= 10 ** (Vector.decimals_allowed * 2)
+                value /= 10 ** (VectorConfiguration.instance().decimals_allowed * 2)
 
             # Add to data Best value (V max)
             data.append(value)

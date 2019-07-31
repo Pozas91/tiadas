@@ -4,9 +4,11 @@ This class have a vector of integers (int32).
 """
 
 import math
+
 import numpy as np
 
 import utils.models as um
+from configurations import VectorConfiguration
 from .dominance import Dominance
 
 
@@ -14,13 +16,6 @@ class Vector:
     """
     Class Vector with functions to work with int vectors.
     """
-
-    # Number of decimals allowed by int numbers
-    decimals_allowed = 2
-
-    # Relative margin to compare of similarity of two elements.
-    relative_tolerance = 0
-    absolute_tolerance = 0
 
     def __init__(self, components, dtype=int):
         """
@@ -202,14 +197,14 @@ class Vector:
         Multiply current class by 10^decimals_allowed attribute to allow a specific number of decimals
         :return:
         """
-        return self.__class__(np.multiply(self.components, 10 ** self.decimals_allowed))
+        return self.__class__(np.multiply(self.components, 10 ** VectorConfiguration.instance().decimals_allowed))
 
     def by_decimals(self):
         """
         Divide current class to rollback to_decimals() operation
         :return:
         """
-        return self.__class__(np.divide(self.components, 10 ** self.decimals_allowed))
+        return self.__class__(np.divide(self.components, 10 ** VectorConfiguration.instance().decimals_allowed))
 
     @um.lazy_property
     def zero_vector(self):
@@ -250,8 +245,8 @@ class Vector:
         :param v2:
         :return:
         """
-        return np.allclose(a=self.components, b=v2.components, rtol=self.relative_tolerance,
-                           atol=self.absolute_tolerance)
+        return np.allclose(a=self.components, b=v2.components, rtol=VectorConfiguration.instance().relative_tolerance,
+                           atol=VectorConfiguration.instance().absolute_tolerance)
 
     def dominance(self, v2) -> Dominance:
         """
@@ -267,16 +262,11 @@ class Vector:
         for idx, component in enumerate(self.components):
 
             # Are equals or close...
-            if math.isclose(a=self.components[idx], b=v2.components[idx], rel_tol=self.relative_tolerance,
-                            abs_tol=self.absolute_tolerance):
+            if math.isclose(a=self.components[idx], b=v2.components[idx],
+                            rel_tol=VectorConfiguration.instance().relative_tolerance,
+                            abs_tol=VectorConfiguration.instance().absolute_tolerance):
                 # Nothing to do at moment
                 pass
-
-            # # Are equals or close...
-            # if np.isclose(a=self.components[idx], b=v2.components[idx], rtol=self.relative_tolerance,
-            #               atol=self.absolute_tolerance):
-            #     # Nothing to do at moment
-            #     pass
 
             elif self.components[idx] > v2.components[idx]:
                 v1_dominate = True

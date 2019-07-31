@@ -42,9 +42,9 @@ class Agent:
             graph_types = {GraphType.EPOCHS, GraphType.STEPS}
 
         # Discount factor
-        assert 0 < gamma <= 1
+        assert 0 <= gamma <= 1
         # Exploration factor
-        assert 0 < epsilon <= 1
+        assert 0 <= epsilon <= 1
 
         self.gamma = gamma
         self.epsilon = epsilon
@@ -228,14 +228,19 @@ class Agent:
         print("Gamma: {}".format(self.gamma))
         print("Epsilon: {}".format(self.epsilon))
 
-    def train(self, epochs=1000):
+    def train(self, epochs: int = 1000):
         """
         Return this agent trained with `epochs` epochs.
         :param epochs:
         :return:
         """
 
-        for _ in range(epochs):
+        for i in range(epochs):
+
+            # if i >= epochs - 1:
+            #     print('Stop!')
+            #     pass
+
             # Do an episode
             self.episode()
 
@@ -247,30 +252,30 @@ class Agent:
         """
         model = {
             'meta': {
-                'class': self.__class__.__name__,
-                'module': self.__module__,
+                'class':        self.__class__.__name__,
+                'module':       self.__module__,
                 'dependencies': {
-                    'numpy': np.__version__,
+                    'numpy':      np.__version__,
                     'matplotlib': matplotlib.__version__
                 }
             },
             'data': {
-                'epsilon': self.epsilon,
-                'gamma': self.gamma,
-                'environment': {
+                'epsilon':           self.epsilon,
+                'gamma':             self.gamma,
+                'environment':       {
                     'meta': {
-                        'class': self.environment.__class__.__name__,
+                        'class':  self.environment.__class__.__name__,
                         'module': self.environment.__module__,
                     },
                     'data': self.environment.get_dict_model()
                 },
-                'max_steps': self.max_steps,
+                'max_steps':         self.max_steps,
                 'states_to_observe': [
                     {
                         'key': str(k), 'value': {'key': k2 if isinstance(k2, int) else list(k2), 'value': v2}
                     } for k, v in self.states_to_observe.items() for k2, v2 in v.items()
                 ],
-                'seed': self.seed
+                'seed':              self.seed
             }
         }
 

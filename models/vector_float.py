@@ -5,6 +5,7 @@ This class have a vector of floats (float64).
 import math
 import numpy as np
 
+from configurations import VectorConfiguration
 from .dominance import Dominance
 from .vector import Vector
 
@@ -13,8 +14,6 @@ class VectorFloat(Vector):
     """
     Class Vector with functions to work with float vectors.
     """
-
-    relative_tolerance = 0.02
 
     def __init__(self, components, dtype=float):
         """
@@ -38,7 +37,8 @@ class VectorFloat(Vector):
         # ])
 
         return np.all([
-            a > b or math.isclose(a=a, b=b, abs_tol=self.absolute_tolerance, rel_tol=self.relative_tolerance) for a, b
+            a > b or math.isclose(a=a, b=b, abs_tol=VectorConfiguration.instance().absolute_tolerance,
+                                  rel_tol=VectorConfiguration.instance().relative_tolerance) for a, b
             in zip(self.components, other.components)
         ])
 
@@ -55,7 +55,8 @@ class VectorFloat(Vector):
         # ])
 
         return np.all([
-            a > b and not math.isclose(a=a, b=b, abs_tol=self.absolute_tolerance, rel_tol=self.relative_tolerance) for
+            a > b and not math.isclose(a=a, b=b, abs_tol=VectorConfiguration.instance().absolute_tolerance,
+                                       rel_tol=VectorConfiguration.instance().relative_tolerance) for
             a, b in zip(self.components, other.components)
         ])
 
@@ -72,7 +73,8 @@ class VectorFloat(Vector):
         # ])
 
         return np.all([
-            a < b and not math.isclose(a=a, b=b, abs_tol=self.absolute_tolerance, rel_tol=self.relative_tolerance) for
+            a < b and not math.isclose(a=a, b=b, abs_tol=VectorConfiguration.instance().absolute_tolerance,
+                                       rel_tol=VectorConfiguration.instance().relative_tolerance) for
             a, b in zip(self.components, other.components)
         ])
 
@@ -89,7 +91,8 @@ class VectorFloat(Vector):
         # ])
 
         return np.all([
-            a < b or math.isclose(a=a, b=b, abs_tol=self.absolute_tolerance, rel_tol=self.relative_tolerance) for a, b
+            a < b or math.isclose(a=a, b=b, abs_tol=VectorConfiguration.instance().absolute_tolerance,
+                                  rel_tol=VectorConfiguration.instance().relative_tolerance) for a, b
             in zip(self.components, other.components)
         ])
 

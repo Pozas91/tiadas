@@ -6,16 +6,15 @@ import importlib
 import itertools
 import json
 import os
-import random
 from copy import deepcopy
 
 import gym
 import math
-import numpy as np
 
 import utils.hypervolume as uh
 import utils.miscellaneous as um
 from agents import Agent
+from configurations import VectorConfiguration
 from gym_tiadas.gym_tiadas.envs import Environment
 from models import Vector, IndexVector, VectorFloat, GraphType, EvaluationMechanism
 
@@ -137,6 +136,10 @@ class AgentA1(Agent):
 
     def do_iteration(self) -> bool:
 
+        if self.state in {(2, 0)}:
+            print('State (2, 0)')
+            pass
+
         # If the state is unknown, register it.
         if self.state not in self.q:
             self.q.update({self.state: {'updated': True}})
@@ -219,7 +222,7 @@ class AgentA1(Agent):
             # If integer mode is True, is necessary divide value by increment
             if self.integer_mode:
                 # Divide value by two powered numbers (hv_reference and reward)
-                value /= 10 ** (Vector.decimals_allowed * 2)
+                value /= 10 ** (VectorConfiguration.instance().decimals_allowed * 2)
 
             # Add to data Best value (V max)
             data.append(value)
@@ -298,8 +301,8 @@ class AgentA1(Agent):
                 possible_neighbours = filter(lambda x: len(x[1]) > 0, all_neighbours.items())
 
                 # Get random state
-                objective_state, associate_states = random.choice(tuple(possible_neighbours))
-                selected_state = random.choice(tuple(associate_states))
+                objective_state, associate_states = self.generator.choice(tuple(possible_neighbours))
+                selected_state = self.generator.choice(tuple(associate_states))
 
                 # Interesting counter
                 if selected_state not in counter_visited_states:
@@ -625,8 +628,6 @@ class AgentA1(Agent):
                     # Q(s, a)
                     q_list += q_s.get(a, dict()).values()
 
-                # v = self.environment.default_reward.m3_max(vectors=q_list)
-
                 # Get all non dominated vectors -> V(s)
                 non_dominated_vectors, _ = self.environment.default_reward.m3_max_2_sets_with_buckets(vectors=q_list)
 
@@ -639,11 +640,7 @@ class AgentA1(Agent):
                     # Set V values (Getting vector with lower index) (simplified)
                     v.update({bucket[0].index: bucket[0].vector})
 
-                # # Set V values (Getting vector with lower index)
-                # v = {bucket[0] for bucket in non_dominated_vectors}
-
-                # # Update V(s)
-                # self.v.update({state: {index_vector.index: index_vector.vector for index_vector in v}})
+                # Update V(s)
                 self.v.update({state: v})
 
                 # V(s) already updated
@@ -695,7 +692,7 @@ class AgentA1(Agent):
                 for index, index_vector in indexes_dict.items():
                     # Divide that vector by Vector.decimals to convert in original float vector
                     index_vector.vector = VectorFloat(
-                        index_vector.vector.components / (10 ** self.environment.default_reward.decimals_allowed)
+                        index_vector.vector.components / (10 ** VectorConfiguration.instance().decimals_allowed)
                     )
 
                     # Update Q-table dictionary
@@ -723,7 +720,7 @@ class AgentA1(Agent):
                 # Divide that vector by Vector.decimals to convert in original float vector
                 vectors.update({
                     index: VectorFloat(
-                        vector.components / (10 ** self.environment.default_reward.decimals_allowed)
+                        vector.components / (10 ** VectorConfiguration.instance().decimals_allowed)
                     )
                 })
                 # Update V-values dictionary

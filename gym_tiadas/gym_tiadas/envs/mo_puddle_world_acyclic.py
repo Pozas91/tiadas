@@ -1,5 +1,7 @@
 """
 Variant of Mo Puddle World for Acyclic agents.
+
+HV REFERENCE: (-50, -150)
 """
 from scipy.spatial import distance
 
@@ -70,7 +72,6 @@ class MoPuddleWorldAcyclic(EnvMesh):
 
         # if the current state is in an puddle
         if self.current_state in self.puddles:
-
             # Min distance found!
             min_distance = min(distance.cityblock(self.current_state, state) for state in self.free_spaces)
 
@@ -137,6 +138,10 @@ class MoPuddleWorldAcyclic(EnvMesh):
         Get a dynamic action space with only valid actions.
         :return:
         """
+
+        # Previous check
+        if not self.observation_space.contains(self.current_state):
+            raise ValueError('Current state {} isn\'t valid.'.format(self.current_state))
 
         # Get current state
         x, y = self.current_state

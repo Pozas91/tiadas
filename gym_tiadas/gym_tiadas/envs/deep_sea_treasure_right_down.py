@@ -1,6 +1,8 @@
 """
 This is a variant of original problem of DeepSeaTreasure where we only take two actions, RIGHT and DOWN, and in the last
 column we only go to DOWN.
+
+HV REFERENCE: (-25, 0)
 """
 from models import Vector
 from spaces import DynamicSpace

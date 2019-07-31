@@ -46,6 +46,7 @@ class Environment(gym.Env):
 
         # Create the observation space
         self.observation_space = observation_space
+        self.observation_space.seed(seed=seed)
 
         # Prepare random seed
         self.np_random = None

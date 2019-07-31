@@ -15,8 +15,9 @@ from copy import deepcopy
 import math
 import numpy as np
 
+from configurations import VectorConfiguration
 from gym_tiadas.gym_tiadas.envs import Environment
-from models import Vector, GraphType, VectorFloat
+from models import GraphType, VectorFloat
 from .agent import Agent
 
 
@@ -229,7 +230,8 @@ class AgentQ(Agent):
             reward = possible_actions.get(possible_action)
 
             # If current value is close to new value
-            if np.allclose(a=reward, b=max_reward, rtol=Vector.relative_tolerance, atol=Vector.absolute_tolerance):
+            if np.allclose(a=reward, b=max_reward, rtol=VectorConfiguration.instance().relative_tolerance,
+                           atol=VectorConfiguration.instance().absolute_tolerance):
 
                 # Append another possible action
                 actions.append(possible_action)

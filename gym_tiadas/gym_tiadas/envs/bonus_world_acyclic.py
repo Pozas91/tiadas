@@ -2,6 +2,8 @@
 """
 Variant of BonusWorld environment to acyclic agents. If agent there on pit state, episode ends and agent receives
 (-50, -50) reward.
+
+HV REFERENCE: (-50, -50, -50)
 """
 from models import Vector
 from spaces import DynamicSpace

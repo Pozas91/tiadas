@@ -1,8 +1,9 @@
 import timeit
 
-number = 100
+number = 1000
 
-time_main = timeit.timeit("from draft_main import agent_int; agent_int()", number=number)
+time_main = timeit.timeit("from draft_main import performance_dominance_new; performance_dominance_new()",
+                          number=number)
 
 # time_a1 = timeit.timeit("from draft import a1; a1()", number=number)
 # time_a2 = timeit.timeit("from draft import a2; a2()", number=number)
@@ -18,4 +19,4 @@ time_main = timeit.timeit("from draft_main import agent_int; agent_int()", numbe
 # print("A5 time: {}".format(time_a5))
 # print("A6 time: {}".format(time_a6))
 
-print("Main time: {}".format(time_main / number))
+print("Main time: {}".format(time_main))
