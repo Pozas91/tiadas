@@ -136,6 +136,7 @@ class AgentA1(Agent):
 
     def do_iteration(self) -> bool:
 
+        # if self.state in {(2, 0)} and self.total_epochs == 321:
         if self.state in {(2, 0)}:
             print('State (2, 0)')
             pass
@@ -487,7 +488,7 @@ class AgentA1(Agent):
         next_state_position = states.index(next_state)
 
         # Calculate the cartesian product
-        cartesian_product, indexes = self.calc_cartesian_product(states=states)
+        cartesian_product, indexes = self.cartesian_product_of_relevant_indexes(states=states)
 
         # Prepare V to do queries
         v = self.v.get(next_state)
@@ -548,13 +549,13 @@ class AgentA1(Agent):
         """
 
         # Prepare to add next_state to known states
-        states = self.s.get(state).get(action, list())
+        known_states = self.s.get(state).get(action, list())
 
         # Save index of next_state (sk)
-        next_state_position = states.index(next_state)
+        next_state_p_position = known_states.index(next_state)
 
         # Calculate the cartesian product
-        cartesian_product, indexes = self.calc_cartesian_product(states=states)
+        cartesian_product, relevant_indexes = self.cartesian_product_of_relevant_indexes(states=known_states)
 
         # Prepare V to do queries
         v = self.v.get(next_state)
@@ -565,13 +566,14 @@ class AgentA1(Agent):
         # Data state Q(s)
         data_state = self.q.get(state)
 
+        # For each tuple in cartesian product
         for p in cartesian_product:
 
             # p[s_k]
-            next_state_index = p[next_state_position]
+            next_state_reference_vector_index = p[next_state_p_position]
 
             # alpha * (reward + gamma * associate_vector)
-            next_q = (reward + v.get(next_state_index) * self.gamma) * self.alpha
+            next_q = (reward + v.get(next_state_reference_vector_index) * self.gamma) * self.alpha
 
             # Q_{n - 1}(s, a, p)
             previous_q = data_state.get(action, {}).get(p)
@@ -657,7 +659,7 @@ class AgentA1(Agent):
         """
         return set(self.v.get(state, {}).keys())
 
-    def calc_cartesian_product(self, states: list):
+    def cartesian_product_of_relevant_indexes(self, states: list):
         """
         :param states:
         :return:

@@ -483,7 +483,8 @@ def main():
 
     VectorConfiguration.instance().decimals_allowed = 7
     VectorConfiguration.instance().relative_tolerance = 0
-    VectorConfiguration.instance().absolute_tolerance = 0.9 * (10 ** VectorConfiguration.instance().decimals_allowed)
+    VectorConfiguration.instance().absolute_tolerance = 0.9
+    VectorConfiguration.instance().absolute_tolerance *= (10 ** VectorConfiguration.instance().decimals_allowed)
 
     test_agents(environment=DeepSeaTreasureRightDown(initial_state=initial_state, columns=4),
                 hv_reference=Vector([-25, 0]), epsilon=0.7, alpha=alpha, states_to_observe=[initial_state],
