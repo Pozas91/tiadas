@@ -188,13 +188,18 @@ def test_agents(environment: Environment, hv_reference: Vector, variable: str, e
                 agent = None
 
                 parameters = {
-                    'epsilon': epsilon, 'alpha': alpha, 'gamma': gamma, 'max_steps': max_steps
+                    'epsilon':              epsilon, 'alpha': alpha, 'gamma': gamma, 'max_steps': max_steps,
+                    'evaluation_mechanism': evaluation_mechanism
                 }
 
                 # Modify current configuration
                 parameters.update({variable: configuration})
 
                 if agent_type == AgentType.SCALARIZED:
+
+                    # Removing useless parameters
+                    del parameters['evaluation_mechanism']
+
                     # Set weights
                     weights = (.99, .01)
 
@@ -241,8 +246,8 @@ def test_agents(environment: Environment, hv_reference: Vector, variable: str, e
 
                     # Build an instance of agent
                     agent = AgentPQL(environment=environment, seed=seed, hv_reference=hv_reference,
-                                     evaluation_mechanism=configuration, graph_types=graph_types,
-                                     states_to_observe=states_to_observe, integer_mode=integer_mode, **parameters)
+                                     graph_types=graph_types, states_to_observe=states_to_observe,
+                                     integer_mode=integer_mode, **parameters)
 
                     # Train the agent
                     agent.train(epochs=epochs)
@@ -254,8 +259,8 @@ def test_agents(environment: Environment, hv_reference: Vector, variable: str, e
 
                     # Build an instance of agent
                     agent = AgentA1(environment=environment, seed=seed, hv_reference=hv_reference,
-                                    evaluation_mechanism=evaluation_mechanism, graph_types=graph_types,
-                                    states_to_observe=states_to_observe, integer_mode=integer_mode, **parameters)
+                                    graph_types=graph_types, states_to_observe=states_to_observe,
+                                    integer_mode=integer_mode, **parameters)
 
                     # Train the agent
                     agent.train(epochs=epochs)
@@ -489,17 +494,17 @@ def main():
     max_steps = 250
     initial_state = (0, 0)
     columns = 10
-    variable = 'alpha'
+    variable = 'evaluation_mechanism'
 
     agents_configuration = {
         AgentType.A1: {
-            # EvaluationMechanism.HV: 'yellow',
-            # EvaluationMechanism.C: 'orange',
-            # EvaluationMechanism.PO: 'blue'
-            0.1: 'beige',
-            0.3: 'gold',
-            0.5: 'lavender',
-            0.8: 'fuchsia'
+            EvaluationMechanism.HV: 'yellow',
+            EvaluationMechanism.C:  'orange',
+            EvaluationMechanism.PO: 'blue'
+            # 0.1: 'beige',
+            # 0.3: 'gold',
+            # 0.5: 'lavender',
+            # 0.8: 'fuchsia'
         },
         # AgentType.PQL:        {
         #     EvaluationMechanism.HV: 'pink',
