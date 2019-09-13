@@ -397,7 +397,7 @@ def prepare_data_and_show_graph(timestamp: int, data_max_len: int, env_name: str
 
                 # Set graph to current evaluation mechanism
                 axs[axs_i].errorbar(x=x, y=process_data, yerr=error, errorevery=math.ceil(data_max_len * 0.1),
-                                    label='{} {}'.format(agent_type.value, variable), color=color)
+                                    label='{} {}'.format(agent_type.value, configuration), color=color)
 
                 filename_m = Path(
                     graph_path.format(agent_type.value, timestamp, number_of_agents, env_name_snake, graph_name,
