@@ -232,14 +232,14 @@ class AgentMOSP(AgentQ):
 
         return result
 
-    def update_graph(self, graph_type: GraphType):
+    def update_graph(self, graph_types: GraphType):
         """
         Update specific graph type
-        :param graph_type:
+        :param graph_types:
         :return:
         """
 
-        for state, data in self.states_to_observe.get(graph_type).items():
+        for state, data in self.graph_info.get(graph_types).items():
             # Calc pareto's frontier found
 
             if not self.pareto_frontier_found:
@@ -251,6 +251,6 @@ class AgentMOSP(AgentQ):
             data.append(value)
 
             # Update dictionary
-            self.states_to_observe.get(graph_type).update({
+            self.graph_info.get(graph_types).update({
                 state: data
             })

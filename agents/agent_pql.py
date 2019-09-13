@@ -161,14 +161,14 @@ class AgentPQL(Agent):
 
         return is_final
 
-    def update_graph(self, graph_type: GraphType):
+    def update_graph(self, graph_types: GraphType):
         """
         Update specific graph type
-        :param graph_type:
+        :param graph_types:
         :return:
         """
 
-        for state, data in self.states_to_observe.get(graph_type).items():
+        for state, data in self.graph_info.get(graph_types).items():
             # Add to data Best value (V max)
             value = self._best_hypervolume(state=state)
 
@@ -181,7 +181,7 @@ class AgentPQL(Agent):
             data.append(value)
 
             # Update dictionary
-            self.states_to_observe.get(graph_type).update({state: data})
+            self.graph_info.get(graph_types).update({state: data})
 
     def get_and_update_n_s_a(self, state: object, action: int) -> int:
         """
@@ -826,7 +826,7 @@ class AgentPQL(Agent):
         model.r = r
         model.nd = nd
         model.n = n
-        model.states_to_observe = states_to_observe
+        model.graph_info = states_to_observe
         model.state = state
         model.total_epochs = total_epochs
         model.total_steps = total_steps

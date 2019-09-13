@@ -110,7 +110,7 @@ def plot_performance(epochs=100000):
     agent_mesh.train(epochs=epochs)
     print('Training finished!')
 
-    for state, data in agent_mesh.states_to_observe.items():
+    for state, data in agent_mesh.graph_info.items():
         plt.plot(data, label='State: {}'.format(state))
 
     plt.xlabel('Steps')
@@ -294,7 +294,7 @@ def deep_sea_treasure_simplified_mo_mp():
     for _ in range(4):
         agent.reset()
         agent.train(epochs=3000)
-        graph.append(agent.states_to_observe.get((0, 0)))
+        graph.append(agent.graph_info.get((0, 0)))
 
     data = np.average(graph, axis=0)
     error = np.std(graph, axis=0)
@@ -361,7 +361,7 @@ def graphs_dps():
             agent.train(epochs=epochs)
 
             # Get graph data
-            graph.append(agent.states_to_observe.get(states_to_observe[0]))
+            graph.append(agent.graph_info.get(states_to_observe[0]))
 
         # Prepare data to graph
         data = np.average(graph, axis=0)

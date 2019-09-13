@@ -9,8 +9,7 @@ import numpy as np
 import utils.miscellaneous as um
 from agents import Agent, AgentPQL, AgentMOSP, AgentA1
 from configurations import VectorConfiguration
-from gym_tiadas.gym_tiadas.envs import Environment, DeepSeaTreasureRightDown, MoPuddleWorldAcyclic, \
-    SpaceExplorationAcyclic
+from gym_tiadas.gym_tiadas.envs import Environment, DeepSeaTreasureRightDown
 from models import Vector, EvaluationMechanism, GraphType
 
 
@@ -37,12 +36,13 @@ def write_config_file(timestamp: int, number_of_agents: int, env_name_snake: str
         file.write(file_data)
 
 
-def write_v_from_initial_state_file(timestamp: int, evaluation_mechanism: EvaluationMechanism, i_agent: int,
-                                    env_name_snake: str, v_s_0: list, agent_type: AgentType):
+def write_v_from_initial_state_file(timestamp: int, i_agent: int, env_name_snake: str, v_s_0: list,
+                                    agent_type: AgentType, variable, configuration):
     """
     Write V(s0) data.
+    :param configuration:
+    :param variable:
     :param timestamp:
-    :param evaluation_mechanism:
     :param i_agent:
     :param env_name_snake:
     :param v_s_0:
@@ -50,14 +50,13 @@ def write_v_from_initial_state_file(timestamp: int, evaluation_mechanism: Evalua
     :return:
     """
     # Path to save file
-    v_s_0_path = './dumps/{}/data/{}_{}_{}_{}.yml'
+    v_s_0_path = './dumps/{}/data/{}_{}_{}_{}_{}.yml'
 
     # Order vectors by origin Vec(0) nearest
     v_s_0 = um.order_vectors_by_origin_nearest(vectors=v_s_0)
 
     v_s_0_filename = Path(
-        v_s_0_path.format(str(agent_type.value), timestamp, str(evaluation_mechanism.value), i_agent,
-                          env_name_snake).lower()
+        v_s_0_path.format(str(agent_type.value), timestamp, i_agent, env_name_snake, variable, configuration).lower()
     )
 
     with v_s_0_filename.open(mode='w+') as file:
@@ -80,29 +79,36 @@ def initialize_graph_data(graph_types: set, agents_configuration: dict) -> dict:
     graphs = dict()
 
     for graph_type in graph_types:
-
         data_types = dict()
 
         for agent_type in agents_configuration:
-
             data_evaluations = dict()
 
-            for evaluation_mechanism in agents_configuration[agent_type]:
-                data_evaluations.update({evaluation_mechanism: list()})
+            for configuration in agents_configuration[agent_type].keys():
+                data_evaluations.update({
+                    '{}'.format(configuration): list()
+                })
 
-            data_types.update({agent_type: data_evaluations})
+            data_types.update({
+                agent_type: data_evaluations
+            })
 
-        graphs.update({graph_type: data_types})
+        graphs.update({
+            graph_type: data_types
+        })
 
     return graphs
 
 
-def test_agents(environment: Environment, hv_reference: Vector, epsilon: float = 0.1, alpha: float = 1.,
+def test_agents(environment: Environment, hv_reference: Vector, variable: str, epsilon: float = 0.1, alpha: float = 1.,
                 states_to_observe: list = None, epochs: int = 1000, integer_mode: bool = False,
                 graph_types: set = None, number_of_agents: int = 30, agents_configuration: dict = None,
-                gamma: float = 1., max_steps: int = None):
+                gamma: float = 1., evaluation_mechanism: EvaluationMechanism = EvaluationMechanism.C,
+                max_steps: int = None):
     """
     This method run an experiment with the parameters and environment given
+    :param variable:
+    :param evaluation_mechanism:
     :param agents_configuration:
     :param integer_mode:
     :param environment:
@@ -120,7 +126,7 @@ def test_agents(environment: Environment, hv_reference: Vector, epsilon: float =
 
     # Parameters
     if graph_types is None:
-        graph_types = {GraphType.STEPS, GraphType.EPOCHS}
+        graph_types = {GraphType.STEPS, GraphType.MEMORY}
 
     if states_to_observe is None:
         states_to_observe = [environment.initial_state]
@@ -135,11 +141,16 @@ def test_agents(environment: Environment, hv_reference: Vector, epsilon: float =
     # File timestamp
     timestamp = int(time.time())
 
+    relative_tolerance = VectorConfiguration.instance().relative_tolerance / (
+            10 ** VectorConfiguration.instance().decimals_allowed)
+
+    absolute_tolerance = VectorConfiguration.instance().absolute_tolerance / (
+            10 ** VectorConfiguration.instance().decimals_allowed)
+
     write_config_file(timestamp=timestamp, number_of_agents=number_of_agents, env_name_snake=env_name_snake,
                       seed=','.join(map(str, range(number_of_agents))), epsilon=epsilon, alpha=alpha,
-                      relative_tolerance=VectorConfiguration.instance().relative_tolerance,
-                      absolute_tolerance=VectorConfiguration.instance().absolute_tolerance, gamma=gamma, epochs=epochs,
-                      max_steps=max_steps)
+                      relative_tolerance=relative_tolerance, max_steps=max_steps, variable=variable,
+                      absolute_tolerance=absolute_tolerance, gamma=gamma, epochs=epochs)
 
     # Create graphs structure
     graphs = initialize_graph_data(graph_types=graph_types, agents_configuration=agents_configuration)
@@ -161,9 +172,9 @@ def test_agents(environment: Environment, hv_reference: Vector, epsilon: float =
 
             print('\t\tAgent: {}'.format(agent_type.value))
 
-            for evaluation_mechanism in agents_configuration[agent_type]:
+            for configuration in agents_configuration[agent_type].keys():
 
-                print('\t\t\tEvaluation Mechanism: {}'.format(evaluation_mechanism.value), end=' ')
+                print('\t\t\t{}: {}'.format(variable, configuration), end=' ')
 
                 # Mark of time
                 t0 = time.time()
@@ -176,15 +187,21 @@ def test_agents(environment: Environment, hv_reference: Vector, epsilon: float =
                 v_s_0 = None
                 agent = None
 
+                parameters = {
+                    'epsilon': epsilon, 'alpha': alpha, 'gamma': gamma, 'max_steps': max_steps
+                }
+
+                # Modify current configuration
+                parameters.update({variable: configuration})
+
                 if agent_type == AgentType.SCALARIZED:
                     # Set weights
                     weights = (.99, .01)
 
                     # Build agent
                     agent = AgentMOSP(seed=seed, environment=environment, weights=weights,
-                                      states_to_observe=states_to_observe, epsilon=epsilon, alpha=alpha,
-                                      graph_types=graph_types, hv_reference=hv_reference, gamma=gamma,
-                                      max_steps=max_steps)
+                                      states_to_observe=states_to_observe, graph_types=graph_types,
+                                      hv_reference=hv_reference, **parameters)
 
                     # Search one extreme objective
                     agent.train(epochs=epochs)
@@ -219,11 +236,13 @@ def test_agents(environment: Environment, hv_reference: Vector, epsilon: float =
 
                 elif agent_type == AgentType.PQL:
 
+                    # Removing useless parameters
+                    del parameters['alpha']
+
                     # Build an instance of agent
-                    agent = AgentPQL(environment=environment, epsilon=epsilon, seed=seed, hv_reference=hv_reference,
-                                     evaluation_mechanism=evaluation_mechanism, graph_types=graph_types,
-                                     states_to_observe=states_to_observe, max_steps=max_steps, gamma=gamma,
-                                     integer_mode=integer_mode)
+                    agent = AgentPQL(environment=environment, seed=seed, hv_reference=hv_reference,
+                                     evaluation_mechanism=configuration, graph_types=graph_types,
+                                     states_to_observe=states_to_observe, integer_mode=integer_mode, **parameters)
 
                     # Train the agent
                     agent.train(epochs=epochs)
@@ -232,17 +251,18 @@ def test_agents(environment: Environment, hv_reference: Vector, epsilon: float =
                     v_s_0 = agent.non_dominated_vectors_from_state(state=agent.environment.initial_state)
 
                 elif agent_type == AgentType.A1:
+
                     # Build an instance of agent
-                    agent = AgentA1(environment=environment, epsilon=epsilon, seed=seed, hv_reference=hv_reference,
+                    agent = AgentA1(environment=environment, seed=seed, hv_reference=hv_reference,
                                     evaluation_mechanism=evaluation_mechanism, graph_types=graph_types,
-                                    states_to_observe=states_to_observe, max_steps=max_steps, gamma=gamma,
-                                    integer_mode=integer_mode, alpha=alpha)
+                                    states_to_observe=states_to_observe, integer_mode=integer_mode, **parameters)
 
                     # Train the agent
                     agent.train(epochs=epochs)
 
                     # Non-dominated vectors found in V(s0)
                     v_real = agent.v_real()
+
                     v_s_0 = v_real.get(agent.environment.initial_state, {
                         0: agent.environment.default_reward.zero_vector
                     }).values()
@@ -253,30 +273,30 @@ def test_agents(environment: Environment, hv_reference: Vector, epsilon: float =
                 print('-> {:.2f}s'.format(time.time() - t0))
 
                 # Write vectors found into file
-                write_v_from_initial_state_file(timestamp=timestamp, evaluation_mechanism=evaluation_mechanism,
-                                                i_agent=i_agent,
-                                                env_name_snake=env_name_snake, v_s_0=v_s_0, agent_type=agent_type)
+                write_v_from_initial_state_file(timestamp=timestamp, i_agent=i_agent, env_name_snake=env_name_snake,
+                                                v_s_0=v_s_0, variable=variable, agent_type=agent_type,
+                                                configuration=configuration)
 
                 # Calc data maximum length
-                data_max_len = update_graph(agent=agent, data_max_len=data_max_len,
-                                            evaluation_mechanism=evaluation_mechanism, graphs=graphs,
-                                            states_to_observe=states_to_observe, agent_type=agent_type)
+                data_max_len = update_graph(agent=agent, data_max_len=data_max_len, graphs=graphs,
+                                            configuration=str(configuration), states_to_observe=states_to_observe,
+                                            agent_type=agent_type)
 
     prepare_data_and_show_graph(timestamp=timestamp, data_max_len=data_max_len, env_name=env_name,
                                 env_name_snake=env_name_snake, graphs=graphs, number_of_agents=number_of_agents,
                                 agents_configuration=agents_configuration, alpha=alpha, epsilon=epsilon, gamma=gamma,
                                 epochs=epochs, max_steps=max_steps, initial_state=environment.initial_state,
-                                integer_mode=integer_mode)
+                                integer_mode=integer_mode, variable=variable)
 
 
-def update_graph(agent: Agent, data_max_len: int, evaluation_mechanism: EvaluationMechanism, graphs: dict,
+def update_graph(agent: Agent, data_max_len: int, configuration: str, graphs: dict,
                  states_to_observe: list, agent_type: AgentType):
     """
     Update graph to show
+    :param configuration:
     :param agent_type:
     :param agent:
     :param data_max_len:
-    :param evaluation_mechanism:
     :param graphs:
     :param states_to_observe:
     :return:
@@ -284,15 +304,19 @@ def update_graph(agent: Agent, data_max_len: int, evaluation_mechanism: Evaluati
 
     for graph_type in graphs:
         # Recover old data
-        data = graphs[graph_type][agent_type][evaluation_mechanism]
+        data = graphs[graph_type][agent_type][configuration]
 
-        # Prepare new data
-        agent_data = agent.states_to_observe[graph_type][states_to_observe[0]]
+        if graph_type is GraphType.MEMORY:
+            agent_data = agent.graph_info[graph_type]
+        else:
+            # Prepare new data
+            agent_data = agent.graph_info[graph_type][states_to_observe[0]]
+
         data.append(agent_data)
 
         # Update data in the dictionary
         graphs[graph_type][agent_type].update({
-            evaluation_mechanism: data
+            configuration: data
         })
 
         data_max_len = max(data_max_len, len(agent_data))
@@ -302,9 +326,11 @@ def update_graph(agent: Agent, data_max_len: int, evaluation_mechanism: Evaluati
 
 def prepare_data_and_show_graph(timestamp: int, data_max_len: int, env_name: str, env_name_snake: str, graphs: dict,
                                 number_of_agents: int, agents_configuration: dict, alpha: float, gamma: float,
-                                epsilon: float, epochs: int, max_steps: int, initial_state: tuple, integer_mode: bool):
+                                epsilon: float, epochs: int, max_steps: int, initial_state: tuple, integer_mode: bool,
+                                variable: str):
     """
     Prepare data to show a graph with the information about results
+    :param variable:
     :param integer_mode:
     :param initial_state:
     :param max_steps:
@@ -339,14 +365,15 @@ def prepare_data_and_show_graph(timestamp: int, data_max_len: int, env_name: str
 
         for agent_type in graphs[graph_type]:
 
-            for evaluation_mechanism in graphs[graph_type][agent_type].keys():
+            for configuration in agents_configuration[agent_type].keys():
 
                 # Recover old data
-                data = graphs[graph_type][agent_type][evaluation_mechanism]
-                color = agents_configuration[agent_type][evaluation_mechanism]
+                data = graphs[graph_type][agent_type][str(configuration)]
+                color = agents_configuration[agent_type][configuration]
 
                 # Change to same length at all arrays
                 for i, x_steps in enumerate(data):
+
                     # Length of x
                     len_x = len(x_steps)
 
@@ -365,13 +392,11 @@ def prepare_data_and_show_graph(timestamp: int, data_max_len: int, env_name: str
 
                 # Set graph to current evaluation mechanism
                 axs[axs_i].errorbar(x=x, y=process_data, yerr=error, errorevery=math.ceil(data_max_len * 0.1),
-                                    label='{} {}'.format(agent_type.value, evaluation_mechanism.value), color=color)
-
-                evaluation_mechanism_name = evaluation_mechanism.value
+                                    label='{} {}'.format(agent_type.value, variable), color=color)
 
                 filename_m = Path(
                     graph_path.format(agent_type.value, timestamp, number_of_agents, env_name_snake, graph_name,
-                                      evaluation_mechanism_name).lower()
+                                      variable).lower()
                 )
 
                 with filename_m.open(mode='w+') as file:
@@ -385,10 +410,17 @@ def prepare_data_and_show_graph(timestamp: int, data_max_len: int, env_name: str
             # Show data
             if graph_type == GraphType.STEPS:
                 axs[axs_i].set_xlabel('{} x{}'.format(graph_type.value, AgentPQL.steps_to_get_graph_data))
+            elif graph_type == GraphType.MEMORY:
+                axs[axs_i].set_xlabel('{} (x{} steps)'.format(graph_type.value, AgentPQL.steps_to_get_graph_data))
             elif graph_type == GraphType.TIME:
                 axs[axs_i].set_xlabel('{} x{}s'.format(graph_type.value, AgentPQL.seconds_to_get_graph_data))
             else:
                 axs[axs_i].set_xlabel(graph_type.value)
+
+            if graph_type == GraphType.MEMORY:
+                axs[axs_i].set_ylabel('# of vectors')
+            else:
+                axs[axs_i].set_ylabel('HV max')
 
         # Shrink current axis by 20%
         box = axs[axs_i].get_position()
@@ -397,8 +429,6 @@ def prepare_data_and_show_graph(timestamp: int, data_max_len: int, env_name: str
             box.x0, box.y0, box.width * 0.9, box.height
         ])
 
-    # [ax.set_ylabel('HV max') for ax in axs]
-    plt.ylabel('HV max')
     fig.suptitle('{} environment'.format(env_name))
     plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
 
@@ -415,18 +445,28 @@ def prepare_data_and_show_graph(timestamp: int, data_max_len: int, env_name: str
     relative_tolerance /= (10 ** VectorConfiguration.instance().decimals_allowed) if integer_mode else 1
     absolute_tolerance /= (10 ** VectorConfiguration.instance().decimals_allowed) if integer_mode else 1
 
-    text_information = '\n'.join([
-        r'$\alpha={}$'.format(alpha),
-        r'$\gamma={}$'.format(gamma),
-        r'$\epsilon={}$'.format(epsilon),
+    basic_information = list()
+
+    if variable is not 'alpha':
+        basic_information.append(r'$\alpha={}$'.format(alpha))
+
+    if variable is not 'gamma':
+        basic_information.append(r'$\gamma={}$'.format(gamma))
+
+    if variable is not 'epsilon':
+        basic_information.append(r'$\epsilon={}$'.format(epsilon))
+
+    if variable is not 'max_steps':
+        basic_information.append(r'$max\_steps={}$'.format(max_steps))
+
+    text_information = '\n'.join(basic_information + [
         r'$epochs={}$'.format(epochs),
-        r'$max\_steps={}$'.format(max_steps),
         r'$initial\_state={}$'.format(initial_state),
         r'$relative\_tolerance={}$'.format(relative_tolerance),
         r'$absolute\_tolerance={}$'.format(absolute_tolerance),
+        r'$\# agents={}$'.format(number_of_agents)
     ])
 
-    # axs[axs_i].text(0.5, 0.5, text_information, bbox=props)
     plt.text(0.85, 0.5, text_information, bbox=props, transform=plt.gcf().transFigure)
 
     # Define figure path
@@ -442,54 +482,52 @@ def prepare_data_and_show_graph(timestamp: int, data_max_len: int, env_name: str
 
 def main():
     # columns = range(1, 11)
-    # alpha = 0.1
-    alpha = 0.1
+    alpha = 0.4
     number_of_agents = 5
-    epochs = 1000
+    epochs = 200
     gamma = 1.
     max_steps = 250
     initial_state = (0, 0)
+    columns = 10
+    variable = 'alpha'
 
-    agent_a1_configuration = {
+    agents_configuration = {
         AgentType.A1: {
-            EvaluationMechanism.HV: 'yellow',
-            EvaluationMechanism.C:  'orange',
-            EvaluationMechanism.PO: 'blue'
-        }
-    }
-
-    agent_pql_configuration = {
-        AgentType.PQL: {
-            EvaluationMechanism.HV: 'pink',
-            EvaluationMechanism.C:  'red',
-            EvaluationMechanism.PO: 'green'
-        }
-    }
-
-    agent_scalarized_configuration = {
-        AgentType.SCALARIZED: {
-            EvaluationMechanism.SCALARIZED: 'cyan'
-        }
+            # EvaluationMechanism.HV: 'yellow',
+            # EvaluationMechanism.C: 'orange',
+            # EvaluationMechanism.PO: 'blue'
+            0.1: 'beige',
+            0.3: 'gold',
+            0.5: 'lavender',
+            0.8: 'fuchsia'
+        },
+        # AgentType.PQL:        {
+        #     EvaluationMechanism.HV: 'pink',
+        #     EvaluationMechanism.C:  'red',
+        #     EvaluationMechanism.PO: 'green'
+        # },
+        # AgentType.SCALARIZED: {
+        # EvaluationMechanism.SCALARIZED: 'cyan'
+        # }
     }
 
     graph_types = {
         GraphType.STEPS,
-        GraphType.TIME,
+        GraphType.MEMORY
+        # GraphType.TIME,
         # GraphType.EPOCHS
     }
 
-    # agents_configuration = {**agent_a1_configuration, **agent_pql_configuration, **agent_scalarized_configuration}
-    agents_configuration = {**agent_a1_configuration}
-
     VectorConfiguration.instance().decimals_allowed = 7
     VectorConfiguration.instance().relative_tolerance = 0
-    VectorConfiguration.instance().absolute_tolerance = 0.9
+    VectorConfiguration.instance().absolute_tolerance = 0.3
     VectorConfiguration.instance().absolute_tolerance *= (10 ** VectorConfiguration.instance().decimals_allowed)
 
-    test_agents(environment=DeepSeaTreasureRightDown(initial_state=initial_state, columns=4),
+    test_agents(environment=DeepSeaTreasureRightDown(initial_state=initial_state, columns=columns),
                 hv_reference=Vector([-25, 0]), epsilon=0.7, alpha=alpha, states_to_observe=[initial_state],
                 epochs=epochs, integer_mode=True, graph_types=graph_types, number_of_agents=number_of_agents,
-                agents_configuration=agents_configuration, gamma=gamma, max_steps=max_steps)
+                agents_configuration=agents_configuration, gamma=gamma, max_steps=max_steps,
+                evaluation_mechanism=EvaluationMechanism.C, variable=variable)
 
     # test_agents(environment=MoPuddleWorldAcyclic(), hv_reference=Vector([-50, -150]), epsilon=0.3, alpha=alpha,
     #             states_to_observe=[(2, 8)], epochs=epochs, integer_mode=True, graph_types=graph_types,

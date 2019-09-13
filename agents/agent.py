@@ -26,7 +26,7 @@ class Agent:
 
     def __init__(self, environment: Environment, epsilon: float = 0.1, gamma: float = 1., seed: int = 0,
                  states_to_observe: list = None, max_steps: int = None,
-                 graph_types=None):
+                 graph_types: set = None):
         """
         :param environment: An environment where agent does any operation.
         :param epsilon: Epsilon using in e-greedy policy, to explore more states.
@@ -55,11 +55,23 @@ class Agent:
         # To intensive problems
         self.max_steps = max_steps
 
-        # Create dictionary of states to observe
-        if states_to_observe is None:
-            self.states_to_observe = dict()
-        else:
-            self.states_to_observe = {x: {state: list() for state in states_to_observe} for x in graph_types}
+        # Create dictionary with graph information
+        graph_info = dict()
+
+        if states_to_observe is not None:
+            # Create graph information hierarchy
+            graph_info = {
+                graph_type: {
+                    state: list() for state in states_to_observe
+                } for graph_type in graph_types - {GraphType.MEMORY}
+            }
+
+        if GraphType.MEMORY in graph_types:
+            graph_info.update({
+                GraphType.MEMORY: list()
+            })
+
+        self.graph_info = graph_info
 
         # Current Agent State if the initial state of environment
         self.state = self.environment.initial_state
@@ -126,41 +138,26 @@ class Agent:
                 is_final_state = self.steps >= self.max_steps
 
             # Check if is necessary update graph
-            if GraphType.STEPS in self.states_to_observe and self.total_steps % self.steps_to_get_graph_data == 0:
+            if self.total_steps % self.steps_to_get_graph_data == 0:
                 # Append new data
-                self.update_graph(graph_type=GraphType.STEPS)
+                self.update_graph(graph_types=(GraphType.STEPS, GraphType.MEMORY))
 
             current_time = time.time()
 
-            if GraphType.TIME in self.states_to_observe and (
-                    current_time - self.last_time_to_get_graph_data) > self.seconds_to_get_graph_data:
+            if (current_time - self.last_time_to_get_graph_data) > self.seconds_to_get_graph_data:
                 # Append new data
-                self.update_graph(graph_type=GraphType.TIME)
+                self.update_graph(graph_types=(GraphType.TIME,))
 
                 # Update last execution
                 self.last_time_to_get_graph_data = current_time
 
-        if GraphType.EPOCHS in self.states_to_observe:
-            # Append new data
-            self.update_graph(graph_type=GraphType.EPOCHS)
+        # Last update in this epoch
+        self.update_graph(graph_types=tuple(self.graph_info.keys()))
 
-        # Save last register data
-        if GraphType.STEPS in self.states_to_observe:
-            # Append new data
-            self.update_graph(graph_type=GraphType.STEPS)
-
-        # Save last register data
-        if GraphType.TIME in self.states_to_observe:
-            # Append new data
-            self.update_graph(graph_type=GraphType.TIME)
-
-            # Update last execution
-            self.last_time_to_get_graph_data = time.time()
-
-    def update_graph(self, graph_type: GraphType) -> None:
+    def update_graph(self, graph_types: tuple) -> None:
         """
         Update specific graph type
-        :param graph_type:
+        :param graph_types:
         :return:
         """
         raise NotImplemented
@@ -199,7 +196,7 @@ class Agent:
         Reset states to observe
         :return:
         """
-        self.states_to_observe.update({state: list for state in self.states_to_observe})
+        self.graph_info.update({state: list for state in self.graph_info})
 
     def show_observed_states(self) -> None:
         """
@@ -207,7 +204,7 @@ class Agent:
         :return:
         """
 
-        for graph_type, states in self.states_to_observe.items():
+        for graph_type, states in self.graph_info.items():
             for state, data in states.items():
                 plt.plot(data, label='State: {}'.format(state))
 
@@ -236,11 +233,6 @@ class Agent:
         """
 
         for i in range(epochs):
-
-            # if i >= epochs - 1:
-            #     print('Stop!')
-            #     pass
-
             # Do an episode
             self.episode()
 
@@ -273,7 +265,7 @@ class Agent:
                 'states_to_observe': [
                     {
                         'key': str(k), 'value': {'key': k2 if isinstance(k2, int) else list(k2), 'value': v2}
-                    } for k, v in self.states_to_observe.items() for k2, v2 in v.items()
+                    } for k, v in self.graph_info.items() for k2, v2 in v.items()
                 ],
                 'seed':              self.seed
             }

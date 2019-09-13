@@ -5,11 +5,12 @@ import datetime
 import importlib
 import itertools
 import json
+import math
 import os
+import time
 from copy import deepcopy
 
 import gym
-import math
 
 import utils.hypervolume as uh
 import utils.miscellaneous as um
@@ -41,7 +42,7 @@ class AgentA1(Agent):
 
         # Types to show a graphs
         if graph_types is None:
-            graph_types = {GraphType.STEPS, GraphType.EPOCHS}
+            graph_types = {GraphType.STEPS, GraphType.MEMORY}
 
         # Super call __init__
         super().__init__(environment=environment, epsilon=epsilon, gamma=gamma, seed=seed,
@@ -62,6 +63,9 @@ class AgentA1(Agent):
 
         # Counter to indexes used by each pair (state, action)
         self.indexes_counter = dict()
+
+        # Set of states that need be updated
+        self.states_to_update = set()
 
         # Evaluation mechanism
         if evaluation_mechanism in (EvaluationMechanism.HV, EvaluationMechanism.PO, EvaluationMechanism.C):
@@ -103,7 +107,7 @@ class AgentA1(Agent):
                     'key': int(action), 'value': {
                         'key': list(table_index), 'value': (v3.index, v3.vector.tolist())
                     }
-                }) for state, v in self.q.items() for action, v2 in v.items() if action != 'updated' for table_index, v3
+                }) for state, v in self.q.items() for action, v2 in v.items() for table_index, v3
                 in v2.items()
             ]
         })
@@ -136,14 +140,9 @@ class AgentA1(Agent):
 
     def do_iteration(self) -> bool:
 
-        # if self.state in {(2, 0)} and self.total_epochs == 321:
-        if self.state in {(2, 0)}:
-            print('State (2, 0)')
-            pass
-
         # If the state is unknown, register it.
         if self.state not in self.q:
-            self.q.update({self.state: {'updated': True}})
+            self.q.update({self.state: dict()})
 
         if self.state not in self.s:
             self.s.update({self.state: dict()})
@@ -209,27 +208,45 @@ class AgentA1(Agent):
 
         return is_final_state
 
-    def update_graph(self, graph_type: GraphType):
+    def update_graph(self, graph_types: tuple) -> None:
         """
         Update specific graph type
-        :param graph_type:
+        :param graph_types:
         :return:
         """
 
-        for state, data in self.states_to_observe.get(graph_type).items():
-            # Add to data Best value (V max)
-            value = self._best_hypervolume(state=state)
+        for graph_type in graph_types:
 
-            # If integer mode is True, is necessary divide value by increment
-            if self.integer_mode:
-                # Divide value by two powered numbers (hv_reference and reward)
-                value /= 10 ** (VectorConfiguration.instance().decimals_allowed * 2)
+            if graph_type is GraphType.MEMORY:
 
-            # Add to data Best value (V max)
-            data.append(value)
+                # Count number of vectors in big Q dictionary
+                self.graph_info[graph_type].append(
+                    sum(len(actions.values()) for states in self.q.values() for actions in states.values())
+                )
 
-            # Update dictionary
-            self.states_to_observe.get(graph_type).update({state: data})
+            else:
+
+                # In the same for loop, is check if this agent has the graph_type indicated (get dictionary default
+                # value)
+                for state, data in self.graph_info.get(graph_type, {}).items():
+
+                    # Add to data Best value (V max)
+                    value = self._best_hypervolume(state=state)
+
+                    # If integer mode is True, is necessary divide value by increment
+                    if self.integer_mode:
+                        # Divide value by two powered numbers (hv_reference and reward)
+                        value /= 10 ** (VectorConfiguration.instance().decimals_allowed * 2)
+
+                    # Add to data Best value (V max)
+                    data.append(value)
+
+                    # Update dictionary
+                    self.graph_info[graph_type].update({state: data})
+
+                if graph_type is GraphType.TIME:
+                    # Update last execution
+                    self.last_time_to_get_graph_data = time.time()
 
     def _best_hypervolume(self, state: object = None) -> float:
         """
@@ -499,6 +516,12 @@ class AgentA1(Agent):
         # Data state Q(s)
         data_state = self.q.get(state)
 
+        # Data action Q(s, a)
+        data_action = data_state.get(action, dict())
+
+        # Control update flag
+        need_update_v = False
+
         for p_prime in cartesian_product:
 
             # p is p_prime less index of next_state (p = p' / sk)
@@ -516,7 +539,7 @@ class AgentA1(Agent):
             # If not exists Q_{n - 1}(s, a, p), then create a new IndexVector with the next index available.
             if not previous_q:
                 # Q_{n - 1}(s, a, p)
-                previous_q = IndexVector(index=index_counter, vector=self.environment.default_reward.zero_vector)
+                previous_q = self.default_vector_value(index=index_counter)
 
                 # Update index counter
                 index_counter += 1
@@ -529,7 +552,6 @@ class AgentA1(Agent):
             q = IndexVector(index=previous_q.index, vector=previous_q.vector + next_q)
 
             # Q(s, a, p_prime)
-            data_action = data_state.get(action, dict())
             data_action.update({p_prime: q})
 
             # Need delete previous index of table if is necessary
@@ -537,7 +559,11 @@ class AgentA1(Agent):
                 data_action.pop(p, None)
 
             data_state.update({action: data_action})
-            data_state.update({'updated': False})
+            need_update_v = True
+
+        # Check if is necessary update V vectors
+        if need_update_v:
+            self.states_to_update.add(state)
 
     def update_operation(self, state: object, action: int, reward: Vector, next_state: object) -> None:
         """
@@ -566,8 +592,20 @@ class AgentA1(Agent):
         # Data state Q(s)
         data_state = self.q.get(state)
 
+        # Data action state Q(s, a)
+        data_action = data_state.get(action, dict())
+
+        # Control update flag
+        need_update_v = False
+
+        # Control of positions used updates to remove orphans vectors
+        positions_updated = set()
+
         # For each tuple in cartesian product
         for p in cartesian_product:
+
+            # Position updated
+            positions_updated.add(p)
 
             # p[s_k]
             next_state_reference_vector_index = p[next_state_p_position]
@@ -581,7 +619,7 @@ class AgentA1(Agent):
             # If not exists Q_{n - 1}(s, a, p), then create a new IndexVector with the next index available.
             if not previous_q:
                 # Q_{n - 1}(s, a, p)
-                previous_q = IndexVector(index=index_counter, vector=self.environment.default_reward.zero_vector)
+                previous_q = self.default_vector_value(index_counter)
 
                 # Update index counter
                 index_counter += 1
@@ -594,62 +632,74 @@ class AgentA1(Agent):
             q = IndexVector(index=previous_q.index, vector=previous_q.vector + next_q)
 
             # Q(s, a, p)
-            data_action = data_state.get(action, dict())
             data_action.update({p: q})
             data_state.update({action: data_action})
-            data_state.update({'updated': False})
+
+            # Is necessary update v vector
+            need_update_v = True
+
+        # Get positions from table
+        all_positions = set(data_action.keys())
+
+        # Deleting difference between all_positions and positions_updated to del orphans vectors
+        for position in all_positions - positions_updated:
+            # Removing orphan vector
+            del data_state[action][position]
+
+        # Check if is necessary update V vectors
+        if need_update_v:
+            self.states_to_update.add(state)
+
+    def default_vector_value(self, index):
+        """
+        This method get a default value if a vector doesn't exist. It's possible change the zero vector for a
+        heuristic function.
+        :param index:
+        :return:
+        """
+        return IndexVector(index=index, vector=self.environment.default_reward.zero_vector)
 
     def check_if_need_update_v(self) -> None:
 
-        # Get all possible states
-        states = self.q.keys()
-
-        # For each state in states
-        for state in states:
-
+        # For each state that need be updated
+        for state in self.states_to_update:
             # Get Q(s)
-            q_s = self.q.get(state)
+            q_s = self.q[state]
 
-            # Check if this action need
-            updated = q_s.get('updated', True)
+            # List accumulative to save all vectors
+            q_list = list()
 
-            # If V(s) is not updated
-            if not updated:
+            # Save previous state
+            previous_state = self.environment.current_state
 
-                # List accumulative to save all vectors
-                q_list = list()
+            # Set new state
+            self.environment.current_state = state
 
-                # Save previous state
-                previous_state = self.environment.current_state
+            # for each action available in state given
+            for a in self.environment.action_space:
+                # Q(s, a)
+                q_list += q_s.get(a, dict()).values()
 
-                # Set new state
-                self.environment.current_state = state
+            # Get all non dominated vectors -> V(s)
+            non_dominated_vectors, _ = self.environment.default_reward.m3_max_2_sets_with_buckets(vectors=q_list)
 
-                # for each action available in state given
-                for a in self.environment.action_space:
-                    # Q(s, a)
-                    q_list += q_s.get(a, dict()).values()
+            v = dict()
 
-                # Get all non dominated vectors -> V(s)
-                non_dominated_vectors, _ = self.environment.default_reward.m3_max_2_sets_with_buckets(vectors=q_list)
+            # Sort keys of buckets
+            for bucket in non_dominated_vectors:
+                bucket.sort(key=lambda x: x.index)
 
-                v = dict()
+                # Set V values (Getting vector with lower index) (simplified)
+                v.update({bucket[0].index: bucket[0].vector})
 
-                # Sort keys of buckets
-                for bucket in non_dominated_vectors:
-                    bucket.sort(key=lambda x: x.index)
+            # Update V(s)
+            self.v.update({state: v})
 
-                    # Set V values (Getting vector with lower index) (simplified)
-                    v.update({bucket[0].index: bucket[0].vector})
+            # Restore state
+            self.environment.current_state = previous_state
 
-                # Update V(s)
-                self.v.update({state: v})
-
-                # V(s) already updated
-                self.q.get(state).update({'updated': True})
-
-                # Restore state
-                self.environment.current_state = previous_state
+        # All pending states are updated
+        self.states_to_update.clear()
 
     def relevant_indexes_of_state(self, state: object) -> set:
         """
@@ -684,9 +734,6 @@ class AgentA1(Agent):
 
         # For each state with it action dictionary
         for state, action_dict in q.items():
-
-            # Remove updated flag
-            action_dict.pop('updated', None)
 
             # For each action with it indexes dictionary
             for action, indexes_dict in action_dict.items():
@@ -742,7 +789,6 @@ class AgentA1(Agent):
 
         objective_hypervolume = uh.calc_hypervolume(list_of_vectors=list_of_vectors, reference=self.hv_reference)
 
-        # while not np.isclose(a=current_hypervolume, b=objective_hypervolume, rtol=0.02):
         while not math.isclose(a=current_hypervolume, b=objective_hypervolume, rel_tol=0.02):
             # Do an episode
             self.episode()
@@ -786,7 +832,6 @@ class AgentA1(Agent):
             states.append(range(self.environment.observation_space.n))
 
         for state in states:
-            self.q.update({state: {'updated': True}})
             self.s.update({state: dict()})
             self.v.update({state: dict()})
             self.indexes_counter.update({state: 0})
@@ -1006,9 +1051,7 @@ class AgentA1(Agent):
 
             if q_state not in q.keys():
                 q.update({
-                    q_state: {
-                        'updated': True
-                    }
+                    q_state: dict()
                 })
 
             q_dict_state = q.get(q_state)
@@ -1033,7 +1076,7 @@ class AgentA1(Agent):
         model.v = v
         model.s = s
         model.q = q
-        model.states_to_observe = states_to_observe
+        model.graph_info = states_to_observe
         model.state = state
         model.total_epochs = total_epochs
         model.total_steps = total_steps

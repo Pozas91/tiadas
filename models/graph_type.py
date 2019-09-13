@@ -5,6 +5,7 @@ class GraphType(Enum):
     STEPS = 'steps'
     EPOCHS = 'epochs'
     TIME = 'time'
+    MEMORY = 'memory'
 
     def __str__(self):
         return str(self.value)
@@ -19,9 +20,9 @@ class GraphType(Enum):
             result = GraphType.STEPS
         elif graph_type == str(GraphType.EPOCHS.value):
             result = GraphType.EPOCHS
+        elif graph_type == str(GraphType.MEMORY.value):
+            result = GraphType.MEMORY
         else:
             result = GraphType.TIME
 
         return result
-
-

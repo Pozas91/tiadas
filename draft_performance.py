@@ -2,8 +2,12 @@ import timeit
 
 number = 1000
 
-time_main = timeit.timeit("from draft_main import performance_dominance_new; performance_dominance_new()",
-                          number=number)
+# time_main = timeit.timeit("from draft_main import performance_dominance_new; performance_dominance_new()",
+#                           number=number)
+
+time_sum = timeit.timeit("from draft_main import dictionary_size_sum; dictionary_size_sum()", number=number)
+time_len = timeit.timeit("from draft_main import dictionary_size_len; dictionary_size_len()", number=number)
+time_reduce = timeit.timeit("from draft_main import dictionary_size_reduce; dictionary_size_reduce()", number=number)
 
 # time_a1 = timeit.timeit("from draft import a1; a1()", number=number)
 # time_a2 = timeit.timeit("from draft import a2; a2()", number=number)
@@ -19,4 +23,6 @@ time_main = timeit.timeit("from draft_main import performance_dominance_new; per
 # print("A5 time: {}".format(time_a5))
 # print("A6 time: {}".format(time_a6))
 
-print("Main time: {}".format(time_main))
+print("SUM time: {}".format(time_sum))
+print("LEN time: {}".format(time_len))
+print("REDUCE time: {}".format(time_reduce))
