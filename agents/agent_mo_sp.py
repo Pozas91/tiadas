@@ -165,7 +165,7 @@ class AgentMOSP(AgentQ):
 
     def calc_frontier_scalarized(self, p: Vector, q: Vector, solutions_known: list = None) -> list:
         """
-        This is a main method to calc pareto's frontier.
+        This is a search_distance method to calc pareto's frontier.
 
         Return a list of supported solutions costs, this method is only valid to two objectives problems.
         Applies a dichotomous search to find all supported solutions costs.

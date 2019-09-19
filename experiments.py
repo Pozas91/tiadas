@@ -66,7 +66,7 @@ def write_v_from_initial_state_file(timestamp: int, i_agent: int, env_name_snake
         file.write(file_data)
 
 
-def initialize_graph_data(graph_types: set, agents_configuration: dict) -> dict:
+def initialize_graph_data(graph_types: dict, agents_configuration: dict) -> dict:
     """
     Initialize graph data dictionary
 
@@ -78,7 +78,7 @@ def initialize_graph_data(graph_types: set, agents_configuration: dict) -> dict:
     # Create graphs structure
     graphs = dict()
 
-    for graph_type in graph_types:
+    for graph_type in graph_types.keys():
         data_types = dict()
 
         for agent_type in agents_configuration:
@@ -100,11 +100,11 @@ def initialize_graph_data(graph_types: set, agents_configuration: dict) -> dict:
     return graphs
 
 
-def test_agents(environment: Environment, hv_reference: Vector, variable: str, epsilon: float = 0.1, alpha: float = 1.,
+def test_agents(environment: Environment, hv_reference: Vector, variable: str, graph_types: dict,
+                agents_configuration: dict, epsilon: float = 0.1, alpha: float = 1., max_steps: int = None,
                 states_to_observe: list = None, epochs: int = 1000, integer_mode: bool = False,
-                graph_types: set = None, number_of_agents: int = 30, agents_configuration: dict = None,
-                gamma: float = 1., evaluation_mechanism: EvaluationMechanism = EvaluationMechanism.C,
-                max_steps: int = None):
+                number_of_agents: int = 30, gamma: float = 1.,
+                evaluation_mechanism: EvaluationMechanism = EvaluationMechanism.C):
     """
     This method run an experiment with the parameters and environment given
     :param variable:
@@ -125,14 +125,8 @@ def test_agents(environment: Environment, hv_reference: Vector, variable: str, e
     """
 
     # Parameters
-    if graph_types is None:
-        graph_types = {GraphType.STEPS, GraphType.MEMORY}
-
     if states_to_observe is None:
         states_to_observe = [environment.initial_state]
-
-    if agents_configuration is None:
-        agents_configuration = dict()
 
     # Build environment
     env_name = environment.__class__.__name__
@@ -187,6 +181,7 @@ def test_agents(environment: Environment, hv_reference: Vector, variable: str, e
                 v_s_0 = None
                 agent = None
 
+                # Variable parameters
                 parameters = {
                     'epsilon':              epsilon, 'alpha': alpha, 'gamma': gamma, 'max_steps': max_steps,
                     'evaluation_mechanism': evaluation_mechanism
@@ -195,6 +190,7 @@ def test_agents(environment: Environment, hv_reference: Vector, variable: str, e
                 # Modify current configuration
                 parameters.update({variable: configuration})
 
+                # Is a SCALARIZED agent?
                 if agent_type == AgentType.SCALARIZED:
 
                     # Removing useless parameters
@@ -205,7 +201,7 @@ def test_agents(environment: Environment, hv_reference: Vector, variable: str, e
 
                     # Build agent
                     agent = AgentMOSP(seed=seed, environment=environment, weights=weights,
-                                      states_to_observe=states_to_observe, graph_types=graph_types,
+                                      states_to_observe=states_to_observe, graph_types=set(graph_types.keys()),
                                       hv_reference=hv_reference, **parameters)
 
                     # Search one extreme objective
@@ -239,6 +235,7 @@ def test_agents(environment: Environment, hv_reference: Vector, variable: str, e
                     # Non-dominated vectors found in V(s0)
                     v_s_0 = agent.pareto_frontier_found
 
+                # Is a PQL agent?
                 elif agent_type == AgentType.PQL:
 
                     # Removing useless parameters
@@ -246,7 +243,7 @@ def test_agents(environment: Environment, hv_reference: Vector, variable: str, e
 
                     # Build an instance of agent
                     agent = AgentPQL(environment=environment, seed=seed, hv_reference=hv_reference,
-                                     graph_types=graph_types, states_to_observe=states_to_observe,
+                                     graph_types=set(graph_types.keys()), states_to_observe=states_to_observe,
                                      integer_mode=integer_mode, **parameters)
 
                     # Train the agent
@@ -255,11 +252,12 @@ def test_agents(environment: Environment, hv_reference: Vector, variable: str, e
                     # Non-dominated vectors found in V(s0)
                     v_s_0 = agent.non_dominated_vectors_from_state(state=agent.environment.initial_state)
 
+                # Is an A1 agent?
                 elif agent_type == AgentType.A1:
 
                     # Build an instance of agent
                     agent = AgentA1(environment=environment, seed=seed, hv_reference=hv_reference,
-                                    graph_types=graph_types, states_to_observe=states_to_observe,
+                                    graph_types=set(graph_types.keys()), states_to_observe=states_to_observe,
                                     integer_mode=integer_mode, **parameters)
 
                     # Train the agent
@@ -291,11 +289,11 @@ def test_agents(environment: Environment, hv_reference: Vector, variable: str, e
                                 env_name_snake=env_name_snake, graphs=graphs, number_of_agents=number_of_agents,
                                 agents_configuration=agents_configuration, alpha=alpha, epsilon=epsilon, gamma=gamma,
                                 epochs=epochs, max_steps=max_steps, initial_state=environment.initial_state,
-                                integer_mode=integer_mode, variable=variable)
+                                integer_mode=integer_mode, variable=variable, graph_types=graph_types)
 
 
-def update_graph(agent: Agent, data_max_len: int, configuration: str, graphs: dict,
-                 states_to_observe: list, agent_type: AgentType):
+def update_graph(agent: Agent, data_max_len: int, configuration: str, graphs: dict, states_to_observe: list,
+                 agent_type: AgentType):
     """
     Update graph to show
     :param configuration:
@@ -313,6 +311,8 @@ def update_graph(agent: Agent, data_max_len: int, configuration: str, graphs: di
 
         if graph_type is GraphType.MEMORY:
             agent_data = agent.graph_info[graph_type]
+        elif graph_type is GraphType.VECTORS_PER_CELL:
+            agent_data = agent.graph_info[graph_type]
         else:
             # Prepare new data
             agent_data = agent.graph_info[graph_type][states_to_observe[0]]
@@ -324,7 +324,8 @@ def update_graph(agent: Agent, data_max_len: int, configuration: str, graphs: di
             configuration: data
         })
 
-        data_max_len = max(data_max_len, len(agent_data))
+        if graph_type is not GraphType.VECTORS_PER_CELL:
+            data_max_len = max(data_max_len, len(agent_data))
 
     return data_max_len
 
@@ -332,9 +333,10 @@ def update_graph(agent: Agent, data_max_len: int, configuration: str, graphs: di
 def prepare_data_and_show_graph(timestamp: int, data_max_len: int, env_name: str, env_name_snake: str, graphs: dict,
                                 number_of_agents: int, agents_configuration: dict, alpha: float, gamma: float,
                                 epsilon: float, epochs: int, max_steps: int, initial_state: tuple, integer_mode: bool,
-                                variable: str):
+                                variable: str, graph_types: dict):
     """
     Prepare data to show a graph with the information about results
+    :param graph_types:
     :param variable:
     :param integer_mode:
     :param initial_state:
@@ -354,11 +356,41 @@ def prepare_data_and_show_graph(timestamp: int, data_max_len: int, env_name: str
     """
 
     # Path to save file
-    graph_path = './dumps/{}/graphs/{}_{}_{}_{}_{}.m'
+    graph_path = './dumps/{}/graphs/{}_{}_{}_{}_{}_{}.m'
     plot_path = './dumps/plots/{}_{}_{}.png'
 
+    # Extract vectors per cells graph from all graphs
+    vectors_per_cells_graph = graphs.pop(GraphType.VECTORS_PER_CELL, {})
+
+    for agent_type in vectors_per_cells_graph:
+
+        for configuration in agents_configuration[agent_type].keys():
+            # Recover old data
+            data = vectors_per_cells_graph[agent_type][str(configuration)]
+            process_data = np.average(data, axis=0)
+
+            filename_m = Path(
+                graph_path.format(agent_type.value, timestamp, number_of_agents, env_name_snake,
+                                  GraphType.VECTORS_PER_CELL.value, variable, str(configuration)).lower()
+            )
+
+            with filename_m.open(mode='w+') as file:
+                file_data = "Z = [\n{}\n];\n".format(''.join([';\n'.join(map(str, x)) for x in process_data]))
+                # file_data += "means = mean(Y);\n"
+                file_data += 'figure;\n'
+                file_data += 'bar3(Z);\n'
+                file_data += 'zlim([0, 30]);\n'
+                file_data += "xlabel('Columns');\n"
+                file_data += "ylabel('Rows');\n"
+                file_data += "zlabel('# Vectors');\n"
+                file_data += "title('{} {}');\n".format(variable, configuration)
+                file.write(file_data)
+
+    # Parameters
+    parameters = {'sharex': True}
+
     # Graph instances
-    fig, axs = plt.subplots(nrows=len(graphs), sharex=True, sharey=True)
+    fig, axs = plt.subplots(nrows=len(graphs), **parameters)
 
     # Resolution 1440x1080 (4:3)
     fig.set_size_inches(14.4, 10.8)
@@ -401,7 +433,7 @@ def prepare_data_and_show_graph(timestamp: int, data_max_len: int, env_name: str
 
                 filename_m = Path(
                     graph_path.format(agent_type.value, timestamp, number_of_agents, env_name_snake, graph_name,
-                                      variable).lower()
+                                      variable, str(configuration)).lower()
                 )
 
                 with filename_m.open(mode='w+') as file:
@@ -433,6 +465,16 @@ def prepare_data_and_show_graph(timestamp: int, data_max_len: int, env_name: str
         axs[axs_i].set_position([
             box.x0, box.y0, box.width * 0.9, box.height
         ])
+
+        limits = graph_types[graph_type]['limits']
+        limits_y = limits.get('y', False)
+        limits_x = limits.get('x', False)
+
+        if limits_y:
+            axs[axs_i].set_ylim(limits_y)
+
+        if limits_x:
+            axs[axs_i].set_ylim(limits_x)
 
     fig.suptitle('{} environment'.format(env_name))
     plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
@@ -486,25 +528,30 @@ def prepare_data_and_show_graph(timestamp: int, data_max_len: int, env_name: str
 
 
 def main():
-    # columns = range(1, 11)
-    alpha = 0.4
-    number_of_agents = 5
-    epochs = 200
+    # Default parameters
+    alpha = 0.8
+    number_of_agents = 1
+    epochs = 4000
     gamma = 1.
     max_steps = 250
     initial_state = (0, 0)
     columns = 10
-    variable = 'evaluation_mechanism'
+    evaluation_mechanism = EvaluationMechanism.C
+
+    # Variable parameters
+    variable = 'alpha'
+    # variable = 'evaluation_mechanism'
 
     agents_configuration = {
         AgentType.A1: {
-            EvaluationMechanism.HV: 'yellow',
-            EvaluationMechanism.C:  'orange',
-            EvaluationMechanism.PO: 'blue'
-            # 0.1: 'beige',
-            # 0.3: 'gold',
-            # 0.5: 'lavender',
-            # 0.8: 'fuchsia'
+            # EvaluationMechanism.HV: 'yellow',
+            # EvaluationMechanism.C:  'orange',
+            # EvaluationMechanism.PO: 'blue'
+            # 0.01: 'blue',
+            # 0.1:  'beige',
+            # 0.3:  'gold',
+            0.8: 'fuchsia',
+            # 1.0: 'cyan'
         },
         # AgentType.PQL:        {
         #     EvaluationMechanism.HV: 'pink',
@@ -517,8 +564,18 @@ def main():
     }
 
     graph_types = {
-        GraphType.STEPS,
-        GraphType.MEMORY
+        # GraphType.STEPS:            {
+        #     'limits': {
+        #         'y': [0, 2000]
+        #     }
+        # },
+        # GraphType.MEMORY:           {
+        #     'limits': {
+        #         'y': [0, 700]
+        #     }
+        # },
+        GraphType.VECTORS_PER_CELL: {
+        }
         # GraphType.TIME,
         # GraphType.EPOCHS
     }
@@ -532,7 +589,7 @@ def main():
                 hv_reference=Vector([-25, 0]), epsilon=0.7, alpha=alpha, states_to_observe=[initial_state],
                 epochs=epochs, integer_mode=True, graph_types=graph_types, number_of_agents=number_of_agents,
                 agents_configuration=agents_configuration, gamma=gamma, max_steps=max_steps,
-                evaluation_mechanism=EvaluationMechanism.C, variable=variable)
+                evaluation_mechanism=evaluation_mechanism, variable=variable)
 
     # test_agents(environment=MoPuddleWorldAcyclic(), hv_reference=Vector([-50, -150]), epsilon=0.3, alpha=alpha,
     #             states_to_observe=[(2, 8)], epochs=epochs, integer_mode=True, graph_types=graph_types,

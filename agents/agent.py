@@ -71,6 +71,11 @@ class Agent:
                 GraphType.MEMORY: list()
             })
 
+        if GraphType.VECTORS_PER_CELL in graph_types:
+            graph_info.update({
+                GraphType.VECTORS_PER_CELL: list()
+            })
+
         self.graph_info = graph_info
 
         # Current Agent State if the initial state of environment
@@ -139,20 +144,20 @@ class Agent:
 
             # Check if is necessary update graph
             if self.total_steps % self.steps_to_get_graph_data == 0:
-                # Append new data
+                # Trigger update graph
                 self.update_graph(graph_types=(GraphType.STEPS, GraphType.MEMORY))
 
             current_time = time.time()
 
             if (current_time - self.last_time_to_get_graph_data) > self.seconds_to_get_graph_data:
-                # Append new data
+                # Trigger update graph
                 self.update_graph(graph_types=(GraphType.TIME,))
 
                 # Update last execution
                 self.last_time_to_get_graph_data = current_time
 
         # Last update in this epoch
-        self.update_graph(graph_types=tuple(self.graph_info.keys()))
+        self.update_graph(graph_types=(GraphType.STEPS, GraphType.MEMORY, GraphType.TIME, GraphType.EPOCHS))
 
     def update_graph(self, graph_types: tuple) -> None:
         """
@@ -235,6 +240,8 @@ class Agent:
         for i in range(epochs):
             # Do an episode
             self.episode()
+
+        self.update_graph(graph_types=(GraphType.VECTORS_PER_CELL,))
 
     def get_dict_model(self) -> dict:
         """

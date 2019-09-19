@@ -6,6 +6,7 @@ class GraphType(Enum):
     EPOCHS = 'epochs'
     TIME = 'time'
     MEMORY = 'memory'
+    VECTORS_PER_CELL = 'vectors_per_cell'
 
     def __str__(self):
         return str(self.value)
@@ -22,6 +23,8 @@ class GraphType(Enum):
             result = GraphType.EPOCHS
         elif graph_type == str(GraphType.MEMORY.value):
             result = GraphType.MEMORY
+        elif graph_type == str(GraphType.VECTORS_PER_CELL.value):
+            result = GraphType.VECTORS_PER_CELL
         else:
             result = GraphType.TIME
 
