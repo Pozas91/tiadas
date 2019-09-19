@@ -1,5 +1,6 @@
 """
-First version of algorithm 1, in this version we are "similar" vector in V(s)
+First version of algorithm 1.
+Adaptation of algorithm MPQ-learning to directed acyclic graphs.
 """
 import datetime
 import importlib
@@ -38,7 +39,7 @@ class AgentA1(Agent):
         :param hv_reference: Reference vector to calc hypervolume
         :param evaluation_mechanism: Evaluation mechanism used to calc best action to choose. Three values are
             available: 'C-PQL', 'PO-PQL', 'HV-PQL'
-        :param graph_types: Type of graph to generate.
+        :param graph_types: Set of types of graph to generate.
         """
 
         # Types to show a graphs
@@ -53,7 +54,11 @@ class AgentA1(Agent):
         assert 0 < alpha <= 1
         self.alpha = alpha
 
-        # Initialize to Q-Learning values
+        # Dictionary that stores all q values. 
+        #Key: state; Value: second level dictionary.
+        #Second level dictionary: key: action; value: third level dictionary
+        #Third level dictionary: key :index vector (element from cartesian product); 
+        #                        value: q-vector (instance of class IndexVector)
         self.q = dict()
 
         # States known by each state and action
