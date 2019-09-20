@@ -282,7 +282,7 @@ class AgentPQL(Agent):
 
         # Resets
         self.reset_steps()
-        self.reset_states_to_observe()
+        self.reset_graph_info()
 
     def best_action(self, state: object = None) -> int:
         """

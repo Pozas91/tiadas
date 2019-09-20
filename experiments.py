@@ -9,7 +9,7 @@ import numpy as np
 import utils.miscellaneous as um
 from agents import Agent, AgentPQL, AgentMOSP, AgentA1
 from configurations import VectorConfiguration
-from gym_tiadas.gym_tiadas.envs import Environment, DeepSeaTreasureRightDown
+from gym_tiadas.gym_tiadas.envs import Environment, DeepSeaTreasureRightDownStochastic
 from models import Vector, EvaluationMechanism, GraphType
 
 
@@ -529,9 +529,9 @@ def prepare_data_and_show_graph(timestamp: int, data_max_len: int, env_name: str
 
 def main():
     # Default parameters
-    alpha = 0.8
+    alpha = 0.1
     number_of_agents = 1
-    epochs = 4000
+    epochs = 10000
     gamma = 1.
     max_steps = 250
     initial_state = (0, 0)
@@ -548,9 +548,9 @@ def main():
             # EvaluationMechanism.C:  'orange',
             # EvaluationMechanism.PO: 'blue'
             # 0.01: 'blue',
-            # 0.1:  'beige',
-            # 0.3:  'gold',
-            0.8: 'fuchsia',
+            0.1: 'beige',
+            0.3: 'gold',
+            # 0.8: 'fuchsia',
             # 1.0: 'cyan'
         },
         # AgentType.PQL:        {
@@ -564,16 +564,16 @@ def main():
     }
 
     graph_types = {
-        # GraphType.STEPS:            {
-        #     'limits': {
-        #         'y': [0, 2000]
-        #     }
-        # },
-        # GraphType.MEMORY:           {
-        #     'limits': {
-        #         'y': [0, 700]
-        #     }
-        # },
+        GraphType.STEPS:            {
+            'limits': {
+                'y': [0, 2000]
+            }
+        },
+        GraphType.MEMORY:           {
+            'limits': {
+                'y': [0, 700]
+            }
+        },
         GraphType.VECTORS_PER_CELL: {
         }
         # GraphType.TIME,
@@ -582,14 +582,22 @@ def main():
 
     VectorConfiguration.instance().decimals_allowed = 7
     VectorConfiguration.instance().relative_tolerance = 0
-    VectorConfiguration.instance().absolute_tolerance = 0.3
-    VectorConfiguration.instance().absolute_tolerance *= (10 ** VectorConfiguration.instance().decimals_allowed)
 
-    test_agents(environment=DeepSeaTreasureRightDown(initial_state=initial_state, columns=columns),
-                hv_reference=Vector([-25, 0]), epsilon=0.7, alpha=alpha, states_to_observe=[initial_state],
-                epochs=epochs, integer_mode=True, graph_types=graph_types, number_of_agents=number_of_agents,
-                agents_configuration=agents_configuration, gamma=gamma, max_steps=max_steps,
-                evaluation_mechanism=evaluation_mechanism, variable=variable)
+    for tolerance in [0.1, 0.3]:
+        for alpha in [0.03, 0.1, 0.3]:
+            VectorConfiguration.set_absolute_tolerance(absolute_tolerance=tolerance)
+
+            test_agents(environment=DeepSeaTreasureRightDownStochastic(initial_state=initial_state, columns=columns),
+                        hv_reference=Vector([-25, 0]), epsilon=0.7, alpha=alpha, states_to_observe=[initial_state],
+                        epochs=epochs, integer_mode=True, graph_types=graph_types, number_of_agents=number_of_agents,
+                        agents_configuration=agents_configuration, gamma=gamma, max_steps=max_steps,
+                        evaluation_mechanism=evaluation_mechanism, variable=variable)
+
+    # test_agents(environment=DeepSeaTreasureRightDown(initial_state=initial_state, columns=columns),
+    #             hv_reference=Vector([-25, 0]), epsilon=0.7, alpha=alpha, states_to_observe=[initial_state],
+    #             epochs=epochs, integer_mode=True, graph_types=graph_types, number_of_agents=number_of_agents,
+    #             agents_configuration=agents_configuration, gamma=gamma, max_steps=max_steps,
+    #             evaluation_mechanism=evaluation_mechanism, variable=variable)
 
     # test_agents(environment=MoPuddleWorldAcyclic(), hv_reference=Vector([-50, -150]), epsilon=0.3, alpha=alpha,
     #             states_to_observe=[(2, 8)], epochs=epochs, integer_mode=True, graph_types=graph_types,
