@@ -2,14 +2,16 @@
 Unit tests file where testing VectorFloat model.
 """
 
+import math
 import random as rnd
 import unittest
 from copy import deepcopy
 
-import math
 import numpy as np
 
-from models import VectorFloat, Dominance
+from models import VectorFloat, Dominance, Vector
+
+from decimal import Decimal, setcontext, DefaultContext
 
 
 class TestVectorFloat(unittest.TestCase):
@@ -21,6 +23,13 @@ class TestVectorFloat(unittest.TestCase):
     difference = 0.01
 
     def setUp(self):
+
+        # Decimal configuration
+        # DefaultContext.prec = Vector.decimals_allowed = 2
+        # setcontext(DefaultContext)
+
+        Vector.set_absolute_tolerance(absolute_tolerance=0.01, integer_mode=False)
+
         self.first_quadrant = (
             [
                 # Problem
@@ -204,6 +213,11 @@ class TestVectorFloat(unittest.TestCase):
                 VectorFloat([7, -3]),
             ]
         )
+
+        # Set up vector configuration
+        Vector.decimals_allowed = 0
+        Vector.set_absolute_tolerance(absolute_tolerance=0.01, integer_mode=False)
+        Vector.set_relative_tolerance(relative_tolerance=0.0, integer_mode=False)
 
     def tearDown(self):
         pass
@@ -681,7 +695,7 @@ class TestVectorFloat(unittest.TestCase):
             # After previous process if solution list have any element, then assert is failed.
             self.assertFalse(solution)
 
-    def test_m3_max_2_sets(self):
+    def test_m3_max_2_lists(self):
         """
         Testing m3_max function
         :return:
@@ -757,7 +771,7 @@ class TestVectorFloat(unittest.TestCase):
         for problem, solution_non_dominated, solution_dominated in problems:
 
             # Apply m3_max_2_sets algorithm
-            non_dominated, dominated = VectorFloat.m3_max_2_sets(vectors=problem)
+            non_dominated, dominated = VectorFloat.m3_max_2_lists(vectors=problem)
 
             # While not is empty
             while non_dominated:
@@ -774,7 +788,7 @@ class TestVectorFloat(unittest.TestCase):
             # After previous process if solution list have any element, then assert is failed.
             self.assertFalse(solution_dominated)
 
-    def test_m3_max_2_sets_not_duplicates(self):
+    def test_m3_max_2_lists_not_duplicates(self):
         """
         Testing m3_max function
         :return:
@@ -906,7 +920,7 @@ class TestVectorFloat(unittest.TestCase):
 
         for problem, solution_non_dominated_uniques, solution_dominated, solution_non_dominated_repeat in problems:
             # Apply m3_max_2_sets_with_repetitions algorithm
-            non_dominated_unique, dominated, non_dominated_repeated = VectorFloat.m3_max_2_sets_with_repetitions(
+            non_dominated_unique, dominated, non_dominated_repeated = VectorFloat.m3_max_2_lists_with_repetitions(
                 vectors=problem)
 
             # While not is empty

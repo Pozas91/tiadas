@@ -60,7 +60,7 @@ class IndexVector:
         :param actions:
         :param vectors: list of Vector objects.
 
-        :return: Return a dictionary with each action given and ocurrences of that action. Applying the m3 algorithm of
+        :return: Return a dictionary with each action given and occurrences of that action applying the m3 algorithm of
         Bentley, Clarkson and Levine (1990).
             We assume that:
                 - We attempt to MAXIMIZE the value of each vector element.

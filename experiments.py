@@ -8,8 +8,7 @@ import numpy as np
 
 import utils.miscellaneous as um
 from agents import Agent, AgentPQL, AgentMOSP, AgentA1
-from configurations import VectorConfiguration
-from gym_tiadas.gym_tiadas.envs import Environment, DeepSeaTreasureRightDownStochastic
+from gym_tiadas.gym_tiadas.envs import Environment, DeepSeaTreasureRightDown
 from models import Vector, EvaluationMechanism, GraphType
 
 
@@ -135,11 +134,9 @@ def test_agents(environment: Environment, hv_reference: Vector, variable: str, g
     # File timestamp
     timestamp = int(time.time())
 
-    relative_tolerance = VectorConfiguration.instance().relative_tolerance / (
-            10 ** VectorConfiguration.instance().decimals_allowed)
-
-    absolute_tolerance = VectorConfiguration.instance().absolute_tolerance / (
-            10 ** VectorConfiguration.instance().decimals_allowed)
+    # Extract tolerances
+    relative_tolerance = Vector.relative_tolerance
+    absolute_tolerance = Vector.absolute_tolerance
 
     write_config_file(timestamp=timestamp, number_of_agents=number_of_agents, env_name_snake=env_name_snake,
                       seed=','.join(map(str, range(number_of_agents))), epsilon=epsilon, alpha=alpha,
@@ -486,11 +483,9 @@ def prepare_data_and_show_graph(timestamp: int, data_max_len: int, env_name: str
         'alpha':     0.5
     }
 
-    relative_tolerance = VectorConfiguration.instance().relative_tolerance
-    absolute_tolerance = VectorConfiguration.instance().absolute_tolerance
-
-    relative_tolerance /= (10 ** VectorConfiguration.instance().decimals_allowed) if integer_mode else 1
-    absolute_tolerance /= (10 ** VectorConfiguration.instance().decimals_allowed) if integer_mode else 1
+    multiply_factor = (10 ** Vector.decimals_allowed) if integer_mode else 1
+    relative_tolerance = Vector.relative_tolerance
+    absolute_tolerance = Vector.absolute_tolerance / multiply_factor
 
     basic_information = list()
 
@@ -531,12 +526,13 @@ def main():
     # Default parameters
     alpha = 0.1
     number_of_agents = 1
-    epochs = 10000
+    epochs = 5000
     gamma = 1.
     max_steps = 250
     initial_state = (0, 0)
     columns = 10
     evaluation_mechanism = EvaluationMechanism.C
+    decimals_allowed = 7
 
     # Variable parameters
     variable = 'alpha'
@@ -550,6 +546,7 @@ def main():
             # 0.01: 'blue',
             0.1: 'beige',
             0.3: 'gold',
+            0.6: 'orange',
             # 0.8: 'fuchsia',
             # 1.0: 'cyan'
         },
@@ -580,18 +577,16 @@ def main():
         # GraphType.EPOCHS
     }
 
-    VectorConfiguration.instance().decimals_allowed = 7
-    VectorConfiguration.instance().relative_tolerance = 0
+    Vector.decimals_allowed = decimals_allowed
 
-    for tolerance in [0.1, 0.3]:
-        for alpha in [0.03, 0.1, 0.3]:
-            VectorConfiguration.set_absolute_tolerance(absolute_tolerance=tolerance)
+    for tolerance in [0.1, 0.3, 0.5]:
+        Vector.set_absolute_tolerance(absolute_tolerance=tolerance, integer_mode=True)
 
-            test_agents(environment=DeepSeaTreasureRightDownStochastic(initial_state=initial_state, columns=columns),
-                        hv_reference=Vector([-25, 0]), epsilon=0.7, alpha=alpha, states_to_observe=[initial_state],
-                        epochs=epochs, integer_mode=True, graph_types=graph_types, number_of_agents=number_of_agents,
-                        agents_configuration=agents_configuration, gamma=gamma, max_steps=max_steps,
-                        evaluation_mechanism=evaluation_mechanism, variable=variable)
+        test_agents(environment=DeepSeaTreasureRightDown(initial_state=initial_state, columns=columns),
+                    hv_reference=Vector([-25, 0]), epsilon=0.7, alpha=alpha, states_to_observe=[initial_state],
+                    epochs=epochs, integer_mode=True, graph_types=graph_types, number_of_agents=number_of_agents,
+                    agents_configuration=agents_configuration, gamma=gamma, max_steps=max_steps,
+                    evaluation_mechanism=evaluation_mechanism, variable=variable)
 
     # test_agents(environment=DeepSeaTreasureRightDown(initial_state=initial_state, columns=columns),
     #             hv_reference=Vector([-25, 0]), epsilon=0.7, alpha=alpha, states_to_observe=[initial_state],

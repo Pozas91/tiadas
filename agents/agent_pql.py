@@ -63,14 +63,12 @@ This seems faster than using either deepcopy (≈ 247% faster) or copy
 import datetime
 import importlib
 import json
+import math
 import os
 from copy import deepcopy
 
-import math
-
 import utils.hypervolume as uh
 import utils.miscellaneous as um
-from configurations import VectorConfiguration
 from gym_tiadas.gym_tiadas.envs import Environment
 from models import IndexVector, GraphType, EvaluationMechanism, Vector, VectorFloat
 from .agent import Agent
@@ -175,7 +173,7 @@ class AgentPQL(Agent):
             # If integer mode is True, is necessary divide value by increment
             if self.integer_mode:
                 # Divide value by two powered numbers (hv_reference and reward)
-                value /= 10 ** (VectorConfiguration.instance().decimals_allowed * 2)
+                value /= 10 ** (Vector.decimals_allowed * 2)
 
             # Add to data Best value (V max)
             data.append(value)

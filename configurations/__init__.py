@@ -1,1 +1,0 @@
-from .vector_configuration import VectorConfiguration
