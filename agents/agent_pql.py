@@ -69,7 +69,7 @@ from copy import deepcopy
 
 import utils.hypervolume as uh
 import utils.miscellaneous as um
-from gym_tiadas.gym_tiadas.envs import Environment
+from environments import Environment
 from models import IndexVector, GraphType, EvaluationMechanism, Vector, VectorFloat
 from .agent import Agent
 
@@ -159,27 +159,31 @@ class AgentPQL(Agent):
 
         return is_final
 
-    def update_graph(self, graph_types: GraphType):
+    def update_graph(self, graph_types: tuple) -> None:
         """
         Update specific graph type
         :param graph_types:
         :return:
         """
 
-        for state, data in self.graph_info.get(graph_types).items():
-            # Add to data Best value (V max)
-            value = self._best_hypervolume(state=state)
+        for graph_type in graph_types:
 
-            # If integer mode is True, is necessary divide value by increment
-            if self.integer_mode:
-                # Divide value by two powered numbers (hv_reference and reward)
-                value /= 10 ** (Vector.decimals_allowed * 2)
+            # In the same for loop, is check if this agent has the graph_type indicated (get dictionary default value)
+            for state, data in self.graph_info.get(graph_type, {}).items():
 
-            # Add to data Best value (V max)
-            data.append(value)
+                # Add to data Best value (V max)
+                value = self._best_hypervolume(state=state)
 
-            # Update dictionary
-            self.graph_info.get(graph_types).update({state: data})
+                # If integer mode is True, is necessary divide value by increment
+                if self.integer_mode:
+                    # Divide value by two powered numbers (hv_reference and reward)
+                    value /= 10 ** (Vector.decimals_allowed * 2)
+
+                # Add to data Best value (V max)
+                data.append(value)
+
+                # Update dictionary
+                self.graph_info.get(graph_type).update({state: data})
 
     def get_and_update_n_s_a(self, state: object, action: int) -> int:
         """

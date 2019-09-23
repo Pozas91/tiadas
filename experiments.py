@@ -8,7 +8,7 @@ import numpy as np
 
 import utils.miscellaneous as um
 from agents import Agent, AgentPQL, AgentMOSP, AgentA1
-from gym_tiadas.gym_tiadas.envs import Environment, DeepSeaTreasureRightDown
+from environments import Environment, DeepSeaTreasureRightDown
 from models import Vector, EvaluationMechanism, GraphType
 
 
@@ -526,7 +526,7 @@ def main():
     # Default parameters
     alpha = 0.1
     number_of_agents = 1
-    epochs = 5000
+    epochs = 10
     gamma = 1.
     max_steps = 250
     initial_state = (0, 0)
@@ -535,18 +535,18 @@ def main():
     decimals_allowed = 7
 
     # Variable parameters
-    variable = 'alpha'
-    # variable = 'evaluation_mechanism'
+    # variable = 'alpha'
+    variable = 'evaluation_mechanism'
 
     agents_configuration = {
         AgentType.A1: {
-            # EvaluationMechanism.HV: 'yellow',
-            # EvaluationMechanism.C:  'orange',
-            # EvaluationMechanism.PO: 'blue'
+            EvaluationMechanism.HV: 'yellow',
+            EvaluationMechanism.C:  'orange',
+            EvaluationMechanism.PO: 'blue',
             # 0.01: 'blue',
-            0.1: 'beige',
-            0.3: 'gold',
-            0.6: 'orange',
+            # 0.1: 'beige',
+            # 0.3: 'gold',
+            # 0.6: 'orange',
             # 0.8: 'fuchsia',
             # 1.0: 'cyan'
         },
@@ -566,15 +566,20 @@ def main():
                 'y': [0, 2000]
             }
         },
-        GraphType.MEMORY:           {
+        # GraphType.MEMORY:           {
+        #     'limits': {
+        #         'y': [0, 700]
+        #     }
+        # },
+        # GraphType.VECTORS_PER_CELL: {
+        # }
+        GraphType.TIME: {
             'limits': {
-                'y': [0, 700]
+                'y': [0, 2000]
             }
         },
-        GraphType.VECTORS_PER_CELL: {
-        }
-        # GraphType.TIME,
-        # GraphType.EPOCHS
+        # GraphType.EPOCHS: {
+        # }
     }
 
     Vector.decimals_allowed = decimals_allowed

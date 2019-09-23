@@ -2,7 +2,6 @@
 This class represent a vector with some features necessaries for our program.
 This class have a vector of floats (float64).
 """
-import decimal
 import math
 
 import numpy as np
@@ -10,21 +9,18 @@ import numpy as np
 from .dominance import Dominance
 from .vector import Vector
 
-new_context = decimal.getcontext().copy()
-
 
 class VectorFloat(Vector):
     """
     Class Vector with functions to work with float vectors.
     """
 
-    def __init__(self, components, dtype=decimal.Decimal):
+    def __init__(self, components):
         """
         Vector's init
         :param components:
         """
-        new_context.prec = Vector.decimals_allowed
-        super().__init__([new_context.create_decimal(component) for component in components], np.dtype(dtype))
+        super().__init__(components)
 
     def __ge__(self, other):
         """

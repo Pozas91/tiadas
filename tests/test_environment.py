@@ -6,7 +6,7 @@ import unittest
 
 import gym
 
-from gym_tiadas.gym_tiadas.envs import Environment
+from environments import Environment
 from models import Vector
 
 

@@ -6,7 +6,7 @@ import unittest
 
 from gym import spaces
 
-from gym_tiadas.gym_tiadas.envs import BonusWorld
+from environments import BonusWorld
 
 
 class TestBonusWorld(unittest.TestCase):

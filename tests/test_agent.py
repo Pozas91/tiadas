@@ -7,7 +7,7 @@ import unittest
 import numpy as np
 
 from agents import Agent
-from gym_tiadas.gym_tiadas.envs.deep_sea_treasure import DeepSeaTreasure
+from environments.deep_sea_treasure import DeepSeaTreasure
 
 
 class TestAgent(unittest.TestCase):

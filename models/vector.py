@@ -20,7 +20,7 @@ class Vector:
     decimals_allowed = 2
 
     # Relative margin to compare of similarity of two elements
-    relative_tolerance = 0.01
+    relative_tolerance = 0
     absolute_tolerance = 0
 
     @staticmethod
@@ -33,12 +33,12 @@ class Vector:
         multiply_factor = (10 ** Vector.decimals_allowed) if integer_mode else 1
         Vector.relative_tolerance = relative_tolerance * multiply_factor
 
-    def __init__(self, components, dtype=int):
+    def __init__(self, components):
         """
         Vector's init
         :param components:
         """
-        self.components = np.array(components).astype(dtype)
+        self.components = np.array(components)
 
     def __getitem__(self, item):
         """

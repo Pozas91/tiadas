@@ -16,7 +16,7 @@ import numpy as np
 import utils.hypervolume as uh
 import utils.miscellaneous as um
 from agents import Agent
-from gym_tiadas.gym_tiadas.envs import Environment
+from environments import Environment
 from models import Vector, IndexVector, VectorFloat, GraphType, EvaluationMechanism
 
 

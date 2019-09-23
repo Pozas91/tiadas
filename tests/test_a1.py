@@ -7,7 +7,7 @@ import unittest
 import numpy as np
 
 from agents import AgentA1
-from gym_tiadas.gym_tiadas.envs import DeepSeaTreasureRightDown
+from environments import DeepSeaTreasureRightDown
 from models import Vector
 
 
