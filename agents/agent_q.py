@@ -37,7 +37,7 @@ class AgentQ(Agent):
 
         # Types to make graphs
         if graph_types is None:
-            graph_types = {GraphType.EPOCHS, GraphType.STEPS}
+            graph_types = {GraphType.EPISODES, GraphType.STEPS}
 
         # Super call __init__
         super().__init__(environment=environment, epsilon=epsilon, gamma=gamma, seed=seed,

@@ -23,7 +23,7 @@ Sample call:
         agent = AgentPQL(environment=env)
 
         # Train agent
-        agent.train() # Optional you can pass a number of epochs, e.g. agent.train(epochs=3000)
+        agent.train() # Optional you can pass a number of episodes, e.g. agent.train(episodes=3000)
     
     
     2) write agent to file
@@ -95,7 +95,7 @@ class AgentPQL(Agent):
 
         # Types to make graphs
         if graph_types is None:
-            graph_types = {GraphType.EPOCHS, GraphType.STEPS}
+            graph_types = {GraphType.EPISODES, GraphType.STEPS}
 
         # Super call __init__
         super().__init__(environment=environment, epsilon=epsilon, gamma=gamma, seed=seed,
@@ -580,7 +580,7 @@ class AgentPQL(Agent):
         model['data'].update({'hv_reference': self.hv_reference.tolist()})
         model['data'].update({'evaluation_mechanism': str(self.evaluation_mechanism)})
         model['data'].update({'integer_mode': self.integer_mode})
-        model['data'].update({'total_epochs': self.total_epochs})
+        model['data'].update({'total_episodes': self.total_episodes})
         model['data'].update({'total_steps': self.total_steps})
         model['data'].update({'state': list(self.state)})
 
@@ -740,7 +740,7 @@ class AgentPQL(Agent):
         epsilon = model_data.get('epsilon')
         gamma = model_data.get('gamma')
         integer_mode = model_data.get('integer_mode')
-        total_epochs = model_data.get('total_epochs')
+        total_episodes = model_data.get('total_episodes')
         total_steps = model_data.get('total_steps')
         state = tuple(model_data.get('state'))
         max_steps = model_data.get('max_steps')
@@ -830,7 +830,7 @@ class AgentPQL(Agent):
         model.n = n
         model.graph_info = states_to_observe
         model.state = state
-        model.total_epochs = total_epochs
+        model.total_episodes = total_episodes
         model.total_steps = total_steps
 
         return model

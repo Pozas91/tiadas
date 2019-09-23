@@ -37,7 +37,7 @@ class Environment(gym.Env):
         :param seed: Initial seed.
         :param initial_state: First state where agent start.
         :param obstacles: States where agent can not to be.
-        :param finals: States where agent finish an epoch.
+        :param finals: States where agent finish an episode.
         """
 
         # Set action space

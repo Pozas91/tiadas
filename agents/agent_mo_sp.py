@@ -83,7 +83,7 @@ class AgentMOSP(AgentQ):
 
         # Types to make graphs
         if graph_types is None:
-            graph_types = {GraphType.EPOCHS, GraphType.STEPS}
+            graph_types = {GraphType.EPISODES, GraphType.STEPS}
 
         # Super call init
         super().__init__(environment=environment, alpha=alpha, epsilon=epsilon, gamma=gamma, seed=seed,
