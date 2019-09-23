@@ -1,8 +1,20 @@
 """
-This is a variant of original problem of DeepSeaTreasure where we only take two actions, RIGHT and DOWN, and in the last
-column we only go to DOWN.
+This is a variant of original problem of DeepSeaTreasure where we only one or
+two actions are allowed in each state. For states in the rightmost column
+(i.e. the largest possible second component) only DOWN is allowed. For all other
+states, RIGHT and DOWN are allowed.
 
-HV REFERENCE: (-25, 0)
+Notice that the constructor allows a 'columns' parameter that can be used to indicate the
+number of columns in the environment to be considered, starting from the left
+hand side. This allows experimenting with 'subspaces' in the domain, i.e.
+the same environment, buy considering only the first k columns.
+
+Notice that is_final does not consider here a maximum number of steps for each
+episode (while DeepSeaTreasure does).
+
+All other elements of the environment behave are as in DeepSeaTreasure.
+
+The reference point for hypervolume calculations in this environment is (-25, 0).
 """
 from models import Vector
 from spaces import DynamicSpace
@@ -13,25 +25,32 @@ class DeepSeaTreasureRightDown(EnvMesh):
     # Possible actions
     _actions = {'RIGHT': 0, 'DOWN': 1}
 
-    # Pareto optimal
+    # Pareto optimal policy vector-values.
     pareto_optimal = [
-        (-1, 1), (-3, 2), (-5, 3), (-7, 5), (-8, 8), (-9, 16), (-13, 24), (-14, 50), (-17, 74), (-19, 124)
+        (-1, 1), (-3, 2), (-5, 3), (-7, 5), (-8, 8), (-9, 16), (-13, 24), 
+        (-14, 50), (-17, 74), (-19, 124)
     ]
 
-    def __init__(self, initial_state: tuple = (0, 0), default_reward: tuple = (0,), seed: int = 0, columns: int = 0):
+    def __init__(self, initial_state: tuple = (0, 0), 
+                 default_reward: tuple = (0,), 
+                 seed: int = 0, 
+                 columns: int = 0):
         """
         :param initial_state:
         :param default_reward:
         :param seed:
-        :param columns: Number of columns to use with this environment.
+        :param columns: Number of columns to be used to build this environment
+                        (allows experimenting with an identical environment,
+                        but considering only the first k columns).
         """
 
+        #the original full-size environment.
         original_mesh_shape = (10, 11)
 
         if columns < 1 or columns > original_mesh_shape[0]:
             columns = original_mesh_shape[0]
 
-        # List of all treasures and its reward.
+        # Dictionary with final states as keys, and treasure amounts as value.
         finals = {
             (0, 1): 1,
             (1, 2): 2,
@@ -59,6 +78,7 @@ class DeepSeaTreasureRightDown(EnvMesh):
         obstacles = obstacles.union([(8, y) for y in range(10, 11)])
         obstacles = frozenset(filter(lambda x: x[0] < columns, obstacles))
 
+        #subspace of the environment to be considered
         mesh_shape = (columns, 11)
 
         # Default reward plus time (time_inverted, treasure_value)
@@ -74,9 +94,9 @@ class DeepSeaTreasureRightDown(EnvMesh):
 
     def step(self, action: int) -> (tuple, Vector, bool, dict):
         """
-        Given an action, do a step
+        Given an action, do a step in the environment
         :param action:
-        :return: (state, (time_inverted, treasure_value), final, info)
+        :return: (state, (steps_taken, treasure_value), final, info)
         """
 
         # Initialize rewards as vector
@@ -109,7 +129,7 @@ class DeepSeaTreasureRightDown(EnvMesh):
 
     def is_final(self, state: tuple = None) -> bool:
         """
-        Return True if state given is terminal, False in otherwise.
+        Return True if state given is final, False in otherwise.
         :param state:
         :return:
         """
@@ -148,6 +168,9 @@ class DeepSeaTreasureRightDown(EnvMesh):
     def action_space(self) -> DynamicSpace:
         """
         Get a dynamic action space with only valid actions.
+        Only DOWN is possible if the submarine reached the last column
+        (i.e. the largest possible x value). Otherwise, both DOWN and 
+        RIGHT are available.
         :return:
         """
 

@@ -1,5 +1,5 @@
 """
-Such as Vector class, but has information about a index (can be an action) associate with this vector.
+Class that represents a vector with an associated integer index, that can be used, for example, as an identifier.
 """
 import numpy as np
 

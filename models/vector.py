@@ -1,44 +1,43 @@
 """
-This class represent a vector with some features necessaries for our program.
-This class have a vector of integers (int32).
+This class represent a vector of integers (int32) with some necessary features for our program.
 """
 
 import math
-
 import numpy as np
 
-import utils.models as um
 from configurations import VectorConfiguration
 from .dominance import Dominance
+import utils.models as um
 
 
 class Vector:
     """
     Class Vector with functions to work with int vectors.
+    Vectors are represented internally as one-dimensional numpy arrays of the indicated type (int by default).
     """
 
     def __init__(self, components, dtype=int):
         """
         Vector's init
-        :param components:
+        :param components: a numpy array, list or tuple of dtype items
         """
 
-        assert isinstance(components, (np.ndarray, list, tuple))
+        #assert isinstance(components, (np.ndarray, list, tuple))
 
-        self.components = np.array(components).astype(dtype)
+        self.components = np.array(components) #.astype(dtype)
 
-    def __getitem__(self, item):
+    def __getitem__(self, index):
         """
-        Get item from vector:
+        Get the component in the index position
 
         v1 = Vector([10, 2, 3])
         print(v1[0]) -> "10"
         print(v1.components[0]) -> "10"
 
         :param item:
-        :return:
+        :return: the component in the index position
         """
-        return self.components[item]
+        return self.components[index]
 
     def __setitem__(self, key, value):
         """
@@ -105,10 +104,10 @@ class Vector:
 
     def __sub__(self, other):
         """
-        This method has four options:
-            - A vector of same length has been given, return a new Vector with the subtract of each pair of components.
+        This method performs four different operations, depending on the nature of 'other':
+            - A vector of same length has been given, return a new Vector with the subtraction of each pair of components.
             - A vector of different length has been given, throws an exception.
-            - A int, subtract that int of each component.
+            - An int, subtract that int of each component.
             - A float, remove decimals, and subtract that number as int.
         :param other:
         :return:
@@ -118,7 +117,7 @@ class Vector:
 
     def __mul__(self, other):
         """
-        This method has four options:
+        This method performs four different operations, depending on the nature of 'other':
             - A vector of same length has been given, return a new Vector with the multiply of each pair of components.
             - A vector of different length has been given, throws an exception.
             - A int, multiply that int of each component.
@@ -131,7 +130,7 @@ class Vector:
 
     def __truediv__(self, other):
         """
-        This method has four options:
+        This method performs four different operations, depending on the nature of 'other':
             - A vector of same length has been given, return a new Vector with the division of each pair of components.
             - A vector of different length has been given, throws an exception.
             - A int, divide that int of each component.
@@ -194,7 +193,7 @@ class Vector:
 
     def to_decimals(self):
         """
-        Multiply current class by 10^decimals_allowed attribute to allow a specific number of decimals
+        Multiply current vector components by 10^decimals_allowed attribute to allow a specific number of decimals
         :return:
         """
         return self.__class__(np.multiply(self.components, 10 ** VectorConfiguration.instance().decimals_allowed))
@@ -223,7 +222,7 @@ class Vector:
 
     def tolist(self):
         """
-        Return as list al components of this vector
+        Return all components of this vector in a list
         :return:
         """
         return self.components.tolist()
@@ -251,7 +250,8 @@ class Vector:
     def dominance(self, v2) -> Dominance:
         """
         Check dominance between two Vector objects. Float values are allowed
-        and treated with precision according to Vector.relative.
+        and treated with precision according to Vector.relative. It is assumed that all
+        vector components are to be maximized.
         :param v2: a Vector object
         :return: an output value according to the Dominance enum.
         """
@@ -284,20 +284,17 @@ class Vector:
                     return Dominance.otherwise
 
         if v1_dominate == v2_dominate:
-            # If both dominate, then both vectors are independent.
-            if v1_dominate:
+            if v1_dominate:  #both, v1_dominate and v2_dominate are True -> vectors are indifferent
                 return Dominance.otherwise
 
             # Are equals
-            else:
+            else: #both, v1_dominate and v2_dominate are False -> vectors are (approximately) equal
                 return Dominance.equals
 
-        # v1 dominate to v2
-        elif v1_dominate:
+        elif v1_dominate:  # v1 dominates v2
             return Dominance.dominate
 
-        # v2 dominate to v1
-        else:
+        else:              # v2 dominates v1
             return Dominance.is_dominated
 
     @staticmethod
@@ -362,7 +359,7 @@ class Vector:
                     # Begin again
                     idx_j = 0
 
-            # If both vectors are equals, do nothing
+            # If both vectors are equal, do nothing
             if equals:
                 pass
             elif discarded:

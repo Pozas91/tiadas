@@ -1,6 +1,8 @@
 """
-This is a variant of original problem of DeepSeaTreasure where we only take two actions, RIGHT and DOWN, and in the last
-column we only go to DOWN.
+This is a variant of the DeepSeaTreasureRightDown environment, where allowed
+actions (only DOWN_PROB or RIGHT_PROB) are stochastic. In the last column (i.e.
+maximum value of x), only a deterministic DOWN action is allowed. The transition
+probability model is provided in the __init__ method.
 """
 import numpy as np
 
@@ -19,13 +21,21 @@ class DeepSeaTreasureRightDownStochastic(EnvMesh):
         (-1, 1), (-3, 2), (-5, 3), (-7, 5), (-8, 8), (-9, 16), (-13, 24), (-14, 50), (-17, 74), (-19, 124)
     ]
 
-    def __init__(self, initial_state: tuple = (0, 0), default_reward: tuple = (0,), seed: int = 0, columns: int = 0,
+    def __init__(self, initial_state: tuple = (0, 0), 
+                 default_reward: tuple = (0,), 
+                 seed: int = 0, 
+                 int = 0,
                  transitions: tuple = (0.8, 0.2)):
         """
         :param initial_state:
         :param default_reward:
         :param seed:
         :param columns: Number of columns to use with this environment.
+        :param transitions: transition probability model. The first element
+        is the probability of achieving the desired result of the action (i.e.
+        moving right in RIGHT_PROB, and down with DOWN_PROB. The second
+        element is the probability of achieving the other result, i.e. moving
+        down in the former, and right in the latter.)
         """
 
         original_mesh_shape = (10, 11)
@@ -72,7 +82,10 @@ class DeepSeaTreasureRightDownStochastic(EnvMesh):
         default_reward = (-1,) + default_reward
         default_reward = Vector(default_reward)
 
-        super().__init__(mesh_shape=mesh_shape, seed=seed, initial_state=initial_state, default_reward=default_reward,
+        super().__init__(mesh_shape=mesh_shape, 
+                         seed=seed, 
+                         initial_state=initial_state, 
+                         default_reward=default_reward,
                          finals=finals, obstacles=obstacles)
 
         # Trying improve performance
@@ -129,7 +142,9 @@ class DeepSeaTreasureRightDownStochastic(EnvMesh):
 
     def next_state(self, action: int, state: tuple = None) -> tuple:
         """
-        Calc next state with current state and action given.
+        Calc next state with current state and action given. Actions are
+        stochastic. Taking action RIGHT_PROB can take the agent to the
+        right or down
         :param state: If a state is given, do action from that state.
         :param action: from action_space
         :return: a new state (or old if is invalid action)
@@ -160,7 +175,7 @@ class DeepSeaTreasureRightDownStochastic(EnvMesh):
         # Set new state
         new_state = x, y
 
-        # If exists obstacles, then new_state must be in self.obstacles
+        # If obstacles exist, check if new_state is in self.obstacles
         is_obstacle = bool(self.obstacles) and new_state in self.obstacles
 
         if not self.observation_space.contains(new_state) or is_obstacle or state == new_state:

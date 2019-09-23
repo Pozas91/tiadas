@@ -530,8 +530,8 @@ def prepare_data_and_show_graph(timestamp: int, data_max_len: int, env_name: str
 def main():
     # Default parameters
     alpha = 0.8
-    number_of_agents = 1
-    epochs = 4000
+    number_of_agents = 2
+    epochs = 10
     gamma = 1.
     max_steps = 250
     initial_state = (0, 0)
@@ -539,43 +539,43 @@ def main():
     evaluation_mechanism = EvaluationMechanism.C
 
     # Variable parameters
-    variable = 'alpha'
-    # variable = 'evaluation_mechanism'
+    # variable = 'alpha'
+    variable = 'evaluation_mechanism'
 
     agents_configuration = {
-        AgentType.A1: {
+        # AgentType.A1: {
             # EvaluationMechanism.HV: 'yellow',
             # EvaluationMechanism.C:  'orange',
             # EvaluationMechanism.PO: 'blue'
             # 0.01: 'blue',
             # 0.1:  'beige',
             # 0.3:  'gold',
-            0.8: 'fuchsia',
+            # 0.8: 'fuchsia',
             # 1.0: 'cyan'
-        },
-        # AgentType.PQL:        {
-        #     EvaluationMechanism.HV: 'pink',
-        #     EvaluationMechanism.C:  'red',
-        #     EvaluationMechanism.PO: 'green'
         # },
+        AgentType.PQL:        {
+            EvaluationMechanism.HV: 'pink',
+            EvaluationMechanism.C:  'red',
+            EvaluationMechanism.PO: 'green'
+        },
         # AgentType.SCALARIZED: {
         # EvaluationMechanism.SCALARIZED: 'cyan'
         # }
     }
 
     graph_types = {
-        # GraphType.STEPS:            {
-        #     'limits': {
-        #         'y': [0, 2000]
-        #     }
-        # },
+        GraphType.STEPS:            {
+            'limits': {
+                'y': [0, 2000]
+            }
+        },
         # GraphType.MEMORY:           {
         #     'limits': {
         #         'y': [0, 700]
         #     }
         # },
-        GraphType.VECTORS_PER_CELL: {
-        }
+        # GraphType.VECTORS_PER_CELL: {
+        # }
         # GraphType.TIME,
         # GraphType.EPOCHS
     }
@@ -585,11 +585,21 @@ def main():
     VectorConfiguration.instance().absolute_tolerance = 0.3
     VectorConfiguration.instance().absolute_tolerance *= (10 ** VectorConfiguration.instance().decimals_allowed)
 
-    test_agents(environment=DeepSeaTreasureRightDown(initial_state=initial_state, columns=columns),
-                hv_reference=Vector([-25, 0]), epsilon=0.7, alpha=alpha, states_to_observe=[initial_state],
-                epochs=epochs, integer_mode=True, graph_types=graph_types, number_of_agents=number_of_agents,
-                agents_configuration=agents_configuration, gamma=gamma, max_steps=max_steps,
-                evaluation_mechanism=evaluation_mechanism, variable=variable)
+    test_agents(environment=DeepSeaTreasureRightDown(initial_state=initial_state,
+                                                     columns=columns),
+                hv_reference=Vector([-25, 0]),
+                epsilon=0.7,
+                alpha=alpha,
+                states_to_observe=[initial_state],
+                epochs=epochs,
+                integer_mode=True,
+                graph_types=graph_types,
+                number_of_agents=number_of_agents,
+                agents_configuration=agents_configuration,
+                gamma=gamma,
+                max_steps=max_steps,
+                evaluation_mechanism=evaluation_mechanism,
+                variable=variable)
 
     # test_agents(environment=MoPuddleWorldAcyclic(), hv_reference=Vector([-50, -150]), epsilon=0.3, alpha=alpha,
     #             states_to_observe=[(2, 8)], epochs=epochs, integer_mode=True, graph_types=graph_types,

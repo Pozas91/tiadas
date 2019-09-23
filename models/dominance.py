@@ -1,9 +1,10 @@
 """
-Dominance Enum class, where indicate types of dominance that we are used in our code:
-+ Dominance.dominate -> A vector dominate another vector.
-+ Dominance.is_dominated -> A vector is dominated by another vector.
-+ Dominance.equals -> Two vectors are equals or similar.
-+ Dominance.otherwise -> Two vectors are independents.
+Dominance Enum class, indicates the result of a dominance check of one vector v with another v2:
++ Dominance.dominate -> v dominates v2
++ Dominance.is_dominated -> v is dominated by v2
++ Dominance.equals -> Both vectors are equals or similar.
++ Dominance.otherwise -> vectors are indifferent to each other (they are not equal or similar an no one dominates
+                         the other.
 """
 from enum import Enum
 

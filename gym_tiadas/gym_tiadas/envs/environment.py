@@ -1,10 +1,11 @@
 # coding=utf-8
 """
-Base model to define environments.
+Base class to define environments.
 
-Action space is a discrete number. Allow numbers from [0, n).
+Action space is a discrete number. Actions are in the range [0, n).
 
-Finals is a dictionary which structure as follows:
+Finals is a dictionary where the key is a state, and the value is a reward
+vector as follows:
 {
     state_1: reward,
     state_2: reward,
@@ -24,20 +25,32 @@ from spaces import IterableDiscrete
 
 
 class Environment(gym.Env):
-    # Possible actions
+    # Possible actions. To be set in descendant classes.
     _actions = dict()
 
     # Icons to render environments
-    _icons = {'BLANK': ' ', 'BLOCK': '■', 'TREASURE': '$', 'CURRENT': '☺', 'ENEMY': '×', 'HOME': 'µ', 'FINAL': '$'}
+    _icons = {'BLANK': ' ', 
+              'BLOCK': '■', 
+              'TREASURE': '$', 
+              'CURRENT': '☺', 
+              'ENEMY': '×', 
+              'HOME': 'µ', 
+              'FINAL': '$'}
 
-    def __init__(self, observation_space: gym.spaces, default_reward: Vector, seed: int = None,
-                 initial_state: object = None, obstacles: frozenset = None, finals: dict = None):
+    def __init__(self, observation_space: gym.spaces, 
+                 default_reward: Vector, 
+                 seed: int = None,
+                 initial_state: object = None, 
+                 obstacles: frozenset = None, 
+                 finals: dict = None):
         """
-        :param default_reward: Default reward that return environment when a reward is not defined.
-        :param seed: Initial seed.
-        :param initial_state: First state where agent start.
-        :param obstacles: States where agent can not to be.
-        :param finals: States where agent finish an epoch.
+        :param default_reward: Default reward returned by the environment when 
+                               a reward is not defined.
+        :param seed: Initial seed. The same is used for _action_space,
+                     observation_space, and random number generator
+        :param initial_state: start state for all episodes.
+        :param obstacles: inaccessible states.
+        :param finals: terminal states for episodes.
         """
 
         # Set action space
@@ -91,15 +104,18 @@ class Environment(gym.Env):
 
     def step(self, action: int) -> (object, Vector, bool, dict):
         """
-        Do a step in the environment
+        Standard operation in gym environments. Performs the 'action' in the
+        environment, returning the new state, the vector reward, a boolean
+        value indicating if the reached state is final, and an optional dictionary
+        with miscelaneous information.
         :param action:
-        :return:
+        :return: 
         """
         raise NotImplemented
 
     def seed(self, seed: int = None) -> list:
         """
-        Generate seed
+        Standard operation in gym environments. Generate seed
         :param seed:
         :return:
         """
@@ -108,14 +124,15 @@ class Environment(gym.Env):
 
     def reset(self) -> object:
         """
-        Reset environment to zero.
+        Standard operation in gym environments. Reset environment to a known
+        initial state.
         :return:
         """
         raise NotImplemented
 
     def render(self, mode: str = 'human') -> None:
         """
-        Render environment
+        Standard operation in gym environments. Render the environment.
         :param mode:
         :return:
         """
@@ -132,8 +149,7 @@ class Environment(gym.Env):
 
     def get_dict_model(self) -> dict:
         """
-        Get dict model of an environment
-        :return:
+        :return: a dictionary with the environments parameters.
         """
 
         # Prepare a deepcopy to do not override original properties
