@@ -81,91 +81,91 @@ class TestVectorDecimal(unittest.TestCase):
                 Vector([D(-8), D(2)]),
 
                 # Repeats
-                Vector([-1, 0]),
-                Vector([-6, 6]),
+                Vector([D(-1), D(0)]),
+                Vector([D(-6), D(6)]),
 
                 # Similar
-                Vector([-4 + self.difference, 2 + self.difference]),
-                Vector([-4 - self.difference, 7 + self.difference]),
+                Vector([D(-4 + self.difference), D(2 + self.difference)]),
+                Vector([D(-4 - self.difference), D(7 + self.difference)]),
             ],
             [
                 # Non-dominated
-                Vector([-1, 0]),
-                Vector([-4, 7]),
-                Vector([-3, 4]),
+                Vector([D(-1), D(0)]),
+                Vector([D(-4), D(7)]),
+                Vector([D(-3), D(4)]),
             ],
             [
                 # Dominated Vectors
-                Vector([-4, 2]),
-                Vector([-6, 6]),
-                Vector([-6, 0]),
-                Vector([-8, 2]),
+                Vector([D(-4), D(2)]),
+                Vector([D(-6), D(6)]),
+                Vector([D(-6), D(0)]),
+                Vector([D(-8), D(2)]),
             ]
         )
 
         self.third_quadrant = (
             [
                 # Problem
-                Vector([-1, -4]),
-                Vector([-2, -1]),
-                Vector([-3, -6]),
-                Vector([-4, -2]),
-                Vector([-5, -4]),
-                Vector([-7, -1]),
+                Vector([D(-1), D(-4)]),
+                Vector([D(-2), D(-1)]),
+                Vector([D(-3), D(-6)]),
+                Vector([D(-4), D(-2)]),
+                Vector([D(-5), D(-4)]),
+                Vector([D(-7), D(-1)]),
 
                 # Repeats
-                Vector([-1, -4]),
-                Vector([-7, -1]),
+                Vector([D(-1), D(-4)]),
+                Vector([D(-7), D(-1)]),
 
                 # Similar
-                Vector([-2 - self.difference, -1 - self.difference]),
-                Vector([-4 + self.difference, -2 + self.difference]),
+                Vector([D(-2 - self.difference), D(-1 - self.difference)]),
+                Vector([D(-4 + self.difference), D(-2 + self.difference)]),
             ],
             [
                 # Non-dominated
-                Vector([-2, -1]),
-                Vector([-1, -4])
+                Vector([D(-2), D(-1)]),
+                Vector([D(-1), D(-4)])
             ],
             [
                 # Dominated Vectors
-                Vector([-3, -6]),
-                Vector([-4, -2]),
-                Vector([-5, -4]),
-                Vector([-7, -1]),
+                Vector([D(-3), D(-6)]),
+                Vector([D(-4), D(-2)]),
+                Vector([D(-5), D(-4)]),
+                Vector([D(-7), D(-1)]),
             ]
         )
 
         self.fourth_quadrant = (
             [
                 # Problem
-                Vector([2, -1]),
-                Vector([3, -2]),
-                Vector([1, -4]),
-                Vector([3, -5]),
-                Vector([5, -6]),
-                Vector([7, -3]),
-                Vector([10, -1]),
+                Vector([D(2), D(-1)]),
+                Vector([D(3), D(-2)]),
+                Vector([D(1), D(-4)]),
+                Vector([D(3), D(-5)]),
+                Vector([D(5), D(-6)]),
+                Vector([D(7), D(-3)]),
+                Vector([D(10), D(-1)]),
 
                 # Repeats
-                Vector([2, -1]),
-                Vector([10, -1]),
+                Vector([D(2), D(-1)]),
+                Vector([D(10), D(-1)]),
 
                 # Similar
-                Vector([7 + self.difference, -3 - self.difference]),
-                Vector([10 + self.difference, -1 + self.difference]),
+                Vector([D(7 + self.difference), D(-3 - self.difference)]),
+                Vector([D(10 + self.difference), D(-1 + self.difference)]),
             ],
             [
                 # Non-dominated
-                Vector([10, -1])
+                Vector([D(10), D(-1)])
             ],
             [
                 # Dominated
-                Vector([2, -1]),
-                Vector([3, -2]),
-                Vector([1, -4]),
-                Vector([3, -5]),
-                Vector([5, -6]),
-                Vector([7, -3]),
+                Vector([D(2), D(-1)]),
+                Vector([D(3), D(-2)]),
+                Vector([D(1), D(-4)]),
+                Vector([D(3), D(-5)]),
+                Vector([D(5), D(-6)]),
+                Vector([D(7), D(-3)]),
             ]
         )
 
@@ -174,40 +174,40 @@ class TestVectorDecimal(unittest.TestCase):
             self.first_quadrant[0] + self.second_quadrant[0] + self.third_quadrant[0] + self.fourth_quadrant[0],
             [
                 # Non-dominate
-                Vector([-4, 7]),
-                Vector([1, 6]),
-                Vector([2, 5]),
-                Vector([3, 4]),
-                Vector([5, 3]),
-                Vector([6, 0]),
-                Vector([10, -1])
+                Vector([D(-4), D(7)]),
+                Vector([D(1), D(6)]),
+                Vector([D(2), D(5)]),
+                Vector([D(3), D(4)]),
+                Vector([D(5), D(3)]),
+                Vector([D(6), D(0)]),
+                Vector([D(10), D(-1)])
             ],
             [
                 # Dominated
-                Vector([0, 6]),
-                Vector([2, 4]),
-                Vector([2, 2]),
-                Vector([4, 3]),
-                Vector([4, 1]),
-                Vector([5, 2]),
-                Vector([-1, 0]),
-                Vector([-3, 4]),
-                Vector([-4, 2]),
-                Vector([-6, 6]),
-                Vector([-6, 0]),
-                Vector([-8, 2]),
-                Vector([-1, -4]),
-                Vector([-2, -1]),
-                Vector([-3, -6]),
-                Vector([-4, -2]),
-                Vector([-5, -4]),
-                Vector([-7, -1]),
-                Vector([2, -1]),
-                Vector([1, -4]),
-                Vector([3, -2]),
-                Vector([3, -5]),
-                Vector([5, -6]),
-                Vector([7, -3]),
+                Vector([D(0), D(6)]),
+                Vector([D(2), D(4)]),
+                Vector([D(2), D(2)]),
+                Vector([D(4), D(3)]),
+                Vector([D(4), D(1)]),
+                Vector([D(5), D(2)]),
+                Vector([D(-1), D(0)]),
+                Vector([D(-3), D(4)]),
+                Vector([D(-4), D(2)]),
+                Vector([D(-6), D(6)]),
+                Vector([D(-6), D(0)]),
+                Vector([D(-8), D(2)]),
+                Vector([D(-1), D(-4)]),
+                Vector([D(-2), D(-1)]),
+                Vector([D(-3), D(-6)]),
+                Vector([D(-4), D(-2)]),
+                Vector([D(-5), D(-4)]),
+                Vector([D(-7), D(-1)]),
+                Vector([D(2), D(-1)]),
+                Vector([D(1), D(-4)]),
+                Vector([D(3), D(-2)]),
+                Vector([D(3), D(-5)]),
+                Vector([D(5), D(-6)]),
+                Vector([D(7), D(-3)]),
             ]
         )
 
@@ -258,11 +258,11 @@ class TestVectorDecimal(unittest.TestCase):
         :return:
         """
 
-        x = Vector([5 + self.difference, 3 + self.difference])
-        y = Vector([4, 4])
-        z = Vector([5, 3])
-        w = Vector([6, 4])
-        t = Vector([3, 2])
+        x = Vector([D(5 + self.difference), D(3 + self.difference)])
+        y = Vector([D(4), D(4)])
+        z = Vector([D(5), D(3)])
+        w = Vector([D(6), D(4)])
+        t = Vector([D(3), D(2)])
 
         self.assertFalse(x >= y)
         self.assertTrue(x >= z)
