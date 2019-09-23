@@ -6,8 +6,7 @@ import unittest
 
 from gym import spaces
 
-from gym_tiadas.gym_tiadas.envs import DeepSeaTreasureStochastic
-from models import Vector
+from environments import DeepSeaTreasureStochastic
 
 
 class TestDeepSeaTreasureStochastic(unittest.TestCase):

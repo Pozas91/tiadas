@@ -6,7 +6,7 @@ import unittest
 
 from gym import spaces
 
-from gym_tiadas.gym_tiadas.envs import SpaceExploration
+from environments import SpaceExploration
 
 
 class TestSpaceExploration(unittest.TestCase):

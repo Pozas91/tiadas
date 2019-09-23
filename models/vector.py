@@ -8,7 +8,6 @@ import math
 import numpy as np
 
 import utils.models as um
-from configurations import VectorConfiguration
 from .dominance import Dominance
 
 
@@ -17,15 +16,29 @@ class Vector:
     Class Vector with functions to work with int vectors.
     """
 
-    def __init__(self, components, dtype=int):
+    # Number of decimals allowed by int numbers
+    decimals_allowed = 2
+
+    # Relative margin to compare of similarity of two elements
+    relative_tolerance = 0
+    absolute_tolerance = 0
+
+    @staticmethod
+    def set_absolute_tolerance(absolute_tolerance: float = 0.0, integer_mode: bool = True):
+        multiply_factor = (10 ** Vector.decimals_allowed) if integer_mode else 1
+        Vector.absolute_tolerance = absolute_tolerance * multiply_factor
+
+    @staticmethod
+    def set_relative_tolerance(relative_tolerance: float = 0.0, integer_mode: bool = True):
+        multiply_factor = (10 ** Vector.decimals_allowed) if integer_mode else 1
+        Vector.relative_tolerance = relative_tolerance * multiply_factor
+
+    def __init__(self, components):
         """
         Vector's init
         :param components:
         """
-
-        assert isinstance(components, (np.ndarray, list, tuple))
-
-        self.components = np.array(components).astype(dtype)
+        self.components = np.array(components)
 
     def __getitem__(self, item):
         """
@@ -197,14 +210,14 @@ class Vector:
         Multiply current class by 10^decimals_allowed attribute to allow a specific number of decimals
         :return:
         """
-        return self.__class__(np.multiply(self.components, 10 ** VectorConfiguration.instance().decimals_allowed))
+        return self.__class__(np.multiply(self.components, 10 ** Vector.decimals_allowed))
 
     def by_decimals(self):
         """
         Divide current class to rollback to_decimals() operation
         :return:
         """
-        return self.__class__(np.divide(self.components, 10 ** VectorConfiguration.instance().decimals_allowed))
+        return self.__class__(np.divide(self.components, 10 ** Vector.decimals_allowed))
 
     @um.lazy_property
     def zero_vector(self):
@@ -245,8 +258,8 @@ class Vector:
         :param v2:
         :return:
         """
-        return np.allclose(a=self.components, b=v2.components, rtol=VectorConfiguration.instance().relative_tolerance,
-                           atol=VectorConfiguration.instance().absolute_tolerance)
+        return np.allclose(a=self.components, b=v2.components, rtol=Vector.relative_tolerance,
+                           atol=Vector.absolute_tolerance)
 
     def dominance(self, v2) -> Dominance:
         """
@@ -262,9 +275,8 @@ class Vector:
         for idx, component in enumerate(self.components):
 
             # Are equals or close...
-            if math.isclose(a=self.components[idx], b=v2.components[idx],
-                            rel_tol=VectorConfiguration.instance().relative_tolerance,
-                            abs_tol=VectorConfiguration.instance().absolute_tolerance):
+            if math.isclose(a=self.components[idx], b=v2.components[idx], rel_tol=Vector.relative_tolerance,
+                            abs_tol=Vector.absolute_tolerance):
                 # Nothing to do at moment
                 pass
 
@@ -375,7 +387,7 @@ class Vector:
         return non_dominated
 
     @staticmethod
-    def m3_max_2_sets(vectors: list) -> (list, list):
+    def m3_max_2_lists(vectors: list) -> (list, list):
         """
         :param vectors : list of Vector objects.
         
@@ -459,7 +471,7 @@ class Vector:
         return non_dominated, dominated
 
     @staticmethod
-    def m3_max_2_sets_not_duplicates(vectors: list) -> (list, list):
+    def m3_max_2_lists_not_duplicates(vectors: list) -> (list, list):
         """
         :param vectors: list of Vector objects.
         
@@ -537,7 +549,7 @@ class Vector:
         return non_dominated, dominated
 
     @staticmethod
-    def m3_max_2_sets_with_buckets(vectors: list) -> (list, list):
+    def m3_max_2_lists_with_buckets(vectors: list) -> (list, list):
         """
         :param vectors: list of Vector objects.
 
@@ -628,7 +640,7 @@ class Vector:
         return non_dominated, dominated
 
     @staticmethod
-    def m3_max_2_sets_with_repetitions(vectors: list) -> (list, list, list):
+    def m3_max_2_lists_with_repetitions(vectors: list) -> (list, list, list):
         """
         :param vectors: list of Vector objects.
 
@@ -641,80 +653,7 @@ class Vector:
             second list with the dominated list, and a third list with non-dominated duplicate list.
         """
 
-        non_dominated = list()
-        dominated = list()
-
-        for idx_i, vector_i in enumerate(vectors):
-
-            discarded = False
-            idx_j = 0
-            included_in_bucket = False
-            bucket = None
-
-            # While has more elements
-            while idx_j < len(non_dominated) and not discarded and not included_in_bucket:
-
-                # Get vector and index
-                bucket = non_dominated[idx_j]
-
-                # Get first
-                vector_j = bucket[0]
-
-                # Vector dominance
-                dominance = vector_i.dominance(v2=vector_j)
-
-                # `vector_i` dominate `vector_j`
-                if dominance == Dominance.dominate:
-
-                    # Remove non-dominated vector
-                    non_dominated.pop(idx_j)
-
-                    # All vectors in bucket are added in dominated list
-                    for vector_j in bucket:
-                        # Add dominated vector
-                        dominated.append(vector_j)
-
-                # `vector_j` dominate `vector_i`
-                elif dominance == Dominance.is_dominated:
-
-                    # Remove non-dominated vector
-                    non_dominated.pop(idx_j)
-
-                    # Set discarded to True
-                    discarded = True
-
-                    # Add dominated vector
-                    dominated.append(vector_i)
-
-                # `vector_i` and `vector_j` are similar or equals
-                elif dominance == Dominance.equals:
-
-                    # Remove non-dominated vector
-                    non_dominated.pop(idx_j)
-
-                    # Vector include in bucket
-                    included_in_bucket = True
-
-                    # Add vector_i to exists bucket.
-                    bucket.append(vector_i)
-
-                # If dominance is otherwise, continue searching
-                if dominance == Dominance.otherwise:
-                    # Search in next element
-                    idx_j += 1
-                else:
-                    # Begin again
-                    idx_j = 0
-
-            if discarded or included_in_bucket:
-                # Add all bucket at first of non_dominated list (bucket[:] is to pass value and not reference)
-                non_dominated.insert(0, bucket[:])
-            else:
-                # List of vectors
-                aux = [vector_i]
-
-                # Add list at end
-                non_dominated.append(aux)
+        non_dominated, dominated = Vector.m3_max_2_lists_with_buckets(vectors=vectors)
 
         # Prepare list to non_dominated vectors
         non_dominated_unique = list()

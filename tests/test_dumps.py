@@ -7,7 +7,7 @@ import unittest
 import numpy as np
 
 from agents import AgentPQL
-from gym_tiadas.gym_tiadas.envs import *
+from environments import *
 from models import Vector, EvaluationMechanism
 
 

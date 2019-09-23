@@ -9,8 +9,7 @@ import numpy as np
 
 import utils.hypervolume as uh
 from agents import AgentPQL, AgentMOSP, AgentQ
-# from gym_tiadas.envs import *
-from gym_tiadas.gym_tiadas.envs import *
+from environments import *
 from models import Vector
 
 ENV_NAME_MESH = 'russell-norvig-v0'

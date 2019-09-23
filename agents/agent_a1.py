@@ -17,8 +17,7 @@ import numpy as np
 import utils.hypervolume as uh
 import utils.miscellaneous as um
 from agents import Agent
-from configurations import VectorConfiguration
-from gym_tiadas.gym_tiadas.envs import Environment
+from environments import Environment
 from models import Vector, IndexVector, VectorFloat, GraphType, EvaluationMechanism
 
 
@@ -264,7 +263,7 @@ class AgentA1(Agent):
                         # If integer mode is True, is necessary divide value by increment
                         if self.integer_mode:
                             # Divide value by two powered numbers (hv_reference and reward)
-                            value /= 10 ** (VectorConfiguration.instance().decimals_allowed * 2)
+                            value /= 10 ** (Vector.decimals_allowed * 2)
 
                         # Add to data Best value (V max)
                         data.append(value)
@@ -709,7 +708,7 @@ class AgentA1(Agent):
                 q_list += q_s.get(a, dict()).values()
 
             # Get all non dominated vectors -> V(s)
-            non_dominated_vectors, _ = self.environment.default_reward.m3_max_2_sets_with_buckets(vectors=q_list)
+            non_dominated_vectors, _ = self.environment.default_reward.m3_max_2_lists_with_buckets(vectors=q_list)
 
             v = dict()
 
@@ -769,7 +768,7 @@ class AgentA1(Agent):
                 for index, index_vector in indexes_dict.items():
                     # Divide that vector by Vector.decimals to convert in original float vector
                     index_vector.vector = VectorFloat(
-                        index_vector.vector.components / (10 ** VectorConfiguration.instance().decimals_allowed)
+                        index_vector.vector.components / (10 ** Vector.decimals_allowed)
                     )
 
                     # Update Q-table dictionary
@@ -797,7 +796,7 @@ class AgentA1(Agent):
                 # Divide that vector by Vector.decimals to convert in original float vector
                 vectors.update({
                     index: VectorFloat(
-                        vector.components / (10 ** VectorConfiguration.instance().decimals_allowed)
+                        vector.components / (10 ** Vector.decimals_allowed)
                     )
                 })
                 # Update V-values dictionary

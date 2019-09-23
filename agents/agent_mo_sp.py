@@ -57,7 +57,7 @@ import numpy as np
 
 import utils.hypervolume as uh
 import utils.miscellaneous as um
-from gym_tiadas.gym_tiadas.envs import Environment
+from environments import Environment
 from models import Vector, VectorFloat, GraphType
 from .agent_q import AgentQ
 

@@ -76,6 +76,20 @@ def manhattan_distance(a: Vector, b: Vector) -> float:
     return cityblock(u=a.components, v=b.components)
 
 
+def math_is_close(a: float, b: float, rel_tol: float = 1e-09, abs_tol: float = 0.0):
+    """
+
+    :param a:
+    :param b:
+    :param rel_tol:
+    :param abs_tol:
+    :return:
+    """
+
+    return round(abs(a - b), Vector.decimals_allowed) <= max(
+        round(rel_tol * max(abs(a), abs(b)), Vector.decimals_allowed), abs_tol)
+
+
 def str_to_snake_case(text: str) -> str:
     """
     Convert a text given to snake case text.

@@ -6,7 +6,7 @@ import unittest
 
 from gym import spaces
 
-from gym_tiadas.gym_tiadas.envs import DeepSeaTreasure
+from environments import DeepSeaTreasure
 
 
 class TestDeepSeaTreasure(unittest.TestCase):

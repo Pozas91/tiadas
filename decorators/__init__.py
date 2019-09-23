@@ -1,1 +1,0 @@
-from .singlenton import Singleton

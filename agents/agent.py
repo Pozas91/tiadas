@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 import utils.miscellaneous as um
-from gym_tiadas.gym_tiadas.envs import Environment
+from environments import Environment
 from models import GraphType
 
 
@@ -196,7 +196,7 @@ class Agent:
         self.total_steps = 0
         self.total_epochs = 0
 
-    def reset_states_to_observe(self):
+    def reset_graph_info(self):
         """
         Reset states to observe
         :return:
