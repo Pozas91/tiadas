@@ -7,7 +7,7 @@ import unittest
 import numpy as np
 
 from agents import Agent
-from gym_tiadas.gym_tiadas.envs.deep_sea_treasure import DeepSeaTreasure
+from environments.deep_sea_treasure import DeepSeaTreasure
 
 
 class TestAgent(unittest.TestCase):
@@ -33,8 +33,8 @@ class TestAgent(unittest.TestCase):
         self.assertTrue(hasattr(self.agent, 'max_steps'))
         self.assertTrue(hasattr(self.agent, 'steps'))
         self.assertTrue(hasattr(self.agent, 'total_steps'))
-        self.assertTrue(hasattr(self.agent, 'total_epochs'))
-        self.assertTrue(hasattr(self.agent, 'states_to_observe'))
+        self.assertTrue(hasattr(self.agent, 'total_episodes'))
+        self.assertTrue(hasattr(self.agent, 'graph_info'))
         self.assertTrue(hasattr(self.agent, 'state'))
         self.assertTrue(hasattr(self.agent, 'seed'))
         self.assertTrue(hasattr(self.agent, 'generator'))
@@ -64,20 +64,20 @@ class TestAgent(unittest.TestCase):
 
         self.assertEqual(self.agent.steps, 0)
 
-    def test_reset_states_to_observe(self):
+    def test_reset_graph_info(self):
         """
-        Testing reset states to observe method.
+        Testing reset graph info method.
         :return:
         """
 
-        # Set states to observe
-        self.agent.states_to_observe = {
+        # Set graph info
+        self.agent.graph_info = {
             (0, 0): [1, 2, 3, 4, 5, 6],
             (1, 1): [1, 2, 30, 4, 5, 6],
         }
 
-        # Reset states to observe
-        self.agent.reset_states_to_observe()
+        # Reset graph info
+        self.agent.reset_graph_info()
 
-        for state in self.agent.states_to_observe.keys():
-            self.assertEqual(list, self.agent.states_to_observe.get(state))
+        for state in self.agent.graph_info.keys():
+            self.assertEqual(list, self.agent.graph_info.get(state))

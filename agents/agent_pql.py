@@ -23,7 +23,7 @@ Sample call:
         agent = AgentPQL(environment=env)
 
         # Train agent
-        agent.train() # Optional you can pass a number of epochs, e.g. agent.train(epochs=3000)
+        agent.train() # Optional you can pass a number of episodes, e.g. agent.train(episodes=3000)
     
     
     2) write agent to file
@@ -63,15 +63,13 @@ This seems faster than using either deepcopy (≈ 247% faster) or copy
 import datetime
 import importlib
 import json
+import math
 import os
 from copy import deepcopy
 
-import math
-
 import utils.hypervolume as uh
 import utils.miscellaneous as um
-from configurations import VectorConfiguration
-from gym_tiadas.gym_tiadas.envs import Environment
+from environments import Environment
 from models import IndexVector, GraphType, EvaluationMechanism, Vector, VectorFloat
 from .agent import Agent
 
@@ -97,7 +95,7 @@ class AgentPQL(Agent):
 
         # Types to make graphs
         if graph_types is None:
-            graph_types = {GraphType.EPOCHS, GraphType.STEPS}
+            graph_types = {GraphType.EPISODES, GraphType.STEPS}
 
         # Super call __init__
         super().__init__(environment=environment, epsilon=epsilon, gamma=gamma, seed=seed,
@@ -161,27 +159,31 @@ class AgentPQL(Agent):
 
         return is_final
 
-    def update_graph(self, graph_types: GraphType):
+    def update_graph(self, graph_types: tuple) -> None:
         """
         Update specific graph type
         :param graph_types:
         :return:
         """
 
-        for state, data in self.graph_info.get(graph_types).items():
-            # Add to data Best value (V max)
-            value = self._best_hypervolume(state=state)
+        for graph_type in graph_types:
 
-            # If integer mode is True, is necessary divide value by increment
-            if self.integer_mode:
-                # Divide value by two powered numbers (hv_reference and reward)
-                value /= 10 ** (VectorConfiguration.instance().decimals_allowed * 2)
+            # In the same for loop, is check if this agent has the graph_type indicated (get dictionary default value)
+            for state, data in self.graph_info.get(graph_type, {}).items():
 
-            # Add to data Best value (V max)
-            data.append(value)
+                # Add to data Best value (V max)
+                value = self._best_hypervolume(state=state)
 
-            # Update dictionary
-            self.graph_info.get(graph_types).update({state: data})
+                # If integer mode is True, is necessary divide value by increment
+                if self.integer_mode:
+                    # Divide value by two powered numbers (hv_reference and reward)
+                    value /= 10 ** (Vector.decimals_allowed * 2)
+
+                # Add to data Best value (V max)
+                data.append(value)
+
+                # Update dictionary
+                self.graph_info.get(graph_type).update({state: data})
 
     def get_and_update_n_s_a(self, state: object, action: int) -> int:
         """
@@ -282,7 +284,7 @@ class AgentPQL(Agent):
 
         # Resets
         self.reset_steps()
-        self.reset_states_to_observe()
+        self.reset_graph_info()
 
     def best_action(self, state: object = None) -> int:
         """
@@ -578,7 +580,7 @@ class AgentPQL(Agent):
         model['data'].update({'hv_reference': self.hv_reference.tolist()})
         model['data'].update({'evaluation_mechanism': str(self.evaluation_mechanism)})
         model['data'].update({'integer_mode': self.integer_mode})
-        model['data'].update({'total_epochs': self.total_epochs})
+        model['data'].update({'total_episodes': self.total_episodes})
         model['data'].update({'total_steps': self.total_steps})
         model['data'].update({'state': list(self.state)})
 
@@ -738,7 +740,7 @@ class AgentPQL(Agent):
         epsilon = model_data.get('epsilon')
         gamma = model_data.get('gamma')
         integer_mode = model_data.get('integer_mode')
-        total_epochs = model_data.get('total_epochs')
+        total_episodes = model_data.get('total_episodes')
         total_steps = model_data.get('total_steps')
         state = tuple(model_data.get('state'))
         max_steps = model_data.get('max_steps')
@@ -828,7 +830,7 @@ class AgentPQL(Agent):
         model.n = n
         model.graph_info = states_to_observe
         model.state = state
-        model.total_epochs = total_epochs
+        model.total_episodes = total_episodes
         model.total_steps = total_steps
 
         return model

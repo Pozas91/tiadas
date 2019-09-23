@@ -552,7 +552,7 @@ class TestVectors(unittest.TestCase):
             # After previous process if solution list have any element, then assert is failed.
             self.assertFalse(solution)
 
-    def test_m3_max_2_sets(self):
+    def test_m3_max_2_lists(self):
         """
         Testing m3_max_2_sets function
         :return:
@@ -617,7 +617,7 @@ class TestVectors(unittest.TestCase):
         for problem, solution_non_dominated, solution_dominated in problems:
 
             # Apply m3_max_2_sets algorithm
-            non_dominated, dominated = Vector.m3_max_2_sets(vectors=problem)
+            non_dominated, dominated = Vector.m3_max_2_lists(vectors=problem)
 
             # While not is empty
             while non_dominated:
@@ -634,7 +634,7 @@ class TestVectors(unittest.TestCase):
             # After previous process if solution list have any element, then assert is failed.
             self.assertFalse(solution_dominated)
 
-    def test_m3_max_2_sets_not_duplicates(self):
+    def test_m3_max_2_lists_not_duplicates(self):
         """
         Testing m3_max_2_sets_not_duplicates function
         :return:
@@ -646,7 +646,7 @@ class TestVectors(unittest.TestCase):
                                                                     self.all_quadrants]:
 
             # Apply m3_max_2_sets algorithm
-            non_dominated, dominated = Vector.m3_max_2_sets_not_duplicates(vectors=problem)
+            non_dominated, dominated = Vector.m3_max_2_lists_not_duplicates(vectors=problem)
 
             # While not is empty
             while non_dominated:
@@ -663,7 +663,7 @@ class TestVectors(unittest.TestCase):
             # After previous process if solution list have any element, then assert is failed.
             self.assertFalse(solution_dominated)
 
-    def test_m3_max_2_sets_with_repetitions(self):
+    def test_m3_max_2_lists_with_repetitions(self):
         """
         Testing m3_max_2_sets_with_repetitions function
         :return:
@@ -744,7 +744,7 @@ class TestVectors(unittest.TestCase):
 
         for problem, solution_non_dominated_uniques, solution_dominated, solution_non_dominated_repeat in problems:
             # Apply m3_max_2_sets_with_repetitions algorithm
-            non_dominated_unique, dominated, non_dominated_repeated = Vector.m3_max_2_sets_with_repetitions(
+            non_dominated_unique, dominated, non_dominated_repeated = Vector.m3_max_2_lists_with_repetitions(
                 vectors=problem)
 
             # While not is empty

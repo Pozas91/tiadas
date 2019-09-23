@@ -29,7 +29,7 @@ class Environment(gym.Env):
     _actions = dict()
 
     # Icons to render environments
-    _icons = {'BLANK': ' ', 
+    _icons = {'BLANK': ' ',
               'BLOCK': '■', 
               'TREASURE': '$', 
               'CURRENT': '☺', 

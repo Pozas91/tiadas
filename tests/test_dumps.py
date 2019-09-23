@@ -7,7 +7,7 @@ import unittest
 import numpy as np
 
 from agents import AgentPQL
-from gym_tiadas.gym_tiadas.envs import *
+from environments import *
 from models import Vector, EvaluationMechanism
 
 
@@ -31,7 +31,7 @@ class TestDumps(unittest.TestCase):
         evaluation_mechanism = EvaluationMechanism.PO
         epsilon = 0.4
         states_to_observe = [(0, 0)]
-        epochs = np.random.randint(10, 50)
+        episodes = np.random.randint(10, 50)
         gamma = 0.99
         max_steps = None
 
@@ -44,7 +44,7 @@ class TestDumps(unittest.TestCase):
                          max_steps=max_steps)
 
         # Train to modify data.
-        agent.train(epochs=epochs)
+        agent.train(episodes=episodes)
 
         # Save and load as new agent.
         agent.save()
@@ -81,7 +81,7 @@ class TestDumps(unittest.TestCase):
         evaluation_mechanism = EvaluationMechanism.PO
         epsilon = 0.11
         states_to_observe = [(1, 1)]
-        epochs = np.random.randint(10, 50)
+        episodes = np.random.randint(10, 50)
         gamma = 0.99
         max_steps = None
         p_stolen = .8
@@ -103,7 +103,7 @@ class TestDumps(unittest.TestCase):
                          max_steps=max_steps)
 
         # Train to modify data.
-        agent.train(epochs=epochs)
+        agent.train(episodes=episodes)
 
         # Save and load as new agent.
         agent.save()
@@ -145,7 +145,7 @@ class TestDumps(unittest.TestCase):
         evaluation_mechanism = EvaluationMechanism.PO
         epsilon = 0.4
         states_to_observe = [(0, 0)]
-        epochs = np.random.randint(10, 50)
+        episodes = np.random.randint(10, 50)
         gamma = 0.99
         max_steps = None
 
@@ -158,7 +158,7 @@ class TestDumps(unittest.TestCase):
                          max_steps=max_steps)
 
         # Train to modify data.
-        agent.train(epochs=epochs)
+        agent.train(episodes=episodes)
 
         # Save and load as new agent.
         agent.save()
@@ -194,7 +194,7 @@ class TestDumps(unittest.TestCase):
         evaluation_mechanism = EvaluationMechanism.PO
         epsilon = 0.11
         states_to_observe = [(0, 0)]
-        epochs = np.random.randint(10, 50)
+        episodes = np.random.randint(10, 50)
         gamma = 0.99
         max_steps = None
 
@@ -207,7 +207,7 @@ class TestDumps(unittest.TestCase):
                          max_steps=max_steps)
 
         # Train to modify data.
-        agent.train(epochs=epochs)
+        agent.train(episodes=episodes)
 
         # Save and load as new agent.
         agent.save()
@@ -243,7 +243,7 @@ class TestDumps(unittest.TestCase):
         evaluation_mechanism = EvaluationMechanism.PO
         epsilon = 0.11
         states_to_observe = [(0, 0)]
-        epochs = np.random.randint(10, 50)
+        episodes = np.random.randint(10, 50)
         gamma = 0.99
         max_steps = None
         n_transaction = 0.33
@@ -258,7 +258,7 @@ class TestDumps(unittest.TestCase):
                          max_steps=max_steps)
 
         # Train to modify data.
-        agent.train(epochs=epochs)
+        agent.train(episodes=episodes)
 
         # Save and load as new agent.
         agent.save()
@@ -293,7 +293,7 @@ class TestDumps(unittest.TestCase):
         evaluation_mechanism = EvaluationMechanism.PO
         epsilon = 0.11
         states_to_observe = [0]
-        epochs = np.random.randint(10, 50)
+        episodes = np.random.randint(10, 50)
         gamma = 0.99
         max_steps = 10
         initial_state = 1
@@ -307,7 +307,7 @@ class TestDumps(unittest.TestCase):
                          max_steps=max_steps)
 
         # Train to modify data.
-        agent.train(epochs=epochs)
+        agent.train(episodes=episodes)
 
         # Save and load as new agent.
         agent.save()
@@ -340,7 +340,7 @@ class TestDumps(unittest.TestCase):
         evaluation_mechanism = EvaluationMechanism.PO
         epsilon = 0.11
         states_to_observe = [0]
-        epochs = np.random.randint(10, 50)
+        episodes = np.random.randint(10, 50)
         gamma = 0.99
         max_steps = 10
         initial_state = 1
@@ -354,7 +354,7 @@ class TestDumps(unittest.TestCase):
                          max_steps=max_steps)
 
         # Train to modify data.
-        agent.train(epochs=epochs)
+        agent.train(episodes=episodes)
 
         # Save and load as new agent.
         agent.save()
@@ -389,7 +389,7 @@ class TestDumps(unittest.TestCase):
         evaluation_mechanism = EvaluationMechanism.PO
         epsilon = 0.3
         states_to_observe = [(0, 0)]
-        epochs = np.random.randint(10, 40)
+        episodes = np.random.randint(10, 40)
         gamma = 0.99
         max_steps = None
 
@@ -402,7 +402,7 @@ class TestDumps(unittest.TestCase):
                          max_steps=max_steps)
 
         # Train to modify data.
-        agent.train(epochs=epochs)
+        agent.train(episodes=episodes)
 
         # Save and load as new agent.
         agent.save()
@@ -437,7 +437,7 @@ class TestDumps(unittest.TestCase):
         evaluation_mechanism = EvaluationMechanism.PO
         epsilon = 0.11
         states_to_observe = [(0, 0)]
-        epochs = np.random.randint(10, 50)
+        episodes = np.random.randint(10, 50)
         gamma = 0.99
         max_steps = None
 
@@ -450,7 +450,7 @@ class TestDumps(unittest.TestCase):
                          max_steps=max_steps)
 
         # Train to modify data.
-        agent.train(epochs=epochs)
+        agent.train(episodes=episodes)
 
         # Save and load as new agent.
         agent.save()
@@ -484,7 +484,7 @@ class TestDumps(unittest.TestCase):
         evaluation_mechanism = EvaluationMechanism.PO
         epsilon = 0.11
         states_to_observe = [(0, 0)]
-        epochs = np.random.randint(10, 50)
+        episodes = np.random.randint(10, 50)
         gamma = 0.99
         max_steps = None
         p_attack = 0.2
@@ -498,7 +498,7 @@ class TestDumps(unittest.TestCase):
                          max_steps=max_steps)
 
         # Train to modify data.
-        agent.train(epochs=epochs)
+        agent.train(episodes=episodes)
 
         # Save and load as new agent.
         agent.save()
@@ -534,7 +534,7 @@ class TestDumps(unittest.TestCase):
         evaluation_mechanism = EvaluationMechanism.PO
         epsilon = 0.4
         states_to_observe = [(0, 0)]
-        epochs = np.random.randint(10, 50)
+        episodes = np.random.randint(10, 50)
         gamma = 0.99
         max_steps = None
         p_attack = 0.2
@@ -549,7 +549,7 @@ class TestDumps(unittest.TestCase):
                          max_steps=max_steps)
 
         # Train to modify data.
-        agent.train(epochs=epochs)
+        agent.train(episodes=episodes)
 
         # Save and load as new agent.
         agent.save()
@@ -585,7 +585,7 @@ class TestDumps(unittest.TestCase):
         evaluation_mechanism = EvaluationMechanism.PO
         epsilon = 0.11
         states_to_observe = [(0, 0)]
-        epochs = np.random.randint(10, 50)
+        episodes = np.random.randint(10, 50)
         gamma = 0.99
         max_steps = None
 
@@ -598,7 +598,7 @@ class TestDumps(unittest.TestCase):
                          max_steps=max_steps)
 
         # Train to modify data.
-        agent.train(epochs=epochs)
+        agent.train(episodes=episodes)
 
         # Save and load as new agent.
         agent.save()

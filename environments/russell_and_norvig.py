@@ -2,6 +2,8 @@
 Mesh problem with a 4x3 grid. We have an agent that try reached goal avoiding a trap. The environment has a transitions
 list of probabilities that can change agent's action to another.
 """
+import math
+
 import numpy as np
 
 from models import VectorFloat

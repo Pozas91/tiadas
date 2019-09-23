@@ -90,11 +90,11 @@ la  siguiente estructura básica común:
             * **No recibe parámetros**
         * **Salida**
             * Muestra por consola la información
-    * `train(self, epochs: int = 1000) -> None`
+    * `train(self, episodes: int = 1000) -> None`
         * **Descripción**
-            * Realiza sobre el agente el un número de episodios indicado como `epochs`.
+            * Realiza sobre el agente el un número de episodios indicado como `episodes`.
         * **Parámetros**
-            * `epochs: int = 1000` - Número de episodios ejecutados
+            * `episodes: int = 1000` - Número de episodios ejecutados
         * **Salida**
             * **No ofrece salida**
     * `get_dict_model(self) -> dict`

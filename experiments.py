@@ -8,8 +8,7 @@ import numpy as np
 
 import utils.miscellaneous as um
 from agents import Agent, AgentPQL, AgentMOSP, AgentA1
-from configurations import VectorConfiguration
-from gym_tiadas.gym_tiadas.envs import Environment, DeepSeaTreasureRightDown
+from environments import Environment, DeepSeaTreasureRightDown
 from models import Vector, EvaluationMechanism, GraphType
 
 
@@ -102,7 +101,7 @@ def initialize_graph_data(graph_types: dict, agents_configuration: dict) -> dict
 
 def test_agents(environment: Environment, hv_reference: Vector, variable: str, graph_types: dict,
                 agents_configuration: dict, epsilon: float = 0.1, alpha: float = 1., max_steps: int = None,
-                states_to_observe: list = None, epochs: int = 1000, integer_mode: bool = False,
+                states_to_observe: list = None, episodes: int = 1000, integer_mode: bool = False,
                 number_of_agents: int = 30, gamma: float = 1.,
                 evaluation_mechanism: EvaluationMechanism = EvaluationMechanism.C):
     """
@@ -116,7 +115,7 @@ def test_agents(environment: Environment, hv_reference: Vector, variable: str, g
     :param epsilon:
     :param alpha:
     :param states_to_observe:
-    :param epochs:
+    :param episodes:
     :param graph_types:
     :param number_of_agents:
     :param gamma:
@@ -135,16 +134,14 @@ def test_agents(environment: Environment, hv_reference: Vector, variable: str, g
     # File timestamp
     timestamp = int(time.time())
 
-    relative_tolerance = VectorConfiguration.instance().relative_tolerance / (
-            10 ** VectorConfiguration.instance().decimals_allowed)
-
-    absolute_tolerance = VectorConfiguration.instance().absolute_tolerance / (
-            10 ** VectorConfiguration.instance().decimals_allowed)
+    # Extract tolerances
+    relative_tolerance = Vector.relative_tolerance
+    absolute_tolerance = Vector.absolute_tolerance
 
     write_config_file(timestamp=timestamp, number_of_agents=number_of_agents, env_name_snake=env_name_snake,
                       seed=','.join(map(str, range(number_of_agents))), epsilon=epsilon, alpha=alpha,
                       relative_tolerance=relative_tolerance, max_steps=max_steps, variable=variable,
-                      absolute_tolerance=absolute_tolerance, gamma=gamma, epochs=epochs)
+                      absolute_tolerance=absolute_tolerance, gamma=gamma, episodes=episodes)
 
     # Create graphs structure
     graphs = initialize_graph_data(graph_types=graph_types, agents_configuration=agents_configuration)
@@ -205,7 +202,7 @@ def test_agents(environment: Environment, hv_reference: Vector, variable: str, g
                                       hv_reference=hv_reference, **parameters)
 
                     # Search one extreme objective
-                    agent.train(epochs=epochs)
+                    agent.train(episodes=episodes)
 
                     # Get p point from agent test
                     p = agent.get_accumulated_reward(from_state=states_to_observe[0])
@@ -221,7 +218,7 @@ def test_agents(environment: Environment, hv_reference: Vector, variable: str, g
                     agent.weights = (.01, .99)
 
                     # Search the other extreme objective
-                    agent.train(epochs=epochs)
+                    agent.train(episodes=episodes)
 
                     # Get q point from agent test.
                     q = agent.get_accumulated_reward(from_state=states_to_observe[0])
@@ -247,7 +244,7 @@ def test_agents(environment: Environment, hv_reference: Vector, variable: str, g
                                      integer_mode=integer_mode, **parameters)
 
                     # Train the agent
-                    agent.train(epochs=epochs)
+                    agent.train(episodes=episodes)
 
                     # Non-dominated vectors found in V(s0)
                     v_s_0 = agent.non_dominated_vectors_from_state(state=agent.environment.initial_state)
@@ -261,7 +258,7 @@ def test_agents(environment: Environment, hv_reference: Vector, variable: str, g
                                     integer_mode=integer_mode, **parameters)
 
                     # Train the agent
-                    agent.train(epochs=epochs)
+                    agent.train(episodes=episodes)
 
                     # Non-dominated vectors found in V(s0)
                     v_real = agent.v_real()
@@ -288,7 +285,7 @@ def test_agents(environment: Environment, hv_reference: Vector, variable: str, g
     prepare_data_and_show_graph(timestamp=timestamp, data_max_len=data_max_len, env_name=env_name,
                                 env_name_snake=env_name_snake, graphs=graphs, number_of_agents=number_of_agents,
                                 agents_configuration=agents_configuration, alpha=alpha, epsilon=epsilon, gamma=gamma,
-                                epochs=epochs, max_steps=max_steps, initial_state=environment.initial_state,
+                                episodes=episodes, max_steps=max_steps, initial_state=environment.initial_state,
                                 integer_mode=integer_mode, variable=variable, graph_types=graph_types)
 
 
@@ -332,7 +329,7 @@ def update_graph(agent: Agent, data_max_len: int, configuration: str, graphs: di
 
 def prepare_data_and_show_graph(timestamp: int, data_max_len: int, env_name: str, env_name_snake: str, graphs: dict,
                                 number_of_agents: int, agents_configuration: dict, alpha: float, gamma: float,
-                                epsilon: float, epochs: int, max_steps: int, initial_state: tuple, integer_mode: bool,
+                                epsilon: float, episodes: int, max_steps: int, initial_state: tuple, integer_mode: bool,
                                 variable: str, graph_types: dict):
     """
     Prepare data to show a graph with the information about results
@@ -341,7 +338,7 @@ def prepare_data_and_show_graph(timestamp: int, data_max_len: int, env_name: str
     :param integer_mode:
     :param initial_state:
     :param max_steps:
-    :param epochs:
+    :param episodes:
     :param alpha:
     :param gamma:
     :param epsilon:
@@ -486,11 +483,9 @@ def prepare_data_and_show_graph(timestamp: int, data_max_len: int, env_name: str
         'alpha':     0.5
     }
 
-    relative_tolerance = VectorConfiguration.instance().relative_tolerance
-    absolute_tolerance = VectorConfiguration.instance().absolute_tolerance
-
-    relative_tolerance /= (10 ** VectorConfiguration.instance().decimals_allowed) if integer_mode else 1
-    absolute_tolerance /= (10 ** VectorConfiguration.instance().decimals_allowed) if integer_mode else 1
+    multiply_factor = (10 ** Vector.decimals_allowed) if integer_mode else 1
+    relative_tolerance = Vector.relative_tolerance
+    absolute_tolerance = Vector.absolute_tolerance / multiply_factor
 
     basic_information = list()
 
@@ -507,7 +502,7 @@ def prepare_data_and_show_graph(timestamp: int, data_max_len: int, env_name: str
         basic_information.append(r'$max\_steps={}$'.format(max_steps))
 
     text_information = '\n'.join(basic_information + [
-        r'$epochs={}$'.format(epochs),
+        r'$episodes={}$'.format(episodes),
         r'$initial\_state={}$'.format(initial_state),
         r'$relative\_tolerance={}$'.format(relative_tolerance),
         r'$absolute\_tolerance={}$'.format(absolute_tolerance),
@@ -529,27 +524,32 @@ def prepare_data_and_show_graph(timestamp: int, data_max_len: int, env_name: str
 
 def main():
     # Default parameters
-    alpha = 0.8
-    number_of_agents = 2
-    epochs = 10
+
+    alpha = 0.1
+    number_of_agents = 1
+    episodes = 10
+
     gamma = 1.
     max_steps = 250
     initial_state = (0, 0)
     columns = 10
     evaluation_mechanism = EvaluationMechanism.C
+    decimals_allowed = 7
 
     # Variable parameters
     # variable = 'alpha'
     variable = 'evaluation_mechanism'
 
     agents_configuration = {
-        # AgentType.A1: {
-            # EvaluationMechanism.HV: 'yellow',
-            # EvaluationMechanism.C:  'orange',
-            # EvaluationMechanism.PO: 'blue'
+
+        AgentType.A1: {
+            EvaluationMechanism.HV: 'yellow',
+            EvaluationMechanism.C:  'orange',
+            EvaluationMechanism.PO: 'blue',
             # 0.01: 'blue',
-            # 0.1:  'beige',
-            # 0.3:  'gold',
+            # 0.1: 'beige',
+            # 0.3: 'gold',
+            # 0.6: 'orange',
             # 0.8: 'fuchsia',
             # 1.0: 'cyan'
         # },
@@ -576,59 +576,61 @@ def main():
         # },
         # GraphType.VECTORS_PER_CELL: {
         # }
-        # GraphType.TIME,
-        # GraphType.EPOCHS
+
+        GraphType.TIME: {
+            'limits': {
+                'y': [0, 2000]
+            }
+        },
+        # GraphType.EPISODES: {
+        # }
     }
 
-    VectorConfiguration.instance().decimals_allowed = 7
-    VectorConfiguration.instance().relative_tolerance = 0
-    VectorConfiguration.instance().absolute_tolerance = 0.3
-    VectorConfiguration.instance().absolute_tolerance *= (10 ** VectorConfiguration.instance().decimals_allowed)
+    Vector.decimals_allowed = decimals_allowed
 
-    test_agents(environment=DeepSeaTreasureRightDown(initial_state=initial_state,
-                                                     columns=columns),
-                hv_reference=Vector([-25, 0]),
-                epsilon=0.7,
-                alpha=alpha,
-                states_to_observe=[initial_state],
-                epochs=epochs,
-                integer_mode=True,
-                graph_types=graph_types,
-                number_of_agents=number_of_agents,
-                agents_configuration=agents_configuration,
-                gamma=gamma,
-                max_steps=max_steps,
-                evaluation_mechanism=evaluation_mechanism,
-                variable=variable)
+    for tolerance in [0.1, 0.3, 0.5]:
+        Vector.set_absolute_tolerance(absolute_tolerance=tolerance, integer_mode=True)
+
+        test_agents(environment=DeepSeaTreasureRightDown(initial_state=initial_state, columns=columns),
+                    hv_reference=Vector([-25, 0]), epsilon=0.7, alpha=alpha, states_to_observe=[initial_state],
+                    episodes=episodes, integer_mode=True, graph_types=graph_types, number_of_agents=number_of_agents,
+                    agents_configuration=agents_configuration, gamma=gamma, max_steps=max_steps,
+                    evaluation_mechanism=evaluation_mechanism, variable=variable)
+
+    # test_agents(environment=DeepSeaTreasureRightDown(initial_state=initial_state, columns=columns),
+    #             hv_reference=Vector([-25, 0]), epsilon=0.7, alpha=alpha, states_to_observe=[initial_state],
+    #             episodes=episodes, integer_mode=True, graph_types=graph_types, number_of_agents=number_of_agents,
+    #             agents_configuration=agents_configuration, gamma=gamma, max_steps=max_steps,
+    #             evaluation_mechanism=evaluation_mechanism, variable=variable)
 
     # test_agents(environment=MoPuddleWorldAcyclic(), hv_reference=Vector([-50, -150]), epsilon=0.3, alpha=alpha,
-    #             states_to_observe=[(2, 8)], epochs=epochs, integer_mode=True, graph_types=graph_types,
+    #             states_to_observe=[(2, 8)], episodes=episodes, integer_mode=True, graph_types=graph_types,
     #             number_of_agents=number_of_agents, agents_configuration=agents_configuration, gamma=gamma,
     #             max_steps=max_steps)
     #
     # test_agents(environment=SpaceExplorationAcyclic(), hv_reference=Vector([-150, -150]), epsilon=0.3, alpha=alpha,
-    #             states_to_observe=[(0, 0)], epochs=epochs, integer_mode=True, graph_types=graph_types,
+    #             states_to_observe=[(0, 0)], episodes=episodes, integer_mode=True, graph_types=graph_types,
     #             number_of_agents=number_of_agents, agents_configuration=agents_configuration, gamma=gamma,
     #             max_steps=max_steps)
 
     # agents_configuration = {**agent_a1_configuration, **agent_scalarized_configuration}
     #
     # test_agents(environment=DeepSeaTreasureRightDownStochastic(), hv_reference=Vector([-25, 0]), epsilon=0.7,
-    #             alpha=alpha, states_to_observe=[(0, 0)], epochs=epochs, integer_mode=True, graph_types=graph_types,
+    #             alpha=alpha, states_to_observe=[(0, 0)], episodes=episodes, integer_mode=True, graph_types=graph_types,
     #             number_of_agents=number_of_agents, agents_configuration=agents_configuration, gamma=gamma,
     #             max_steps=max_steps)
     #
     # agents_configuration = {**agent_a1_configuration, **agent_pql_configuration}
     #
     # test_agents(environment=BonusWorldAcyclic(), hv_reference=Vector([-50, -50, -50]), epsilon=0.25, alpha=alpha,
-    #             states_to_observe=[(0, 0)], epochs=epochs, integer_mode=True, graph_types=graph_types,
+    #             states_to_observe=[(0, 0)], episodes=episodes, integer_mode=True, graph_types=graph_types,
     #             number_of_agents=number_of_agents, agents_configuration=agents_configuration, gamma=gamma,
     #             max_steps=max_steps)
     #
     # agents_configuration = {**agent_a1_configuration}
     #
     # test_agents(environment=PressurizedBountifulSeaTreasureRightDownStochastic(), hv_reference=Vector([-25, 0, -100]),
-    #             epsilon=0.7, alpha=alpha, states_to_observe=[(0, 0)], epochs=epochs, integer_mode=True,
+    #             epsilon=0.7, alpha=alpha, states_to_observe=[(0, 0)], episodes=episodes, integer_mode=True,
     #             graph_types=graph_types, number_of_agents=number_of_agents, agents_configuration=agents_configuration,
     #             gamma=gamma, max_steps=max_steps)
 
