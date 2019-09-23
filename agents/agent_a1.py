@@ -132,7 +132,7 @@ class AgentA1(Agent):
         model.get('data').update({'hv_reference': self.hv_reference.tolist()})
         model.get('data').update({'evaluation_mechanism': str(self.evaluation_mechanism)})
         model.get('data').update({'integer_mode': self.integer_mode})
-        model.get('data').update({'total_epochs': self.total_epochs})
+        model.get('data').update({'total_episodes': self.total_episodes})
         model.get('data').update({'total_steps': self.total_steps})
         model.get('data').update({'state': list(self.state)})
 
@@ -290,7 +290,7 @@ class AgentA1(Agent):
 
         return hv
 
-    def reverse_episode(self, epochs_per_state: int = 10) -> None:
+    def reverse_episode(self, episodes_per_state: int = 10) -> None:
         """
         Run an episode complete until get a final step
         :return:
@@ -328,13 +328,13 @@ class AgentA1(Agent):
             # Check if there are more valid states pending
             more_valid_states = number_of_states_to_visit > 0
 
-            # Number of states to visit per epochs per state
-            total_epochs = number_of_states_to_visit * epochs_per_state
+            # Number of states to visit per episodes per state
+            total_episodes = number_of_states_to_visit * episodes_per_state
 
-            for epoch in range(total_epochs):
+            for episode in range(total_episodes):
 
                 if not states_to_visit:
-                    print('Not more states to visit. Stop in epoch {}'.format(epoch))
+                    print('Not more states to visit. Stop in episode {}'.format(episode))
                     break
 
                 # Get possible combinations
@@ -974,7 +974,7 @@ class AgentA1(Agent):
         gamma = model_data.get('gamma')
         alpha = model_data.get('alpha')
         integer_mode = model_data.get('integer_mode')
-        total_epochs = model_data.get('total_epochs')
+        total_episodes = model_data.get('total_episodes')
         total_steps = model_data.get('total_steps')
         state = tuple(model_data.get('state'))
         max_steps = model_data.get('max_steps')
@@ -1100,7 +1100,7 @@ class AgentA1(Agent):
         model.q = q
         model.graph_info = states_to_observe
         model.state = state
-        model.total_epochs = total_epochs
+        model.total_episodes = total_episodes
         model.total_steps = total_steps
 
         return model

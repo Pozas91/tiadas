@@ -39,7 +39,7 @@ class Agent:
 
         # Types to make graphs
         if graph_types is None:
-            graph_types = {GraphType.EPOCHS, GraphType.STEPS}
+            graph_types = {GraphType.EPISODES, GraphType.STEPS}
 
         # Discount factor
         assert 0 <= gamma <= 1
@@ -88,14 +88,14 @@ class Agent:
         # Total of this agent
         self.total_steps = 0
 
-        # Steps per epoch
+        # Steps per episode
         self.steps = 0
 
         # Initial execution time
         self.last_time_to_get_graph_data = time.time()
 
         # Total of this agent
-        self.total_epochs = 0
+        self.total_episodes = 0
 
     def select_action(self, state: object = None) -> int:
         """
@@ -123,8 +123,8 @@ class Agent:
         :return:
         """
 
-        # Increment total epochs
-        self.total_epochs += 1
+        # Increment total episodes
+        self.total_episodes += 1
 
         # Reset environment
         self.state = self.environment.reset()
@@ -156,8 +156,8 @@ class Agent:
                 # Update last execution
                 self.last_time_to_get_graph_data = current_time
 
-        # Last update in this epoch
-        self.update_graph(graph_types=(GraphType.STEPS, GraphType.MEMORY, GraphType.TIME, GraphType.EPOCHS))
+        # Last update in this episode
+        self.update_graph(graph_types=(GraphType.STEPS, GraphType.MEMORY, GraphType.TIME, GraphType.EPISODES))
 
     def update_graph(self, graph_types: tuple) -> None:
         """
@@ -194,7 +194,7 @@ class Agent:
         :return:
         """
         self.total_steps = 0
-        self.total_epochs = 0
+        self.total_episodes = 0
 
     def reset_graph_info(self):
         """
@@ -230,14 +230,14 @@ class Agent:
         print("Gamma: {}".format(self.gamma))
         print("Epsilon: {}".format(self.epsilon))
 
-    def train(self, epochs: int = 1000):
+    def train(self, episodes: int = 1000):
         """
-        Return this agent trained with `epochs` epochs.
-        :param epochs:
+        Return this agent trained with `episodes` episodes.
+        :param episodes:
         :return:
         """
 
-        for i in range(epochs):
+        for i in range(episodes):
             # Do an episode
             self.episode()
 

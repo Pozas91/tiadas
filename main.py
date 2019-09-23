@@ -25,25 +25,25 @@ def plot_training_from_zero():
 
     # Times
     time_train_mesh = list()
-    epochs_list = [1000, 10000, 100000, 200000]
+    episodes_list = [1000, 10000, 100000, 200000]
 
     # Agents to show policy at end
     agent_mesh = None
 
     print("Training agent...")
 
-    for epochs in epochs_list:
+    for episodes in episodes_list:
         # Training mesh agent
         agent_mesh = AgentQ(environment=environment_mesh)
         start_time = time.time()
-        agent_mesh.train(epochs=epochs)
+        agent_mesh.train(episodes=episodes)
         time_train = time.time() - start_time
         time_train_mesh.append(time_train)
-        print('MESH: To {} epochs -> {} seconds.'.format(epochs, time_train))
+        print('MESH: To {} episodes -> {} seconds.'.format(episodes, time_train))
 
-    plt.plot(epochs_list, time_train_mesh, label='Mesh Agent')
+    plt.plot(episodes_list, time_train_mesh, label='Mesh Agent')
 
-    plt.xlabel('# epochs')
+    plt.xlabel('# episodes')
     plt.ylabel('Time in seconds')
 
     plt.legend(loc='upper left')
@@ -64,24 +64,24 @@ def plot_training_accumulate():
 
     # Times
     time_train_mesh = list()
-    epochs_list = [1000, 10000]
+    episodes_list = [1000, 10000]
 
     # Agents to show policy at end
     agent_mesh = AgentQ(environment=environment_mesh, states_to_observe=[(0, 0), (2, 0), (2, 1), (3, 2)])
 
     print("Training agent...")
 
-    for epochs in epochs_list:
+    for episodes in episodes_list:
         # Training mesh agent
         start_time = time.time()
-        agent_mesh.train(epochs=epochs)
+        agent_mesh.train(episodes=episodes)
         time_train = time.time() - start_time
         time_train_mesh.append(time_train)
-        print('MESH: To {} epochs -> {} seconds.'.format(epochs, time_train))
+        print('MESH: To {} episodes -> {} seconds.'.format(episodes, time_train))
 
-    plt.plot(epochs_list, time_train_mesh, label='Mesh Agent')
+    plt.plot(episodes_list, time_train_mesh, label='Mesh Agent')
 
-    plt.xlabel('# epochs')
+    plt.xlabel('# episodes')
     plt.ylabel('Time in seconds')
 
     plt.legend(loc='upper left')
@@ -93,7 +93,7 @@ def plot_training_accumulate():
     agent_mesh.show_policy()
 
 
-def plot_performance(epochs=100000):
+def plot_performance(episodes=100000):
     # Default reward
     reward = -0.04
 
@@ -106,7 +106,7 @@ def plot_performance(epochs=100000):
 
     # Training mesh agent
     print("Training agent...")
-    agent_mesh.train(epochs=epochs)
+    agent_mesh.train(episodes=episodes)
     print('Training finished!')
 
     for state, data in agent_mesh.graph_info.items():
@@ -127,7 +127,7 @@ def plot_performance(epochs=100000):
 def russel_and_norvig():
     env = RussellNorvig()
     agent = AgentQ(environment=env)
-    agent.train(epochs=10000)
+    agent.train(episodes=10000)
     agent.show_policy()
     pass
 
@@ -154,7 +154,7 @@ def space_exploration():
     env = SpaceExploration()
     weights = (0.8, 0.2)
     agent = AgentMOSP(environment=env, weights=weights, epsilon=0.5, alpha=0.2, states_to_observe=[(0, 0)])
-    agent.train(epochs=100000)
+    agent.train(episodes=100000)
     agent.show_policy()
     pass
 
@@ -229,7 +229,7 @@ def pressurized_bountiful_sea_treasure():
     env = PressurizedBountifulSeaTreasure()
     weights = (1., 0., 0.)
     agent = AgentMOSP(environment=env, weights=weights, epsilon=0.5, max_steps=1000)
-    agent.train(epochs=200000)
+    agent.train(episodes=200000)
     agent.show_policy()
     pass
 
@@ -238,7 +238,7 @@ def buridan_ass():
     env = BuridanAss()
     weights = (0.3,) * 3
     agent = AgentMOSP(environment=env, epsilon=0.3, weights=weights)
-    agent.train(epochs=10000)
+    agent.train(episodes=10000)
     pass
 
 
@@ -246,7 +246,7 @@ def mo_puddle_world():
     env = MoPuddleWorld()
     weights = (0.5,) * 2
     agent = AgentMOSP(environment=env, weights=weights, epsilon=0.3, max_steps=100)
-    agent.train(epochs=1000)
+    agent.train(episodes=1000)
     agent.show_policy()
     pass
 
@@ -256,7 +256,7 @@ def linked_rings():
     weights = (0.5,) * 2
     agent = AgentMOSP(environment=env, weights=weights, epsilon=0.1, max_steps=100,
                       states_to_observe=[0, 1, 4])
-    agent.train(epochs=1000)
+    agent.train(episodes=1000)
     agent.show_policy()
     agent.show_observed_states()
     pass
@@ -267,7 +267,7 @@ def non_recurrent_rings():
     weights = (0.3, 0.7)
     agent = AgentMOSP(environment=env, weights=weights, epsilon=0.1, max_steps=100,
                       states_to_observe=[0, 7])
-    agent.train(epochs=1000)
+    agent.train(episodes=1000)
     agent.show_policy()
     agent.show_observed_states()
     pass
@@ -277,7 +277,7 @@ def deep_sea_treasure_simplified():
     env = DeepSeaTreasureSimplified()
     weights = (0.5,) * 2
     agent = AgentMOSP(environment=env, weights=weights, epsilon=0.5, states_to_observe=[(0, 0)])
-    agent.train(epochs=10000)
+    agent.train(episodes=10000)
     agent.show_observed_states()
     agent.show_policy()
     pass
@@ -292,7 +292,7 @@ def deep_sea_treasure_simplified_mo_mp():
 
     for _ in range(4):
         agent.reset()
-        agent.train(epochs=3000)
+        agent.train(episodes=3000)
         graph.append(agent.graph_info.get((0, 0)))
 
     data = np.average(graph, axis=0)
@@ -322,7 +322,7 @@ def graphs_dps():
     hv_reference = Vector([-25, 0])
 
     evaluation_mechanisms = ['HV-PQL', 'PO-PQL', 'C-PQL']
-    epochs = 3000
+    episodes = 3000
     steps = 100
 
     # Make instance of AgentPQL
@@ -337,12 +337,12 @@ def graphs_dps():
         optimal = uh.calc_hypervolume(list_of_vectors=pareto_optimal, reference=hv_reference)
 
         # Prepare data to use in graph
-        graph = [[optimal] * epochs]
+        graph = [[optimal] * episodes]
         data = np.average(graph, axis=0)
         error = np.std(graph, axis=0)
-        y = np.arange(0, epochs, 1)
+        y = np.arange(0, episodes, 1)
 
-        plt.errorbar(x=y, y=data, yerr=error, errorevery=epochs * 0.1, label='Pareto frontier')
+        plt.errorbar(x=y, y=data, yerr=error, errorevery=episodes * 0.1, label='Pareto frontier')
 
     for evaluation_mechanism in evaluation_mechanisms:
 
@@ -357,7 +357,7 @@ def graphs_dps():
             agent.reset()
 
             # Train model
-            agent.train(epochs=epochs)
+            agent.train(episodes=episodes)
 
             # Get graph data
             graph.append(agent.graph_info.get(states_to_observe[0]))
@@ -365,10 +365,10 @@ def graphs_dps():
         # Prepare data to graph
         data = np.average(graph, axis=0)
         error = np.std(graph, axis=0)
-        y = np.arange(0, epochs, 1)
+        y = np.arange(0, episodes, 1)
 
         # Set graph to current evaluation mechanism
-        plt.errorbar(x=y, y=data, yerr=error, errorevery=epochs * 0.1, label=evaluation_mechanism)
+        plt.errorbar(x=y, y=data, yerr=error, errorevery=episodes * 0.1, label=evaluation_mechanism)
 
     # Show data
     plt.xlabel('Steps')
@@ -393,14 +393,14 @@ def track_policy():
                          hv_reference=Vector([-25, 0]), evaluation_mechanism=evaluation_mechanism)
 
         # Train model
-        agent.train(epochs=3000)
+        agent.train(episodes=3000)
 
         # Save model
         agent.save()
 
     # else:
     #     # Train model
-    #     q_learning.train(agent=agent, epochs=18000)
+    #     q_learning.train(agent=agent, episodes=18000)
     #
     #     # Save model
     #     agent.save()
@@ -432,7 +432,7 @@ def no_cycles_environment():
     agent = AgentPQL(environment=env, states_to_observe=[state], epsilon=0.4)
 
     # Train
-    agent.train(epochs=5000)
+    agent.train(episodes=5000)
 
     # Observed states
     agent.show_observed_states()
@@ -447,7 +447,7 @@ def no_cycles_environment():
 def main():
     # plot_training_from_zero()
     # plot_training_accumulate()
-    # plot_performance(epochs=1000000)
+    # plot_performance(episodes=1000000)
 
     # deep_sea_treasure()
     # testing_pareto()

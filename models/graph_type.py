@@ -3,7 +3,7 @@ from enum import Enum
 
 class GraphType(Enum):
     STEPS = 'steps'
-    EPOCHS = 'epochs'
+    EPISODES = 'episodes'
     TIME = 'time'
     MEMORY = 'memory'
     VECTORS_PER_CELL = 'vectors_per_cell'
@@ -19,8 +19,8 @@ class GraphType(Enum):
 
         if graph_type == str(GraphType.STEPS.value):
             result = GraphType.STEPS
-        elif graph_type == str(GraphType.EPOCHS.value):
-            result = GraphType.EPOCHS
+        elif graph_type == str(GraphType.EPISODES.value):
+            result = GraphType.EPISODES
         elif graph_type == str(GraphType.MEMORY.value):
             result = GraphType.MEMORY
         elif graph_type == str(GraphType.VECTORS_PER_CELL.value):

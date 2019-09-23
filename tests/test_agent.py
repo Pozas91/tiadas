@@ -33,7 +33,7 @@ class TestAgent(unittest.TestCase):
         self.assertTrue(hasattr(self.agent, 'max_steps'))
         self.assertTrue(hasattr(self.agent, 'steps'))
         self.assertTrue(hasattr(self.agent, 'total_steps'))
-        self.assertTrue(hasattr(self.agent, 'total_epochs'))
+        self.assertTrue(hasattr(self.agent, 'total_episodes'))
         self.assertTrue(hasattr(self.agent, 'graph_info'))
         self.assertTrue(hasattr(self.agent, 'state'))
         self.assertTrue(hasattr(self.agent, 'seed'))
