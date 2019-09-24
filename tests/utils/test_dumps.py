@@ -9,6 +9,7 @@ import numpy as np
 from agents import AgentPQL
 from environments import *
 from models import Vector, EvaluationMechanism
+from decimal import Decimal as D
 
 
 class TestDumps(unittest.TestCase):
@@ -27,13 +28,17 @@ class TestDumps(unittest.TestCase):
         initial_state = (1, 1)
         default_reward = (1, 1)
         seed = 1
-        hv_reference = Vector([-5, -5, -5])
+        hv_reference = Vector([-100, -100, -100])
         evaluation_mechanism = EvaluationMechanism.PO
         epsilon = 0.4
         states_to_observe = [(0, 0)]
-        episodes = np.random.randint(10, 50)
+        episodes = np.random.randint(1, 10)
         gamma = 0.99
         max_steps = None
+
+        # Vector configuration
+        Vector.decimals_allowed = 2
+        Vector.set_absolute_tolerance(absolute_tolerance=0.01, integer_mode=True)
 
         # Instance of Environment
         env = BonusWorld(initial_state=initial_state, default_reward=default_reward, seed=seed)
@@ -41,7 +46,7 @@ class TestDumps(unittest.TestCase):
         # Instance of AgentMOMP
         agent = AgentPQL(environment=env, epsilon=epsilon, states_to_observe=states_to_observe,
                          hv_reference=hv_reference, evaluation_mechanism=evaluation_mechanism, gamma=gamma,
-                         max_steps=max_steps)
+                         max_steps=max_steps, integer_mode=True)
 
         # Train to modify data.
         agent.train(episodes=episodes)
@@ -82,7 +87,7 @@ class TestDumps(unittest.TestCase):
         epsilon = 0.11
         states_to_observe = [(1, 1)]
         episodes = np.random.randint(10, 50)
-        gamma = 0.99
+        gamma = D(0.99)
         max_steps = None
         p_stolen = .8
         n_appear = 15

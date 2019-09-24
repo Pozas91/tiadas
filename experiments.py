@@ -8,7 +8,7 @@ import numpy as np
 
 import utils.miscellaneous as um
 from agents import Agent, AgentPQL, AgentMOSP, AgentA1
-from environments import Environment, DeepSeaTreasureRightDown
+from environments import Environment, DeepSeaTreasureRightDown, DeepSeaTreasureRightDownStochastic
 from models import Vector, EvaluationMechanism, GraphType
 
 
@@ -537,11 +537,10 @@ def main():
     decimals_allowed = 7
 
     # Variable parameters
-    # variable = 'alpha'
-    variable = 'evaluation_mechanism'
+    variable = 'alpha'
+    # variable = 'evaluation_mechanism'
 
     agents_configuration = {
-
         # AgentType.A1: {
         #     EvaluationMechanism.HV: 'yellow',
         #     EvaluationMechanism.C:  'orange',
@@ -569,7 +568,6 @@ def main():
                 'y': [0, 2000]
             }
         },
-
         # GraphType.MEMORY:           {
         #     'limits': {
         #         'y': [0, 700]
@@ -594,7 +592,7 @@ def main():
     for tolerance in [0.1, 0.3, 0.5]:
         Vector.set_absolute_tolerance(absolute_tolerance=tolerance, integer_mode=True)
 
-        test_agents(environment=DeepSeaTreasureRightDown(initial_state=initial_state, columns=columns),
+        test_agents(environment=DeepSeaTreasureRightDownStochastic(initial_state=initial_state, columns=columns),
                     hv_reference=Vector([-25, 0]), epsilon=0.7, alpha=alpha, states_to_observe=[initial_state],
                     episodes=episodes, integer_mode=True, graph_types=graph_types, number_of_agents=number_of_agents,
                     agents_configuration=agents_configuration, gamma=gamma, max_steps=max_steps,

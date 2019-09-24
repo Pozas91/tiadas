@@ -3,6 +3,7 @@ This class represent a vector with some features necessaries for our program.
 This class has a vector of floats (float64).
 """
 import math
+from decimal import Decimal as D
 
 import numpy as np
 
@@ -10,7 +11,7 @@ from .dominance import Dominance
 from .vector import Vector
 
 
-class VectorFloat(Vector):
+class VectorDecimal(Vector):
     """
     Class Vector with functions to work with float vectors.
     """
@@ -20,7 +21,7 @@ class VectorFloat(Vector):
         Vector's init
         :param components:
         """
-        super().__init__(components)
+        super().__init__([D(component) for component in components])
 
     def __ge__(self, other):
         """
@@ -30,9 +31,13 @@ class VectorFloat(Vector):
         :return:
         """
 
+        # Extract decimal exponent
+        decimal_exponent = Vector.decimal_exponent
+
         return np.all([
-            a > b or math.isclose(a=a, b=b, abs_tol=Vector.absolute_tolerance, rel_tol=Vector.relative_tolerance) for
-            a, b in zip(self.components, other.components)
+            a > b or
+            a.quantize(decimal_exponent) == b.quantize(decimal_exponent)
+            for a, b in zip(self.components, other.components)
         ])
 
     def __gt__(self, other):
@@ -42,8 +47,13 @@ class VectorFloat(Vector):
         :param other:
         :return:
         """
+
+        # Extract decimal exponent
+        decimal_exponent = Vector.decimal_exponent
+
         return np.all([
-            a > b and not math.isclose(a=a, b=b, abs_tol=Vector.absolute_tolerance, rel_tol=Vector.relative_tolerance)
+            a > b and
+            a.quantize(decimal_exponent) != b.quantize(decimal_exponent)
             for a, b in zip(self.components, other.components)
         ])
 
@@ -54,8 +64,13 @@ class VectorFloat(Vector):
         :param other:
         :return:
         """
+
+        # Extract decimal exponent
+        decimal_exponent = Vector.decimal_exponent
+
         return np.all([
-            a < b and not math.isclose(a=a, b=b, abs_tol=Vector.absolute_tolerance, rel_tol=Vector.relative_tolerance)
+            a < b and
+            a.quantize(decimal_exponent) != b.quantize(decimal_exponent)
             for a, b in zip(self.components, other.components)
         ])
 
@@ -67,13 +82,85 @@ class VectorFloat(Vector):
         :return:
         """
 
+        # Extract decimal exponent
+        decimal_exponent = Vector.decimal_exponent
+
         return np.all([
-            a < b or math.isclose(a=a, b=b, abs_tol=Vector.absolute_tolerance, rel_tol=Vector.relative_tolerance) for
-            a, b in zip(self.components, other.components)
+            a < b or
+            a.quantize(decimal_exponent) == b.quantize(decimal_exponent)
+            for a, b in zip(self.components, other.components)
         ])
 
+    def all_close(self, v2) -> bool:
+        """
+        A vector is equal than other when all components are equal (or close) one by one.
+        :param v2:
+        :return:
+        """
+
+        # Extract decimal exponent
+        decimal_exponent = Vector.decimal_exponent
+
+        return np.all([
+            a.quantize(decimal_exponent) == b.quantize(decimal_exponent)
+            for a, b in zip(self.components, v2.components)
+        ])
+
+    def dominance(self, v2) -> Dominance:
+        """
+        Check dominance between two Vector objects. Float values are allowed
+        and treated with precision according to Vector.relative.
+        :param v2: a Vector object
+        :return: an output value according to the Dominance enum.
+        """
+
+        v1_dominate = False
+        v2_dominate = False
+
+        # Extract decimal exponent
+        decimal_exponent = Vector.decimal_exponent
+
+        for idx, component in enumerate(self.components):
+
+            # Are equals or close...
+            if self.components[idx].quantize(decimal_exponent) == v2.components[idx].quantize(decimal_exponent):
+                # Nothing to do at moment
+                pass
+
+            elif self.components[idx] > v2.components[idx]:
+                v1_dominate = True
+
+                # If already dominate v2, then both vectors are independent.
+                if v2_dominate:
+                    return Dominance.otherwise
+
+            # v1's component is dominated by v2
+            elif self.components[idx] < v2.components[idx]:
+                v2_dominate = True
+
+                # If already dominate v1, then both vectors are independent.
+                if v1_dominate:
+                    return Dominance.otherwise
+
+        if v1_dominate == v2_dominate:
+            # If both dominate, then both vectors are independent.
+            if v1_dominate:
+                return Dominance.otherwise
+
+            # Are equals
+            else:
+                return Dominance.equals
+
+        # v1 dominate to v2
+        elif v1_dominate:
+            return Dominance.dominate
+
+        # v2 dominate to v1
+        else:
+            return Dominance.is_dominated
+
     @staticmethod
-    def m3_max_2_sets_not_duplicates(vectors: list) -> (list, list):
+    def m3_max_2_lists_not_duplicates(vectors: list) -> (list, list):
         """
         :param vectors: list of Vector objects.
 

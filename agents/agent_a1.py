@@ -18,7 +18,7 @@ import utils.hypervolume as uh
 import utils.miscellaneous as um
 from agents import Agent
 from environments import Environment
-from models import Vector, IndexVector, VectorFloat, GraphType, EvaluationMechanism
+from models import Vector, IndexVector, VectorDecimal, GraphType, EvaluationMechanism
 
 
 class AgentA1(Agent):
@@ -767,7 +767,7 @@ class AgentA1(Agent):
                 # For each index with it index_vector (with a int vector associated multiplied by Vector.decimals)
                 for index, index_vector in indexes_dict.items():
                     # Divide that vector by Vector.decimals to convert in original float vector
-                    index_vector.vector = VectorFloat(
+                    index_vector.vector = VectorDecimal(
                         index_vector.vector.components / (10 ** Vector.decimals_allowed)
                     )
 
@@ -795,7 +795,7 @@ class AgentA1(Agent):
             for index, vector in vectors.items():
                 # Divide that vector by Vector.decimals to convert in original float vector
                 vectors.update({
-                    index: VectorFloat(
+                    index: VectorDecimal(
                         vector.components / (10 ** Vector.decimals_allowed)
                     )
                 })
@@ -954,7 +954,7 @@ class AgentA1(Agent):
 
             elif 'default_reward' in key:
                 # If all elements are int, then default_reward is a integer Vector, otherwise float Vector
-                value = Vector(value) if (all([isinstance(x, int) for x in value])) else VectorFloat(value)
+                value = Vector(value) if (all([isinstance(x, int) for x in value])) else VectorDecimal(value)
 
             vars(environment)[key] = value
 

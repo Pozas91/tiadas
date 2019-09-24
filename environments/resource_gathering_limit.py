@@ -3,7 +3,7 @@ Such as Resource Gathering environment, but has a `time_limit`, if the agent non
 reward vector is divide by the `time` spent.
 """
 
-from models import VectorFloat
+from models import VectorDecimal
 from .env_mesh import EnvMesh
 
 
@@ -21,7 +21,7 @@ class ResourceGatheringLimit(EnvMesh):
         :param time_limit: When agent does `time_limit` steps terminate current episode.
         """
 
-        self.state = VectorFloat(default_reward)
+        self.state = VectorDecimal(default_reward)
 
         # States where there are gold {state: available}
         self.gold_states = {(2, 0): True}
@@ -34,7 +34,7 @@ class ResourceGatheringLimit(EnvMesh):
         self.time_limit = time_limit
 
         mesh_shape = (5, 5)
-        default_reward = VectorFloat(default_reward)
+        default_reward = VectorDecimal(default_reward)
 
         super().__init__(mesh_shape=mesh_shape, seed=seed, initial_state=initial_state, default_reward=default_reward)
 
@@ -42,7 +42,7 @@ class ResourceGatheringLimit(EnvMesh):
         self.enemies = [(3, 0), (2, 1)]
         self.p_attack = p_attack
 
-    def step(self, action: int) -> (tuple, VectorFloat, bool, dict):
+    def step(self, action: int) -> (tuple, VectorDecimal, bool, dict):
         """
         Given an action, do a step
         :param action:
