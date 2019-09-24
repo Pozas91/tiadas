@@ -9,8 +9,6 @@ import numpy as np
 from agents import AgentPQL
 from environments import *
 from models import Vector, EvaluationMechanism
-from decimal import Decimal as D
-
 
 class TestDumps(unittest.TestCase):
 
@@ -87,7 +85,7 @@ class TestDumps(unittest.TestCase):
         epsilon = 0.11
         states_to_observe = [(1, 1)]
         episodes = np.random.randint(10, 50)
-        gamma = D(0.99)
+        gamma = 0.99
         max_steps = None
         p_stolen = .8
         n_appear = 15

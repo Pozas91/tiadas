@@ -58,7 +58,7 @@ import numpy as np
 import utils.hypervolume as uh
 import utils.miscellaneous as um
 from environments import Environment
-from models import Vector, VectorDecimal, GraphType
+from models import Vector, VectorFloat, GraphType
 from .agent_q import AgentQ
 
 
@@ -104,7 +104,7 @@ class AgentMOSP(AgentQ):
         """
 
         # Convert to float vector
-        reward = VectorDecimal(reward.components)
+        reward = VectorFloat(reward.components)
 
         # Multiply the reward for the vector weights, sum all components and return a reward of the same type as the
         # original, but with only one component.
@@ -122,7 +122,7 @@ class AgentMOSP(AgentQ):
         # Super call
         super()._update_q_values(reward=reward, action=action, next_state=next_state)
 
-    def find_c_vector(self, w1: float, w2: float, solutions_known: list = None) -> VectorDecimal:
+    def find_c_vector(self, w1: float, w2: float, solutions_known: list = None) -> VectorFloat:
         """
         This method is called from calc_frontier_scalarized method.age
 
@@ -198,7 +198,7 @@ class AgentMOSP(AgentQ):
                 continue
 
             # Convert to vectors
-            a, b = VectorDecimal(a), VectorDecimal(b)
+            a, b = VectorFloat(a), VectorFloat(b)
 
             # Decompose points
             a_x, a_y = a

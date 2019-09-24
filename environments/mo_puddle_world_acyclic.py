@@ -5,7 +5,7 @@ HV REFERENCE: (-50, -150)
 """
 from scipy.spatial import distance
 
-from models import VectorDecimal
+from models import VectorFloat
 from spaces import DynamicSpace
 from .env_mesh import EnvMesh
 
@@ -25,7 +25,7 @@ class MoPuddleWorldAcyclic(EnvMesh):
 
         self.final_state = final_state
         mesh_shape = (20, 20)
-        default_reward = VectorDecimal(default_reward)
+        default_reward = VectorFloat(default_reward)
 
         super().__init__(mesh_shape=mesh_shape, seed=seed, default_reward=default_reward)
 
@@ -47,7 +47,7 @@ class MoPuddleWorldAcyclic(EnvMesh):
         # Get free spaces
         self.free_spaces = list(set(all_space) - self.puddles)
 
-    def step(self, action: int) -> (tuple, VectorDecimal, bool, dict):
+    def step(self, action: int) -> (tuple, VectorFloat, bool, dict):
         """
         Given an action, do a step
         :param action:

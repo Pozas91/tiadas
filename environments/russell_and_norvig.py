@@ -6,7 +6,7 @@ import math
 
 import numpy as np
 
-from models import VectorDecimal
+from models import VectorFloat
 from .env_mesh import EnvMesh
 
 
@@ -36,7 +36,7 @@ class RussellNorvig(EnvMesh):
 
         # Default shape
         mesh_shape = (4, 3)
-        default_reward = VectorDecimal(default_reward)
+        default_reward = VectorFloat(default_reward)
 
         super().__init__(mesh_shape=mesh_shape, seed=seed, initial_state=initial_state, obstacles=obstacles,
                          finals=finals, default_reward=default_reward)
@@ -45,7 +45,7 @@ class RussellNorvig(EnvMesh):
             self._actions)
         self.transitions = transitions
 
-    def step(self, action: int) -> (tuple, VectorDecimal, bool, dict):
+    def step(self, action: int) -> (tuple, VectorFloat, bool, dict):
         """
         Given an action, do a step
         :param action:

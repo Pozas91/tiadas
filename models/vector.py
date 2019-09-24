@@ -4,7 +4,6 @@ This class have a vector of integers (int32).
 """
 
 import math
-from decimal import Decimal as D
 
 import numpy as np
 
@@ -19,7 +18,6 @@ class Vector:
 
     # Number of decimals allowed by int numbers
     decimals_allowed = 2
-    decimal_exponent = D(10) ** -(decimals_allowed - 1)
 
     # Relative margin to compare of similarity of two elements
     relative_tolerance = 0
@@ -34,10 +32,6 @@ class Vector:
     def set_relative_tolerance(relative_tolerance: float = 0.0, integer_mode: bool = False):
         multiply_factor = (10 ** Vector.decimals_allowed) if integer_mode else 1
         Vector.relative_tolerance = relative_tolerance * multiply_factor
-
-    @staticmethod
-    def update_decimal_exponent():
-        Vector.decimals_allowed = D(10) ** -(Vector.decimals_allowed - 1)
 
     def __init__(self, components):
         """
