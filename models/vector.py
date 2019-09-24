@@ -4,6 +4,7 @@ This class have a vector of integers (int32).
 """
 
 import math
+from decimal import Decimal as D
 
 import numpy as np
 
@@ -18,20 +19,25 @@ class Vector:
 
     # Number of decimals allowed by int numbers
     decimals_allowed = 2
+    decimal_exponent = D(10) ** -(decimals_allowed - 1)
 
     # Relative margin to compare of similarity of two elements
     relative_tolerance = 0
     absolute_tolerance = 0
 
     @staticmethod
-    def set_absolute_tolerance(absolute_tolerance: float = 0.0, integer_mode: bool = True):
+    def set_absolute_tolerance(absolute_tolerance: float = 0.0, integer_mode: bool = False):
         multiply_factor = (10 ** Vector.decimals_allowed) if integer_mode else 1
         Vector.absolute_tolerance = absolute_tolerance * multiply_factor
 
     @staticmethod
-    def set_relative_tolerance(relative_tolerance: float = 0.0, integer_mode: bool = True):
+    def set_relative_tolerance(relative_tolerance: float = 0.0, integer_mode: bool = False):
         multiply_factor = (10 ** Vector.decimals_allowed) if integer_mode else 1
         Vector.relative_tolerance = relative_tolerance * multiply_factor
+
+    @staticmethod
+    def update_decimal_exponent():
+        Vector.decimals_allowed = D(10) ** -(Vector.decimals_allowed - 1)
 
     def __init__(self, components):
         """
@@ -109,7 +115,7 @@ class Vector:
             - A vector of same length has been given, return a new Vector with the sum of each pair of components.
             - A vector of different length has been given, throws an exception.
             - A int, sum that int of each component.
-            - A float, remove decimals, and sum that number as int.
+            - A float, sum that number as float, and remove decimals.
         :param other:
         :return:
         """
@@ -122,7 +128,7 @@ class Vector:
             - A vector of same length has been given, return a new Vector with the subtract of each pair of components.
             - A vector of different length has been given, throws an exception.
             - A int, subtract that int of each component.
-            - A float, remove decimals, and subtract that number as int.
+            - A float, subtract that number as float, and remove decimals.
         :param other:
         :return:
         """
@@ -135,7 +141,7 @@ class Vector:
             - A vector of same length has been given, return a new Vector with the multiply of each pair of components.
             - A vector of different length has been given, throws an exception.
             - A int, multiply that int of each component.
-            - A float, remove decimals, and multiply that number as int.
+            - A float, multiply that number as float, and remove decimals.
         :param other:
         :return:
         """
@@ -148,7 +154,7 @@ class Vector:
             - A vector of same length has been given, return a new Vector with the division of each pair of components.
             - A vector of different length has been given, throws an exception.
             - A int, divide that int of each component.
-            - A float, remove decimals, and divide that number as int.
+            - A float, divide that number as float, and remove decimals.
         :param other:
         :return:
         """

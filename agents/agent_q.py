@@ -16,7 +16,7 @@ import math
 import numpy as np
 
 from environments import Environment
-from models import GraphType, VectorFloat, Vector
+from models import GraphType, VectorDecimal, Vector
 from .agent import Agent
 
 
@@ -356,7 +356,7 @@ class AgentQ(Agent):
 
         print(steps)
 
-    def get_accumulated_reward(self, from_state: object = None) -> VectorFloat:
+    def get_accumulated_reward(self, from_state: object = None) -> VectorDecimal:
         """
         When the agent is trained, do a walk, and return the sum of vectors recovered.
         :return:
@@ -370,7 +370,7 @@ class AgentQ(Agent):
         result = np.sum(history, axis=0)
 
         # Return a vector float
-        return VectorFloat(result)
+        return VectorDecimal(result)
 
     @staticmethod
     def policies_are_similar(a: dict, b: dict) -> bool:

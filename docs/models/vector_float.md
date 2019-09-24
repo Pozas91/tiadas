@@ -34,7 +34,7 @@ funcionalidades, con algunas diferencias que presentamos a continuación.
         * **Salida**
             * Devuelve un `Vector`, vector que representa a un vector entero.
     * **Estáticos**
-        * `m3_max_2_sets_not_duplicates(vectors: list) -> (list, list)`
+        * `m3_max_2_lists_not_duplicates(vectors: list) -> (list, list)`
             * **Descripción**
                 * A diferencia que la versión original en la clase [`Vector`](vector.md), este método usa una
                 comprobación previa para ver si dos vectores son parecidos, en caso de ser cierto, descarta las demás
