@@ -28,12 +28,12 @@ class Agent:
                  states_to_observe: list = None, max_steps: int = None,
                  graph_types: set = None):
         """
-        :param environment: An environment where agent does any operation.
-        :param epsilon: Epsilon using in e-greedy policy, to explore more states.
+        :param environment: the agent's environment.
+        :param epsilon: Epsilon used in epsilon-greedy policy to control exploration.
         :param gamma: Discount factor
         :param seed: Seed used for np.random.RandomState method.
-        :param states_to_observe: List of states from that we want to get a graphical output.
-        :param max_steps: Limits of steps per episode.
+        :param states_to_observe: List of states from which graphical output is provided.
+        :param max_steps: Limit of steps per episode.
         :
         """
 
@@ -109,13 +109,23 @@ class Agent:
 
         if self.generator.uniform(low=0., high=1.) < self.epsilon:
             # Get random action to explore possibilities
-            action = self.environment.action_space.sample()
+            return self._greedy_action(state) #self.environment.action_space.sample()
 
         else:
             # Get best action to exploit reward.
-            action = self.best_action(state=state)
+            return self.best_action(state=state)
 
-        return action
+        #return action
+
+    def _greedy_action(self, state) -> int:
+        """
+        Select action according to the greedy policy. The default method is to randomly sample the
+        action_space in the environment.
+        :param state:
+        :return:
+        """
+        return self.environment.action_space.sample()
+
 
     def episode(self) -> None:
         """

@@ -527,7 +527,7 @@ def main():
 
     alpha = 0.1
     number_of_agents = 1
-    episodes = 10
+    episodes = 100
 
     gamma = 1.
     max_steps = 250
@@ -542,17 +542,17 @@ def main():
 
     agents_configuration = {
 
-        AgentType.A1: {
-            EvaluationMechanism.HV: 'yellow',
-            EvaluationMechanism.C:  'orange',
-            EvaluationMechanism.PO: 'blue',
-            # 0.01: 'blue',
-            # 0.1: 'beige',
-            # 0.3: 'gold',
-            # 0.6: 'orange',
-            # 0.8: 'fuchsia',
-            # 1.0: 'cyan'
-        # },
+        # AgentType.A1: {
+        #     EvaluationMechanism.HV: 'yellow',
+        #     EvaluationMechanism.C:  'orange',
+        #     EvaluationMechanism.PO: 'blue',
+        #     # 0.01: 'blue',
+        #     # 0.1: 'beige',
+        #     # 0.3: 'gold',
+        #     # 0.6: 'orange',
+        #     # 0.8: 'fuchsia',
+        #     # 1.0: 'cyan'
+        #  },
         AgentType.PQL:        {
             EvaluationMechanism.HV: 'pink',
             EvaluationMechanism.C:  'red',
@@ -569,19 +569,22 @@ def main():
                 'y': [0, 2000]
             }
         },
+
         # GraphType.MEMORY:           {
         #     'limits': {
         #         'y': [0, 700]
         #     }
         # },
+
         # GraphType.VECTORS_PER_CELL: {
         # }
 
         GraphType.TIME: {
-            'limits': {
-                'y': [0, 2000]
-            }
+           'limits': {
+               'y': [0, 2000]
+           }
         },
+
         # GraphType.EPISODES: {
         # }
     }

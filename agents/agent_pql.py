@@ -7,9 +7,9 @@ Learning using Sets of Pareto Dominating Policies" paper.
 Save rewards, N and occurrences independently, to calculate Q-set on runtime.
 
 Evaluation mechanisms available
-    - HV-PQL: Based in hypervolume
-    - C-PQL: Based in cardinality
-    - PO-PQL: Based in Pareto
+    - HV-PQL: Based on hypervolume
+    - C-PQL: Based on cardinality of the set of Pareto-optimal vectors
+    - PO-PQL: Based on existance of at least one Pareto-optimal vector
     
     
 Sample call: 
@@ -76,21 +76,27 @@ from .agent import Agent
 
 class AgentPQL(Agent):
 
-    def __init__(self, environment: Environment, epsilon: float = 0.1, gamma: float = 1., seed: int = 0,
-                 max_steps: int = None, hv_reference: Vector = None, graph_types: set = None,
-                 evaluation_mechanism: EvaluationMechanism = EvaluationMechanism.HV, states_to_observe: list = None,
+    def __init__(self, environment: Environment,
+                 epsilon: float = 0.1,
+                 gamma: float = 1.,
+                 seed: int = 0,
+                 max_steps: int = None,
+                 hv_reference: Vector = None,
+                 graph_types: set = None,
+                 evaluation_mechanism: EvaluationMechanism = EvaluationMechanism.HV,
+                 states_to_observe: list = None,
                  integer_mode: bool = True):
 
         """
         :param environment: instance of any environment class.
-        :param epsilon: Epsilon used in epsilon-greedy policy, to explore more states.
-        :param gamma: Discount factor
+        :param epsilon: Epsilon used in epsilon-greedy policy, to determine degree of exploration
         :param seed: Seed used for np.random.RandomState method.
-        :param max_steps: Limits of steps per episode.
-        :param hv_reference: Reference vector to calc hypervolume
-        :param evaluation_mechanism: Evaluation mechanism used to calc best action to choose. Three values are
-            available: EvaluationMechanism.{C, PO, HV}
-        :param states_to_observe: List of states from that we want to get a graphical output.
+        :param max_steps: Limit of steps per episode.
+        :param hv_reference: Reference vector for hypervolume calculations
+        :param evaluation_mechanism: Evaluation mechanism used to calc best action to choose among those with
+               non-dominated policy estimates. Three values are available: EvaluationMechanism.{C, PO, HV}
+        :param states_to_observe: List of states to be traced in a graphical output.
+        :param graph_types: types of graphical outputs that will be produced.
         """
 
         # Types to make graphs
@@ -114,7 +120,7 @@ class AgentPQL(Agent):
         if evaluation_mechanism in (EvaluationMechanism.HV, EvaluationMechanism.PO, EvaluationMechanism.C):
             self.evaluation_mechanism = evaluation_mechanism
         else:
-            raise ValueError('Evaluation mechanism does not valid.')
+            raise ValueError('The evaluation mechanism is not valid.')
 
         # if integer mode is True, all reward vectors received will be converted.
         self.integer_mode = integer_mode
@@ -128,7 +134,7 @@ class AgentPQL(Agent):
         # Choose action a from s using a policy derived from the Q-set
         action = self.select_action()
 
-        # Do step on environment
+        # perform chosen action on the environment
         next_state, reward, is_final, info = self.environment.step(action=action)
 
         if self.integer_mode:
@@ -288,7 +294,8 @@ class AgentPQL(Agent):
 
     def best_action(self, state: object = None) -> int:
         """
-        Return best action for q and state given.
+        Return best action for q and state given. The best action is selected according to the method
+        specified in the self.evaluation_mechanism variable.
         :param state:
         :return:
         """
@@ -435,7 +442,9 @@ class AgentPQL(Agent):
 
     def hypervolume_evaluation(self, state: object) -> int:
         """
-        Calc the hypervolume for each action in state given. (EvaluationMechanism.HV)
+        Calc the hypervolume for each action in the given state, and returns the int representing the action
+        with maximum hypervolume. (Approximate) ties are broken choosing randomly among actions with
+        (approximately) maximum hypervolume. (EvaluationMechanism.HV)
         :param state:
         :return:
         """
@@ -469,7 +478,10 @@ class AgentPQL(Agent):
 
     def cardinality_evaluation(self, state: object) -> int:
         """
-        Calc the cardinality for each action in state given. (EvaluationMechanism.C)
+        Calculates the cardinality (number of Pareto-optimal estimates) for each action in the given state,
+        and returns the int representing an action with maximum cardinality. Ties are broken randomly among
+        max cardinality actions.
+        (EvaluationMechanism.C)
         :param state:
         :return:
         """
@@ -501,12 +513,13 @@ class AgentPQL(Agent):
         # Get all max actions
         filter_actions = [action for action in actions.keys() if actions[action] == max_cardinality]
 
-        # from best actions get one aleatory
+        # choose randomly among actions with maximum cardinality
         return self.generator.choice(filter_actions)
 
     def pareto_evaluation(self, state: object) -> int:
         """
-        Calc the pareto for each action in state given. (EvaluationMechanism.PO)
+        Calculates which actions for the current state have at least a Pareto-optimal estimate, and returns one
+         of them (randomly chosen). (EvaluationMechanism.PO)
         :param state:
         :return:
         """
