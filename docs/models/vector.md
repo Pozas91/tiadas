@@ -109,7 +109,7 @@ vector y un número, multiplicación, division, obtención de valores, establece
             * **Salida**
                 * Devuelve un `tuple` con dos `list`, tupla con dos lista que representa a los vectores no dominados y 
                 dominados.
-        * `m3_max_2_sets_not_duplicates(vectors: list) -> (list, list)`
+        * `m3_max_2_lists_not_duplicates(vectors: list) -> (list, list)`
             * **Descripción**
                 * Tiene la misma función que el anterior, pero evita vectores duplicados en la segunda lista.
             * **Parámetros**

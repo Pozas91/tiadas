@@ -1,7 +1,7 @@
 """
 Variant of the Deep Sea Treasure environment.
 """
-from models import VectorFloat
+from models import VectorDecimal
 from .deep_sea_treasure import DeepSeaTreasure
 
 
@@ -39,9 +39,9 @@ class DeepSeaTreasureMixed(DeepSeaTreasure):
 
         # Default reward plus time (time_inverted, treasure_value)
         default_reward = (-1,) + default_reward
-        self.default_reward = VectorFloat(default_reward)
+        self.default_reward = VectorDecimal(default_reward)
 
-    def step(self, action: int) -> (tuple, VectorFloat, bool, dict):
+    def step(self, action: int) -> (tuple, VectorDecimal, bool, dict):
         """
         Given an action, do a step
         :param action:

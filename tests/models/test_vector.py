@@ -636,7 +636,7 @@ class TestVectors(unittest.TestCase):
 
     def test_m3_max_2_lists_not_duplicates(self):
         """
-        Testing m3_max_2_sets_not_duplicates function
+        Testing m3_max_2_lists_not_duplicates function
         :return:
         """
 

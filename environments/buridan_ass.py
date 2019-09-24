@@ -12,7 +12,7 @@ plate and walking penalty is -1 per step.
 FINAL STATE: No food to eat.
 
 REF: Dynamic Preferences in Multi-Criteria Reinforcement Learning (Sriraam Natarajan)"""
-from models import VectorFloat
+from models import VectorDecimal
 from .env_mesh import EnvMesh
 
 
@@ -41,7 +41,7 @@ class BuridanAss(EnvMesh):
         }
 
         mesh_shape = (3, 3)
-        default_reward = VectorFloat(default_reward)
+        default_reward = VectorDecimal(default_reward)
 
         super().__init__(mesh_shape=mesh_shape, seed=seed, default_reward=default_reward, initial_state=initial_state,
                          finals=finals)
@@ -56,7 +56,7 @@ class BuridanAss(EnvMesh):
         # Last time that donkey ate.
         self.last_ate = 0
 
-    def step(self, action: int) -> (tuple, VectorFloat, bool, dict):
+    def step(self, action: int) -> (tuple, VectorDecimal, bool, dict):
         """
         Given an action, do a step
         :param action:

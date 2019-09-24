@@ -12,7 +12,7 @@ REF: Empirical evaluation methods for multi-objective reinforcement learning alg
 """
 from scipy.spatial import distance
 
-from models import VectorFloat
+from models import VectorDecimal
 from .env_mesh import EnvMesh
 
 
@@ -31,7 +31,7 @@ class MoPuddleWorld(EnvMesh):
 
         self.final_state = final_state
         mesh_shape = (20, 20)
-        default_reward = VectorFloat(default_reward)
+        default_reward = VectorDecimal(default_reward)
 
         super().__init__(mesh_shape=mesh_shape, seed=seed, default_reward=default_reward)
 
@@ -49,7 +49,7 @@ class MoPuddleWorld(EnvMesh):
         # Get free spaces
         self.free_spaces = list(set(all_space) - self.puddles)
 
-    def step(self, action: int) -> (tuple, VectorFloat, bool, dict):
+    def step(self, action: int) -> (tuple, VectorDecimal, bool, dict):
         """
         Given an action, do a step
         :param action:
