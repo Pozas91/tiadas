@@ -3,6 +3,8 @@ This is a variant of the DeepSeaTreasureRightDown environment, where allowed
 actions (only DOWN_PROB or RIGHT_PROB) are stochastic. In the last column (i.e.
 maximum value of x), only a deterministic DOWN action is allowed. The transition
 probability model is provided in the __init__ method.
+
+HV REFERENCE: (-25, 0)
 """
 import numpy as np
 

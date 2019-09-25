@@ -1,3 +1,4 @@
+from .agent_type import AgentType
 from .dominance import Dominance
 from .evaluation_mechanism import EvaluationMechanism
 from .graph_type import GraphType

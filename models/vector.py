@@ -5,7 +5,6 @@ This class represent a vector of integers (int32) with some necessary features f
 import math
 
 import numpy as np
-from docutils.transforms import components
 
 from .dominance import Dominance
 import utils.models as um

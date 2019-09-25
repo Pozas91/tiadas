@@ -174,6 +174,10 @@ class AgentPQL(Agent):
 
         for graph_type in graph_types:
 
+            # If our agent doesn't has that graph_type ignore it.
+            if graph_type not in self.graph_info:
+                continue
+
             if graph_type is GraphType.MEMORY:
 
                 # Count number of vectors in non dominate dictionary

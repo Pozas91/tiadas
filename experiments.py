@@ -1,21 +1,14 @@
 import math
 import time
-from enum import Enum
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
 
 import utils.miscellaneous as um
-from agents import Agent, AgentPQL, AgentMOSP, AgentA1
-from environments import Environment, DeepSeaTreasureRightDown, DeepSeaTreasureRightDownStochastic
-from models import Vector, EvaluationMechanism, GraphType
-
-
-class AgentType(Enum):
-    A1 = 'a1'
-    PQL = 'pql'
-    SCALARIZED = 'scalarized'
+from agents import Agent, AgentA1, AgentPQL, AgentMOSP
+from environments import PressurizedBountifulSeaTreasure, Environment
+from models import GraphType, Vector, EvaluationMechanism, AgentType
 
 
 def write_config_file(timestamp: int, number_of_agents: int, env_name_snake: str, **kwargs):
@@ -77,7 +70,7 @@ def initialize_graph_data(graph_types: dict, agents_configuration: dict) -> dict
     # Create graphs structure
     graphs = dict()
 
-    for graph_type in graph_types.keys():
+    for gt in graph_types.keys():
         data_types = dict()
 
         for agent_type in agents_configuration:
@@ -93,24 +86,24 @@ def initialize_graph_data(graph_types: dict, agents_configuration: dict) -> dict
             })
 
         graphs.update({
-            graph_type: data_types
+            gt: data_types
         })
 
     return graphs
 
 
-def test_agents(environment: Environment, hv_reference: Vector, variable: str, graph_types: dict,
+def test_agents(env: Environment, hv_reference: Vector, variable: str, graph_types: dict,
                 agents_configuration: dict, epsilon: float = 0.1, alpha: float = 1., max_steps: int = None,
                 states_to_observe: list = None, episodes: int = 1000, integer_mode: bool = False,
                 number_of_agents: int = 30, gamma: float = 1.,
-                evaluation_mechanism: EvaluationMechanism = EvaluationMechanism.C):
+                eval_mechanism: EvaluationMechanism = EvaluationMechanism.C):
     """
     This method run an experiment with the parameters and environment given
     :param variable:
-    :param evaluation_mechanism:
+    :param eval_mechanism:
     :param agents_configuration:
     :param integer_mode:
-    :param environment:
+    :param env:
     :param hv_reference:
     :param epsilon:
     :param alpha:
@@ -125,10 +118,10 @@ def test_agents(environment: Environment, hv_reference: Vector, variable: str, g
 
     # Parameters
     if states_to_observe is None:
-        states_to_observe = [environment.initial_state]
+        states_to_observe = [env.initial_state]
 
     # Build environment
-    env_name = environment.__class__.__name__
+    env_name = env.__class__.__name__
     env_name_snake = um.str_to_snake_case(env_name)
 
     # File timestamp
@@ -171,8 +164,8 @@ def test_agents(environment: Environment, hv_reference: Vector, variable: str, g
                 t0 = time.time()
 
                 # Reset environment
-                environment.reset()
-                environment.seed(seed=seed)
+                env.reset()
+                env.seed(seed=seed)
 
                 # Default values
                 v_s_0 = None
@@ -181,7 +174,7 @@ def test_agents(environment: Environment, hv_reference: Vector, variable: str, g
                 # Variable parameters
                 parameters = {
                     'epsilon':              epsilon, 'alpha': alpha, 'gamma': gamma, 'max_steps': max_steps,
-                    'evaluation_mechanism': evaluation_mechanism
+                    'evaluation_mechanism': eval_mechanism
                 }
 
                 # Modify current configuration
@@ -197,7 +190,7 @@ def test_agents(environment: Environment, hv_reference: Vector, variable: str, g
                     weights = (.99, .01)
 
                     # Build agent
-                    agent = AgentMOSP(seed=seed, environment=environment, weights=weights,
+                    agent = AgentMOSP(seed=seed, environment=env, weights=weights,
                                       states_to_observe=states_to_observe, graph_types=set(graph_types.keys()),
                                       hv_reference=hv_reference, **parameters)
 
@@ -239,7 +232,7 @@ def test_agents(environment: Environment, hv_reference: Vector, variable: str, g
                     del parameters['alpha']
 
                     # Build an instance of agent
-                    agent = AgentPQL(environment=environment, seed=seed, hv_reference=hv_reference,
+                    agent = AgentPQL(environment=env, seed=seed, hv_reference=hv_reference,
                                      graph_types=set(graph_types.keys()), states_to_observe=states_to_observe,
                                      integer_mode=integer_mode, **parameters)
 
@@ -247,14 +240,13 @@ def test_agents(environment: Environment, hv_reference: Vector, variable: str, g
                     agent.train(episodes=episodes)
 
                     # Non-dominated vectors found in V(s0)
-                    # v_s_0 = agent.non_dominated_vectors_from_state(state=agent.environment.initial_state)
                     v_s_0 = agent.q_set_from_state(state=agent.environment.initial_state)
 
                 # Is an A1 agent?
                 elif agent_type == AgentType.A1:
 
                     # Build an instance of agent
-                    agent = AgentA1(environment=environment, seed=seed, hv_reference=hv_reference,
+                    agent = AgentA1(environment=env, seed=seed, hv_reference=hv_reference,
                                     graph_types=set(graph_types.keys()), states_to_observe=states_to_observe,
                                     integer_mode=integer_mode, **parameters)
 
@@ -286,7 +278,7 @@ def test_agents(environment: Environment, hv_reference: Vector, variable: str, g
     prepare_data_and_show_graph(timestamp=timestamp, data_max_len=data_max_len, env_name=env_name,
                                 env_name_snake=env_name_snake, graphs=graphs, number_of_agents=number_of_agents,
                                 agents_configuration=agents_configuration, alpha=alpha, epsilon=epsilon, gamma=gamma,
-                                episodes=episodes, max_steps=max_steps, initial_state=environment.initial_state,
+                                episodes=episodes, max_steps=max_steps, initial_state=env.initial_state,
                                 integer_mode=integer_mode, variable=variable, graph_types=graph_types)
 
 
@@ -464,7 +456,7 @@ def prepare_data_and_show_graph(timestamp: int, data_max_len: int, env_name: str
             box.x0, box.y0, box.width * 0.9, box.height
         ])
 
-        limits = graph_types[graph_type]['limits']
+        limits = graph_types[graph_type].get('limits', {})
         limits_y = limits.get('y', False)
         limits_x = limits.get('x', False)
 
@@ -526,7 +518,7 @@ def prepare_data_and_show_graph(timestamp: int, data_max_len: int, env_name: str
 def main():
     # Default parameters
     alpha = 0.8
-    number_of_agents = 5
+    number_of_agents = 1
     episodes = 2000
     gamma = 1.
     max_steps = 250
@@ -541,21 +533,21 @@ def main():
 
     agents_configuration = {
         # AgentType.A1: {
-            # EvaluationMechanism.HV: 'yellow',
-            # EvaluationMechanism.C:  'orange',
-            # EvaluationMechanism.PO: 'blue',
-            # 0.01: 'blue',
-            # 0.03: 'cyan',
-            # 0.1: 'black',
-            # 0.3: 'gold',
-            # 0.6: 'orange',
-            # 0.8: 'fuchsia',
-            # 1.0: 'cyan'
+        # EvaluationMechanism.HV: 'yellow',
+        # EvaluationMechanism.C:  'orange',
+        # EvaluationMechanism.PO: 'blue',
+        # 0.01: 'blue',
+        # 0.03: 'cyan',
+        # 0.1: 'black',
+        # 0.3: 'gold',
+        # 0.6: 'orange',
+        # 0.8: 'fuchsia',
+        # 1.0: 'cyan'
         # },
-        AgentType.PQL:        {
-            EvaluationMechanism.HV: 'pink',
+        AgentType.PQL: {
+            # EvaluationMechanism.HV: 'pink',
             EvaluationMechanism.C:  'red',
-            EvaluationMechanism.PO: 'green'
+            # EvaluationMechanism.PO: 'green'
         },
         # AgentType.SCALARIZED: {
         # EvaluationMechanism.SCALARIZED: 'cyan'
@@ -563,23 +555,23 @@ def main():
     }
 
     graph_types = {
-        GraphType.STEPS:            {
+        GraphType.STEPS:  {
+            # 'limits': {
+            #     'y': [0, 2000]
+            # }
+        },
+        # GraphType.MEMORY: {
+            # 'limits': {
+            #     'y': [0, 700]
+            # }
+        # },
+        # GraphType.VECTORS_PER_CELL: {
+        # }
+        GraphType.TIME: {
             'limits': {
                 'y': [0, 2000]
             }
         },
-        GraphType.MEMORY:           {
-            'limits': {
-                'y': [0, 700]
-            }
-        },
-        # GraphType.VECTORS_PER_CELL: {
-        # }
-        # GraphType.TIME: {
-        #     'limits': {
-        #         'y': [0, 2000]
-        #     }
-        # },
         # GraphType.EPISODES: {
         # }
     }
@@ -589,11 +581,11 @@ def main():
     for tolerance in [0.1, 0.3, 0.5]:
         Vector.set_absolute_tolerance(absolute_tolerance=tolerance, integer_mode=True)
 
-        test_agents(environment=DeepSeaTreasureRightDown(initial_state=initial_state, columns=columns),
-                    hv_reference=Vector([-25, 0]), epsilon=0.7, alpha=alpha, states_to_observe=[initial_state],
+        test_agents(env=PressurizedBountifulSeaTreasure(initial_state=initial_state),
+                    hv_reference=Vector([-25, 0, -120]), epsilon=0.7, alpha=alpha, states_to_observe=[initial_state],
                     episodes=episodes, integer_mode=True, graph_types=graph_types, number_of_agents=number_of_agents,
                     agents_configuration=agents_configuration, gamma=gamma, max_steps=max_steps,
-                    evaluation_mechanism=evaluation_mechanism, variable=variable)
+                    eval_mechanism=evaluation_mechanism, variable=variable)
 
     # test_agents(environment=DeepSeaTreasureRightDown(initial_state=initial_state, columns=columns),
     #             hv_reference=Vector([-25, 0]), epsilon=0.7, alpha=alpha, states_to_observe=[initial_state],

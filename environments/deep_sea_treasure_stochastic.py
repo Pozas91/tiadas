@@ -2,6 +2,7 @@
 Such as DeepSeaTreasure environment but has a vector of transitions probabilities, which will be used when an action
 is to be taken.
 
+HV REFERENCE: (-25, 0)
 """
 from models import Vector
 from .env_mesh import EnvMesh

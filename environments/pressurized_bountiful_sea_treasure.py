@@ -5,7 +5,10 @@ create a convex Pareto front.
 FINAL STATE: To reach any final state.
 
 REF: Multi-objective reinforcement learning using sets of pareto dominating policies (Kristof Van Moffaert,
-Ann Nowé) 2014 """
+Ann Nowé) 2014
+
+HV REFERENCE: (-25, 0, -120)
+"""
 from models import Vector
 from .env_mesh import EnvMesh
 

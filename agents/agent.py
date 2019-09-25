@@ -109,13 +109,13 @@ class Agent:
 
         if self.generator.uniform(low=0., high=1.) < self.epsilon:
             # Get random action to explore possibilities
-            return self._greedy_action(state) #self.environment.action_space.sample()
+            return self._greedy_action(state)  # self.environment.action_space.sample()
 
         else:
             # Get best action to exploit reward.
             return self.best_action(state=state)
 
-        #return action
+        # return action
 
     def _greedy_action(self, state) -> int:
         """
@@ -125,7 +125,6 @@ class Agent:
         :return:
         """
         return self.environment.action_space.sample()
-
 
     def episode(self) -> None:
         """
@@ -149,7 +148,7 @@ class Agent:
             is_final_state = self.do_iteration()
 
             # Check timeout
-            if self.max_steps is not None and not is_final_state:
+            if not is_final_state and self.max_steps is not None:
                 is_final_state = self.steps >= self.max_steps
 
             # Check if is necessary update graph

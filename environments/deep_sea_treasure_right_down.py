@@ -14,7 +14,7 @@ episode (while DeepSeaTreasure does).
 
 All other elements of the environment behave are as in DeepSeaTreasure.
 
-The reference point for hypervolume calculations in this environment is (-25, 0).
+HV REFERENCE: (-25, 0)
 """
 from models import Vector
 from spaces import DynamicSpace

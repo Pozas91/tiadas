@@ -19,6 +19,8 @@ Episodes end whenever a final state (with a treasure) is reached.
 Refernce: 
     Empirical Evaluation methods for multi-objective reinforcement learning algorithms
     (Vamplew, Dazeley, Berry, Issabekov and Dekker) 2011
+
+HV REFERENCE: (-25, 0)
 """
 
 from models import Vector
