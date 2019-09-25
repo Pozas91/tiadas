@@ -1,17 +1,26 @@
-"""The environment is a grid of 10 rows and 11 columns. The agent controls a submarine searching for undersea
-treasure. There are multiple treasure locations with varying values. There are two objectives - to minimise the time
-taken to reach the treasure, and to maximise the value of the treasure. Each episode commences with the vessel in the
-top left state, and ends when a treasure location is reached or after 1000 actions. Four actions are available to the
-agent - moving one square to the left, right, up or down. Any action which would cause the agent to leave the grid
-will leave its position unchanged. The reward received by the agent is a 2-element vector. The first element is a
-time penalty, which is -1 on all turns. The second element is the treasure value which is 0 except when the agent
-moves into a treasure location, when it is the value indicated.
+"""The environment is a grid of 10 rows and 11 columns. The agent controls a 
+submarine searching for undersea treasures. There are multiple treasure locations
+with varying treasure values. There are two objectives - to minimise the number 
+of steps taken to reach the treasure, and to maximise the value of the treasure. 
+Each episode starts with the vessel in the top left state, and ends when a 
+treasure location is reached or after a given number of actions. Four actions 
+are available to the agent - moving one square to the left, right, up or down. 
+Any action that would cause the agent to leave the grid will leave its position 
+unchanged. The reward received by the agent is a 2-element vector. The first 
+element is a time penalty, which adds -1 on each step. The second element is 
+the treasure value  of the state the agent moves into (zero for any non-terminal
+state).
 
-FINAL STATE: To reach any final state.
+Notice that states are represented by a tuple (a, b), where b stands for the
+row (y-axis), and a for the column (x-axis).                                                     
 
-REF: Empirical Evaluation methods for multi-objective reinforcement learning algorithms
+Episodes end whenever a final state (with a treasure) is reached.
+
+Refernce: 
+    Empirical Evaluation methods for multi-objective reinforcement learning algorithms
     (Vamplew, Dazeley, Berry, Issabekov and Dekker) 2011
 """
+
 from models import Vector
 from .env_mesh import EnvMesh
 
@@ -20,13 +29,16 @@ class DeepSeaTreasure(EnvMesh):
     # Possible actions
     _actions = {'UP': 0, 'RIGHT': 1, 'DOWN': 2, 'LEFT': 3}
 
-    # Pareto optimal
+    # Pareto optimal policy vector-values
     pareto_optimal = [
-        Vector([-1, 1]), Vector([-3, 2]), Vector([-5, 3]), Vector([-7, 5]), Vector([-8, 8]), Vector([-9, 16]),
-        Vector([-13, 24]), Vector([-14, 50]), Vector([-17, 74]), Vector([-19, 124])
+        Vector([-1, 1]), Vector([-3, 2]), Vector([-5, 3]), Vector([-7, 5]), 
+        Vector([-8, 8]), Vector([-9, 16]), Vector([-13, 24]), Vector([-14, 50]), 
+        Vector([-17, 74]), Vector([-19, 124])
     ]
 
-    def __init__(self, initial_state: tuple = (0, 0), default_reward: tuple = (0,), seed: int = 0,
+    def __init__(self, initial_state: tuple = (0, 0), 
+                 default_reward: tuple = (0,), 
+                 seed: int = 0,
                  steps_limit: int = 1000):
         """
         :param initial_state:
@@ -34,7 +46,7 @@ class DeepSeaTreasure(EnvMesh):
         :param seed:
         """
 
-        # List of all treasures and its reward.
+        # Dictionary with final states as keys, and treasure amounts as values.
         finals = {
             (0, 1): 1,
             (1, 2): 2,
@@ -65,10 +77,14 @@ class DeepSeaTreasure(EnvMesh):
         default_reward = (-1,) + default_reward
         default_reward = Vector(default_reward)
 
-        super().__init__(mesh_shape=mesh_shape, seed=seed, initial_state=initial_state, default_reward=default_reward,
-                         finals=finals, obstacles=obstacles)
+        super().__init__(mesh_shape=mesh_shape,  
+                         seed=seed, 
+                         initial_state=initial_state, 
+                         default_reward=default_reward,
+                         finals=finals, 
+                         obstacles=obstacles)
 
-        # Steps
+        # Step counter and limit
         self.steps_limit = steps_limit
         self.steps = 0
 
@@ -79,7 +95,7 @@ class DeepSeaTreasure(EnvMesh):
         :return: (state, (time_inverted, treasure_value), final, info)
         """
 
-        # Increment steps
+        # Increment step counter
         self.steps += 1
 
         # Initialize rewards as vector
@@ -88,7 +104,7 @@ class DeepSeaTreasure(EnvMesh):
         # Get new state
         new_state = self.next_state(action=action)
 
-        # Update previous state
+        # Update current state
         self.current_state = new_state
 
         # Get treasure value
@@ -104,7 +120,7 @@ class DeepSeaTreasure(EnvMesh):
 
     def reset(self) -> tuple:
         """
-        Reset environment to zero.
+        Reset environment to initial state.
         :return:
         """
         self.steps = 0
@@ -113,7 +129,8 @@ class DeepSeaTreasure(EnvMesh):
 
     def is_final(self, state: tuple = None) -> bool:
         """
-        Return True if state given is terminal, False in otherwise.
+        Return True if the state given is final or the maximum number of
+        steps has been reached, False otherwise.
         :param state:
         :return:
         """

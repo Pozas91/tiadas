@@ -53,7 +53,7 @@ def distance_to_origin(a: Vector) -> float:
 
 def order_vectors_by_origin_nearest(vectors: list) -> list:
     """
-    Order given vectors by origin nearest
+    Order given vectors by nearest to origin
     :param vectors:
     :return:
     """
@@ -93,6 +93,8 @@ def math_is_close(a: float, b: float, rel_tol: float = 1e-09, abs_tol: float = 0
 def str_to_snake_case(text: str) -> str:
     """
     Convert a text given to snake case text.
+    This is used, for example, to convert environment names and
+    write them in files.
     :param text:
     :return:
     """

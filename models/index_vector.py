@@ -1,5 +1,5 @@
 """
-Such as Vector class, but has information about a index (can be an action) associate with this vector.
+Class that represents a vector with an associated integer index, that can be used, for example, as an identifier.
 """
 import numpy as np
 
@@ -44,7 +44,7 @@ class IndexVector:
         Return the string representation of an array, with index associate.
         :return:
         """
-        return '{} - {}'.format(self.index, np.array_repr(self.vector.components))
+        return '{} - {}'.format(self.index, self.vector.__repr__())
 
     def dominance(self, v2) -> Dominance:
         """
@@ -57,6 +57,14 @@ class IndexVector:
     @staticmethod
     def actions_occurrences_based_m3_with_repetitions(vectors: list, actions: list) -> dict:
         """
+        This function receives a list on IndexVector objects (where de index of each vector is an integer representing
+        an action), and a list of indices (each one representing an action used as index in the previous list).
+
+        The function calculates the set of non-dominated vectors in the first list (with repetitions), and counts,
+        for each action, the number of associated non-dominated vectors.
+
+        Then, a dictionary is returned, where keys are actions, and values are non-dominated vector counts.
+
         :param actions:
         :param vectors: list of Vector objects.
 

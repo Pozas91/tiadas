@@ -1,12 +1,14 @@
 """
-Base model to define environments which observation_space as mesh.
-Mesh is a grid of columns per rows, where the minimum value is (0, 0), and maximum value is (columns - 1, rows - 1).
-Top-left corner is (0, 0), top-right corner is (columns - 1, 0), bottom-left corner is (0, rows - 1) and
-bottom-right corner is (columns - 1, rows - 1).
+Base class to define environments with an observation_space defined by a mesh.
+Mesh is a grid of columns per rows, where the minimum value is (0, 0), and maximum 
+value is (columns - 1, rows - 1).
+The top-left corner is (0, 0), the top-right corner is (columns - 1, 0), bottom-left 
+corner is (0, rows - 1) and bottom-right corner is (columns - 1, rows - 1).
 
-Action space is a discrete number. Allow numbers from [0, n).
+Action space is a discrete number. Actions are in the range [0, n).
 
-Finals is a dictionary which structure as follows:
+Finals is a dictionary where the key is a state, and the value is a reward
+vector as follows:
 {
     state_1: reward,
     state_2: reward,
@@ -25,34 +27,45 @@ from .environment import Environment
 
 class EnvMesh(Environment):
 
-    def __init__(self, mesh_shape: tuple, default_reward: Vector, seed: int = None, initial_state: tuple = None,
-                 obstacles: frozenset = None, finals: dict = None):
+    def __init__(self, mesh_shape: tuple, 
+                 default_reward: Vector, 
+                 seed: int = None, 
+                 initial_state: tuple = None, 
+                 obstacles: frozenset = None, 
+                 finals: dict = None):
 
         """
-        :param mesh_shape: A tuple where first component is a x-axis, and second component is y-axis.
-        :param default_reward: Default reward that return environment when a reward is not defined.
-        :param seed: Initial seed.
-        :param initial_state: First state where agent start.
-        :param obstacles: States where agent can not to be.
-        :param finals: States where agent finish an episode.
+        :param mesh_shape: A tuple where first component represents the x-axis
+                           (i.e. columns), and the second component the y-axis
+                           (i.e. rows).
+        :param default_reward: Default reward returned by the environment when a 
+                               reward is not defined.
+        :param seed: Initial seed for the random number generator.
+        :param initial_state: start state for each episode.
+        :param obstacles: inaccessible states.
+        :param finals: terminal states for episodes.
         """
 
         # Create the mesh
         x, y = mesh_shape
         observation_space = gym.spaces.Tuple((spaces.Discrete(x), spaces.Discrete(y)))
 
-        super().__init__(observation_space=observation_space, default_reward=default_reward, seed=seed,
-                         initial_state=initial_state, obstacles=obstacles, finals=finals)
+        super().__init__(observation_space=observation_space, 
+                         default_reward=default_reward, 
+                         seed=seed,
+                         initial_state=initial_state, 
+                         obstacles=obstacles, 
+                         finals=finals)
 
     def render(self, mode: str = 'human') -> None:
         """
-        Render environment
+        Render the environment as a grid on the screen
         :param mode:
         :return:
         """
 
         if mode == 'human':
-            # Get cols (x) and rows (y) from observation space
+            # Get cols (x) and rows (y) from the observation space
             cols, rows = self.observation_space.spaces[0].n, self.observation_space.spaces[1].n
 
             for y in range(rows):
@@ -81,7 +94,8 @@ class EnvMesh(Environment):
 
     def next_state(self, action: int, state: tuple = None) -> tuple:
         """
-        Calc next state with current state and action given. Default is 4-neighbors (UP, LEFT, DOWN, RIGHT)
+        Calc next state with current state and action given. 
+        Default is 4-neighbors (UP, LEFT, DOWN, RIGHT)
         :param state: If a state is given, do action from that state.
         :param action: from action_space
         :return: a new state (or old if is invalid action)
