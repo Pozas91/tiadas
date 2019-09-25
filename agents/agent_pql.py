@@ -168,22 +168,32 @@ class AgentPQL(Agent):
 
         for graph_type in graph_types:
 
-            # In the same for loop, is check if this agent has the graph_type indicated (get dictionary default value)
-            for state, data in self.graph_info.get(graph_type, {}).items():
+            if graph_type is GraphType.MEMORY:
 
-                # Add to data Best value (V max)
-                value = self._best_hypervolume(state=state)
+                # Count number of vectors in non dominate dictionary
+                self.graph_info[graph_type].append(
+                    sum(len(actions) for states in self.nd.values() for actions in states.values())
+                )
 
-                # If integer mode is True, is necessary divide value by increment
-                if self.integer_mode:
-                    # Divide value by two powered numbers (hv_reference and reward)
-                    value /= 10 ** (Vector.decimals_allowed * 2)
+            else:
 
-                # Add to data Best value (V max)
-                data.append(value)
+                # In the same for loop, is check if this agent has the graph_type indicated (get dictionary default
+                # value)
+                for state, data in self.graph_info.get(graph_type, {}).items():
 
-                # Update dictionary
-                self.graph_info.get(graph_type).update({state: data})
+                    # Add to data Best value (V max)
+                    value = self._best_hypervolume(state=state)
+
+                    # If integer mode is True, is necessary divide value by increment
+                    if self.integer_mode:
+                        # Divide value by two powered numbers (hv_reference and reward)
+                        value /= 10 ** (Vector.decimals_allowed * 2)
+
+                    # Add to data Best value (V max)
+                    data.append(value)
+
+                    # Update dictionary
+                    self.graph_info.get(graph_type).update({state: data})
 
     def get_and_update_n_s_a(self, state: object, action: int) -> int:
         """
@@ -255,7 +265,7 @@ class AgentPQL(Agent):
 
     def q_set(self, state: object, action: int) -> list:
         """
-        Calc on run-time Q-set
+        Calc on run-time Q(s, a)
         :param state:
         :param action:
         :return:
@@ -271,6 +281,28 @@ class AgentPQL(Agent):
         q_set = [r_s_a + (non_dominated * self.gamma) for non_dominated in non_dominated_vectors]
 
         return q_set
+
+    def q_set_from_state(self, state: object) -> list:
+        """
+        Calc Q(s)
+        :param state:
+        :return:
+        """
+
+        # Union
+        union = list()
+
+        # for each action in actions
+        for a in self.environment.action_space:
+
+            # Get Q(s, a)
+            q = self.q_set(state=state, action=a)
+
+            # Union with flatten mode.
+            union += q
+
+        # Return Q(s)
+        return self.environment.default_reward.m3_max(union)
 
     def reset(self) -> None:
         """

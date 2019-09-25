@@ -247,7 +247,8 @@ def test_agents(environment: Environment, hv_reference: Vector, variable: str, g
                     agent.train(episodes=episodes)
 
                     # Non-dominated vectors found in V(s0)
-                    v_s_0 = agent.non_dominated_vectors_from_state(state=agent.environment.initial_state)
+                    # v_s_0 = agent.non_dominated_vectors_from_state(state=agent.environment.initial_state)
+                    v_s_0 = agent.q_set_from_state(state=agent.environment.initial_state)
 
                 # Is an A1 agent?
                 elif agent_type == AgentType.A1:
@@ -524,9 +525,9 @@ def prepare_data_and_show_graph(timestamp: int, data_max_len: int, env_name: str
 
 def main():
     # Default parameters
-    alpha = 0.1
-    number_of_agents = 10
-    episodes = 10000
+    alpha = 0.8
+    number_of_agents = 5
+    episodes = 2000
     gamma = 1.
     max_steps = 250
     initial_state = (0, 0)
@@ -539,23 +540,23 @@ def main():
     # variable = 'evaluation_mechanism'
 
     agents_configuration = {
-        AgentType.A1: {
+        # AgentType.A1: {
             # EvaluationMechanism.HV: 'yellow',
             # EvaluationMechanism.C:  'orange',
             # EvaluationMechanism.PO: 'blue',
-            0.01: 'blue',
-            0.03: 'cyan',
-            0.1: 'black',
-            0.3: 'gold',
-            0.6: 'orange',
-            0.8: 'fuchsia',
+            # 0.01: 'blue',
+            # 0.03: 'cyan',
+            # 0.1: 'black',
+            # 0.3: 'gold',
+            # 0.6: 'orange',
+            # 0.8: 'fuchsia',
             # 1.0: 'cyan'
-        },
-        # AgentType.PQL:        {
-        #     EvaluationMechanism.HV: 'pink',
-        #     EvaluationMechanism.C:  'red',
-        #     EvaluationMechanism.PO: 'green'
         # },
+        AgentType.PQL:        {
+            EvaluationMechanism.HV: 'pink',
+            EvaluationMechanism.C:  'red',
+            EvaluationMechanism.PO: 'green'
+        },
         # AgentType.SCALARIZED: {
         # EvaluationMechanism.SCALARIZED: 'cyan'
         # }
@@ -588,7 +589,7 @@ def main():
     for tolerance in [0.1, 0.3, 0.5]:
         Vector.set_absolute_tolerance(absolute_tolerance=tolerance, integer_mode=True)
 
-        test_agents(environment=DeepSeaTreasureRightDownStochastic(initial_state=initial_state, columns=columns),
+        test_agents(environment=DeepSeaTreasureRightDown(initial_state=initial_state, columns=columns),
                     hv_reference=Vector([-25, 0]), epsilon=0.7, alpha=alpha, states_to_observe=[initial_state],
                     episodes=episodes, integer_mode=True, graph_types=graph_types, number_of_agents=number_of_agents,
                     agents_configuration=agents_configuration, gamma=gamma, max_steps=max_steps,

@@ -2,7 +2,6 @@
 This class represent a vector with some features necessaries for our program.
 This class have a vector of floats (float64).
 """
-import math
 
 import numpy as np
 
