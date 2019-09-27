@@ -126,7 +126,7 @@ class Agent:
         """
         return self.environment.action_space.sample()
 
-    def episode(self) -> None:
+    def episode(self, steps_to_finish: int = None) -> None:
         """
         Run an episode complete until get a final step
         :return:
@@ -145,11 +145,12 @@ class Agent:
         self.reset_steps()
 
         while not is_final_state:
+            # Do an iteration
             is_final_state = self.do_iteration()
 
-            # Check timeout
-            if not is_final_state and self.max_steps is not None:
-                is_final_state = self.steps >= self.max_steps
+            # Stop conditions
+            is_final_state |= (steps_to_finish is not None and self.total_steps >= steps_to_finish)
+            is_final_state |= (self.max_steps is not None and self.steps >= self.max_steps)
 
             # Check if is necessary update graph
             if self.total_steps % self.steps_to_get_graph_data == 0:
@@ -164,9 +165,6 @@ class Agent:
 
                 # Update last execution
                 self.last_time_to_get_graph_data = current_time
-
-        # Last update in this episode
-        self.update_graph(graph_types=(GraphType.STEPS, GraphType.MEMORY, GraphType.TIME, GraphType.EPISODES))
 
     def update_graph(self, graph_types: tuple) -> None:
         """
@@ -252,6 +250,35 @@ class Agent:
 
         self.update_graph(graph_types=(GraphType.VECTORS_PER_CELL,))
 
+    def time_train(self, execution_time: int = 120):
+        """
+        Return this agent trained during `time_execution` seconds.
+        :param solution:
+        :param execution_time:
+        :return:
+        """
+
+        reference_time = time.time()
+
+        while (time.time() - reference_time) < execution_time:
+            # Do an episode
+            self.episode()
+
+        self.update_graph(graph_types=(GraphType.VECTORS_PER_CELL,))
+
+    def steps_train(self, steps: int = 1000):
+        """
+        Return this agent trained during `steps` steps.
+        :param steps:
+        :return:
+        """
+
+        while self.total_steps < steps:
+            # Do an episode
+            self.episode()
+
+        self.update_graph(graph_types=(GraphType.VECTORS_PER_CELL,))
+
     def get_dict_model(self) -> dict:
         """
         Get a dictionary of model
@@ -260,30 +287,30 @@ class Agent:
         """
         model = {
             'meta': {
-                'class':        self.__class__.__name__,
-                'module':       self.__module__,
+                'class': self.__class__.__name__,
+                'module': self.__module__,
                 'dependencies': {
-                    'numpy':      np.__version__,
+                    'numpy': np.__version__,
                     'matplotlib': matplotlib.__version__
                 }
             },
             'data': {
-                'epsilon':           self.epsilon,
-                'gamma':             self.gamma,
-                'environment':       {
+                'epsilon': self.epsilon,
+                'gamma': self.gamma,
+                'environment': {
                     'meta': {
-                        'class':  self.environment.__class__.__name__,
+                        'class': self.environment.__class__.__name__,
                         'module': self.environment.__module__,
                     },
                     'data': self.environment.get_dict_model()
                 },
-                'max_steps':         self.max_steps,
+                'max_steps': self.max_steps,
                 'states_to_observe': [
                     {
                         'key': str(k), 'value': {'key': k2 if isinstance(k2, int) else list(k2), 'value': v2}
                     } for k, v in self.graph_info.items() for k2, v2 in v.items()
                 ],
-                'seed':              self.seed
+                'seed': self.seed
             }
         }
 

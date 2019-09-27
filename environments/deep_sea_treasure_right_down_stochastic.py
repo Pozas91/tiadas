@@ -6,12 +6,13 @@ probability model is provided in the __init__ method.
 
 HV REFERENCE: (-25, 0)
 """
+import math
+
 import numpy as np
 
 from models import Vector
 from spaces import DynamicSpace
 from .env_mesh import EnvMesh
-import math
 
 
 class DeepSeaTreasureRightDownStochastic(EnvMesh):
@@ -23,11 +24,8 @@ class DeepSeaTreasureRightDownStochastic(EnvMesh):
         (-1, 1), (-3, 2), (-5, 3), (-7, 5), (-8, 8), (-9, 16), (-13, 24), (-14, 50), (-17, 74), (-19, 124)
     ]
 
-    def __init__(self, initial_state: tuple = (0, 0), 
-                 default_reward: tuple = (0,), 
-                 seed: int = 0, 
-                 int = 0,
-                 transitions: tuple = (0.8, 0.2)):
+    def __init__(self, initial_state: tuple = (0, 0), default_reward: tuple = (0,), seed: int = 0,
+                 transitions: tuple = (0.8, 0.2), columns: int = 10):
         """
         :param initial_state:
         :param default_reward:
@@ -84,9 +82,9 @@ class DeepSeaTreasureRightDownStochastic(EnvMesh):
         default_reward = (-1,) + default_reward
         default_reward = Vector(default_reward)
 
-        super().__init__(mesh_shape=mesh_shape, 
-                         seed=seed, 
-                         initial_state=initial_state, 
+        super().__init__(mesh_shape=mesh_shape,
+                         seed=seed,
+                         initial_state=initial_state,
                          default_reward=default_reward,
                          finals=finals, obstacles=obstacles)
 

@@ -6,8 +6,8 @@ import math
 
 import numpy as np
 
-from .dominance import Dominance
 import utils.models as um
+from .dominance import Dominance
 
 
 class Vector:
@@ -40,7 +40,6 @@ class Vector:
         """
 
         self.components = np.array(components)
-
 
     def __getitem__(self, index):
         """
@@ -300,17 +299,17 @@ class Vector:
                     return Dominance.otherwise
 
         if v1_dominate == v2_dominate:
-            if v1_dominate:  #both, v1_dominate and v2_dominate are True -> vectors are indifferent
+            if v1_dominate:  # both, v1_dominate and v2_dominate are True -> vectors are indifferent
                 return Dominance.otherwise
 
             # Are equals
-            else: #both, v1_dominate and v2_dominate are False -> vectors are (approximately) equal
+            else:  # both, v1_dominate and v2_dominate are False -> vectors are (approximately) equal
                 return Dominance.equals
 
         elif v1_dominate:  # v1 dominates v2
             return Dominance.dominate
 
-        else:              # v2 dominates v1
+        else:  # v2 dominates v1
             return Dominance.is_dominated
 
     @staticmethod

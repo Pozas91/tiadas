@@ -65,6 +65,7 @@ import importlib
 import json
 import math
 import os
+import time
 from copy import deepcopy
 
 import utils.hypervolume as uh
@@ -76,16 +77,10 @@ from .agent import Agent
 
 class AgentPQL(Agent):
 
-    def __init__(self, environment: Environment,
-                 epsilon: float = 0.1,
-                 gamma: float = 1.,
-                 seed: int = 0,
-                 max_steps: int = None,
-                 hv_reference: Vector = None,
-                 graph_types: set = None,
-                 evaluation_mechanism: EvaluationMechanism = EvaluationMechanism.HV,
-                 states_to_observe: list = None,
-                 integer_mode: bool = True):
+    def __init__(self, environment: Environment, epsilon: float = 0.1, gamma: float = 1., seed: int = 0,
+                 max_steps: int = None, hv_reference: Vector = None, graph_types: set = None,
+                 evaluation_mechanism: EvaluationMechanism = EvaluationMechanism.HV, states_to_observe: list = None,
+                 integer_mode: bool = False):
 
         """
         :param environment: instance of any environment class.
@@ -191,16 +186,23 @@ class AgentPQL(Agent):
                 # value)
                 for state, data in self.graph_info.get(graph_type, {}).items():
 
-                    # Add to data Best value (V max)
-                    value = self._best_hypervolume(state=state)
+                    # # Add to data Best value (V max)
+                    # value = self._best_hypervolume(state=state)
+                    #
+                    # # If integer mode is True, is necessary divide value by increment
+                    # if self.integer_mode:
+                    #     # Divide value by two powered numbers (hv_reference and reward)
+                    #     value /= 10 ** (Vector.decimals_allowed * 2)
 
-                    # If integer mode is True, is necessary divide value by increment
-                    if self.integer_mode:
-                        # Divide value by two powered numbers (hv_reference and reward)
-                        value /= 10 ** (Vector.decimals_allowed * 2)
+                    # Extract V(state) (without operations)
+                    value = self.q_set_from_state(state=state)
 
-                    # Add to data Best value (V max)
-                    data.append(value)
+                    # Add information to that data
+                    data.append({
+                        'vectors': value,
+                        'time': time.time(),
+                        'steps': self.total_steps
+                    })
 
                     # Update dictionary
                     self.graph_info.get(graph_type).update({state: data})
@@ -304,7 +306,6 @@ class AgentPQL(Agent):
 
         # for each action in actions
         for a in self.environment.action_space:
-
             # Get Q(s, a)
             q = self.q_set(state=state, action=a)
 
