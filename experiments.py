@@ -200,7 +200,7 @@ def test_agents(env: Environment, hv_reference: Vector, variable: str, graph_typ
 def main():
     # Basic configuration
     alpha = 0.8
-    number_of_agents = 5
+    number_of_agents = 20
     episodes = 2000
     gamma = 1.
     max_steps = 250
@@ -211,7 +211,7 @@ def main():
     epsilon = 0.7
     states_to_observe = [initial_state]
     integer_mode = False
-    execution_time = 30
+    execution_time = 90
     steps_limit = 10000
 
     # Environment configuration
@@ -256,11 +256,17 @@ def main():
         GraphType.EPISODES
     }
 
-    ug.test_time(environment=environment, hv_reference=hv_reference, epsilon=epsilon, alpha=alpha,
-                 states_to_observe=states_to_observe, integer_mode=integer_mode, number_of_agents=number_of_agents,
-                 agents_configuration=agents_configuration, gamma=gamma, max_steps=max_steps,
-                 evaluation_mechanism=evaluation_mechanism, variable=variable, execution_time=execution_time,
-                 seconds_to_get_data=1, solution=solution)
+    # ug.test_time(environment=environment, hv_reference=hv_reference, epsilon=epsilon, alpha=alpha,
+    #              states_to_observe=states_to_observe, integer_mode=integer_mode, number_of_agents=number_of_agents,
+    #              agents_configuration=agents_configuration, gamma=gamma, max_steps=max_steps,
+    #              evaluation_mechanism=evaluation_mechanism, variable=variable, execution_time=execution_time,
+    #              seconds_to_get_data=1, solution=solution)
+
+    ug.test_steps(environment=environment, hv_reference=hv_reference, epsilon=epsilon, alpha=alpha,
+                  states_to_observe=states_to_observe, integer_mode=integer_mode, number_of_agents=number_of_agents,
+                  agents_configuration=agents_configuration, gamma=gamma, max_steps=max_steps,
+                  evaluation_mechanism=evaluation_mechanism, variable=variable, steps_limit=steps_limit,
+                  steps_to_get_data=100, solution=solution)
 
     # ug.test_steps(environment=environment, hv_reference=hv_reference, epsilon=epsilon, alpha=alpha,
     #               states_to_observe=states_to_observe, integer_mode=integer_mode, number_of_agents=number_of_agents,

@@ -97,21 +97,13 @@ def initialize_graph_data(graph_types: set, agents_configuration: dict) -> (dict
                     }
                 })
 
-            data_types.update({
-                agent_type: data_evaluations
-            })
+            # Update agent type graph
+            data_types.update({agent_type: data_evaluations})
+            data_types_info.update({agent_type: data_evaluations_info})
 
-            data_types_info.update({
-                agent_type: data_evaluations_info
-            })
-
-        graphs.update({
-            graph_type: data_types
-        })
-
-        graphs_info.update({
-            graph_type: data_types_info
-        })
+        # Update graphs
+        graphs.update({graph_type: data_types})
+        graphs_info.update({graph_type: data_types_info})
 
     return graphs, graphs_info
 
@@ -180,11 +172,7 @@ def update_graphs(graphs: dict, agent: Agent, configuration: str, states_to_obse
         else:
 
             # Prepare new data
-            agent_data = list()
-            agent_time = list()
-            agent_steps = list()
-            agent_solutions_found = list()
-            agent_had_solutions_found = list()
+            agent_data, agent_time, agent_steps, agent_solutions_found, agent_had_solutions_found = (list(),) * 5
 
             for new_data in agent.graph_info[graph_type][states_to_observe[0]]:
                 # Calc hypervolume
@@ -204,32 +192,32 @@ def update_graphs(graphs: dict, agent: Agent, configuration: str, states_to_obse
                     agent_solutions_found.append(number_of_solutions)
                     agent_had_solutions_found.append(solution_found)
 
+            # Additional information
+            data_info['time'].append(min([float('inf') if x is None else x for x in agent_time]))
+            data_info['steps'].append(min([float('inf') if x is None else x for x in agent_steps]))
+            data_info['solutions_found'].append(max([x for x in agent_solutions_found]))
+            data_info['had_solution_found'].append(np.any(agent_had_solutions_found))
+
+            # Update graph information
+            graphs_info[graph_type][agent_type].update({
+                configuration: data_info
+            })
+
         # Save new data
         data.append(agent_data)
 
-        # Additional information
-        data_info['time'].append(min([float('inf') if x is None else x for x in agent_time]))
-        data_info['steps'].append(min([float('inf') if x is None else x for x in agent_steps]))
-        data_info['solutions_found'].append(max([x for x in agent_solutions_found]))
-        data_info['had_solution_found'].append(np.any(agent_had_solutions_found))
-
         # Update data in the dictionary
-        graphs[graph_type][agent_type].update({
-            configuration: data
-        })
-
-        graphs_info[graph_type][agent_type].update({
-            configuration: data_info
-        })
+        graphs[graph_type][agent_type].update({configuration: data})
 
 
 def test_steps(environment: Environment, hv_reference: Vector, variable: str, agents_configuration: dict,
                steps_limit: int, epsilon: float = 0.1, alpha: float = 0.1, max_steps: int = None,
                states_to_observe: list = None, integer_mode: bool = False, number_of_agents: int = 30,
                gamma: float = 1., evaluation_mechanism: EvaluationMechanism = EvaluationMechanism.C,
-               steps_to_get_data: int = 1):
+               steps_to_get_data: int = 1, solution: list = None):
     """
 
+    :param solution:
     :param environment:
     :param hv_reference:
     :param variable:
@@ -267,15 +255,10 @@ def test_steps(environment: Environment, hv_reference: Vector, variable: str, ag
                       max_steps=max_steps, variable=variable, gamma=gamma, steps_limit=steps_limit)
 
     # Define graph types
-    graph_types = {
-        GraphType.STEPS
-    }
+    graph_types = {GraphType.STEPS}
 
     # Create graphs structure
-    graphs = initialize_graph_data(graph_types=graph_types, agents_configuration=agents_configuration)
-
-    # Data max length
-    data_max_len = float('-inf')
+    graphs, graphs_info = initialize_graph_data(graph_types=graph_types, agents_configuration=agents_configuration)
 
     # Show information
     print('Environment: {}'.format(env_name))
@@ -303,10 +286,6 @@ def test_steps(environment: Environment, hv_reference: Vector, variable: str, ag
                 # Reset environment
                 environment.reset()
                 environment.seed(seed=seed)
-
-                # Default values
-                v_s_0 = None
-                agent = None
 
                 # Variable parameters
                 parameters = {
@@ -340,14 +319,14 @@ def test_steps(environment: Environment, hv_reference: Vector, variable: str, ag
                                                 configuration=configuration)
 
                 # Update graphs
-                update_graphs(agent=agent, graphs=graphs, configuration=str(configuration),
-                              states_to_observe=states_to_observe, agent_type=agent_type)
+                update_graphs(agent=agent, graphs=graphs, configuration=str(configuration), agent_type=agent_type,
+                              states_to_observe=states_to_observe, graphs_info=graphs_info, solution=solution)
 
     prepare_data_and_show_graph(timestamp=timestamp, env_name=env_name, env_name_snake=env_name_snake, graphs=graphs,
                                 number_of_agents=number_of_agents, agents_configuration=agents_configuration,
                                 alpha=alpha, epsilon=epsilon, gamma=gamma, stop_condition={'steps': steps_limit},
                                 max_steps=max_steps, initial_state=environment.initial_state, integer_mode=integer_mode,
-                                variable=variable)
+                                variable=variable, graphs_info=graphs_info)
 
 
 def test_time(environment: Environment, hv_reference: Vector, variable: str, agents_configuration: dict,
@@ -395,9 +374,7 @@ def test_time(environment: Environment, hv_reference: Vector, variable: str, age
                       max_steps=max_steps, variable=variable, gamma=gamma, execution_time=execution_time)
 
     # Define graph types
-    graph_types = {
-        GraphType.TIME
-    }
+    graph_types = {GraphType.TIME}
 
     # Create graphs structure
     graphs, graphs_info = initialize_graph_data(graph_types=graph_types, agents_configuration=agents_configuration)
@@ -460,7 +437,7 @@ def test_time(environment: Environment, hv_reference: Vector, variable: str, age
                                                 v_s_0=v_s_0, variable=variable, agent_type=agent_type,
                                                 configuration=configuration)
 
-                # Update graph to show
+                # Update graphs
                 update_graphs(agent=agent, graphs=graphs, configuration=str(configuration), agent_type=agent_type,
                               states_to_observe=states_to_observe, graphs_info=graphs_info, solution=solution)
 
@@ -550,7 +527,7 @@ def prepare_data_and_show_graph(timestamp: int, env_name: str, env_name_snake: s
 
         graph_name = graph_type.value
 
-        print('{}'.format(graph_name))
+        print('Graph Type: {}'.format(graph_name))
 
         for agent_type in graphs[graph_type]:
 
@@ -560,16 +537,26 @@ def prepare_data_and_show_graph(timestamp: int, env_name: str, env_name_snake: s
                 data_info = graphs_info[graph_type][agent_type][str(configuration)]
 
                 # Information about time
+                # Keep finite elements
+                data_info['time'] = list(filter(math.isfinite, data_info['time']))
+                # If hasn't any element return [-1] list
+                data_info['time'] = data_info['time'] if data_info['time'] else [-1]
+
                 info_time_avg = np.average(data_info['time'])
                 info_time_std = np.std(data_info['time'])
                 info_time_max = np.max(data_info['time'])
                 info_time_min = np.min(data_info['time'])
 
                 print('\tTime:')
-                print('\t\t{}_{} & {} & {} & {} & {} \\'.format(agent_type, configuration, info_time_avg, info_time_std,
+                print(
+                    '\t\t{}_{} & {} & {} & {} & {} \\\\'.format(agent_type, configuration, info_time_avg, info_time_std,
                                                                 info_time_max, info_time_min))
 
                 # Information about steps
+                # Keep finite elements
+                data_info['steps'] = list(filter(math.isfinite, data_info['steps']))
+                # If hasn't any element return [-1] list
+                data_info['steps'] = data_info['steps'] if data_info['steps'] else [-1]
                 info_steps_avg = np.average(data_info['steps'])
                 info_steps_std = np.std(data_info['steps'])
                 info_steps_max = np.max(data_info['steps'])
@@ -577,8 +564,8 @@ def prepare_data_and_show_graph(timestamp: int, env_name: str, env_name_snake: s
 
                 print('\tSteps:')
                 print(
-                    '\t\t{}_{} & {} & {} & {} & {} \\'.format(agent_type, configuration, info_steps_avg, info_steps_std,
-                                                              info_steps_max, info_steps_min))
+                    '\t\t{}_{} & {} & {} & {} & {} \\\\'.format(agent_type, configuration, info_steps_avg,
+                                                                info_steps_std, info_steps_max, info_steps_min))
 
                 # Information about solutions_found
                 info_solutions_found_avg = np.average(data_info['solutions_found'])
@@ -588,9 +575,9 @@ def prepare_data_and_show_graph(timestamp: int, env_name: str, env_name_snake: s
 
                 print('\tSolutions found:')
                 print(
-                    '\t\t{}_{} & {} & {} & {} & {} \\'.format(agent_type, configuration, info_solutions_found_avg,
-                                                              info_solutions_found_std, info_solutions_found_max,
-                                                              info_solutions_found_min))
+                    '\t\t{}_{} & {} & {} & {} & {} \\\\'.format(agent_type, configuration, info_solutions_found_avg,
+                                                                info_solutions_found_std, info_solutions_found_max,
+                                                                info_solutions_found_min))
 
                 # Information about had solution found
                 print('\tHad solution:')
