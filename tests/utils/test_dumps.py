@@ -47,7 +47,7 @@ class TestDumps(unittest.TestCase):
                          max_steps=max_steps, integer_mode=True)
 
         # Train to modify data.
-        agent.train(episodes=episodes)
+        agent.episode_train(episodes=episodes)
 
         # Save and load as new agent.
         agent.save()
@@ -106,7 +106,7 @@ class TestDumps(unittest.TestCase):
                          max_steps=max_steps)
 
         # Train to modify data.
-        agent.train(episodes=episodes)
+        agent.episode_train(episodes=episodes)
 
         # Save and load as new agent.
         agent.save()
@@ -161,7 +161,7 @@ class TestDumps(unittest.TestCase):
                          max_steps=max_steps)
 
         # Train to modify data.
-        agent.train(episodes=episodes)
+        agent.episode_train(episodes=episodes)
 
         # Save and load as new agent.
         agent.save()
@@ -210,7 +210,7 @@ class TestDumps(unittest.TestCase):
                          max_steps=max_steps)
 
         # Train to modify data.
-        agent.train(episodes=episodes)
+        agent.episode_train(episodes=episodes)
 
         # Save and load as new agent.
         agent.save()
@@ -261,7 +261,7 @@ class TestDumps(unittest.TestCase):
                          max_steps=max_steps)
 
         # Train to modify data.
-        agent.train(episodes=episodes)
+        agent.episode_train(episodes=episodes)
 
         # Save and load as new agent.
         agent.save()
@@ -310,7 +310,7 @@ class TestDumps(unittest.TestCase):
                          max_steps=max_steps)
 
         # Train to modify data.
-        agent.train(episodes=episodes)
+        agent.episode_train(episodes=episodes)
 
         # Save and load as new agent.
         agent.save()
@@ -357,7 +357,7 @@ class TestDumps(unittest.TestCase):
                          max_steps=max_steps)
 
         # Train to modify data.
-        agent.train(episodes=episodes)
+        agent.episode_train(episodes=episodes)
 
         # Save and load as new agent.
         agent.save()
@@ -405,7 +405,7 @@ class TestDumps(unittest.TestCase):
                          max_steps=max_steps)
 
         # Train to modify data.
-        agent.train(episodes=episodes)
+        agent.episode_train(episodes=episodes)
 
         # Save and load as new agent.
         agent.save()
@@ -453,7 +453,7 @@ class TestDumps(unittest.TestCase):
                          max_steps=max_steps)
 
         # Train to modify data.
-        agent.train(episodes=episodes)
+        agent.episode_train(episodes=episodes)
 
         # Save and load as new agent.
         agent.save()
@@ -501,7 +501,7 @@ class TestDumps(unittest.TestCase):
                          max_steps=max_steps)
 
         # Train to modify data.
-        agent.train(episodes=episodes)
+        agent.episode_train(episodes=episodes)
 
         # Save and load as new agent.
         agent.save()
@@ -552,7 +552,7 @@ class TestDumps(unittest.TestCase):
                          max_steps=max_steps)
 
         # Train to modify data.
-        agent.train(episodes=episodes)
+        agent.episode_train(episodes=episodes)
 
         # Save and load as new agent.
         agent.save()
@@ -601,7 +601,7 @@ class TestDumps(unittest.TestCase):
                          max_steps=max_steps)
 
         # Train to modify data.
-        agent.train(episodes=episodes)
+        agent.episode_train(episodes=episodes)
 
         # Save and load as new agent.
         agent.save()

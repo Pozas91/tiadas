@@ -21,7 +21,7 @@ EXAMPLE OF USE OF AgentMOSP:
     # Get p point from agent test.
     p = q_learning.get_accumulated_reward(agent=agent)
 
-    # Reset agent to train again with others weights
+    # Reset agent to episode_train again with others weights
     agent.reset()
 
     # Set weights to find another extreme point
@@ -66,7 +66,7 @@ class AgentMOSP(AgentQ):
 
     def __init__(self, environment: Environment, alpha: float = 0.1, epsilon: float = 0.1, gamma: float = 1.,
                  seed: int = 0, states_to_observe: list = None, max_steps: int = None, weights: tuple = None,
-                 graph_types: set = None, hv_reference: Vector = None):
+                 graph_types: set = None, hv_reference: Vector = None, initial_q_value: float = 0.):
         """
         :param environment: An environment where agent does any operation.
         :param alpha: Learning rate
@@ -87,7 +87,8 @@ class AgentMOSP(AgentQ):
 
         # Super call init
         super().__init__(environment=environment, alpha=alpha, epsilon=epsilon, gamma=gamma, seed=seed,
-                         states_to_observe=states_to_observe, max_steps=max_steps, graph_types=graph_types)
+                         states_to_observe=states_to_observe, max_steps=max_steps, graph_types=graph_types,
+                         initial_q_value=initial_q_value)
 
         # Set weights
         self.weights = weights
@@ -156,7 +157,7 @@ class AgentMOSP(AgentQ):
             self.objective_training(objective=objective)
         else:
             # Normal training.
-            self.train()
+            self.episode_train()
 
         # Get point c from agent's test.
         c = self.get_accumulated_reward()
@@ -243,7 +244,7 @@ class AgentMOSP(AgentQ):
             # Calc pareto's frontier found
 
             if not self.pareto_frontier_found:
-                value = 0.
+                value = self.initial_q_value
             else:
                 value = uh.calc_hypervolume(list_of_vectors=self.pareto_frontier_found, reference=self.hv_reference)
 
@@ -251,6 +252,4 @@ class AgentMOSP(AgentQ):
             data.append(value)
 
             # Update dictionary
-            self.graph_info.get(graph_types).update({
-                state: data
-            })
+            self.graph_info.get(graph_types).update({state: data})

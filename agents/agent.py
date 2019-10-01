@@ -19,14 +19,13 @@ class Agent:
     json_indent = 2
     # Get dumps path from this file path
     dumps_path = Path('{}/../../dumps/models'.format(__file__))
-    # Each steps to calc graph data
-    steps_to_get_graph_data = 1
-    # Each seconds to calc graph data
-    seconds_to_get_graph_data = 0.001
+
+    # Each unit the agent get data
+    interval_to_get_data = 1
 
     def __init__(self, environment: Environment, epsilon: float = 0.1, gamma: float = 1., seed: int = 0,
-                 states_to_observe: list = None, max_steps: int = None,
-                 graph_types: set = None):
+                 states_to_observe: list = None, max_steps: int = None, graph_types: set = None,
+                 initial_q_value: object = None):
         """
         :param environment: the agent's environment.
         :param epsilon: Epsilon used in epsilon-greedy policy to control exploration.
@@ -34,7 +33,6 @@ class Agent:
         :param seed: Seed used for np.random.RandomState method.
         :param states_to_observe: List of states from which graphical output is provided.
         :param max_steps: Limit of steps per episode.
-        :
         """
 
         # Types to make graphs
@@ -97,6 +95,9 @@ class Agent:
         # Total of this agent
         self.total_episodes = 0
 
+        # Initial Q value, when doesn't found another solution.
+        self.initial_q_value = initial_q_value
+
     def select_action(self, state: object = None) -> int:
         """
         Select best action with a little e-greedy policy.
@@ -153,13 +154,13 @@ class Agent:
             is_final_state |= (self.max_steps is not None and self.steps >= self.max_steps)
 
             # Check if is necessary update graph
-            if self.total_steps % self.steps_to_get_graph_data == 0:
+            if self.total_steps % self.interval_to_get_data == 0:
                 # Trigger update graph
                 self.update_graph(graph_types=(GraphType.STEPS, GraphType.MEMORY))
 
             current_time = time.time()
 
-            if (current_time - self.last_time_to_get_graph_data) > self.seconds_to_get_graph_data:
+            if (current_time - self.last_time_to_get_graph_data) > self.interval_to_get_data:
                 # Trigger update graph
                 self.update_graph(graph_types=(GraphType.TIME,))
 
@@ -237,7 +238,7 @@ class Agent:
         print("Gamma: {}".format(self.gamma))
         print("Epsilon: {}".format(self.epsilon))
 
-    def train(self, episodes: int = 1000):
+    def episode_train(self, episodes: int = 1000):
         """
         Return this agent trained with `episodes` episodes.
         :param episodes:

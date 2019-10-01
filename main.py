@@ -36,7 +36,7 @@ def plot_training_from_zero():
         # Training mesh agent
         agent_mesh = AgentQ(environment=environment_mesh)
         start_time = time.time()
-        agent_mesh.train(episodes=episodes)
+        agent_mesh.episode_train(episodes=episodes)
         time_train = time.time() - start_time
         time_train_mesh.append(time_train)
         print('MESH: To {} episodes -> {} seconds.'.format(episodes, time_train))
@@ -74,7 +74,7 @@ def plot_training_accumulate():
     for episodes in episodes_list:
         # Training mesh agent
         start_time = time.time()
-        agent_mesh.train(episodes=episodes)
+        agent_mesh.episode_train(episodes=episodes)
         time_train = time.time() - start_time
         time_train_mesh.append(time_train)
         print('MESH: To {} episodes -> {} seconds.'.format(episodes, time_train))
@@ -106,7 +106,7 @@ def plot_performance(episodes=100000):
 
     # Training mesh agent
     print("Training agent...")
-    agent_mesh.train(episodes=episodes)
+    agent_mesh.episode_train(episodes=episodes)
     print('Training finished!')
 
     for state, data in agent_mesh.graph_info.items():
@@ -127,7 +127,7 @@ def plot_performance(episodes=100000):
 def russel_and_norvig():
     env = RussellNorvig()
     agent = AgentQ(environment=env)
-    agent.train(episodes=10000)
+    agent.episode_train(episodes=10000)
     agent.show_policy()
     pass
 
@@ -136,7 +136,7 @@ def deep_sea_treasure():
     env = DeepSeaTreasure()
     weights = (0., 1.)
     agent = AgentMOSP(environment=env, weights=weights, epsilon=0.8, max_steps=1000)
-    agent.train()
+    agent.episode_train()
     agent.show_policy()
     pass
 
@@ -145,7 +145,7 @@ def bonus_world():
     env = BonusWorld()
     weights = (0., 1., 0.)
     agent = AgentMOSP(environment=env, weights=weights, epsilon=0.5, alpha=0.2, states_to_observe=[(0, 0)])
-    agent.train()
+    agent.episode_train()
     agent.show_policy()
     pass
 
@@ -154,7 +154,7 @@ def space_exploration():
     env = SpaceExploration()
     weights = (0.8, 0.2)
     agent = AgentMOSP(environment=env, weights=weights, epsilon=0.5, alpha=0.2, states_to_observe=[(0, 0)])
-    agent.train(episodes=100000)
+    agent.episode_train(episodes=100000)
     agent.show_policy()
     pass
 
@@ -180,7 +180,7 @@ def testing_pareto():
     # Get p point from agent test.
     p = agent.get_accumulated_reward()
 
-    # Reset agent to train again with others weights
+    # Reset agent to episode_train again with others weights
     agent.reset()
 
     # Set weights to find another extreme point
@@ -220,7 +220,7 @@ def resource_gathering():
     env = ResourceGathering()
     weights = (0., 0., 1.)
     agent = AgentMOSP(environment=env, weights=weights, max_steps=1000)
-    agent.train()
+    agent.episode_train()
     agent.show_policy()
     pass
 
@@ -229,7 +229,7 @@ def pressurized_bountiful_sea_treasure():
     env = PressurizedBountifulSeaTreasure()
     weights = (1., 0., 0.)
     agent = AgentMOSP(environment=env, weights=weights, epsilon=0.5, max_steps=1000)
-    agent.train(episodes=200000)
+    agent.episode_train(episodes=200000)
     agent.show_policy()
     pass
 
@@ -238,7 +238,7 @@ def buridan_ass():
     env = BuridanAss()
     weights = (0.3,) * 3
     agent = AgentMOSP(environment=env, epsilon=0.3, weights=weights)
-    agent.train(episodes=10000)
+    agent.episode_train(episodes=10000)
     pass
 
 
@@ -246,7 +246,7 @@ def mo_puddle_world():
     env = MoPuddleWorld()
     weights = (0.5,) * 2
     agent = AgentMOSP(environment=env, weights=weights, epsilon=0.3, max_steps=100)
-    agent.train(episodes=1000)
+    agent.episode_train(episodes=1000)
     agent.show_policy()
     pass
 
@@ -256,7 +256,7 @@ def linked_rings():
     weights = (0.5,) * 2
     agent = AgentMOSP(environment=env, weights=weights, epsilon=0.1, max_steps=100,
                       states_to_observe=[0, 1, 4])
-    agent.train(episodes=1000)
+    agent.episode_train(episodes=1000)
     agent.show_policy()
     agent.show_observed_states()
     pass
@@ -267,7 +267,7 @@ def non_recurrent_rings():
     weights = (0.3, 0.7)
     agent = AgentMOSP(environment=env, weights=weights, epsilon=0.1, max_steps=100,
                       states_to_observe=[0, 7])
-    agent.train(episodes=1000)
+    agent.episode_train(episodes=1000)
     agent.show_policy()
     agent.show_observed_states()
     pass
@@ -277,7 +277,7 @@ def deep_sea_treasure_simplified():
     env = DeepSeaTreasureSimplified()
     weights = (0.5,) * 2
     agent = AgentMOSP(environment=env, weights=weights, epsilon=0.5, states_to_observe=[(0, 0)])
-    agent.train(episodes=10000)
+    agent.episode_train(episodes=10000)
     agent.show_observed_states()
     agent.show_policy()
     pass
@@ -292,7 +292,7 @@ def deep_sea_treasure_simplified_mo_mp():
 
     for _ in range(4):
         agent.reset()
-        agent.train(episodes=3000)
+        agent.episode_train(episodes=3000)
         graph.append(agent.graph_info.get((0, 0)))
 
     data = np.average(graph, axis=0)
@@ -357,7 +357,7 @@ def graphs_dps():
             agent.reset()
 
             # Train model
-            agent.train(episodes=episodes)
+            agent.episode_train(episodes=episodes)
 
             # Get graph data
             graph.append(agent.graph_info.get(states_to_observe[0]))
@@ -393,14 +393,14 @@ def track_policy():
                          hv_reference=Vector([-25, 0]), evaluation_mechanism=evaluation_mechanism)
 
         # Train model
-        agent.train(episodes=3000)
+        agent.episode_train(episodes=3000)
 
         # Save model
         agent.save()
 
     # else:
     #     # Train model
-    #     q_learning.train(agent=agent, episodes=18000)
+    #     q_learning.episode_train(agent=agent, episodes=18000)
     #
     #     # Save model
     #     agent.save()
@@ -432,7 +432,7 @@ def no_cycles_environment():
     agent = AgentPQL(environment=env, states_to_observe=[state], epsilon=0.4)
 
     # Train
-    agent.train(episodes=5000)
+    agent.episode_train(episodes=5000)
 
     # Observed states
     agent.show_observed_states()

@@ -10,9 +10,9 @@ The data structure of q dictionary is as follows:
     ...
 }
 """
+import math
 from copy import deepcopy
 
-import math
 import numpy as np
 
 from environments import Environment
@@ -23,7 +23,7 @@ from .agent import Agent
 class AgentQ(Agent):
     def __init__(self, environment: Environment, alpha: float = 0.1, epsilon: float = 0.1, gamma: float = 1.,
                  seed: int = 0, states_to_observe: list = None, max_steps: int = None,
-                 graph_types=None):
+                 graph_types: set = None, initial_q_value: float = 0.):
         """
         :param environment: An environment where agent does any operation.
         :param alpha: Learning rate
@@ -41,7 +41,8 @@ class AgentQ(Agent):
 
         # Super call __init__
         super().__init__(environment=environment, epsilon=epsilon, gamma=gamma, seed=seed,
-                         states_to_observe=states_to_observe, max_steps=max_steps, graph_types=graph_types)
+                         initial_q_value=initial_q_value, states_to_observe=states_to_observe, max_steps=max_steps,
+                         graph_types=graph_types)
 
         # Learning factor
         assert 0 < alpha <= 1
@@ -214,9 +215,7 @@ class AgentQ(Agent):
         # Get unknown actions with default reward
         for action in self.environment.action_space:
             if action not in possible_actions:
-                possible_actions.update({
-                    action: 0.
-                })
+                possible_actions.update({action: self.initial_q_value})
 
         # Get max by value, and get it's action
         actions = list()
@@ -229,7 +228,8 @@ class AgentQ(Agent):
             reward = possible_actions.get(possible_action)
 
             # If current value is close to new value
-            if np.allclose(a=reward, b=max_reward, rtol=Vector.relative_tolerance, atol=Vector.absolute_tolerance):
+            if math.isclose(a=reward, b=max_reward, rel_tol=Vector.relative_tolerance,
+                            abs_tol=Vector.absolute_tolerance):
 
                 # Append another possible action
                 actions.append(possible_action)
@@ -265,7 +265,7 @@ class AgentQ(Agent):
             # Get unknown actions with default reward
             for action in self.environment.action_space:
                 if action not in possible_actions:
-                    possible_actions.update({action: 0.})
+                    possible_actions.update({action: self.initial_q_value})
 
             # Get best action and use it to get best reward.
             action = self.best_action(state=state)
@@ -315,8 +315,8 @@ class AgentQ(Agent):
         :return:
         """
 
-        # while not np.isclose(a=self.v, b=objective, rtol=0.01, atol=0.00):
-        while not math.isclose(a=self.v, b=objective, rel_tol=0.01, abs_tol=0.0):
+        while not math.isclose(a=self.v, b=objective, rel_tol=Vector.relative_tolerance,
+                               abs_tol=Vector.absolute_tolerance):
             # Do an episode
             self.episode()
 

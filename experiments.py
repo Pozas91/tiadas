@@ -110,7 +110,7 @@ def test_agents(env: Environment, hv_reference: Vector, variable: str, graph_typ
                                       hv_reference=hv_reference, **parameters)
 
                     # Search one extreme objective
-                    agent.train(episodes=episodes)
+                    agent.episode_train(episodes=episodes)
 
                     # Get p point from agent test
                     p = agent.get_accumulated_reward(from_state=states_to_observe[0])
@@ -118,7 +118,7 @@ def test_agents(env: Environment, hv_reference: Vector, variable: str, graph_typ
                     # Add point found to pareto's frontier found
                     agent.pareto_frontier_found.append(p)
 
-                    # Reset agent to train again with others weights
+                    # Reset agent to episode_train again with others weights
                     agent.reset()
                     agent.reset_totals()
 
@@ -126,7 +126,7 @@ def test_agents(env: Environment, hv_reference: Vector, variable: str, graph_typ
                     agent.weights = (.01, .99)
 
                     # Search the other extreme objective
-                    agent.train(episodes=episodes)
+                    agent.episode_train(episodes=episodes)
 
                     # Get q point from agent test.
                     q = agent.get_accumulated_reward(from_state=states_to_observe[0])
@@ -152,7 +152,7 @@ def test_agents(env: Environment, hv_reference: Vector, variable: str, graph_typ
                                      integer_mode=integer_mode, **parameters)
 
                     # Train the agent
-                    agent.train(episodes=episodes)
+                    agent.episode_train(episodes=episodes)
 
                     # Non-dominated vectors found in V(s0)
                     v_s_0 = agent.q_set_from_state(state=agent.environment.initial_state)
@@ -166,7 +166,7 @@ def test_agents(env: Environment, hv_reference: Vector, variable: str, graph_typ
                                     integer_mode=integer_mode, **parameters)
 
                     # Train the agent
-                    agent.train(episodes=episodes)
+                    agent.episode_train(episodes=episodes)
 
                     # Non-dominated vectors found in V(s0)
                     v_real = agent.v_real()
@@ -200,7 +200,7 @@ def test_agents(env: Environment, hv_reference: Vector, variable: str, graph_typ
 def main():
     # Basic configuration
     alpha = 0.8
-    number_of_agents = 20
+    number_of_agents = 5
     episodes = 2000
     gamma = 1.
     max_steps = 250
@@ -211,8 +211,8 @@ def main():
     epsilon = 0.7
     states_to_observe = [initial_state]
     integer_mode = False
-    execution_time = 90
-    steps_limit = 10000
+    execution_time = 60
+    steps_limit = 450000
 
     # Environment configuration
     # environment = PressurizedBountifulSeaTreasure(initial_state=initial_state)
@@ -222,7 +222,7 @@ def main():
     solution = environment.pareto_optimal
 
     # Variable parameters
-    variable = 'alpha'
+    variable = 'epsilon'
     # variable = 'evaluation_mechanism'
 
     agents_configuration = {
@@ -239,21 +239,42 @@ def main():
         # 1.0: 'cyan'
         # },
         AgentType.PQL: {
-            EvaluationMechanism.HV: 'pink',
-            EvaluationMechanism.C: 'red',
-            # EvaluationMechanism.PO: 'green'
+            # EvaluationMechanism.HV: 'pink',
+            # EvaluationMechanism.C: 'red',
+            # EvaluationMechanism.PO: 'green',
+            1.0: 'red',
+            0.9: 'fuchsia',
+            0.8: 'orange',
+            0.7: 'pink',
+            0.6: 'yellow',
+            0.5: 'green',
+            0.4: 'cyan',
+            0.3: 'blue'
         },
         # AgentType.SCALARIZED: {
         # EvaluationMechanism.SCALARIZED: 'cyan'
         # }
     }
 
-    graph_types = {
-        GraphType.STEPS,
-        GraphType.MEMORY,
-        GraphType.VECTORS_PER_CELL,
-        GraphType.TIME,
-        GraphType.EPISODES
+    graph_configurations = {
+        GraphType.STEPS: {
+            'limit': 1000,
+            'interval': 10
+        },
+        # GraphType.MEMORY: {
+        #
+        # },
+        # GraphType.VECTORS_PER_CELL: {
+        #
+        # },
+        GraphType.TIME: {
+            'limit': 120,
+            'interval': 4
+        },
+        GraphType.EPISODES: {
+            'limit': 1000,
+            'interval': 2
+        }
     }
 
     # ug.test_time(environment=environment, hv_reference=hv_reference, epsilon=epsilon, alpha=alpha,
@@ -262,65 +283,11 @@ def main():
     #              evaluation_mechanism=evaluation_mechanism, variable=variable, execution_time=execution_time,
     #              seconds_to_get_data=1, solution=solution)
 
-    ug.test_steps(environment=environment, hv_reference=hv_reference, epsilon=epsilon, alpha=alpha,
-                  states_to_observe=states_to_observe, integer_mode=integer_mode, number_of_agents=number_of_agents,
-                  agents_configuration=agents_configuration, gamma=gamma, max_steps=max_steps,
-                  evaluation_mechanism=evaluation_mechanism, variable=variable, steps_limit=steps_limit,
-                  steps_to_get_data=100, solution=solution)
-
-    # ug.test_steps(environment=environment, hv_reference=hv_reference, epsilon=epsilon, alpha=alpha,
-    #               states_to_observe=states_to_observe, integer_mode=integer_mode, number_of_agents=number_of_agents,
-    #               agents_configuration=agents_configuration, gamma=gamma, max_steps=max_steps,
-    #               evaluation_mechanism=evaluation_mechanism, variable=variable, steps_limit=steps_limit,
-    #               steps_to_get_data=1)
-
-    # Vector.decimals_allowed = decimals_allowed
-
-    # for tolerance in [0.1, 0.3, 0.5]:
-    #     Vector.set_absolute_tolerance(absolute_tolerance=tolerance, integer_mode=True)
-    #
-    #     test_agents(env=PressurizedBountifulSeaTreasure(initial_state=initial_state),
-    #                 hv_reference=Vector([-25, 0, -120]), epsilon=0.7, alpha=alpha, states_to_observe=[initial_state],
-    #                 episodes=episodes, integer_mode=True, graph_types=graph_types, number_of_agents=number_of_agents,
-    #                 agents_configuration=agents_configuration, gamma=gamma, max_steps=max_steps,
-    #                 eval_mechanism=evaluation_mechanism, variable=variable)
-
-    # test_agents(environment=DeepSeaTreasureRightDown(initial_state=initial_state, columns=columns),
-    #             hv_reference=Vector([-25, 0]), epsilon=0.7, alpha=alpha, states_to_observe=[initial_state],
-    #             episodes=episodes, integer_mode=True, graph_types=graph_types, number_of_agents=number_of_agents,
-    #             agents_configuration=agents_configuration, gamma=gamma, max_steps=max_steps,
-    #             evaluation_mechanism=evaluation_mechanism, variable=variable)
-
-    # test_agents(environment=MoPuddleWorldAcyclic(), hv_reference=Vector([-50, -150]), epsilon=0.3, alpha=alpha,
-    #             states_to_observe=[(2, 8)], episodes=episodes, integer_mode=True, graph_types=graph_types,
-    #             number_of_agents=number_of_agents, agents_configuration=agents_configuration, gamma=gamma,
-    #             max_steps=max_steps)
-    #
-    # test_agents(environment=SpaceExplorationAcyclic(), hv_reference=Vector([-150, -150]), epsilon=0.3, alpha=alpha,
-    #             states_to_observe=[(0, 0)], episodes=episodes, integer_mode=True, graph_types=graph_types,
-    #             number_of_agents=number_of_agents, agents_configuration=agents_configuration, gamma=gamma,
-    #             max_steps=max_steps)
-
-    # agents_configuration = {**agent_a1_configuration, **agent_scalarized_configuration}
-    #
-    # test_agents(environment=DeepSeaTreasureRightDownStochastic(), hv_reference=Vector([-25, 0]), epsilon=0.7,
-    #             alpha=alpha, states_to_observe=[(0, 0)], episodes=episodes, integer_mode=True, graph_types=graph_types,
-    #             number_of_agents=number_of_agents, agents_configuration=agents_configuration, gamma=gamma,
-    #             max_steps=max_steps)
-    #
-    # agents_configuration = {**agent_a1_configuration, **agent_pql_configuration}
-    #
-    # test_agents(environment=BonusWorldAcyclic(), hv_reference=Vector([-50, -50, -50]), epsilon=0.25, alpha=alpha,
-    #             states_to_observe=[(0, 0)], episodes=episodes, integer_mode=True, graph_types=graph_types,
-    #             number_of_agents=number_of_agents, agents_configuration=agents_configuration, gamma=gamma,
-    #             max_steps=max_steps)
-    #
-    # agents_configuration = {**agent_a1_configuration}
-    #
-    # test_agents(environment=PressurizedBountifulSeaTreasureRightDownStochastic(), hv_reference=Vector([-25, 0, -100]),
-    #             epsilon=0.7, alpha=alpha, states_to_observe=[(0, 0)], episodes=episodes, integer_mode=True,
-    #             graph_types=graph_types, number_of_agents=number_of_agents, agents_configuration=agents_configuration,
-    #             gamma=gamma, max_steps=max_steps)
+    ug.test_agents(environment=environment, hv_reference=hv_reference, epsilon=epsilon, alpha=alpha,
+                   states_to_observe=states_to_observe, integer_mode=integer_mode, number_of_agents=number_of_agents,
+                   agents_configuration=agents_configuration, gamma=gamma, max_steps=max_steps,
+                   evaluation_mechanism=evaluation_mechanism, variable=variable,
+                   graph_configuration=graph_configurations, solution=solution)
 
 
 if __name__ == '__main__':

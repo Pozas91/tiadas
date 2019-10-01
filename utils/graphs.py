@@ -1,14 +1,16 @@
 import math
+import os
 import time
 from decimal import Decimal as D
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
+from colorama import Fore
 
 import utils.hypervolume as uh
 import utils.miscellaneous as um
-from agents import Agent, AgentPQL
+from agents import Agent, AgentPQL, AgentMOSP, AgentA1
 from environments import Environment
 from models import AgentType, GraphType, Vector, EvaluationMechanism
 
@@ -172,7 +174,8 @@ def update_graphs(graphs: dict, agent: Agent, configuration: str, states_to_obse
         else:
 
             # Prepare new data
-            agent_data, agent_time, agent_steps, agent_solutions_found, agent_had_solutions_found = (list(),) * 5
+            agent_data, agent_time, agent_steps = list(), list(), list()
+            agent_solutions_found, agent_had_solutions_found = list(), list()
 
             for new_data in agent.graph_info[graph_type][states_to_observe[0]]:
                 # Calc hypervolume
@@ -210,13 +213,230 @@ def update_graphs(graphs: dict, agent: Agent, configuration: str, states_to_obse
         graphs[graph_type][agent_type].update({configuration: data})
 
 
+def test_agents(environment: Environment, hv_reference: Vector, variable: str, agents_configuration: dict,
+                graph_configuration: dict, epsilon: float = 0.1, alpha: float = 0.1, max_steps: int = None,
+                states_to_observe: list = None, integer_mode: bool = False, number_of_agents: int = 30,
+                gamma: float = 1., solution: list = None,
+                evaluation_mechanism: EvaluationMechanism = EvaluationMechanism.C):
+    """
+    :param graph_configuration:
+    :param solution:
+    :param environment:
+    :param hv_reference:
+    :param variable:
+    :param agents_configuration:
+    :param epsilon:
+    :param alpha:
+    :param max_steps:
+    :param states_to_observe:
+    :param integer_mode:
+    :param number_of_agents:
+    :param gamma:
+    :param evaluation_mechanism:
+    :return:
+    """
+
+    # Extract graph_types
+    graph_types = set(graph_configuration.keys())
+
+    # Parameters
+    if states_to_observe is None:
+        states_to_observe = [environment.initial_state]
+
+    # Build environment
+    env_name = environment.__class__.__name__
+    env_name_snake = um.str_to_snake_case(env_name)
+
+    # File timestamp
+    timestamp = int(time.time())
+
+    # Write all information in configuration file
+    write_config_file(timestamp=timestamp, number_of_agents=number_of_agents, env_name_snake=env_name_snake,
+                      seed=','.join(map(str, range(number_of_agents))), epsilon=epsilon, alpha=alpha,
+                      max_steps=max_steps, variable=variable, gamma=gamma, agents_configuration=agents_configuration,
+                      graph_configuration=graph_configuration)
+
+    # Create graphs structure
+    graphs, graphs_info = initialize_graph_data(graph_types=graph_types, agents_configuration=agents_configuration)
+
+    # Show information
+    print('Environment: {}'.format(env_name))
+
+    for graph_type in graph_types:
+
+        # Extract interval and limit
+        interval = graph_configuration[graph_type]['interval']
+        limit = graph_configuration[graph_type]['limit']
+
+        # Set interval to get data
+        Agent.interval_to_get_data = interval
+
+        # Execute a iteration with different seed for each agent indicate
+        for seed in range(number_of_agents):
+
+            # Show information
+            print("\tExecution: {}".format(seed + 1))
+
+            # For each configuration
+            for agent_type in agents_configuration:
+
+                # Show information
+                print('\t\tAgent: {}'.format(agent_type.value))
+
+                # Extract configuration for that agent
+                for configuration in agents_configuration[agent_type].keys():
+                    # Show information
+                    print('\t\t\t{}: {}'.format(variable, configuration), end=' ')
+
+                    # Mark of time
+                    t0 = time.time()
+
+                    # Reset environment
+                    environment.reset()
+                    environment.seed(seed=seed)
+
+                    # Variable parameters
+                    parameters = {
+                        'epsilon': epsilon, 'alpha': alpha, 'gamma': gamma, 'max_steps': max_steps,
+                        'evaluation_mechanism': evaluation_mechanism
+                    }
+
+                    # Modify current configuration
+                    parameters.update({variable: configuration})
+
+                    # Initialize params
+                    agent = None
+                    v_s_0 = None
+
+                    if agent_type is AgentType.SCALARIZED:
+
+                        # Removing useless parameters
+                        del parameters['evaluation_mechanism']
+
+                        # Set weights
+                        weights = (.99, .01)
+
+                        # Build agent
+                        agent = AgentMOSP(seed=seed, environment=environment, weights=weights,
+                                          states_to_observe=states_to_observe, graph_types=graph_types,
+                                          hv_reference=hv_reference, **parameters)
+
+                        # Search one extreme objective
+                        if graph_type is GraphType.STEPS:
+                            agent.steps_train(steps=limit)
+                        elif graph_type is GraphType.EPISODES:
+                            agent.episode_train(episodes=limit)
+                        elif graph_type is GraphType.TIME:
+                            agent.time_train(execution_time=limit)
+
+                        # Get p point from agent test
+                        p = agent.get_accumulated_reward(from_state=states_to_observe[0])
+
+                        # Add point found to pareto's frontier found
+                        agent.pareto_frontier_found.append(p)
+
+                        # Reset agent to episode_train again with others weights
+                        agent.reset()
+                        agent.reset_totals()
+
+                        # Set weights to find another extreme point
+                        agent.weights = (.01, .99)
+
+                        # Search the other extreme objective
+                        if graph_type is GraphType.STEPS:
+                            agent.steps_train(steps=limit)
+                        elif graph_type is GraphType.EPISODES:
+                            agent.episode_train(episodes=limit)
+                        elif graph_type is GraphType.TIME:
+                            agent.time_train(execution_time=limit)
+
+                        # Get q point from agent test.
+                        q = agent.get_accumulated_reward(from_state=states_to_observe[0])
+
+                        # Add point found to pareto's frontier found
+                        agent.pareto_frontier_found.append(q)
+
+                        # Search pareto points
+                        agent.calc_frontier_scalarized(p=p, q=q)
+
+                        # Non-dominated vectors found in V(s0)
+                        v_s_0 = agent.pareto_frontier_found
+
+                    elif agent_type is AgentType.PQL:
+
+                        # Removing useless parameters
+                        del parameters['alpha']
+
+                        # Build an instance of agent
+                        agent = AgentPQL(environment=environment, seed=seed, hv_reference=hv_reference,
+                                         graph_types=graph_types, states_to_observe=states_to_observe,
+                                         integer_mode=integer_mode, **parameters)
+
+                        # Train the agent
+                        if graph_type is GraphType.TIME:
+                            agent.time_train(execution_time=limit)
+                        elif graph_type is GraphType.STEPS:
+                            agent.steps_train(steps=limit)
+                        elif graph_type is GraphType.EPISODES:
+                            agent.episode_train(episodes=limit)
+
+                        # Non-dominated vectors found in V(s0)
+                        v_s_0 = agent.q_set_from_state(state=agent.environment.initial_state)
+
+                    elif agent_type is AgentType.A1:
+
+                        # Build an instance of agent
+                        agent = AgentA1(environment=environment, seed=seed, hv_reference=hv_reference,
+                                        graph_types=graph_types, states_to_observe=states_to_observe,
+                                        integer_mode=integer_mode, **parameters)
+
+                        # Train the agent
+                        if graph_type is GraphType.TIME:
+                            agent.time_train(execution_time=limit)
+                        elif graph_type is GraphType.STEPS:
+                            agent.steps_train(steps=limit)
+                        elif graph_type is GraphType.EPISODES:
+                            agent.episode_train(episodes=limit)
+
+                        # Non-dominated vectors found in V(s0)
+                        v_real = agent.v_real()
+
+                        v_s_0 = v_real.get(agent.environment.initial_state, {
+                            0: agent.environment.default_reward.zero_vector
+                        }).values()
+
+                    print('-> {:.2f}s'.format(time.time() - t0))
+
+                    # Write vectors found into file
+                    write_v_from_initial_state_file(timestamp=timestamp, seed=seed, env_name_snake=env_name_snake,
+                                                    v_s_0=v_s_0, variable=variable, agent_type=agent_type,
+                                                    configuration=configuration)
+
+                    # Update graphs
+                    update_graphs(agent=agent, graphs=graphs, configuration=str(configuration), agent_type=agent_type,
+                                  states_to_observe=states_to_observe, graphs_info=graphs_info, solution=solution)
+
+        # Define stop condition
+        if graph_type is GraphType.TIME:
+            stop_condition = {'time': limit}
+        elif graph_type is GraphType.STEPS:
+            stop_condition = {'steps': limit}
+        else:
+            raise ValueError('Graph type unknown.')
+
+    prepare_data_and_show_graph(timestamp=timestamp, env_name=env_name, env_name_snake=env_name_snake, graphs=graphs,
+                                number_of_agents=number_of_agents, agents_configuration=agents_configuration,
+                                alpha=alpha, epsilon=epsilon, gamma=gamma, graph_configuration=graph_configuration,
+                                max_steps=max_steps, initial_state=environment.initial_state, integer_mode=integer_mode,
+                                variable=variable, graphs_info=graphs_info)
+
+
 def test_steps(environment: Environment, hv_reference: Vector, variable: str, agents_configuration: dict,
                steps_limit: int, epsilon: float = 0.1, alpha: float = 0.1, max_steps: int = None,
                states_to_observe: list = None, integer_mode: bool = False, number_of_agents: int = 30,
                gamma: float = 1., evaluation_mechanism: EvaluationMechanism = EvaluationMechanism.C,
                steps_to_get_data: int = 1, solution: list = None):
     """
-
     :param solution:
     :param environment:
     :param hv_reference:
@@ -236,7 +456,7 @@ def test_steps(environment: Environment, hv_reference: Vector, variable: str, ag
     """
 
     # Set steps to get data from agent
-    Agent.steps_to_get_graph_data = steps_to_get_data
+    Agent.interval_to_get_data = steps_to_get_data
 
     # Parameters
     if states_to_observe is None:
@@ -450,12 +670,12 @@ def test_time(environment: Environment, hv_reference: Vector, variable: str, age
 
 def prepare_data_and_show_graph(timestamp: int, env_name: str, env_name_snake: str, graphs: dict,
                                 number_of_agents: int, agents_configuration: dict, alpha: float, gamma: float,
-                                epsilon: float, stop_condition: dict, max_steps: int, initial_state: tuple,
+                                epsilon: float, graph_configuration: dict, max_steps: int, initial_state: tuple,
                                 integer_mode: bool, variable: str, graphs_info: dict):
     """
     Prepare data to show a graph with the information about results
+    :param graph_configuration:
     :param graphs_info:
-    :param stop_condition:
     :param variable:
     :param integer_mode:
     :param initial_state:
@@ -494,7 +714,6 @@ def prepare_data_and_show_graph(timestamp: int, env_name: str, env_name_snake: s
             with filename_m.open(mode='w+') as file:
                 file_data = "Z = [\n{}\n];\n".format(''.join([';\n'.join(map(str, x)) for x in process_data]))
                 # file_data += "means = mean(Y);\n"
-                file_data += 'figure;\n'
                 file_data += 'bar3(Z);\n'
                 file_data += 'zlim([0, 30]);\n'
                 file_data += "xlabel('Columns');\n"
@@ -526,6 +745,8 @@ def prepare_data_and_show_graph(timestamp: int, env_name: str, env_name_snake: s
     for axs_i, graph_type in enumerate(graphs):
 
         graph_name = graph_type.value
+        graph_limit = graph_configuration[graph_type]['limit']
+        graph_interval = graph_configuration[graph_type]['interval']
 
         print('Graph Type: {}'.format(graph_name))
 
@@ -536,11 +757,15 @@ def prepare_data_and_show_graph(timestamp: int, env_name: str, env_name_snake: s
                 # Data info
                 data_info = graphs_info[graph_type][agent_type][str(configuration)]
 
+                # Output Text: Algorithm_Mechanism & average & std & max & min
+                output_text = '\t\t{}_{} & {:.2f} & {:.2f} & {:.2f} & {:.2f} \\\\'
+
                 # Information about time
                 # Keep finite elements
                 data_info['time'] = list(filter(math.isfinite, data_info['time']))
                 # If hasn't any element return [-1] list
                 data_info['time'] = data_info['time'] if data_info['time'] else [-1]
+                data_info['time'] = list(map(lambda x: time.time() - x, data_info['time']))
 
                 info_time_avg = np.average(data_info['time'])
                 info_time_std = np.std(data_info['time'])
@@ -548,9 +773,8 @@ def prepare_data_and_show_graph(timestamp: int, env_name: str, env_name_snake: s
                 info_time_min = np.min(data_info['time'])
 
                 print('\tTime:')
-                print(
-                    '\t\t{}_{} & {} & {} & {} & {} \\\\'.format(agent_type, configuration, info_time_avg, info_time_std,
-                                                                info_time_max, info_time_min))
+                print(output_text.format(agent_type, configuration, info_time_avg, info_time_std, info_time_max,
+                                         info_time_min))
 
                 # Information about steps
                 # Keep finite elements
@@ -563,9 +787,8 @@ def prepare_data_and_show_graph(timestamp: int, env_name: str, env_name_snake: s
                 info_steps_min = np.min(data_info['steps'])
 
                 print('\tSteps:')
-                print(
-                    '\t\t{}_{} & {} & {} & {} & {} \\\\'.format(agent_type, configuration, info_steps_avg,
-                                                                info_steps_std, info_steps_max, info_steps_min))
+                print(output_text.format(agent_type, configuration, info_steps_avg, info_steps_std, info_steps_max,
+                                         info_steps_min))
 
                 # Information about solutions_found
                 info_solutions_found_avg = np.average(data_info['solutions_found'])
@@ -574,14 +797,12 @@ def prepare_data_and_show_graph(timestamp: int, env_name: str, env_name_snake: s
                 info_solutions_found_min = np.min(data_info['solutions_found'])
 
                 print('\tSolutions found:')
-                print(
-                    '\t\t{}_{} & {} & {} & {} & {} \\\\'.format(agent_type, configuration, info_solutions_found_avg,
-                                                                info_solutions_found_std, info_solutions_found_max,
-                                                                info_solutions_found_min))
+                print(output_text.format(agent_type, configuration, info_solutions_found_avg, info_solutions_found_std,
+                                         info_solutions_found_max, info_solutions_found_min))
 
                 # Information about had solution found
                 print('\tHad solution:')
-                print('\t\t{}'.format(sum(data_info['had_solution_found'])))
+                print('\t\t{} / {}'.format(sum(data_info['had_solution_found']), len(data_info['had_solution_found'])))
 
                 # Recover old data
                 data = graphs[graph_type][agent_type][str(configuration)]
@@ -627,17 +848,16 @@ def prepare_data_and_show_graph(timestamp: int, env_name: str, env_name_snake: s
                     file_data = "x = [{}]\n".format(', '.join(map(str, x)))
                     file_data += "Y = [\n{}\n]\n".format(';\n'.join([', '.join(map(str, x)) for x in data]))
                     file_data += "means = mean(Y);\n"
-                    file_data += 'figure;\n'
                     file_data += 'plot(x, means);\n'
                     file.write(file_data)
 
             # Show data
             if graph_type == GraphType.STEPS:
-                axs[axs_i].set_xlabel('{} x{}'.format(graph_type.value, AgentPQL.steps_to_get_graph_data))
+                axs[axs_i].set_xlabel('{} x{}'.format(graph_type.value, graph_interval))
             elif graph_type == GraphType.MEMORY:
-                axs[axs_i].set_xlabel('{} (x{} steps)'.format(graph_type.value, AgentPQL.steps_to_get_graph_data))
+                axs[axs_i].set_xlabel('{} (x{} steps)'.format(graph_type.value, graph_interval))
             elif graph_type == GraphType.TIME:
-                axs[axs_i].set_xlabel('{} x{}s'.format(graph_type.value, AgentPQL.seconds_to_get_graph_data))
+                axs[axs_i].set_xlabel('{} x{}s'.format(graph_type.value, graph_interval))
             else:
                 axs[axs_i].set_xlabel(graph_type.value)
 
@@ -705,3 +925,103 @@ def prepare_data_and_show_graph(timestamp: int, env_name: str, env_name_snake: s
     plt.savefig(plot_filename)
 
     plt.show()
+
+
+def unified_graphs(line_specification: dict, input_path: str = './dumps/unify',
+                   output_path: str = None) -> None:
+    """
+
+    :param line_specification:
+    :param input_path:
+    :param output_path:
+    :return:
+    """
+
+    # Create an instance of Path with input and output paths.
+    input_directory = Path(input_path)
+    # output_file = Path(output_path)
+
+    if input_directory.exists():
+
+        # Extract all files from input directory
+        files = filter(Path.is_file, os.scandir(input_directory))
+
+        # Dictionary where key is the configuration of the experiment and value is the mean
+        means = list()
+
+        # X range to x axis
+        x_axis = 0
+
+        # Define description file name
+        description_file_name = None
+
+        for file in files:
+
+            # Extract parts of file name
+            file_name = file.name.split('.m')[0].split('_')
+
+            # Extract the import part from file name (two last words without extension)
+            exclusive_name = ' '.join(file_name[-2:]).lower()
+
+            current_description_file_name = '_'.join(file_name[2: -2] + file_name[1:2] + file_name[0:1])
+
+            if description_file_name is None:
+                # Construct problem and configuration of files
+                description_file_name = current_description_file_name
+
+            elif current_description_file_name != description_file_name:
+                raise IOError('Found files from different problems.')
+
+            # Data to do a mean
+            data = list()
+
+            # Boolean flag to know if we must read that line
+            read = False
+
+            # Open as file
+            with open(file, mode='r') as f:
+
+                for line in f:
+
+                    if 'Y' in line:
+                        read = True
+                        continue
+
+                    if ']' in line and read:
+                        break
+
+                    if read:
+                        # Processed line, parsing to float each element separated by ', '
+                        processed_line = list(map(float, line[:-2].split(', ')))
+                        # Max len x axis
+                        x_axis = max(len(processed_line), x_axis)
+                        # Save processed line
+                        data.append(processed_line)
+
+                    pass
+
+            means.append(
+                (np.average(data, axis=0), exclusive_name, line_specification[exclusive_name])
+            )
+
+        output_path = './dumps/unify/unified/{}.m'.format(description_file_name) if output_path is None else output_path
+        output_file = Path(output_path)
+
+        with output_file.open(mode='w+') as f:
+            file_data = 'figure;\n'
+            file_data += 'hold on;\n\n'
+            file_data += 'X = [{}];\n\n'.format(', '.join(map(str, range(x_axis))))
+
+            labels = list()
+
+            for data, label, line_configuration in means:
+                file_data += 'Y = [{}];\n'.format(', '.join(map(str, data)))
+                file_data += 'plot(X, Y, \'Color\', \'{}\');\n\n'.format(line_configuration)
+                labels.append(label)
+
+            file_data += 'legend({});\n'.format(', '.join("'{}'".format(label) for label in labels))
+
+            f.write(file_data)
+
+    else:
+        print(Fore.RED + "Input path doesn't exists")

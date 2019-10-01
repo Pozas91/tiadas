@@ -26,7 +26,7 @@ class AgentA1(Agent):
     def __init__(self, environment: Environment, hv_reference: Vector, alpha: float = 0.1, epsilon: float = 0.1,
                  gamma: float = 1., seed: int = 0, states_to_observe: list = None, max_steps: int = None,
                  evaluation_mechanism: EvaluationMechanism = EvaluationMechanism.HV,
-                 graph_types: set = None, integer_mode: bool = True):
+                 graph_types: set = None, integer_mode: bool = True, initial_q_value: Vector = None):
         """
         :param environment: An environment where agent does any operation.
         :param alpha: Learning rate
@@ -46,17 +46,20 @@ class AgentA1(Agent):
             graph_types = {GraphType.STEPS, GraphType.MEMORY}
 
         # Super call __init__
-        super().__init__(environment=environment, epsilon=epsilon, gamma=gamma, seed=seed,
-                         states_to_observe=states_to_observe, max_steps=max_steps, graph_types=graph_types)
+        super().__init__(environment=environment, epsilon=epsilon, gamma=gamma, seed=seed, graph_types=graph_types,
+                         states_to_observe=states_to_observe, max_steps=max_steps, initial_q_value=initial_q_value)
+
+        if initial_q_value is None:
+            self.initial_q_value = self.environment.default_reward.zero_vector
 
         # Learning factor
         assert 0 < alpha <= 1
         self.alpha = alpha
 
         # Dictionary that stores all q values. 
-        #Key: state; Value: second level dictionary.
-        #Second level dictionary: key: action; value: third level dictionary
-        #Third level dictionary: key :index vector (element from cartesian product); 
+        # Key: state; Value: second level dictionary.
+        # Second level dictionary: key: action; value: third level dictionary
+        # Third level dictionary: key :index vector (element from cartesian product);
         #                        value: q-vector (instance of class IndexVector)
         self.q = dict()
 
@@ -180,7 +183,7 @@ class AgentA1(Agent):
                 self.v.update({
                     next_state: {
                         # By default finals states has a zero vector with a zero index
-                        0: self.environment.default_reward.zero_vector
+                        0: self.initial_q_value
                     }
                 })
 
@@ -288,8 +291,8 @@ class AgentA1(Agent):
         # Get Q-set from state given for each possible action
         v = list(self.v.get(state, {}).values())
 
-        # If v is empty, default is zero vector
-        v = v if v else [self.environment.default_reward.zero_vector]
+        # If v is empty, default is initial_q_value variable.
+        v = v if v else [self.initial_q_value]
 
         # Getting hypervolume
         hv = uh.calc_hypervolume(list_of_vectors=v, reference=self.hv_reference)
@@ -360,7 +363,7 @@ class AgentA1(Agent):
                         selected_state: counter_visited_states.get(selected_state) + 1
                     })
 
-                # Change initial state for train
+                # Change initial state for episode_train
                 self.environment.initial_state = selected_state
 
                 # Do an episode
@@ -382,9 +385,9 @@ class AgentA1(Agent):
             state = self.state
 
         # Use the selected evaluation
-        if self.evaluation_mechanism == EvaluationMechanism.HV:
+        if self.evaluation_mechanism is EvaluationMechanism.HV:
             action = self.hypervolume_evaluation(state=state)
-        elif self.evaluation_mechanism == EvaluationMechanism.C:
+        elif self.evaluation_mechanism is EvaluationMechanism.C:
             action = self.cardinality_evaluation(state=state)
         else:
             action = self.pareto_evaluation(state=state)
@@ -409,7 +412,7 @@ class AgentA1(Agent):
 
             # Get Q-set from state given for each possible action
             q_set = self.q.get(state, dict()).get(a, {
-                (0,): IndexVector(index=0, vector=self.environment.default_reward.zero_vector)
+                (0,): IndexVector(index=0, vector=self.initial_q_value)
             })
 
             # Filter vector from index vectors
@@ -451,7 +454,7 @@ class AgentA1(Agent):
 
             # Get Q-set from state given for each possible action
             q_set = self.q.get(state, dict()).get(a, {
-                (0,): IndexVector(index=a, vector=self.environment.default_reward.zero_vector)
+                (0,): IndexVector(index=a, vector=self.initial_q_value)
             })
 
             # for each Q in Q_set(s, a)
@@ -490,7 +493,7 @@ class AgentA1(Agent):
 
             # Get Q-set from state given for each possible action
             q_set = self.q.get(state, dict()).get(a, {
-                (0,): IndexVector(index=a, vector=self.environment.default_reward.zero_vector)
+                (0,): IndexVector(index=a, vector=self.initial_q_value)
             })
 
             # for each Q in Q_set(s, a)
@@ -685,7 +688,7 @@ class AgentA1(Agent):
         :param index:
         :return:
         """
-        return IndexVector(index=index, vector=self.environment.default_reward.zero_vector)
+        return IndexVector(index=index, vector=self.initial_q_value)
 
     def check_if_need_update_v(self) -> None:
 

@@ -14,7 +14,7 @@ Evaluation mechanisms available
     
 Sample call: 
     
-    1) train
+    1) episode_train
     
         # Instance of environment
         env = DeepSeaTreasure()
@@ -23,7 +23,7 @@ Sample call:
         agent = AgentPQL(environment=env)
 
         # Train agent
-        agent.train() # Optional you can pass a number of episodes, e.g. agent.train(episodes=3000)
+        agent.episode_train() # Optional you can pass a number of episodes, e.g. agent.episode_train(episodes=3000)
     
     
     2) write agent to file
@@ -79,8 +79,8 @@ class AgentPQL(Agent):
 
     def __init__(self, environment: Environment, epsilon: float = 0.1, gamma: float = 1., seed: int = 0,
                  max_steps: int = None, hv_reference: Vector = None, graph_types: set = None,
-                 evaluation_mechanism: EvaluationMechanism = EvaluationMechanism.HV, states_to_observe: list = None,
-                 integer_mode: bool = False):
+                 evaluation_mechanism: EvaluationMechanism = EvaluationMechanism.HV, initial_q_value: Vector = None,
+                 states_to_observe: list = None, integer_mode: bool = False):
 
         """
         :param environment: instance of any environment class.
@@ -100,7 +100,11 @@ class AgentPQL(Agent):
 
         # Super call __init__
         super().__init__(environment=environment, epsilon=epsilon, gamma=gamma, seed=seed,
-                         states_to_observe=states_to_observe, max_steps=max_steps, graph_types=graph_types)
+                         states_to_observe=states_to_observe, max_steps=max_steps, graph_types=graph_types,
+                         initial_q_value=initial_q_value)
+
+        if initial_q_value is None:
+            self.initial_q_value = self.environment.default_reward.zero_vector
 
         # Average observed immediate reward vector.
         self.r = dict()
@@ -143,7 +147,7 @@ class AgentPQL(Agent):
         if is_final:
             # ND(s, a) <- Zero vector
             nd_s_a_dict = self.nd.get(self.state, {})
-            nd_s_a_dict.update({action: [self.environment.default_reward.zero_vector]})
+            nd_s_a_dict.update({action: [self.initial_q_value]})
             self.nd.update({self.state: nd_s_a_dict})
         else:
             # Update ND policies of s' in s
@@ -185,14 +189,6 @@ class AgentPQL(Agent):
                 # In the same for loop, is check if this agent has the graph_type indicated (get dictionary default
                 # value)
                 for state, data in self.graph_info.get(graph_type, {}).items():
-
-                    # # Add to data Best value (V max)
-                    # value = self._best_hypervolume(state=state)
-                    #
-                    # # If integer mode is True, is necessary divide value by increment
-                    # if self.integer_mode:
-                    #     # Divide value by two powered numbers (hv_reference and reward)
-                    #     value /= 10 ** (Vector.decimals_allowed * 2)
 
                     # Extract V(state) (without operations)
                     value = self.q_set_from_state(state=state)
@@ -287,7 +283,7 @@ class AgentPQL(Agent):
         r_s_a = self.r.get(state, {}).get(action, self.environment.default_reward.zero_vector)
 
         # Get ND(s, a)
-        non_dominated_vectors = self.nd.get(state, {}).get(action, [self.environment.default_reward.zero_vector])
+        non_dominated_vectors = self.nd.get(state, {}).get(action, [self.initial_q_value])
 
         # R(s, a) + y*ND
         q_set = [r_s_a + (non_dominated * self.gamma) for non_dominated in non_dominated_vectors]
@@ -342,9 +338,9 @@ class AgentPQL(Agent):
             state = self.state
 
         # Use the selected evaluation
-        if self.evaluation_mechanism == EvaluationMechanism.HV:
+        if self.evaluation_mechanism is EvaluationMechanism.HV:
             action = self.hypervolume_evaluation(state=state)
-        elif self.evaluation_mechanism == EvaluationMechanism.C:
+        elif self.evaluation_mechanism is EvaluationMechanism.C:
             action = self.cardinality_evaluation(state=state)
         else:
             action = self.pareto_evaluation(state=state)

@@ -44,7 +44,7 @@ class TestAgent(unittest.TestCase):
         self.assertTrue(hasattr(self.agent, 'reset_steps'))
         self.assertTrue(hasattr(self.agent, 'show_observed_states'))
         self.assertTrue(hasattr(self.agent, 'print_information'))
-        self.assertTrue(hasattr(self.agent, 'train'))
+        self.assertTrue(hasattr(self.agent, 'episode_train'))
         self.assertTrue(hasattr(self.agent, 'episode'))
         self.assertTrue(hasattr(self.agent, 'select_action'))
         self.assertTrue(hasattr(self.agent, 'reset'))
