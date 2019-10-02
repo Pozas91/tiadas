@@ -244,12 +244,12 @@ def main():
             # EvaluationMechanism.PO: 'green',
             1.0: 'red',
             0.9: 'fuchsia',
-            0.8: 'orange',
-            0.7: 'pink',
-            0.6: 'yellow',
-            0.5: 'green',
-            0.4: 'cyan',
-            0.3: 'blue'
+            # 0.8: 'orange',
+            # 0.7: 'pink',
+            # 0.6: 'yellow',
+            # 0.5: 'green',
+            # 0.4: 'cyan',
+            # 0.3: 'blue'
         },
         # AgentType.SCALARIZED: {
         # EvaluationMechanism.SCALARIZED: 'cyan'
@@ -258,7 +258,7 @@ def main():
 
     graph_configurations = {
         GraphType.STEPS: {
-            'limit': 1000,
+            'limit': 100,
             'interval': 10
         },
         # GraphType.MEMORY: {
@@ -268,11 +268,11 @@ def main():
         #
         # },
         GraphType.TIME: {
-            'limit': 120,
+            'limit': 8,
             'interval': 4
         },
         GraphType.EPISODES: {
-            'limit': 1000,
+            'limit': 100,
             'interval': 2
         }
     }

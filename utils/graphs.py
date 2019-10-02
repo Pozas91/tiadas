@@ -216,9 +216,10 @@ def update_graphs(graphs: dict, agent: Agent, configuration: str, states_to_obse
 def test_agents(environment: Environment, hv_reference: Vector, variable: str, agents_configuration: dict,
                 graph_configuration: dict, epsilon: float = 0.1, alpha: float = 0.1, max_steps: int = None,
                 states_to_observe: list = None, integer_mode: bool = False, number_of_agents: int = 30,
-                gamma: float = 1., solution: list = None,
+                gamma: float = 1., solution: list = None, initial_q_value: Vector = None,
                 evaluation_mechanism: EvaluationMechanism = EvaluationMechanism.C):
     """
+    :param initial_q_value:
     :param graph_configuration:
     :param solution:
     :param environment:
@@ -298,112 +299,17 @@ def test_agents(environment: Environment, hv_reference: Vector, variable: str, a
                     # Variable parameters
                     parameters = {
                         'epsilon': epsilon, 'alpha': alpha, 'gamma': gamma, 'max_steps': max_steps,
-                        'evaluation_mechanism': evaluation_mechanism
+                        'evaluation_mechanism': evaluation_mechanism, 'initial_q_value': initial_q_value
                     }
 
                     # Modify current configuration
                     parameters.update({variable: configuration})
 
-                    # Initialize params
-                    agent = None
-                    v_s_0 = None
-
-                    if agent_type is AgentType.SCALARIZED:
-
-                        # Removing useless parameters
-                        del parameters['evaluation_mechanism']
-
-                        # Set weights
-                        weights = (.99, .01)
-
-                        # Build agent
-                        agent = AgentMOSP(seed=seed, environment=environment, weights=weights,
-                                          states_to_observe=states_to_observe, graph_types=graph_types,
-                                          hv_reference=hv_reference, **parameters)
-
-                        # Search one extreme objective
-                        if graph_type is GraphType.STEPS:
-                            agent.steps_train(steps=limit)
-                        elif graph_type is GraphType.EPISODES:
-                            agent.episode_train(episodes=limit)
-                        elif graph_type is GraphType.TIME:
-                            agent.time_train(execution_time=limit)
-
-                        # Get p point from agent test
-                        p = agent.get_accumulated_reward(from_state=states_to_observe[0])
-
-                        # Add point found to pareto's frontier found
-                        agent.pareto_frontier_found.append(p)
-
-                        # Reset agent to episode_train again with others weights
-                        agent.reset()
-                        agent.reset_totals()
-
-                        # Set weights to find another extreme point
-                        agent.weights = (.01, .99)
-
-                        # Search the other extreme objective
-                        if graph_type is GraphType.STEPS:
-                            agent.steps_train(steps=limit)
-                        elif graph_type is GraphType.EPISODES:
-                            agent.episode_train(episodes=limit)
-                        elif graph_type is GraphType.TIME:
-                            agent.time_train(execution_time=limit)
-
-                        # Get q point from agent test.
-                        q = agent.get_accumulated_reward(from_state=states_to_observe[0])
-
-                        # Add point found to pareto's frontier found
-                        agent.pareto_frontier_found.append(q)
-
-                        # Search pareto points
-                        agent.calc_frontier_scalarized(p=p, q=q)
-
-                        # Non-dominated vectors found in V(s0)
-                        v_s_0 = agent.pareto_frontier_found
-
-                    elif agent_type is AgentType.PQL:
-
-                        # Removing useless parameters
-                        del parameters['alpha']
-
-                        # Build an instance of agent
-                        agent = AgentPQL(environment=environment, seed=seed, hv_reference=hv_reference,
-                                         graph_types=graph_types, states_to_observe=states_to_observe,
-                                         integer_mode=integer_mode, **parameters)
-
-                        # Train the agent
-                        if graph_type is GraphType.TIME:
-                            agent.time_train(execution_time=limit)
-                        elif graph_type is GraphType.STEPS:
-                            agent.steps_train(steps=limit)
-                        elif graph_type is GraphType.EPISODES:
-                            agent.episode_train(episodes=limit)
-
-                        # Non-dominated vectors found in V(s0)
-                        v_s_0 = agent.q_set_from_state(state=agent.environment.initial_state)
-
-                    elif agent_type is AgentType.A1:
-
-                        # Build an instance of agent
-                        agent = AgentA1(environment=environment, seed=seed, hv_reference=hv_reference,
-                                        graph_types=graph_types, states_to_observe=states_to_observe,
-                                        integer_mode=integer_mode, **parameters)
-
-                        # Train the agent
-                        if graph_type is GraphType.TIME:
-                            agent.time_train(execution_time=limit)
-                        elif graph_type is GraphType.STEPS:
-                            agent.steps_train(steps=limit)
-                        elif graph_type is GraphType.EPISODES:
-                            agent.episode_train(episodes=limit)
-
-                        # Non-dominated vectors found in V(s0)
-                        v_real = agent.v_real()
-
-                        v_s_0 = v_real.get(agent.environment.initial_state, {
-                            0: agent.environment.default_reward.zero_vector
-                        }).values()
+                    agent, v_s_0 = train_agent_and_get_v_s_0(agent_type=agent_type, environment=environment,
+                                                             graph_type=graph_type, graph_types=graph_types,
+                                                             hv_reference=hv_reference, initial_q_value=initial_q_value,
+                                                             integer_mode=integer_mode, limit=limit, seed=seed,
+                                                             parameters=parameters, states_to_observe=states_to_observe)
 
                     print('-> {:.2f}s'.format(time.time() - t0))
 
@@ -416,19 +322,110 @@ def test_agents(environment: Environment, hv_reference: Vector, variable: str, a
                     update_graphs(agent=agent, graphs=graphs, configuration=str(configuration), agent_type=agent_type,
                                   states_to_observe=states_to_observe, graphs_info=graphs_info, solution=solution)
 
-        # Define stop condition
-        if graph_type is GraphType.TIME:
-            stop_condition = {'time': limit}
-        elif graph_type is GraphType.STEPS:
-            stop_condition = {'steps': limit}
-        else:
-            raise ValueError('Graph type unknown.')
-
     prepare_data_and_show_graph(timestamp=timestamp, env_name=env_name, env_name_snake=env_name_snake, graphs=graphs,
                                 number_of_agents=number_of_agents, agents_configuration=agents_configuration,
                                 alpha=alpha, epsilon=epsilon, gamma=gamma, graph_configuration=graph_configuration,
                                 max_steps=max_steps, initial_state=environment.initial_state, integer_mode=integer_mode,
                                 variable=variable, graphs_info=graphs_info)
+
+
+def train_agent_and_get_v_s_0(agent_type: AgentType, environment: Environment, graph_type: GraphType, graph_types: set,
+                              hv_reference: Vector, initial_q_value: Vector, integer_mode: bool, limit: int,
+                              parameters: dict, seed: int, states_to_observe: list):
+    """
+    :param agent_type:
+    :param environment:
+    :param graph_type:
+    :param graph_types:
+    :param hv_reference:
+    :param initial_q_value:
+    :param integer_mode:
+    :param limit:
+    :param parameters:
+    :param seed:
+    :param states_to_observe:
+    :return:
+    """
+    # By default
+    agent, v_s_0 = None, None
+
+    if agent_type is AgentType.SCALARIZED:
+
+        # Removing useless parameters
+        del parameters['evaluation_mechanism']
+
+        # Set weights
+        weights = (.99, .01)
+
+        # Build agent
+        agent = AgentMOSP(seed=seed, environment=environment, weights=weights,
+                          states_to_observe=states_to_observe, graph_types=graph_types,
+                          hv_reference=hv_reference, **parameters)
+
+        # Train the agent
+        agent.train(graph_type=graph_type, limit=limit)
+
+        # Get p point from agent test
+        p = agent.get_accumulated_reward(from_state=states_to_observe[0])
+
+        # Add point found to pareto's frontier found
+        agent.pareto_frontier_found.append(p)
+
+        # Reset agent to episode_train again with others weights
+        agent.reset()
+        agent.reset_totals()
+
+        # Set weights to find another extreme point
+        agent.weights = (.01, .99)
+
+        # Train the agent
+        agent.train(graph_type=graph_type, limit=limit)
+
+        # Get q point from agent test.
+        q = agent.get_accumulated_reward(from_state=states_to_observe[0])
+
+        # Add point found to pareto's frontier found
+        agent.pareto_frontier_found.append(q)
+
+        # Search pareto points
+        agent.calc_frontier_scalarized(p=p, q=q)
+
+        # Non-dominated vectors found in V(s0)
+        v_s_0 = agent.pareto_frontier_found
+
+    elif agent_type is AgentType.PQL:
+
+        # Removing useless parameters
+        del parameters['alpha']
+
+        # Build an instance of agent
+        agent = AgentPQL(environment=environment, seed=seed, hv_reference=hv_reference,
+                         graph_types=graph_types, states_to_observe=states_to_observe,
+                         integer_mode=integer_mode, **parameters)
+
+        # Train the agent
+        agent.train(graph_type=graph_type, limit=limit)
+
+        # Non-dominated vectors found in V(s0)
+        v_s_0 = agent.q_set_from_state(state=agent.environment.initial_state)
+
+    elif agent_type is AgentType.A1:
+
+        # Build an instance of agent
+        agent = AgentA1(environment=environment, seed=seed, hv_reference=hv_reference,
+                        graph_types=graph_types, states_to_observe=states_to_observe,
+                        integer_mode=integer_mode, **parameters)
+
+        # Train the agent
+        agent.train(graph_type=graph_type, limit=limit)
+
+        # Non-dominated vectors found in V(s0)
+        v_real = agent.v_real()
+
+        # Extract V from s0, by default is `initial_q_value`
+        v_s_0 = v_real.get(agent.environment.initial_state, {0: initial_q_value}).values()
+
+    return agent, v_s_0
 
 
 def test_steps(environment: Environment, hv_reference: Vector, variable: str, agents_configuration: dict,
@@ -765,7 +762,6 @@ def prepare_data_and_show_graph(timestamp: int, env_name: str, env_name_snake: s
                 data_info['time'] = list(filter(math.isfinite, data_info['time']))
                 # If hasn't any element return [-1] list
                 data_info['time'] = data_info['time'] if data_info['time'] else [-1]
-                data_info['time'] = list(map(lambda x: time.time() - x, data_info['time']))
 
                 info_time_avg = np.average(data_info['time'])
                 info_time_std = np.std(data_info['time'])
@@ -852,16 +848,18 @@ def prepare_data_and_show_graph(timestamp: int, env_name: str, env_name_snake: s
                     file.write(file_data)
 
             # Show data
-            if graph_type == GraphType.STEPS:
+            if graph_type is GraphType.STEPS:
                 axs[axs_i].set_xlabel('{} x{}'.format(graph_type.value, graph_interval))
-            elif graph_type == GraphType.MEMORY:
+            elif graph_type is GraphType.MEMORY:
                 axs[axs_i].set_xlabel('{} (x{} steps)'.format(graph_type.value, graph_interval))
-            elif graph_type == GraphType.TIME:
+            elif graph_type is GraphType.TIME:
                 axs[axs_i].set_xlabel('{} x{}s'.format(graph_type.value, graph_interval))
+            elif graph_type is GraphType.EPISODES:
+                axs[axs_i].set_xlabel('{} x{}'.format(graph_type.value, graph_interval))
             else:
                 axs[axs_i].set_xlabel(graph_type.value)
 
-            if graph_type == GraphType.MEMORY:
+            if graph_type is GraphType.MEMORY:
                 axs[axs_i].set_ylabel('# of vectors')
             else:
                 axs[axs_i].set_ylabel('HV max')
@@ -904,10 +902,10 @@ def prepare_data_and_show_graph(timestamp: int, env_name: str, env_name_snake: s
     if variable is not 'max_steps':
         basic_information.append(r'$max\_steps={}$'.format(max_steps))
 
-    stop_condition_key = next(iter(stop_condition))
+    # stop_condition_key = next(iter(stop_condition))
 
     text_information = '\n'.join(basic_information + [
-        r'stop_condition={} - {}$'.format(stop_condition_key, stop_condition[stop_condition_key]),
+        # r'stop_condition={} - {}$'.format(stop_condition_key, stop_condition[stop_condition_key]),
         r'$initial\_state={}$'.format(initial_state),
         r'$relative\_tolerance={}$'.format(relative_tolerance),
         r'$absolute\_tolerance={}$'.format(absolute_tolerance),

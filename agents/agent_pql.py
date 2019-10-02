@@ -189,14 +189,13 @@ class AgentPQL(Agent):
                 # In the same for loop, is check if this agent has the graph_type indicated (get dictionary default
                 # value)
                 for state, data in self.graph_info.get(graph_type, {}).items():
-
                     # Extract V(state) (without operations)
                     value = self.q_set_from_state(state=state)
 
                     # Add information to that data
                     data.append({
                         'vectors': value,
-                        'time': time.time(),
+                        'time': time.time() - self.reference_time_to_train,
                         'steps': self.total_steps
                     })
 

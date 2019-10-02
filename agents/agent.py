@@ -98,6 +98,9 @@ class Agent:
         # Initial Q value, when doesn't found another solution.
         self.initial_q_value = initial_q_value
 
+        # Time as reference to mark vectors for graphs
+        self.reference_time_to_train = None
+
     def select_action(self, state: object = None) -> int:
         """
         Select best action with a little e-greedy policy.
@@ -238,6 +241,19 @@ class Agent:
         print("Gamma: {}".format(self.gamma))
         print("Epsilon: {}".format(self.epsilon))
 
+    def train(self, graph_type: GraphType, limit: int):
+
+        self.reference_time_to_train = time.time()
+
+        if graph_type is GraphType.EPISODES:
+            self.episode_train(episodes=limit)
+        elif graph_type is GraphType.TIME:
+            self.time_train(execution_time=limit)
+        elif graph_type is GraphType.STEPS:
+            self.steps_train(steps=limit)
+
+        self.update_graph(graph_types=(GraphType.VECTORS_PER_CELL,))
+
     def episode_train(self, episodes: int = 1000):
         """
         Return this agent trained with `episodes` episodes.
@@ -249,7 +265,8 @@ class Agent:
             # Do an episode
             self.episode()
 
-        self.update_graph(graph_types=(GraphType.VECTORS_PER_CELL,))
+            if i % Agent.interval_to_get_data == 0:
+                self.update_graph(graph_types=(GraphType.EPISODES,))
 
     def time_train(self, execution_time: int = 120):
         """
@@ -259,13 +276,9 @@ class Agent:
         :return:
         """
 
-        reference_time = time.time()
-
-        while (time.time() - reference_time) < execution_time:
+        while (time.time() - self.reference_time_to_train) < execution_time:
             # Do an episode
             self.episode()
-
-        self.update_graph(graph_types=(GraphType.VECTORS_PER_CELL,))
 
     def steps_train(self, steps: int = 1000):
         """
@@ -277,8 +290,6 @@ class Agent:
         while self.total_steps < steps:
             # Do an episode
             self.episode()
-
-        self.update_graph(graph_types=(GraphType.VECTORS_PER_CELL,))
 
     def get_dict_model(self) -> dict:
         """
