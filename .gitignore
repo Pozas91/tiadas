@@ -157,8 +157,8 @@ fabric.properties
 # Editor-based Rest Client
 .idea/httpRequests
 
-# Ignore draft files
-draft_*.py
-
 # Ignore dumps directory
 dumps/*
+
+# Ignore drafts directory
+drafts/*
