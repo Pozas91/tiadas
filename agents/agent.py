@@ -130,7 +130,7 @@ class Agent:
         """
         return self.environment.action_space.sample()
 
-    def episode(self, steps_to_finish: int = None) -> None:
+    def episode(self, graph_type: GraphType) -> None:
         """
         Run an episode complete until get a final step
         :return:
@@ -153,27 +153,31 @@ class Agent:
             is_final_state = self.do_iteration()
 
             # Stop conditions
-            is_final_state |= (steps_to_finish is not None and self.total_steps >= steps_to_finish)
             is_final_state |= (self.max_steps is not None and self.steps >= self.max_steps)
 
             # Check if is necessary update graph
-            if self.total_steps % self.interval_to_get_data == 0:
-                # Trigger update graph
-                self.update_graph(graph_types=(GraphType.STEPS, GraphType.MEMORY))
+            if (graph_type is GraphType.STEPS) and (self.total_steps % self.interval_to_get_data == 0):
+                # Update Graph
+                self.update_graph(graph_type=GraphType.STEPS)
 
-            current_time = time.time()
+            if (graph_type is GraphType.MEMORY) and (self.total_steps % self.interval_to_get_data == 0):
+                # Update Graph
+                self.update_graph(graph_type=GraphType.MEMORY)
 
-            if (current_time - self.last_time_to_get_graph_data) > self.interval_to_get_data:
-                # Trigger update graph
-                self.update_graph(graph_types=(GraphType.TIME,))
+            if graph_type is GraphType.TIME:
+                current_time = time.time()
 
-                # Update last execution
-                self.last_time_to_get_graph_data = current_time
+                if (current_time - self.last_time_to_get_graph_data) > self.interval_to_get_data:
+                    # Update Graph
+                    self.update_graph(graph_type=GraphType.TIME)
 
-    def update_graph(self, graph_types: tuple) -> None:
+                    # Update last execution
+                    self.last_time_to_get_graph_data = current_time
+
+    def update_graph(self, graph_type: GraphType) -> None:
         """
         Update specific graph type
-        :param graph_types:
+        :param graph_type:
         :return:
         """
         raise NotImplemented
@@ -246,50 +250,54 @@ class Agent:
         self.reference_time_to_train = time.time()
 
         if graph_type is GraphType.EPISODES:
-            self.episode_train(episodes=limit)
+            self.episode_train(episodes=limit, graph_type=graph_type)
         elif graph_type is GraphType.TIME:
-            self.time_train(execution_time=limit)
+            self.time_train(execution_time=limit, graph_type=graph_type)
         elif graph_type is GraphType.STEPS:
-            self.steps_train(steps=limit)
+            self.steps_train(steps=limit, graph_type=graph_type)
 
-        self.update_graph(graph_types=(GraphType.VECTORS_PER_CELL,))
+        if GraphType.VECTORS_PER_CELL in self.graph_info:
+            # Update Graph
+            self.update_graph(graph_type=GraphType.VECTORS_PER_CELL)
 
-    def episode_train(self, episodes: int = 1000):
+    def episode_train(self, episodes: int, graph_type: GraphType):
         """
         Return this agent trained with `episodes` episodes.
+        :param graph_type:
         :param episodes:
         :return:
         """
 
         for i in range(episodes):
             # Do an episode
-            self.episode()
+            self.episode(graph_type=graph_type)
 
-            if i % Agent.interval_to_get_data == 0:
-                self.update_graph(graph_types=(GraphType.EPISODES,))
+            if (graph_type is GraphType.EPISODES) and (i % Agent.interval_to_get_data == 0):
+                self.update_graph(graph_type=GraphType.EPISODES)
 
-    def time_train(self, execution_time: int = 120):
+    def time_train(self, execution_time: int, graph_type: GraphType):
         """
         Return this agent trained during `time_execution` seconds.
-        :param solution:
+        :param graph_type:
         :param execution_time:
         :return:
         """
 
         while (time.time() - self.reference_time_to_train) < execution_time:
             # Do an episode
-            self.episode()
+            self.episode(graph_type=graph_type)
 
-    def steps_train(self, steps: int = 1000):
+    def steps_train(self, steps: int, graph_type: GraphType):
         """
         Return this agent trained during `steps` steps.
+        :param graph_type:
         :param steps:
         :return:
         """
 
         while self.total_steps < steps:
             # Do an episode
-            self.episode()
+            self.episode(graph_type=graph_type)
 
     def get_dict_model(self) -> dict:
         """

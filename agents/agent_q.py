@@ -124,14 +124,14 @@ class AgentQ(Agent):
 
         return is_final_state
 
-    def update_graph(self, graph_types: GraphType):
+    def update_graph(self, graph_type: GraphType):
         """
         Update specific graph type
-        :param graph_types:
+        :param graph_type:
         :return:
         """
 
-        for state, data in self.graph_info.get(graph_types).items():
+        for state, data in self.graph_info[graph_type].items():
             # Add to data Best value (V max)
             value = self._best_reward(state=state)
 
@@ -139,7 +139,7 @@ class AgentQ(Agent):
             data.append(value)
 
             # Update dictionary
-            self.graph_info.get(graph_types).update({state: data})
+            self.graph_info[graph_type].update({state: data})
 
     def _update_q_values(self, reward: float, action: int, next_state: object) -> None:
         """

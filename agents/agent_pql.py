@@ -164,43 +164,37 @@ class AgentPQL(Agent):
 
         return is_final
 
-    def update_graph(self, graph_types: tuple) -> None:
+    def update_graph(self, graph_type: GraphType) -> None:
         """
         Update specific graph type
-        :param graph_types:
+        :param graph_type:
         :return:
         """
 
-        for graph_type in graph_types:
+        if graph_type is GraphType.MEMORY:
 
-            # If our agent doesn't has that graph_type ignore it.
-            if graph_type not in self.graph_info:
-                continue
+            # Count number of vectors in non dominate dictionary
+            self.graph_info[graph_type].append(
+                sum(len(actions) for states in self.nd.values() for actions in states.values())
+            )
 
-            if graph_type is GraphType.MEMORY:
+        else:
 
-                # Count number of vectors in non dominate dictionary
-                self.graph_info[graph_type].append(
-                    sum(len(actions) for states in self.nd.values() for actions in states.values())
-                )
+            # In the same for loop, is check if this agent has the graph_type indicated (get dictionary default
+            # value)
+            for state, data in self.graph_info.get(graph_type, {}).items():
+                # Extract V(state) (without operations)
+                value = self.q_set_from_state(state=state)
 
-            else:
+                # Add information to that data
+                data.append({
+                    'data': value,
+                    'time': time.time() - self.reference_time_to_train,
+                    'steps': self.total_steps
+                })
 
-                # In the same for loop, is check if this agent has the graph_type indicated (get dictionary default
-                # value)
-                for state, data in self.graph_info.get(graph_type, {}).items():
-                    # Extract V(state) (without operations)
-                    value = self.q_set_from_state(state=state)
-
-                    # Add information to that data
-                    data.append({
-                        'vectors': value,
-                        'time': time.time() - self.reference_time_to_train,
-                        'steps': self.total_steps
-                    })
-
-                    # Update dictionary
-                    self.graph_info.get(graph_type).update({state: data})
+                # Update dictionary
+                self.graph_info.get(graph_type).update({state: data})
 
     def get_and_update_n_s_a(self, state: object, action: int) -> int:
         """

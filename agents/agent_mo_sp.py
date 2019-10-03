@@ -157,7 +157,7 @@ class AgentMOSP(AgentQ):
             self.objective_training(objective=objective)
         else:
             # Normal training.
-            self.episode_train()
+            self.episode_train(episodes=1000, graph_type=GraphType.EPISODES)
 
         # Get point c from agent's test.
         c = self.get_accumulated_reward()
@@ -233,14 +233,14 @@ class AgentMOSP(AgentQ):
 
         return result
 
-    def update_graph(self, graph_types: GraphType):
+    def update_graph(self, graph_type: GraphType):
         """
         Update specific graph type
-        :param graph_types:
+        :param graph_type:
         :return:
         """
 
-        for state, data in self.graph_info.get(graph_types).items():
+        for state, data in self.graph_info[graph_type].items():
             # Calc pareto's frontier found
 
             if not self.pareto_frontier_found:
@@ -252,4 +252,4 @@ class AgentMOSP(AgentQ):
             data.append(value)
 
             # Update dictionary
-            self.graph_info.get(graph_types).update({state: data})
+            self.graph_info[graph_type].update({state: data})

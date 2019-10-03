@@ -16,6 +16,14 @@ from models import AgentType, GraphType, Vector, EvaluationMechanism
 
 
 def write_config_file(timestamp: int, number_of_agents: int, env_name_snake: str, **kwargs):
+    """
+    :param timestamp:
+    :param number_of_agents:
+    :param env_name_snake:
+    :param kwargs:
+    :return:
+    """
+
     # Path to save file
     config_path = './dumps/config/{}_{}_{}.config'
 
@@ -147,8 +155,8 @@ def compare_solution(vectors: list, solution: list) -> (int, bool):
     return number_of_equals, number_of_equals == len(solution)
 
 
-def update_graphs(graphs: dict, agent: Agent, configuration: str, states_to_observe: list, agent_type: AgentType,
-                  graphs_info: dict, solution: list = None):
+def update_graphs(graphs: dict, agent: Agent, configuration: str, states_to_observe: list,
+                  agent_type: AgentType, graphs_info: dict, solution: list = None):
     """
     Update graph to show
     :param graphs_info:
@@ -179,21 +187,26 @@ def update_graphs(graphs: dict, agent: Agent, configuration: str, states_to_obse
 
             for new_data in agent.graph_info[graph_type][states_to_observe[0]]:
                 # Calc hypervolume
-                hv = uh.calc_hypervolume(list_of_vectors=new_data['vectors'], reference=agent.hv_reference)
+                hv = uh.calc_hypervolume(list_of_vectors=new_data['data'], reference=agent.hv_reference)
 
                 # Add hypervolume to agent_data
                 agent_data.append(hv)
 
                 # If solution is given, compare it
                 if solution is not None:
-                    number_of_solutions, solution_found = compare_solution(
-                        vectors=new_data['vectors'], solution=solution)
+                    number_of_solutions, solution_found = compare_solution(vectors=new_data['data'], solution=solution)
 
                     # Extract information
                     agent_time.append(new_data['time'] if solution_found else None)
                     agent_steps.append(new_data['steps'] if solution_found else None)
                     agent_solutions_found.append(number_of_solutions)
                     agent_had_solutions_found.append(solution_found)
+
+            # Default value
+            agent_time = agent_time if agent_time else [float('inf')]
+            agent_steps = agent_steps if agent_steps else [float('inf')]
+            agent_solutions_found = agent_solutions_found if agent_solutions_found else [0]
+            agent_had_solutions_found = agent_had_solutions_found if agent_had_solutions_found else [False]
 
             # Additional information
             data_info['time'].append(min([float('inf') if x is None else x for x in agent_time]))
@@ -268,6 +281,9 @@ def test_agents(environment: Environment, hv_reference: Vector, variable: str, a
         # Extract interval and limit
         interval = graph_configuration[graph_type]['interval']
         limit = graph_configuration[graph_type]['limit']
+
+        # Show information
+        print("\tGraph type: {} - [{}/{}]".format(graph_type, limit, interval))
 
         # Set interval to get data
         Agent.interval_to_get_data = interval
@@ -428,243 +444,6 @@ def train_agent_and_get_v_s_0(agent_type: AgentType, environment: Environment, g
     return agent, v_s_0
 
 
-def test_steps(environment: Environment, hv_reference: Vector, variable: str, agents_configuration: dict,
-               steps_limit: int, epsilon: float = 0.1, alpha: float = 0.1, max_steps: int = None,
-               states_to_observe: list = None, integer_mode: bool = False, number_of_agents: int = 30,
-               gamma: float = 1., evaluation_mechanism: EvaluationMechanism = EvaluationMechanism.C,
-               steps_to_get_data: int = 1, solution: list = None):
-    """
-    :param solution:
-    :param environment:
-    :param hv_reference:
-    :param variable:
-    :param agents_configuration:
-    :param steps_limit:
-    :param epsilon:
-    :param alpha:
-    :param max_steps:
-    :param states_to_observe:
-    :param integer_mode:
-    :param number_of_agents:
-    :param gamma:
-    :param evaluation_mechanism:
-    :param steps_to_get_data:
-    :return:
-    """
-
-    # Set steps to get data from agent
-    Agent.interval_to_get_data = steps_to_get_data
-
-    # Parameters
-    if states_to_observe is None:
-        states_to_observe = [environment.initial_state]
-
-    # Build environment
-    env_name = environment.__class__.__name__
-    env_name_snake = um.str_to_snake_case(env_name)
-
-    # File timestamp
-    timestamp = int(time.time())
-
-    # Write all information in configuration file
-    write_config_file(timestamp=timestamp, number_of_agents=number_of_agents, env_name_snake=env_name_snake,
-                      seed=','.join(map(str, range(number_of_agents))), epsilon=epsilon, alpha=alpha,
-                      max_steps=max_steps, variable=variable, gamma=gamma, steps_limit=steps_limit)
-
-    # Define graph types
-    graph_types = {GraphType.STEPS}
-
-    # Create graphs structure
-    graphs, graphs_info = initialize_graph_data(graph_types=graph_types, agents_configuration=agents_configuration)
-
-    # Show information
-    print('Environment: {}'.format(env_name))
-
-    # Execute a iteration with different seed for each agent indicate
-    for seed in range(number_of_agents):
-
-        # Show information
-        print("\tExecution: {}".format(seed + 1))
-
-        # For each configuration
-        for agent_type in agents_configuration:
-
-            # Show information
-            print('\t\tAgent: {}'.format(agent_type.value))
-
-            # Extract configuration for that agent
-            for configuration in agents_configuration[agent_type].keys():
-                # Show information
-                print('\t\t\t{}: {}'.format(variable, configuration), end=' ')
-
-                # Mark of time
-                t0 = time.time()
-
-                # Reset environment
-                environment.reset()
-                environment.seed(seed=seed)
-
-                # Variable parameters
-                parameters = {
-                    'epsilon': epsilon, 'alpha': alpha, 'gamma': gamma, 'max_steps': max_steps,
-                    'evaluation_mechanism': evaluation_mechanism
-                }
-
-                # Modify current configuration
-                parameters.update({variable: configuration})
-
-                # Configuration of PQL Agent
-
-                # Removing useless parameters
-                del parameters['alpha']
-
-                # Build an instance of agent
-                agent = AgentPQL(environment=environment, seed=seed, hv_reference=hv_reference, graph_types=graph_types,
-                                 states_to_observe=states_to_observe, integer_mode=integer_mode, **parameters)
-
-                # Train the agent
-                agent.steps_train(steps=steps_limit)
-
-                # Non-dominated vectors found in V(s0)
-                v_s_0 = agent.q_set_from_state(state=agent.environment.initial_state)
-
-                print('-> {:.2f}s'.format(time.time() - t0))
-
-                # Write vectors found into file
-                write_v_from_initial_state_file(timestamp=timestamp, seed=seed, env_name_snake=env_name_snake,
-                                                v_s_0=v_s_0, variable=variable, agent_type=agent_type,
-                                                configuration=configuration)
-
-                # Update graphs
-                update_graphs(agent=agent, graphs=graphs, configuration=str(configuration), agent_type=agent_type,
-                              states_to_observe=states_to_observe, graphs_info=graphs_info, solution=solution)
-
-    prepare_data_and_show_graph(timestamp=timestamp, env_name=env_name, env_name_snake=env_name_snake, graphs=graphs,
-                                number_of_agents=number_of_agents, agents_configuration=agents_configuration,
-                                alpha=alpha, epsilon=epsilon, gamma=gamma, stop_condition={'steps': steps_limit},
-                                max_steps=max_steps, initial_state=environment.initial_state, integer_mode=integer_mode,
-                                variable=variable, graphs_info=graphs_info)
-
-
-def test_time(environment: Environment, hv_reference: Vector, variable: str, agents_configuration: dict,
-              execution_time: int, epsilon: float = 0.1, alpha: float = 0.1, max_steps: int = None,
-              states_to_observe: list = None, integer_mode: bool = False, number_of_agents: int = 30, gamma: float = 1.,
-              evaluation_mechanism: EvaluationMechanism = EvaluationMechanism.C, seconds_to_get_data: int = 1,
-              solution: list = None):
-    """
-
-    :param solution:
-    :param seconds_to_get_data:
-    :param environment:
-    :param hv_reference:
-    :param variable:
-    :param agents_configuration:
-    :param execution_time:
-    :param epsilon:
-    :param alpha:
-    :param max_steps:
-    :param states_to_observe:
-    :param integer_mode:
-    :param number_of_agents:
-    :param gamma:
-    :param evaluation_mechanism:
-    :return:
-    """
-
-    # Set seconds to get data from agent
-    Agent.seconds_to_get_graph_data = seconds_to_get_data
-
-    # Parameters
-    if states_to_observe is None:
-        states_to_observe = [environment.initial_state]
-
-    # Build environment
-    env_name = environment.__class__.__name__
-    env_name_snake = um.str_to_snake_case(env_name)
-
-    # File timestamp
-    timestamp = int(time.time())
-
-    # Write all information in configuration file
-    write_config_file(timestamp=timestamp, number_of_agents=number_of_agents, env_name_snake=env_name_snake,
-                      seed=','.join(map(str, range(number_of_agents))), epsilon=epsilon, alpha=alpha,
-                      max_steps=max_steps, variable=variable, gamma=gamma, execution_time=execution_time)
-
-    # Define graph types
-    graph_types = {GraphType.TIME}
-
-    # Create graphs structure
-    graphs, graphs_info = initialize_graph_data(graph_types=graph_types, agents_configuration=agents_configuration)
-
-    # Show information
-    print('Environment: {}'.format(env_name))
-
-    # Execute a iteration with different seed for each agent indicate
-    for seed in range(number_of_agents):
-
-        # Show information
-        print("\tExecution: {}".format(seed + 1))
-
-        # For each configuration
-        for agent_type in agents_configuration:
-
-            # Show information
-            print('\t\tAgent: {}'.format(agent_type.value))
-
-            # Extract configuration for that agent
-            for configuration in agents_configuration[agent_type].keys():
-                # Show information
-                print('\t\t\t{}: {}'.format(variable, configuration), end=' ')
-
-                # Mark of time
-                t0 = time.time()
-
-                # Reset environment
-                environment.reset()
-                environment.seed(seed=seed)
-
-                # Variable parameters
-                parameters = {
-                    'epsilon': epsilon, 'alpha': alpha, 'gamma': gamma, 'max_steps': max_steps,
-                    'evaluation_mechanism': evaluation_mechanism
-                }
-
-                # Modify current configuration
-                parameters.update({variable: configuration})
-
-                # Configuration of PQL Agent
-
-                # Removing useless parameters
-                del parameters['alpha']
-
-                # Build an instance of agent
-                agent = AgentPQL(environment=environment, seed=seed, hv_reference=hv_reference, graph_types=graph_types,
-                                 states_to_observe=states_to_observe, **parameters, integer_mode=integer_mode)
-
-                # # Train the agent
-                agent.time_train(execution_time=execution_time)
-
-                # Non-dominated vectors found in V(s0)
-                v_s_0 = agent.q_set_from_state(state=agent.environment.initial_state)
-
-                print('-> {:.2f}s'.format(time.time() - t0))
-
-                # Write vectors found into file
-                write_v_from_initial_state_file(timestamp=timestamp, seed=seed, env_name_snake=env_name_snake,
-                                                v_s_0=v_s_0, variable=variable, agent_type=agent_type,
-                                                configuration=configuration)
-
-                # Update graphs
-                update_graphs(agent=agent, graphs=graphs, configuration=str(configuration), agent_type=agent_type,
-                              states_to_observe=states_to_observe, graphs_info=graphs_info, solution=solution)
-
-    prepare_data_and_show_graph(timestamp=timestamp, env_name=env_name, env_name_snake=env_name_snake, graphs=graphs,
-                                number_of_agents=number_of_agents, agents_configuration=agents_configuration,
-                                alpha=alpha, epsilon=epsilon, gamma=gamma, stop_condition={'time': execution_time},
-                                max_steps=max_steps, initial_state=environment.initial_state,
-                                integer_mode=integer_mode, variable=variable, graphs_info=graphs_info)
-
-
 def prepare_data_and_show_graph(timestamp: int, env_name: str, env_name_snake: str, graphs: dict,
                                 number_of_agents: int, agents_configuration: dict, alpha: float, gamma: float,
                                 epsilon: float, graph_configuration: dict, max_steps: int, initial_state: tuple,
@@ -720,7 +499,7 @@ def prepare_data_and_show_graph(timestamp: int, env_name: str, env_name_snake: s
                 file.write(file_data)
 
     # Parameters
-    parameters = {}
+    parameters = {'sharex': False, 'sharey': False}
 
     # Get number of graphs
     number_of_graphs = len(graphs)
@@ -736,14 +515,13 @@ def prepare_data_and_show_graph(timestamp: int, env_name: str, env_name_snake: s
     fig.set_size_inches(14.4, 10.8)
     fig.set_dpi(244)
 
-    y_limit = -1
-    x_limit = -1
-
     for axs_i, graph_type in enumerate(graphs):
 
+        # Setting values to graph
         graph_name = graph_type.value
         graph_limit = graph_configuration[graph_type]['limit']
         graph_interval = graph_configuration[graph_type]['interval']
+        y_limit, x_limit = -1, -1
 
         print('Graph Type: {}'.format(graph_name))
 
@@ -871,8 +649,9 @@ def prepare_data_and_show_graph(timestamp: int, env_name: str, env_name_snake: s
             box.x0, box.y0, box.width * 0.9, box.height
         ])
 
-        axs[axs_i].set_ylim([0, math.ceil(y_limit * 1.1)])
-        axs[axs_i].set_xlim([0, math.ceil(x_limit * 1.1)])
+        # Set initial limits
+        axs[axs_i].set_xlim(left=0)
+        axs[axs_i].set_ylim(bottom=0)
 
     fig.suptitle('{} environment'.format(env_name))
     plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
@@ -902,10 +681,7 @@ def prepare_data_and_show_graph(timestamp: int, env_name: str, env_name_snake: s
     if variable is not 'max_steps':
         basic_information.append(r'$max\_steps={}$'.format(max_steps))
 
-    # stop_condition_key = next(iter(stop_condition))
-
     text_information = '\n'.join(basic_information + [
-        # r'stop_condition={} - {}$'.format(stop_condition_key, stop_condition[stop_condition_key]),
         r'$initial\_state={}$'.format(initial_state),
         r'$relative\_tolerance={}$'.format(relative_tolerance),
         r'$absolute\_tolerance={}$'.format(absolute_tolerance),

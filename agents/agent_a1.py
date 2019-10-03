@@ -216,68 +216,61 @@ class AgentA1(Agent):
 
         return is_final_state
 
-    def update_graph(self, graph_types: tuple) -> None:
+    def update_graph(self, graph_type: GraphType) -> None:
         """
         Update specific graph type
-        :param graph_types:
         :return:
         """
 
-        for graph_type in graph_types:
+        if graph_type is GraphType.MEMORY:
 
-            # If our agent doesn't has that graph_type ignore it.
-            if graph_type not in self.graph_info:
-                continue
+            # Count number of vectors in big Q dictionary
+            self.graph_info[graph_type].append(
+                sum(len(actions.values()) for states in self.q.values() for actions in states.values())
+            )
 
-            if graph_type is GraphType.MEMORY:
+        elif graph_type is GraphType.VECTORS_PER_CELL:
 
-                # Count number of vectors in big Q dictionary
-                self.graph_info[graph_type].append(
-                    sum(len(actions.values()) for states in self.q.values() for actions in states.values())
-                )
+            # Get positions on axis x and y
+            x = self.environment.observation_space.spaces[0].n
+            y = self.environment.observation_space.spaces[1].n
 
-            elif graph_type is GraphType.VECTORS_PER_CELL:
+            # Extract only states with information
+            valid_states = self.q.keys()
 
-                # Get positions on axis x and y
-                x = self.environment.observation_space.spaces[0].n
-                y = self.environment.observation_space.spaces[1].n
+            # By default the size of all states is zero
+            z = np.zeros([y, x])
 
-                # Extract only states with information
-                valid_states = self.q.keys()
+            # Calc number of vectors for each state
+            for x, y in valid_states:
+                z[y][x] = sum(len(actions.values()) for actions in self.q[(x, y)].values())
 
-                # By default the size of all states is zero
-                z = np.zeros([y, x])
+            # Save that information
+            self.graph_info[graph_type].append(z)
 
-                # Calc number of vectors for each state
-                for x, y in valid_states:
-                    z[y][x] = sum(len(actions.values()) for actions in self.q[(x, y)].values())
+        else:
 
-                # Save that information
-                self.graph_info[graph_type].append(z)
+            # In the same for loop, is check if this agent has the graph_type indicated (get dictionary default
+            # value)
+            for state, data in self.graph_info.get(graph_type, {}).items():
 
-            else:
+                # Add to data Best value (V max)
+                value = self._best_hypervolume(state=state)
 
-                # In the same for loop, is check if this agent has the graph_type indicated (get dictionary default
-                # value)
-                for state, data in self.graph_info.get(graph_type, {}).items():
+                # If integer mode is True, is necessary divide value by increment
+                if self.integer_mode:
+                    # Divide value by two powered numbers (hv_reference and reward)
+                    value /= 10 ** (Vector.decimals_allowed * 2)
 
-                    # Add to data Best value (V max)
-                    value = self._best_hypervolume(state=state)
+                # Add to data Best value (V max)
+                data.append(value)
 
-                    # If integer mode is True, is necessary divide value by increment
-                    if self.integer_mode:
-                        # Divide value by two powered numbers (hv_reference and reward)
-                        value /= 10 ** (Vector.decimals_allowed * 2)
+                # Update dictionary
+                self.graph_info[graph_type].update({state: data})
 
-                    # Add to data Best value (V max)
-                    data.append(value)
-
-                    # Update dictionary
-                    self.graph_info[graph_type].update({state: data})
-
-                if graph_type is GraphType.TIME:
-                    # Update last execution
-                    self.last_time_to_get_graph_data = time.time()
+            if graph_type is GraphType.TIME:
+                # Update last execution
+                self.last_time_to_get_graph_data = time.time()
 
     def _best_hypervolume(self, state: object = None) -> float:
         """

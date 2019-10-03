@@ -1,200 +1,6 @@
-import time
-
 import utils.graphs as ug
-import utils.miscellaneous as um
-from agents import AgentA1, AgentPQL, AgentMOSP
-from environments import Environment, DeepSeaTreasure
+from environments import DeepSeaTreasure
 from models import GraphType, Vector, EvaluationMechanism, AgentType
-
-
-def test_agents(env: Environment, hv_reference: Vector, variable: str, graph_types: dict,
-                agents_configuration: dict, epsilon: float = 0.1, alpha: float = 1., max_steps: int = None,
-                states_to_observe: list = None, episodes: int = 1000, integer_mode: bool = False,
-                number_of_agents: int = 30, gamma: float = 1.,
-                eval_mechanism: EvaluationMechanism = EvaluationMechanism.C):
-    """
-    This method run an experiment with the parameters and environment given
-    :param variable:
-    :param eval_mechanism:
-    :param agents_configuration:
-    :param integer_mode:
-    :param env:
-    :param hv_reference:
-    :param epsilon:
-    :param alpha:
-    :param states_to_observe:
-    :param episodes:
-    :param graph_types:
-    :param number_of_agents:
-    :param gamma:
-    :param max_steps:
-    :return:
-    """
-
-    # Parameters
-    if states_to_observe is None:
-        states_to_observe = [env.initial_state]
-
-    # Build environment
-    env_name = env.__class__.__name__
-    env_name_snake = um.str_to_snake_case(env_name)
-
-    # File timestamp
-    timestamp = int(time.time())
-
-    # Extract tolerances
-    relative_tolerance = Vector.relative_tolerance
-    absolute_tolerance = Vector.absolute_tolerance
-
-    ug.write_config_file(timestamp=timestamp, number_of_agents=number_of_agents, env_name_snake=env_name_snake,
-                         seed=','.join(map(str, range(number_of_agents))), epsilon=epsilon, alpha=alpha,
-                         relative_tolerance=relative_tolerance, max_steps=max_steps, variable=variable,
-                         absolute_tolerance=absolute_tolerance, gamma=gamma, episodes=episodes)
-
-    # Create graphs structure
-    graphs = ug.initialize_graph_data(graph_types=graph_types, agents_configuration=agents_configuration)
-
-    # Data max length
-    data_max_len = float('-inf')
-
-    # Information
-    print('Environment: {}'.format(env_name))
-
-    for i_agent in range(number_of_agents):
-
-        print("\tExecution: {}".format(i_agent + 1))
-
-        # Set a seed
-        seed = i_agent
-
-        for agent_type in agents_configuration:
-
-            print('\t\tAgent: {}'.format(agent_type.value))
-
-            for configuration in agents_configuration[agent_type].keys():
-
-                print('\t\t\t{}: {}'.format(variable, configuration), end=' ')
-
-                # Mark of time
-                t0 = time.time()
-
-                # Reset environment
-                env.reset()
-                env.seed(seed=seed)
-
-                # Default values
-                v_s_0 = None
-                agent = None
-
-                # Variable parameters
-                parameters = {
-                    'epsilon': epsilon, 'alpha': alpha, 'gamma': gamma, 'max_steps': max_steps,
-                    'evaluation_mechanism': eval_mechanism
-                }
-
-                # Modify current configuration
-                parameters.update({variable: configuration})
-
-                # Is a SCALARIZED agent?
-                if agent_type == AgentType.SCALARIZED:
-
-                    # Removing useless parameters
-                    del parameters['evaluation_mechanism']
-
-                    # Set weights
-                    weights = (.99, .01)
-
-                    # Build agent
-                    agent = AgentMOSP(seed=seed, environment=env, weights=weights,
-                                      states_to_observe=states_to_observe, graph_types=set(graph_types.keys()),
-                                      hv_reference=hv_reference, **parameters)
-
-                    # Search one extreme objective
-                    agent.episode_train(episodes=episodes)
-
-                    # Get p point from agent test
-                    p = agent.get_accumulated_reward(from_state=states_to_observe[0])
-
-                    # Add point found to pareto's frontier found
-                    agent.pareto_frontier_found.append(p)
-
-                    # Reset agent to episode_train again with others weights
-                    agent.reset()
-                    agent.reset_totals()
-
-                    # Set weights to find another extreme point
-                    agent.weights = (.01, .99)
-
-                    # Search the other extreme objective
-                    agent.episode_train(episodes=episodes)
-
-                    # Get q point from agent test.
-                    q = agent.get_accumulated_reward(from_state=states_to_observe[0])
-
-                    # Add point found to pareto's frontier found
-                    agent.pareto_frontier_found.append(q)
-
-                    # Search pareto points
-                    agent.calc_frontier_scalarized(p=p, q=q)
-
-                    # Non-dominated vectors found in V(s0)
-                    v_s_0 = agent.pareto_frontier_found
-
-                # Is a PQL agent?
-                elif agent_type == AgentType.PQL:
-
-                    # Removing useless parameters
-                    del parameters['alpha']
-
-                    # Build an instance of agent
-                    agent = AgentPQL(environment=env, seed=seed, hv_reference=hv_reference,
-                                     graph_types=set(graph_types.keys()), states_to_observe=states_to_observe,
-                                     integer_mode=integer_mode, **parameters)
-
-                    # Train the agent
-                    agent.episode_train(episodes=episodes)
-
-                    # Non-dominated vectors found in V(s0)
-                    v_s_0 = agent.q_set_from_state(state=agent.environment.initial_state)
-
-                # Is an A1 agent?
-                elif agent_type == AgentType.A1:
-
-                    # Build an instance of agent
-                    agent = AgentA1(environment=env, seed=seed, hv_reference=hv_reference,
-                                    graph_types=set(graph_types.keys()), states_to_observe=states_to_observe,
-                                    integer_mode=integer_mode, **parameters)
-
-                    # Train the agent
-                    agent.episode_train(episodes=episodes)
-
-                    # Non-dominated vectors found in V(s0)
-                    v_real = agent.v_real()
-
-                    v_s_0 = v_real.get(agent.environment.initial_state, {
-                        0: agent.environment.default_reward.zero_vector
-                    }).values()
-
-                else:
-                    ValueError("Agent type does not valid!")
-
-                print('-> {:.2f}s'.format(time.time() - t0))
-
-                # Write vectors found into file
-                ug.write_v_from_initial_state_file(timestamp=timestamp, seed=i_agent, env_name_snake=env_name_snake,
-                                                   v_s_0=v_s_0, variable=variable, agent_type=agent_type,
-                                                   configuration=configuration)
-
-                # Calc data maximum length
-                data_max_len = ug.update_graphs(agent=agent, graphs=graphs,
-                                                configuration=str(configuration), states_to_observe=states_to_observe,
-                                                agent_type=agent_type)
-
-    ug.prepare_data_and_show_graph(timestamp=timestamp, env_name=env_name, env_name_snake=env_name_snake, graphs=graphs,
-                                   number_of_agents=number_of_agents, agents_configuration=agents_configuration,
-                                   alpha=alpha, epsilon=epsilon, gamma=gamma, stop_condition={'episodes': episodes},
-                                   max_steps=max_steps, initial_state=env.initial_state, integer_mode=integer_mode,
-                                   variable=variable)
 
 
 def main():
@@ -242,10 +48,10 @@ def main():
             # EvaluationMechanism.HV: 'pink',
             # EvaluationMechanism.C: 'red',
             # EvaluationMechanism.PO: 'green',
-            1.0: 'red',
-            0.9: 'fuchsia',
+            # 1.0: 'red',
+            # 0.9: 'fuchsia',
             # 0.8: 'orange',
-            # 0.7: 'pink',
+            0.7: 'pink',
             # 0.6: 'yellow',
             # 0.5: 'green',
             # 0.4: 'cyan',
@@ -257,31 +63,28 @@ def main():
     }
 
     graph_configurations = {
-        GraphType.STEPS: {
-            'limit': 100,
-            'interval': 10
-        },
-        # GraphType.MEMORY: {
-        #
+        # GraphType.EPISODES: {
+        #     'limit': 1000,
+        #     'interval': 10
         # },
+        # GraphType.STEPS: {
+        #     'limit': 4000,
+        #     'interval': 10
+        # },
+        GraphType.MEMORY: {
+            GraphType.EPISODES: {
+                'limit': 1000,
+                'interval': 10
+            }
+        },
         # GraphType.VECTORS_PER_CELL: {
         #
         # },
-        GraphType.TIME: {
-            'limit': 8,
-            'interval': 4
-        },
-        GraphType.EPISODES: {
-            'limit': 100,
-            'interval': 2
-        }
+        # GraphType.TIME: {
+        #     'limit': 30,
+        #     'interval': 2
+        # },
     }
-
-    # ug.test_time(environment=environment, hv_reference=hv_reference, epsilon=epsilon, alpha=alpha,
-    #              states_to_observe=states_to_observe, integer_mode=integer_mode, number_of_agents=number_of_agents,
-    #              agents_configuration=agents_configuration, gamma=gamma, max_steps=max_steps,
-    #              evaluation_mechanism=evaluation_mechanism, variable=variable, execution_time=execution_time,
-    #              seconds_to_get_data=1, solution=solution)
 
     ug.test_agents(environment=environment, hv_reference=hv_reference, epsilon=epsilon, alpha=alpha,
                    states_to_observe=states_to_observe, integer_mode=integer_mode, number_of_agents=number_of_agents,
