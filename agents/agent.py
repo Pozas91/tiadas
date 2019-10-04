@@ -19,7 +19,6 @@ class Agent:
     json_indent = 2
     # Get dumps path from this file path
     dumps_path = Path('{}/../../dumps/models'.format(__file__))
-
     # Each unit the agent get data
     interval_to_get_data = 1
 
@@ -113,19 +112,21 @@ class Agent:
 
         if self.generator.uniform(low=0., high=1.) < self.epsilon:
             # Get random action to explore possibilities
-            return self._greedy_action(state)  # self.environment.action_space.sample()
+            action = self._greedy_action(state)
 
         else:
             # Get best action to exploit reward.
-            return self.best_action(state=state)
+            action = self.best_action(state=state)
 
-        # return action
+        return action
 
-    def _greedy_action(self, state) -> int:
+    def _greedy_action(self, state, info=None) -> int:
         """
         Select action according to the greedy policy. The default method is to randomly sample the
-        action_space in the environment.
+        action_space in the environment. The method accepts an optional argument info intended for
+        agent dependent information, possibly shared with the method best_action
         :param state:
+        :param info: agent dependent information (optional)
         :return:
         """
         return self.environment.action_space.sample()
@@ -189,9 +190,10 @@ class Agent:
         """
         raise NotImplemented
 
-    def best_action(self, state: object = None) -> int:
+    def best_action(self, state: object = None, info=None) -> int:
         """
-        Return best action a state given.
+        Return best action a state given. The method accepts an optional argument info intended for
+        agent dependent information, possibly shared with the method best_action
         :return:
         """
         raise NotImplemented
@@ -249,14 +251,15 @@ class Agent:
 
         self.reference_time_to_train = time.time()
 
-        if graph_type is GraphType.EPISODES:
-            self.episode_train(episodes=limit, graph_type=graph_type)
-        elif graph_type is GraphType.TIME:
+        if graph_type is GraphType.TIME:
             self.time_train(execution_time=limit, graph_type=graph_type)
         elif graph_type is GraphType.STEPS:
             self.steps_train(steps=limit, graph_type=graph_type)
+        else:
+            # In other case, default method is episode training
+            self.episode_train(episodes=limit, graph_type=graph_type)
 
-        if GraphType.VECTORS_PER_CELL in self.graph_info:
+        if graph_type is GraphType.VECTORS_PER_CELL:
             # Update Graph
             self.update_graph(graph_type=GraphType.VECTORS_PER_CELL)
 
@@ -373,11 +376,14 @@ class Agent:
         # Prepare file path
         file_path = self.dumps_file_path(filename=filename)
 
+        # If any parents doesn't exist, make it.
+        file_path.parent.mkdir(parents=True, exist_ok=True)
+
         # Get dict model
         model = self.get_dict_model()
 
         # Open file with filename in write mode with UTF-8 encoding.
-        with open(str(file_path), 'w', encoding='UTF-8') as file:
+        with file_path.open('w', encoding='UTF-8') as file:
             json.dump(model, file, indent=self.json_indent)
 
     @staticmethod

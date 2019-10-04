@@ -243,10 +243,10 @@ class AgentA1(Agent):
 
             # Calc number of vectors for each state
             for x, y in valid_states:
-                z[y][x] = sum(len(actions.values()) for actions in self.q[(x, y)].values())
+                z[y, x] = sum(len(actions.values()) for actions in self.q[(x, y)].values())
 
             # Save that information
-            self.graph_info[graph_type].append(z)
+            self.graph_info[graph_type].append(z.tolist())
 
         else:
 

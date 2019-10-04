@@ -5,6 +5,8 @@ class AgentType(Enum):
     A1 = 'a1'
     PQL = 'pql'
     SCALARIZED = 'scalarized'
+    PQL_EXP = 'pql_exp'
+    PQL_EXP_3 = 'pql_exp_3'
 
     def __str__(self):
         return str(self.value)

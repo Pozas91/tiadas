@@ -1,3 +1,6 @@
+from colorama import Fore, init
+init(autoreset=True)
+
 import utils.graphs as ug
 from environments import DeepSeaTreasure
 from models import GraphType, Vector, EvaluationMechanism, AgentType
@@ -5,14 +8,14 @@ from models import GraphType, Vector, EvaluationMechanism, AgentType
 
 def main():
     # Basic configuration
-    alpha = 0.8
-    number_of_agents = 5
+    alpha = 1
+    number_of_agents = 7
     episodes = 2000
     gamma = 1.
     max_steps = 250
     initial_state = (0, 0)
     columns = 10
-    evaluation_mechanism = EvaluationMechanism.C
+    evaluation_mechanism = EvaluationMechanism.HV
     decimals_allowed = 7
     epsilon = 0.7
     states_to_observe = [initial_state]
@@ -44,42 +47,47 @@ def main():
         # 0.8: 'fuchsia',
         # 1.0: 'cyan'
         # },
-        AgentType.PQL: {
-            # EvaluationMechanism.HV: 'pink',
-            # EvaluationMechanism.C: 'red',
-            # EvaluationMechanism.PO: 'green',
-            # 1.0: 'red',
-            # 0.9: 'fuchsia',
-            # 0.8: 'orange',
-            0.7: 'pink',
-            # 0.6: 'yellow',
-            # 0.5: 'green',
-            # 0.4: 'cyan',
-            # 0.3: 'blue'
-        },
+        # AgentType.PQL: {
+        # EvaluationMechanism.HV: 'pink',
+        # EvaluationMechanism.C: 'red',
+        # EvaluationMechanism.PO: 'green',
+        # 1.0: 'red',
+        # 0.9: 'fuchsia',
+        # 0.8: 'orange',
+        # 0.7: 'pink',
+        # 0.6: 'yellow',
+        # 0.5: 'green',
+        # 0.4: 'cyan',
+        # 0.3: 'blue'
+        # },
         # AgentType.SCALARIZED: {
         # EvaluationMechanism.SCALARIZED: 'cyan'
         # }
+        AgentType.PQL_EXP_3: {
+            0.5: 'red',
+            0.4: 'fuchsia',
+            0.3: 'orange',
+            0.2: 'pink',
+        }
     }
 
     graph_configurations = {
         # GraphType.EPISODES: {
-        #     'limit': 1000,
+        #     'limit': 100,
         #     'interval': 10
         # },
         # GraphType.STEPS: {
-        #     'limit': 4000,
+        #     'limit': 40 * 1000,
+        #     'interval': 200
+        # },
+        # GraphType.MEMORY: {
+        #     'limit': 200,
         #     'interval': 10
         # },
-        GraphType.MEMORY: {
-            GraphType.EPISODES: {
-                'limit': 1000,
-                'interval': 10
-            }
+        GraphType.VECTORS_PER_CELL: {
+            'limit': 200,
+            'interval': 10
         },
-        # GraphType.VECTORS_PER_CELL: {
-        #
-        # },
         # GraphType.TIME: {
         #     'limit': 30,
         #     'interval': 2

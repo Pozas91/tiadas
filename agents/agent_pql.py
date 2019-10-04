@@ -73,6 +73,7 @@ import utils.miscellaneous as um
 from environments import Environment
 from models import IndexVector, GraphType, EvaluationMechanism, Vector, VectorFloat
 from .agent import Agent
+import numpy as np
 
 
 class AgentPQL(Agent):
@@ -105,6 +106,8 @@ class AgentPQL(Agent):
 
         if initial_q_value is None:
             self.initial_q_value = self.environment.default_reward.zero_vector
+        else:
+            self.initial_q_value = initial_q_value
 
         # Average observed immediate reward vector.
         self.r = dict()
@@ -177,6 +180,25 @@ class AgentPQL(Agent):
             self.graph_info[graph_type].append(
                 sum(len(actions) for states in self.nd.values() for actions in states.values())
             )
+
+        elif graph_type is GraphType.VECTORS_PER_CELL:
+
+            # Get positions on axis x and y
+            x = self.environment.observation_space.spaces[0].n
+            y = self.environment.observation_space.spaces[1].n
+
+            # Extract only states with information
+            valid_states = self.nd.keys()
+
+            # By default the size of all states is zero
+            z = np.zeros([y, x])
+
+            # Calc number of vectors for each state
+            for x, y in valid_states:
+                z[y][x] = sum(len(actions) for actions in self.nd[(x, y)].values())
+
+            # Save that information
+            self.graph_info[graph_type].append(z)
 
         else:
 
@@ -318,10 +340,11 @@ class AgentPQL(Agent):
         self.reset_steps()
         self.reset_graph_info()
 
-    def best_action(self, state: object = None) -> int:
+    def best_action(self, state: object = None, info=None) -> int:
         """
         Return best action for q and state given. The best action is selected according to the method
         specified in the self.evaluation_mechanism variable.
+        :param info:
         :param state:
         :return:
         """

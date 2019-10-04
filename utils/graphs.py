@@ -6,13 +6,15 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
-from colorama import Fore
+from colorama import Fore, init
 
 import utils.hypervolume as uh
 import utils.miscellaneous as um
-from agents import Agent, AgentPQL, AgentMOSP, AgentA1
+from agents import Agent, AgentPQL, AgentMOSP, AgentA1, AgentPQLEXP, AgentPQLEXP3
 from environments import Environment
 from models import AgentType, GraphType, Vector, EvaluationMechanism
+
+init(autoreset=True)
 
 
 def write_config_file(timestamp: int, number_of_agents: int, env_name_snake: str, **kwargs):
@@ -27,11 +29,18 @@ def write_config_file(timestamp: int, number_of_agents: int, env_name_snake: str
     # Path to save file
     config_path = './dumps/config/{}_{}_{}.config'
 
-    filename_config = Path(
-        config_path.format(timestamp, number_of_agents, env_name_snake).lower()
+    # Get only first letter of each word
+    env_name_abbr = ''.join([word[0] for word in env_name_snake.split('_')])
+
+    # Create file from above path
+    config_file = Path(
+        config_path.format(env_name_abbr, number_of_agents, timestamp).lower()
     )
 
-    with filename_config.open(mode='w+') as file:
+    # If any parents doesn't exist, make it.
+    config_file.parent.mkdir(parents=True, exist_ok=True)
+
+    with config_file.open(mode='w+') as file:
         file_data = ''
 
         for key, value in kwargs.items():
@@ -60,11 +69,18 @@ def write_v_from_initial_state_file(timestamp: int, seed: int, env_name_snake: s
     # Order vectors by origin Vec(0) nearest
     v_s_0 = um.order_vectors_by_origin_nearest(vectors=v_s_0)
 
-    v_s_0_filename = Path(
-        v_s_0_path.format(str(agent_type.value), timestamp, seed, env_name_snake, variable, configuration).lower()
+    # Get only first letter of each word
+    env_name_abbr = ''.join([word[0] for word in env_name_snake.split('_')])
+
+    # Create file from above path
+    v_s_0_file = Path(
+        v_s_0_path.format(env_name_abbr, str(agent_type.value), seed, variable, configuration, timestamp).lower()
     )
 
-    with v_s_0_filename.open(mode='w+') as file:
+    # If any parents doesn't exist, make it.
+    v_s_0_file.parent.mkdir(parents=True, exist_ok=True)
+
+    with v_s_0_file.open(mode='w+') as file:
         file_data = 'v_s_0_non_dominated:\n'
         file_data += '  {}'.format('\n  '.join(map(str, v_s_0)))
 
@@ -253,6 +269,9 @@ def test_agents(environment: Environment, hv_reference: Vector, variable: str, a
     # Extract graph_types
     graph_types = set(graph_configuration.keys())
 
+    if len(graph_types) > 2:
+        print(Fore.YELLOW + "Isn't recommended more than 2 graphs")
+
     # Parameters
     if states_to_observe is None:
         states_to_observe = [environment.initial_state]
@@ -266,9 +285,9 @@ def test_agents(environment: Environment, hv_reference: Vector, variable: str, a
 
     # Write all information in configuration file
     write_config_file(timestamp=timestamp, number_of_agents=number_of_agents, env_name_snake=env_name_snake,
-                      seed=','.join(map(str, range(number_of_agents))), epsilon=epsilon, alpha=alpha,
-                      max_steps=max_steps, variable=variable, gamma=gamma, agents_configuration=agents_configuration,
-                      graph_configuration=graph_configuration)
+                      seed=','.join(map(str, range(number_of_agents))), epsilon=epsilon, alpha=alpha, gamma=gamma,
+                      max_steps=max_steps, variable=variable, agents_configuration=agents_configuration,
+                      graph_configuration=graph_configuration, evaluation_mechanism=evaluation_mechanism)
 
     # Create graphs structure
     graphs, graphs_info = initialize_graph_data(graph_types=graph_types, agents_configuration=agents_configuration)
@@ -342,7 +361,7 @@ def test_agents(environment: Environment, hv_reference: Vector, variable: str, a
                                 number_of_agents=number_of_agents, agents_configuration=agents_configuration,
                                 alpha=alpha, epsilon=epsilon, gamma=gamma, graph_configuration=graph_configuration,
                                 max_steps=max_steps, initial_state=environment.initial_state, integer_mode=integer_mode,
-                                variable=variable, graphs_info=graphs_info)
+                                variable=variable, graphs_info=graphs_info, evaluation_mechanism=evaluation_mechanism)
 
 
 def train_agent_and_get_v_s_0(agent_type: AgentType, environment: Environment, graph_type: GraphType, graph_types: set,
@@ -409,15 +428,24 @@ def train_agent_and_get_v_s_0(agent_type: AgentType, environment: Environment, g
         # Non-dominated vectors found in V(s0)
         v_s_0 = agent.pareto_frontier_found
 
-    elif agent_type is AgentType.PQL:
+    elif agent_type in (AgentType.PQL, AgentType.PQL_EXP, AgentType.PQL_EXP_3):
 
         # Removing useless parameters
         del parameters['alpha']
 
         # Build an instance of agent
-        agent = AgentPQL(environment=environment, seed=seed, hv_reference=hv_reference,
-                         graph_types=graph_types, states_to_observe=states_to_observe,
-                         integer_mode=integer_mode, **parameters)
+        if agent_type is AgentType.PQL:
+            agent = AgentPQL(environment=environment, seed=seed, hv_reference=hv_reference,
+                             graph_types=graph_types, states_to_observe=states_to_observe,
+                             integer_mode=integer_mode, **parameters)
+        elif agent_type is AgentType.PQL_EXP:
+            agent = AgentPQLEXP(environment=environment, seed=seed, hv_reference=hv_reference,
+                                graph_types=graph_types, states_to_observe=states_to_observe,
+                                integer_mode=integer_mode, **parameters)
+        elif agent_type is AgentType.PQL_EXP_3:
+            agent = AgentPQLEXP3(environment=environment, seed=seed, hv_reference=hv_reference,
+                                 graph_types=graph_types, states_to_observe=states_to_observe,
+                                 integer_mode=integer_mode, **parameters)
 
         # Train the agent
         agent.train(graph_type=graph_type, limit=limit)
@@ -447,9 +475,11 @@ def train_agent_and_get_v_s_0(agent_type: AgentType, environment: Environment, g
 def prepare_data_and_show_graph(timestamp: int, env_name: str, env_name_snake: str, graphs: dict,
                                 number_of_agents: int, agents_configuration: dict, alpha: float, gamma: float,
                                 epsilon: float, graph_configuration: dict, max_steps: int, initial_state: tuple,
-                                integer_mode: bool, variable: str, graphs_info: dict):
+                                integer_mode: bool, variable: str, graphs_info: dict,
+                                evaluation_mechanism: EvaluationMechanism):
     """
     Prepare data to show a graph with the information about results
+    :param evaluation_mechanism:
     :param graph_configuration:
     :param graphs_info:
     :param variable:
@@ -480,16 +510,19 @@ def prepare_data_and_show_graph(timestamp: int, env_name: str, env_name_snake: s
         for configuration in agents_configuration[agent_type].keys():
             # Recover old data
             data = vectors_per_cells_graph[agent_type][str(configuration)]
-            process_data = np.average(data, axis=0)
+            process_data = np.average(data, axis=0).tolist()
 
-            filename_m = Path(
+            # Create file from given path.
+            matlab_file = Path(
                 graph_path.format(agent_type.value, timestamp, number_of_agents, env_name_snake,
                                   GraphType.VECTORS_PER_CELL.value, variable, str(configuration)).lower()
             )
 
-            with filename_m.open(mode='w+') as file:
+            # If any parents doesn't exist, make it.
+            matlab_file.parent.mkdir(parents=True, exist_ok=True)
+
+            with matlab_file.open(mode='w+') as file:
                 file_data = "Z = [\n{}\n];\n".format(''.join([';\n'.join(map(str, x)) for x in process_data]))
-                # file_data += "means = mean(Y);\n"
                 file_data += 'bar3(Z);\n'
                 file_data += 'zlim([0, 30]);\n'
                 file_data += "xlabel('Columns');\n"
@@ -529,54 +562,9 @@ def prepare_data_and_show_graph(timestamp: int, env_name: str, env_name_snake: s
 
             for configuration in agents_configuration[agent_type].keys():
 
-                # Data info
-                data_info = graphs_info[graph_type][agent_type][str(configuration)]
-
-                # Output Text: Algorithm_Mechanism & average & std & max & min
-                output_text = '\t\t{}_{} & {:.2f} & {:.2f} & {:.2f} & {:.2f} \\\\'
-
-                # Information about time
-                # Keep finite elements
-                data_info['time'] = list(filter(math.isfinite, data_info['time']))
-                # If hasn't any element return [-1] list
-                data_info['time'] = data_info['time'] if data_info['time'] else [-1]
-
-                info_time_avg = np.average(data_info['time'])
-                info_time_std = np.std(data_info['time'])
-                info_time_max = np.max(data_info['time'])
-                info_time_min = np.min(data_info['time'])
-
-                print('\tTime:')
-                print(output_text.format(agent_type, configuration, info_time_avg, info_time_std, info_time_max,
-                                         info_time_min))
-
-                # Information about steps
-                # Keep finite elements
-                data_info['steps'] = list(filter(math.isfinite, data_info['steps']))
-                # If hasn't any element return [-1] list
-                data_info['steps'] = data_info['steps'] if data_info['steps'] else [-1]
-                info_steps_avg = np.average(data_info['steps'])
-                info_steps_std = np.std(data_info['steps'])
-                info_steps_max = np.max(data_info['steps'])
-                info_steps_min = np.min(data_info['steps'])
-
-                print('\tSteps:')
-                print(output_text.format(agent_type, configuration, info_steps_avg, info_steps_std, info_steps_max,
-                                         info_steps_min))
-
-                # Information about solutions_found
-                info_solutions_found_avg = np.average(data_info['solutions_found'])
-                info_solutions_found_std = np.std(data_info['solutions_found'])
-                info_solutions_found_max = np.max(data_info['solutions_found'])
-                info_solutions_found_min = np.min(data_info['solutions_found'])
-
-                print('\tSolutions found:')
-                print(output_text.format(agent_type, configuration, info_solutions_found_avg, info_solutions_found_std,
-                                         info_solutions_found_max, info_solutions_found_min))
-
-                # Information about had solution found
-                print('\tHad solution:')
-                print('\t\t{} / {}'.format(sum(data_info['had_solution_found']), len(data_info['had_solution_found'])))
+                # If is possible that get data, show it
+                if graph_type in (GraphType.EPISODES, GraphType.TIME, GraphType.STEPS):
+                    show_data_info(agent_type, configuration, graph_type, graphs_info)
 
                 # Recover old data
                 data = graphs[graph_type][agent_type][str(configuration)]
@@ -613,12 +601,16 @@ def prepare_data_and_show_graph(timestamp: int, env_name: str, env_name_snake: s
                 axs[axs_i].errorbar(x=x, y=process_data, yerr=error, errorevery=math.ceil(data_max_len * 0.1),
                                     label='{} {}'.format(agent_type.value, configuration), color=color)
 
-                filename_m = Path(
+                # Create file from given path.
+                matlab_file = Path(
                     graph_path.format(agent_type.value, timestamp, number_of_agents, env_name_snake, graph_name,
                                       variable, str(configuration)).lower()
                 )
 
-                with filename_m.open(mode='w+') as file:
+                # If any parents doesn't exist, make it.
+                matlab_file.parent.mkdir(parents=True, exist_ok=True)
+
+                with matlab_file.open(mode='w+') as file:
                     file_data = "x = [{}]\n".format(', '.join(map(str, x)))
                     file_data += "Y = [\n{}\n]\n".format(';\n'.join([', '.join(map(str, x)) for x in data]))
                     file_data += "means = mean(Y);\n"
@@ -653,8 +645,10 @@ def prepare_data_and_show_graph(timestamp: int, env_name: str, env_name_snake: s
         axs[axs_i].set_xlim(left=0)
         axs[axs_i].set_ylim(bottom=0)
 
+        # Graphs
+        axs[axs_i].legend(loc='lower right')
+
     fig.suptitle('{} environment'.format(env_name))
-    plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
 
     # Text information
     props = {
@@ -679,26 +673,74 @@ def prepare_data_and_show_graph(timestamp: int, env_name: str, env_name_snake: s
         basic_information.append(r'$\epsilon={}$'.format(epsilon))
 
     if variable is not 'max_steps':
-        basic_information.append(r'$max\_steps={}$'.format(max_steps))
+        basic_information.append(r'max_steps={}'.format(max_steps))
+
+    if variable is not 'evaluation_mechanism':
+        basic_information.append(r'evaluation_mechanism={}'.format(evaluation_mechanism))
 
     text_information = '\n'.join(basic_information + [
-        r'$initial\_state={}$'.format(initial_state),
-        r'$relative\_tolerance={}$'.format(relative_tolerance),
-        r'$absolute\_tolerance={}$'.format(absolute_tolerance),
-        r'$\# agents={}$'.format(number_of_agents)
+        r'initial_state={}'.format(initial_state),
+        r'relative_tolerance={}'.format(relative_tolerance),
+        r'absolute_tolerance={}'.format(absolute_tolerance),
+        r'# agents={}'.format(number_of_agents)
     ])
 
     plt.text(0.85, 0.5, text_information, bbox=props, transform=plt.gcf().transFigure)
 
     # Define figure path
-    plot_filename = Path(
+    plot_file = Path(
         plot_path.format(timestamp, number_of_agents, env_name_snake).lower()
     )
 
+    # If any parents doesn't exist, make it.
+    plot_file.parent.mkdir(parents=True, exist_ok=True)
+
     # Save figure
-    plt.savefig(plot_filename)
+    plt.savefig(plot_file)
 
     plt.show()
+
+
+def show_data_info(agent_type, configuration, graph_type, graphs_info):
+    # Data info
+    data_info = graphs_info[graph_type][agent_type][str(configuration)]
+    # Output Text: Algorithm_Mechanism & average & std & max & min
+    output_text = '\t\t{}_{} & {:.2f} & {:.2f} & {:.2f} & {:.2f} \\\\'
+    # Information about time
+    # Keep finite elements
+    data_info['time'] = list(filter(math.isfinite, data_info['time']))
+    # If hasn't any element return [-1] list
+    data_info['time'] = data_info['time'] if data_info['time'] else [-1]
+    info_time_avg = np.average(data_info['time'])
+    info_time_std = np.std(data_info['time'])
+    info_time_max = np.max(data_info['time'])
+    info_time_min = np.min(data_info['time'])
+    print('\tTime:')
+    print(output_text.format(agent_type, configuration, info_time_avg, info_time_std, info_time_max,
+                             info_time_min))
+    # Information about steps
+    # Keep finite elements
+    data_info['steps'] = list(filter(math.isfinite, data_info['steps']))
+    # If hasn't any element return [-1] list
+    data_info['steps'] = data_info['steps'] if data_info['steps'] else [-1]
+    info_steps_avg = np.average(data_info['steps'])
+    info_steps_std = np.std(data_info['steps'])
+    info_steps_max = np.max(data_info['steps'])
+    info_steps_min = np.min(data_info['steps'])
+    print('\tSteps:')
+    print(output_text.format(agent_type, configuration, info_steps_avg, info_steps_std, info_steps_max,
+                             info_steps_min))
+    # Information about solutions_found
+    info_solutions_found_avg = np.average(data_info['solutions_found'])
+    info_solutions_found_std = np.std(data_info['solutions_found'])
+    info_solutions_found_max = np.max(data_info['solutions_found'])
+    info_solutions_found_min = np.min(data_info['solutions_found'])
+    print('\tSolutions found:')
+    print(output_text.format(agent_type, configuration, info_solutions_found_avg, info_solutions_found_std,
+                             info_solutions_found_max, info_solutions_found_min))
+    # Information about had solution found
+    print('\tHad solution:')
+    print('\t\t{} / {}'.format(sum(data_info['had_solution_found']), len(data_info['had_solution_found'])))
 
 
 def unified_graphs(line_specification: dict, input_path: str = './dumps/unify',
@@ -713,7 +755,9 @@ def unified_graphs(line_specification: dict, input_path: str = './dumps/unify',
 
     # Create an instance of Path with input and output paths.
     input_directory = Path(input_path)
-    # output_file = Path(output_path)
+
+    # If any parents doesn't exist, make it.
+    input_directory.mkdir(parents=True, exist_ok=True)
 
     if input_directory.exists():
 
@@ -780,6 +824,9 @@ def unified_graphs(line_specification: dict, input_path: str = './dumps/unify',
 
         output_path = './dumps/unify/unified/{}.m'.format(description_file_name) if output_path is None else output_path
         output_file = Path(output_path)
+
+        # If any parents doesn't exist, make it.
+        output_file.parent.mkdir(parents=True, exist_ok=True)
 
         with output_file.open(mode='w+') as f:
             file_data = 'figure;\n'
