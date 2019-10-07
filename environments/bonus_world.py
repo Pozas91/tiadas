@@ -108,7 +108,7 @@ class BonusWorld(EnvMesh):
         # Check is_final
         final = self.is_final(self.current_state)
 
-        return self.current_state, rewards, final, info
+        return (self.current_state, self.bonus_activated), rewards, final, info
 
     def reset(self) -> tuple:
         """
@@ -118,7 +118,8 @@ class BonusWorld(EnvMesh):
         self.current_state = self.initial_state
         self.bonus_activated = False
 
-        return self.current_state
+        # Return ((x, y), bonus)
+        return self.current_state, self.bonus_activated
 
     def is_final(self, state: tuple = None) -> bool:
         """

@@ -161,11 +161,11 @@ class Agent:
                 # Update Graph
                 self.update_graph(graph_type=GraphType.STEPS)
 
-            if (graph_type is GraphType.MEMORY) and (self.total_steps % self.interval_to_get_data == 0):
+            elif (graph_type is GraphType.MEMORY) and (self.total_steps % self.interval_to_get_data == 0):
                 # Update Graph
                 self.update_graph(graph_type=GraphType.MEMORY)
 
-            if graph_type is GraphType.TIME:
+            elif graph_type is GraphType.TIME:
                 current_time = time.time()
 
                 if (current_time - self.last_time_to_get_graph_data) > self.interval_to_get_data:

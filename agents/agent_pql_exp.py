@@ -27,18 +27,20 @@ class AgentPQLEXP(AgentPQL):
         if not state:
             state = self.state
 
-        data = tuple()
-        if self.evaluation_mechanism == EvaluationMechanism.HV:
-            data = self.calculate_hypervolumes()
-        elif self.evaluation_mechanism == EvaluationMechanism.C:
+        if self.evaluation_mechanism is EvaluationMechanism.HV:
+            data = self.calculate_hypervolume()
+        elif self.evaluation_mechanism is EvaluationMechanism.C:
             data = self.calculate_cardinality()
-        else:
+        elif self.evaluation_mechanism is EvaluationMechanism.PO:
             data = self.calculate_pareto()
+        elif self.evaluation_mechanism is EvaluationMechanism.CHV:
+            data = self.calculate_chv()
+        else:
+            raise ValueError('Unknown evaluation mechanism')
 
         if self.generator.uniform(low=0., high=1.) < self.epsilon:
             # Get random action to explore possibilities
             return self._greedy_action(state, data)
-
         else:
             # Get best action to exploit reward.
             return self.best_action(state, data)
@@ -122,7 +124,7 @@ class AgentPQLEXP(AgentPQL):
         print('Warning: agent_pql_exp._greedy_action: seleccionando acción de emergencia')
         return info[len - 1][0]
 
-    def calculate_hypervolumes(self):
+    def calculate_hypervolume(self):
         """
         Calc the hypervolume for each action and returns a list of tuples (maximum-hv, [(action, hipervolume)*], sum-hv)
         :param state:
@@ -148,7 +150,7 @@ class AgentPQLEXP(AgentPQL):
             sum += hv
 
         # return (max-hv, list of tuples, sum-hv).
-        return (maximum, result, sum)
+        return maximum, result, sum
 
     def calculate_cardinality(self):
         """
@@ -184,14 +186,15 @@ class AgentPQLEXP(AgentPQL):
 
         result = []
         maximum = -1
-        sum = 0
+        summation = 0
+
         for a in action_space:
             result.append((a, actions[a]))
             if actions[a] > maximum:
                 maximum = actions[a]
-            sum += actions[a]
+            summation += actions[a]
 
-        return (maximum, result, sum)
+        return maximum, result, summation
 
     def calculate_pareto(self):
         """
@@ -226,12 +229,62 @@ class AgentPQLEXP(AgentPQL):
         )
 
         result = []
-        sum = 0
+        summation = 0
         for a in action_space:
             if actions[a] > 0:
                 result.append((a, 1))
-                sum += 1
+                summation += 1
             else:
                 result.append((a, 0))
 
-        return (1, result, sum)
+        return 1, result, summation
+
+    def calculate_chv(self):
+        """
+        Calc the hypervolume for the vectors that provide cardinality for each action and returns a tuple
+        (maximum_chv, list of tuples (action, chv), sum of chv)
+
+        CAUTION: This method assumes actions are integers in a range.
+
+        :param state:
+        :return:
+        """
+
+        # List of all Qs
+        all_q = list()
+
+        # Getting action_space
+        action_space = self.environment.action_space
+
+        # for each a in actions
+        for a in action_space:
+
+            # Get Q-set from state given for each possible action.
+            q_set = self.q_set(state=self.state, action=a)
+
+            # for each Q in Q_set(s, a)
+            for q in q_set:
+                all_q.append(IndexVector(index=a, vector=q))
+
+        # NDQs <- ND(all_q). Keep only the non-dominating solutions (We want the vectors, so return_vectors must be
+        # True)
+        vectors = IndexVector.actions_occurrences_based_m3_with_repetitions(
+            vectors=all_q, actions=action_space, return_vectors=True
+        )
+
+        result = []
+        maximum = -1
+        summation = 0
+
+        for a in action_space:
+
+            chv = 0
+
+            if len(vectors[a]) > 0:
+                chv = uh.calc_hypervolume(list_of_vectors=vectors[a], reference=self.hv_reference)
+
+            result.append((a, chv))
+            maximum = max(maximum, chv)
+            summation += chv
+
+        return maximum, result, summation

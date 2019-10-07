@@ -74,7 +74,7 @@ def write_v_from_initial_state_file(timestamp: int, seed: int, env_name_snake: s
 
     # Create file from above path
     v_s_0_file = Path(
-        v_s_0_path.format(env_name_abbr, str(agent_type.value), seed, variable, configuration, timestamp).lower()
+        v_s_0_path.format(str(agent_type.value), env_name_abbr, seed, variable, configuration, timestamp).lower()
     )
 
     # If any parents doesn't exist, make it.

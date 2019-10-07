@@ -19,6 +19,7 @@
           <option value="pygmo.*" />
           <option value="gym.*" />
           <option value="stop_condition" />
+          <option value="info" />
         </list>
       </option>
     </inspection_tool>

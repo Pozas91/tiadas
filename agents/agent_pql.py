@@ -68,12 +68,13 @@ import os
 import time
 from copy import deepcopy
 
+import numpy as np
+
 import utils.hypervolume as uh
 import utils.miscellaneous as um
 from environments import Environment
 from models import IndexVector, GraphType, EvaluationMechanism, Vector, VectorFloat
 from .agent import Agent
-import numpy as np
 
 
 class AgentPQL(Agent):
@@ -119,7 +120,9 @@ class AgentPQL(Agent):
         self.n = dict()
 
         # Evaluation mechanism
-        if evaluation_mechanism in (EvaluationMechanism.HV, EvaluationMechanism.PO, EvaluationMechanism.C):
+        if evaluation_mechanism in (
+                EvaluationMechanism.HV, EvaluationMechanism.PO, EvaluationMechanism.C, EvaluationMechanism.CHV
+        ):
             self.evaluation_mechanism = evaluation_mechanism
         else:
             raise ValueError('The evaluation mechanism is not valid.')
@@ -358,8 +361,12 @@ class AgentPQL(Agent):
             action = self.hypervolume_evaluation(state=state)
         elif self.evaluation_mechanism is EvaluationMechanism.C:
             action = self.cardinality_evaluation(state=state)
-        else:
+        elif self.evaluation_mechanism is EvaluationMechanism.PO:
             action = self.pareto_evaluation(state=state)
+        elif self.evaluation_mechanism is EvaluationMechanism.CHV:
+            action = self.chv_evaluation(state=state)
+        else:
+            raise ValueError('Unknown evaluation mechanism')
 
         return action
 
@@ -563,6 +570,57 @@ class AgentPQL(Agent):
         filter_actions = [action for action in actions.keys() if actions[action] == max_cardinality]
 
         # choose randomly among actions with maximum cardinality
+        return self.generator.choice(filter_actions)
+
+    def chv_evaluation(self, state: object) -> int:
+        """
+        Calc the hypervolume for the vectors that provide cardinality for each action and returns a tuple
+        (maximum_chv, list of tuples (action, chv), sum of chv)
+
+        CAUTION: This method assumes actions are integers in a range.
+
+        :param state:
+        :return:
+        """
+
+        # List of all Qs
+        all_q = list()
+
+        # Getting action_space
+        action_space = self.environment.action_space
+
+        # for each a in actions
+        for a in action_space:
+
+            # Get Q-set from state given for each possible action.
+            q_set = self.q_set(state=state, action=a)
+
+            # for each Q in Q_set(s, a)
+            for q in q_set:
+                all_q.append(IndexVector(index=a, vector=q))
+
+        # NDQs <- ND(all_q). Keep only the non-dominating solutions (We want the vectors, so return_vectors must be
+        # True)
+        vectors_dict = IndexVector.actions_occurrences_based_m3_with_repetitions(
+            vectors=all_q, actions=action_space, return_vectors=True
+        )
+
+        # Dict where each action has it hypervolume
+        hypervolume_actions = {
+            action: uh.calc_hypervolume(list_of_vectors=vectors, reference=self.hv_reference) if len(vectors) > 0
+            else 0.0
+            for action, vectors in vectors_dict.items()
+        }
+
+        # Get max hypervolume
+        max_hypervolume = max(hypervolume_actions.values())
+
+        # Get all max actions
+        filter_actions = [
+            action for action in hypervolume_actions.keys() if hypervolume_actions[action] == max_hypervolume
+        ]
+
+        # Choose randomly among actions with maximum hypervolume
         return self.generator.choice(filter_actions)
 
     def pareto_evaluation(self, state: object) -> int:
@@ -909,9 +967,9 @@ class AgentPQL(Agent):
 
         objective_hypervolume = uh.calc_hypervolume(list_of_vectors=list_of_vectors, reference=self.hv_reference)
 
-        # while not np.isclose(a=current_hypervolume, b=objective_hypervolume, rtol=0.01, atol=0.0):
         while not math.isclose(a=current_hypervolume, b=objective_hypervolume, rel_tol=0.01, abs_tol=0.0):
             # Do an episode
+            # TODO: Is necessary pass to the episode method the graph type
             self.episode()
 
             # Update hypervolume

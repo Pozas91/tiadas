@@ -15,13 +15,15 @@ class AgentType(Enum):
         return str(self.value)
 
     @staticmethod
-    def from_string(graph_type: str):
+    def from_string(agent_type: str):
 
-        if graph_type == str(AgentType.A1.value):
+        if agent_type == str(AgentType.A1.value):
             result = AgentType.A1
-        elif graph_type == str(AgentType.PQL.value):
+        elif agent_type == str(AgentType.PQL.value):
             result = AgentType.PQL
-        else:
+        elif agent_type == str(AgentType.SCALARIZED.value):
             result = AgentType.SCALARIZED
+        else:
+            raise ValueError('Unknown agent type')
 
         return result

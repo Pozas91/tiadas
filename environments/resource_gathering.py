@@ -110,7 +110,7 @@ class ResourceGathering(EnvMesh):
         for gem_state in self.gem_states.keys():
             self.gem_states.update({gem_state: True})
 
-        return self.current_state
+        return self.current_state, tuple(self.status.tolist())
 
     def render(self, **kwargs) -> None:
         # Get cols (x) and rows (y) from observation space

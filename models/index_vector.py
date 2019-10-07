@@ -55,7 +55,8 @@ class IndexVector:
         return self.vector.dominance(v2.vector)
 
     @staticmethod
-    def actions_occurrences_based_m3_with_repetitions(vectors: list, actions: list) -> dict:
+    def actions_occurrences_based_m3_with_repetitions(vectors: list, actions: list,
+                                                      return_vectors: bool = False) -> dict:
         """
         This function receives a list on IndexVector objects (where de index of each vector is an integer representing
         an action), and a list of indices (each one representing an action used as index in the previous list).
@@ -72,6 +73,8 @@ class IndexVector:
         Bentley, Clarkson and Levine (1990).
             We assume that:
                 - We attempt to MAXIMIZE the value of each vector element.
+
+        If return_vectors is True, return a dictionary with the vectors for each action.
         """
 
         non_dominated = list()
@@ -96,13 +99,13 @@ class IndexVector:
                 dominance = vector_i.dominance(v2=vector_j)
 
                 # `vector_i` dominate `vector_j`
-                if dominance == Dominance.dominate:
+                if dominance is Dominance.dominate:
 
                     # Remove non-dominated vector
                     non_dominated.pop(idx_j)
 
                 # `vector_j` dominate `vector_i`
-                elif dominance == Dominance.is_dominated:
+                elif dominance is Dominance.is_dominated:
 
                     # Remove non-dominated vector
                     non_dominated.pop(idx_j)
@@ -111,7 +114,7 @@ class IndexVector:
                     discarded = True
 
                 # `vector_i` and `vector_j` are similar or equals
-                elif dominance == Dominance.equals:
+                elif dominance is Dominance.equals:
 
                     # Remove non-dominated vector
                     non_dominated.pop(idx_j)
@@ -123,7 +126,7 @@ class IndexVector:
                     bucket.append(vector_i)
 
                 # If dominance is otherwise, continue searching
-                if dominance == Dominance.otherwise:
+                if dominance is Dominance.otherwise:
                     # Search in next element
                     idx_j += 1
                 else:
@@ -140,14 +143,27 @@ class IndexVector:
                 # Add list at end
                 non_dominated.append(aux)
 
-        # Prepare actions dict
-        actions_dict = {action: 0 for action in actions}
+        if return_vectors:
+            vectors_dict = {action: [] for action in actions}
 
-        # for each bucket in non_dominated
-        for bucket in non_dominated:
-            # for each vector in bucket
-            for vector in bucket:
-                # Increment vector action
-                actions_dict[vector.index] += 1
+            # for each bucket in non_dominated
+            for bucket in non_dominated:
+                # for each vector in bucket
+                for vector in bucket:
+                    vectors_dict[vector.index].append(vector.vector)
 
-        return actions_dict
+            return vectors_dict
+
+        else:
+
+            # Prepare actions dict
+            actions_dict = {action: 0 for action in actions}
+
+            # for each bucket in non_dominated
+            for bucket in non_dominated:
+                # for each vector in bucket
+                for vector in bucket:
+                    # Increment vector action
+                    actions_dict[vector.index] += 1
+
+            return actions_dict

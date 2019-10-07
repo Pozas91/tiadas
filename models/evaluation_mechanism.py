@@ -5,6 +5,7 @@ class EvaluationMechanism(Enum):
     C = 'C'
     PO = 'PO'
     HV = 'HV'
+    CHV = 'CHV'
     PARETO = 'Pareto'
     SCALARIZED = 'Linear Scalarized'
 
@@ -25,7 +26,9 @@ class EvaluationMechanism(Enum):
             result = EvaluationMechanism.HV
         elif evaluation_mechanism == str(EvaluationMechanism.PARETO.value):
             result = EvaluationMechanism.PARETO
-        else:
+        elif evaluation_mechanism == str(EvaluationMechanism.SCALARIZED.value):
             result = EvaluationMechanism.SCALARIZED
+        else:
+            raise ValueError('Unknown evaluation mechanism')
 
         return result

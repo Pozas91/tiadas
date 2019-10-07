@@ -25,7 +25,9 @@ class GraphType(Enum):
             result = GraphType.MEMORY
         elif graph_type == str(GraphType.VECTORS_PER_CELL.value):
             result = GraphType.VECTORS_PER_CELL
-        else:
+        elif graph_type == str(GraphType.TIME.value):
             result = GraphType.TIME
+        else:
+            raise ValueError('Unknown graph type')
 
         return result

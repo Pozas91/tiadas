@@ -1,34 +1,32 @@
-from colorama import Fore, init
-init(autoreset=True)
+from colorama import init
 
 import utils.graphs as ug
-from environments import DeepSeaTreasure
+from environments import BonusWorld
 from models import GraphType, Vector, EvaluationMechanism, AgentType
+
+init(autoreset=True)
 
 
 def main():
     # Basic configuration
     alpha = 1
-    number_of_agents = 7
-    episodes = 2000
+    number_of_agents = 1
     gamma = 1.
     max_steps = 250
     initial_state = (0, 0)
-    columns = 10
-    evaluation_mechanism = EvaluationMechanism.HV
+    evaluation_mechanism = EvaluationMechanism.CHV
     decimals_allowed = 7
     epsilon = 0.7
-    states_to_observe = [initial_state]
+    states_to_observe = [((0, 0), False)]
     integer_mode = False
-    execution_time = 60
-    steps_limit = 450000
+    solution = None
 
     # Environment configuration
     # environment = PressurizedBountifulSeaTreasure(initial_state=initial_state)
     # hv_reference = Vector([-25, 0, -120])
-    environment = DeepSeaTreasure(initial_state=initial_state)
-    hv_reference = Vector([-25, 0])
-    solution = environment.pareto_optimal
+    environment = BonusWorld(initial_state=initial_state)
+    # hv_reference = Vector([-25, 0])
+    hv_reference = Vector([0, 0, -150])
 
     # Variable parameters
     variable = 'epsilon'
@@ -47,28 +45,28 @@ def main():
         # 0.8: 'fuchsia',
         # 1.0: 'cyan'
         # },
-        # AgentType.PQL: {
-        # EvaluationMechanism.HV: 'pink',
-        # EvaluationMechanism.C: 'red',
-        # EvaluationMechanism.PO: 'green',
-        # 1.0: 'red',
-        # 0.9: 'fuchsia',
-        # 0.8: 'orange',
-        # 0.7: 'pink',
-        # 0.6: 'yellow',
-        # 0.5: 'green',
-        # 0.4: 'cyan',
-        # 0.3: 'blue'
-        # },
+        AgentType.PQL: {
+            # EvaluationMechanism.HV: 'pink',
+            # EvaluationMechanism.C: 'red',
+            # EvaluationMechanism.PO: 'green',
+            # 1.0: 'red',
+            # 0.9: 'fuchsia',
+            # 0.8: 'orange',
+            # 0.7: 'pink',
+            # 0.6: 'yellow',
+            0.5: 'green',
+            # 0.4: 'cyan',
+            # 0.3: 'blue'
+        },
         # AgentType.SCALARIZED: {
         # EvaluationMechanism.SCALARIZED: 'cyan'
         # }
-        AgentType.PQL_EXP_3: {
-            0.5: 'red',
-            0.4: 'fuchsia',
-            0.3: 'orange',
-            0.2: 'pink',
-        }
+        # AgentType.PQL_EXP_3: {
+        #     0.5: 'red',
+        #     0.4: 'fuchsia',
+        #     0.3: 'orange',
+        #     0.2: 'pink',
+        # }
     }
 
     graph_configurations = {
@@ -76,18 +74,18 @@ def main():
         #     'limit': 100,
         #     'interval': 10
         # },
-        # GraphType.STEPS: {
-        #     'limit': 40 * 1000,
-        #     'interval': 200
-        # },
+        GraphType.STEPS: {
+            'limit': 20 * 1000,
+            'interval': 200
+        },
         # GraphType.MEMORY: {
         #     'limit': 200,
         #     'interval': 10
         # },
-        GraphType.VECTORS_PER_CELL: {
-            'limit': 200,
-            'interval': 10
-        },
+        # GraphType.VECTORS_PER_CELL: {
+        #     'limit': 200,
+        #     'interval': 10
+        # },
         # GraphType.TIME: {
         #     'limit': 30,
         #     'interval': 2

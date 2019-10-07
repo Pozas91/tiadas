@@ -21,7 +21,7 @@ class ResourceGatheringLimit(EnvMesh):
         :param time_limit: When agent does `time_limit` steps terminate current episode.
         """
 
-        self.state = VectorFloat(default_reward)
+        self.status = VectorFloat(default_reward)
 
         # States where there are gold {state: available}
         self.gold_states = {(2, 0): True}
@@ -64,7 +64,7 @@ class ResourceGatheringLimit(EnvMesh):
 
         # If the agent is in the same state as an enemy
         if self.current_state in self.enemies:
-            rewards = self.state * 1
+            rewards = self.status * 1
 
         # If the agent is in the same state as gold
         elif self.current_state in self.gold_states.keys():
@@ -76,16 +76,16 @@ class ResourceGatheringLimit(EnvMesh):
 
         # If the agent is at home and have gold or gem
         elif self.__at_home():
-            rewards = self.state * 1
+            rewards = self.status * 1
 
         if self.time >= self.time_limit:
             # Accumulate reward
-            rewards = self.state / self.time
+            rewards = self.status / self.time
 
         # Set info
         info = {}
 
-        return (self.current_state, tuple(self.state)), rewards, final, info
+        return (self.current_state, tuple(self.status)), rewards, final, info
 
     def reset(self) -> tuple:
         """
@@ -93,7 +93,7 @@ class ResourceGatheringLimit(EnvMesh):
         :return:
         """
         self.current_state = self.initial_state
-        self.state = self.default_reward.copy()
+        self.status = self.default_reward.copy()
 
         # Reset golds positions
         for gold_state in self.gold_states.keys():
@@ -106,7 +106,7 @@ class ResourceGatheringLimit(EnvMesh):
         # Reset time inverted
         self.time = 0
 
-        return self.current_state
+        return self.current_state, tuple(self.status.tolist())
 
     def render(self, **kwargs) -> None:
         # Get cols (x) and rows (y) from observation space
@@ -150,7 +150,7 @@ class ResourceGatheringLimit(EnvMesh):
 
         if self.p_attack >= self.np_random.uniform():
             self.reset()
-            self.state[0] = -1
+            self.status[0] = -1
             final = True
 
         return final
@@ -163,7 +163,7 @@ class ResourceGatheringLimit(EnvMesh):
 
         # Check if there is a gold
         if self.gold_states.get(self.current_state, False):
-            self.state[1] += 1
+            self.status[1] += 1
             self.gold_states.update({self.current_state: False})
 
     def __get_gem(self) -> None:
@@ -174,7 +174,7 @@ class ResourceGatheringLimit(EnvMesh):
 
         # Check if there is a gem
         if self.gem_states.get(self.current_state, False):
-            self.state[2] += 1
+            self.status[2] += 1
             self.gem_states.update({self.current_state: False})
 
     def __at_home(self) -> bool:
@@ -191,7 +191,7 @@ class ResourceGatheringLimit(EnvMesh):
         :return:
         """
 
-        return (self.state[1] >= 0 or self.state[2] >= 0) and self.__at_home()
+        return (self.status[1] >= 0 or self.status[2] >= 0) and self.__at_home()
 
     def is_final(self, state: tuple = None) -> bool:
         """
@@ -217,7 +217,7 @@ class ResourceGatheringLimit(EnvMesh):
         data = super().get_dict_model()
 
         # Prepare environment data
-        data['state'] = self.state.tolist()
+        data['state'] = self.status.tolist()
 
         # Clean specific environment data
         del data['gold_states']
