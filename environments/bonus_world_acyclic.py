@@ -48,6 +48,9 @@ class BonusWorldAcyclic(EnvMesh):
         default_reward += (-1,)
         default_reward = Vector(default_reward)
 
+        # Separate position from bonus_activated
+        initial_state, self.bonus_activated = initial_state
+
         super().__init__(mesh_shape=mesh_shape, seed=seed, default_reward=default_reward, initial_state=initial_state,
                          finals=finals, obstacles=obstacles)
 
@@ -60,9 +63,6 @@ class BonusWorldAcyclic(EnvMesh):
         self.bonus = [
             (3, 3)
         ]
-
-        # Bonus is activated?
-        self.bonus_activated = False
 
         # Pits penalize
         self.pits_penalize = Vector([-50, -50, -1])

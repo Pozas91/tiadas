@@ -23,7 +23,7 @@ class BonusWorld(EnvMesh):
     # Possible actions
     _actions = {'UP': 0, 'RIGHT': 1, 'DOWN': 2, 'LEFT': 3}
 
-    def __init__(self, initial_state: tuple = (0, 0), default_reward: tuple = (0, 0), seed: int = 0):
+    def __init__(self, initial_state: tuple = ((0, 0), False), default_reward: tuple = (0, 0), seed: int = 0):
         """
         :param initial_state:
         :param default_reward: (objective 1, objective 2)
@@ -54,6 +54,9 @@ class BonusWorld(EnvMesh):
         default_reward += (-1,)
         default_reward = Vector(default_reward)
 
+        # Separate position from bonus_activated
+        initial_state, self.bonus_activated = initial_state
+
         super().__init__(mesh_shape=mesh_shape, seed=seed, default_reward=default_reward, initial_state=initial_state,
                          finals=finals, obstacles=obstacles)
 
@@ -66,9 +69,6 @@ class BonusWorld(EnvMesh):
         self.bonus = [
             (3, 3)
         ]
-
-        # Bonus is activated?
-        self.bonus_activated = False
 
     def step(self, action: int) -> (tuple, Vector, bool, dict):
         """

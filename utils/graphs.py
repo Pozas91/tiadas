@@ -743,8 +743,7 @@ def show_data_info(agent_type, configuration, graph_type, graphs_info):
     print('\t\t{} / {}'.format(sum(data_info['had_solution_found']), len(data_info['had_solution_found'])))
 
 
-def unified_graphs(line_specification: dict, input_path: str = './dumps/unify',
-                   output_path: str = None) -> None:
+def unified_graphs(line_specification: dict, input_path: str = None, output_path: str = None) -> None:
     """
 
     :param line_specification:
@@ -754,7 +753,10 @@ def unified_graphs(line_specification: dict, input_path: str = './dumps/unify',
     """
 
     # Create an instance of Path with input and output paths.
-    input_directory = Path(input_path)
+    if input_path is None:
+        input_directory = Path(__file__).parent.parent.joinpath('dumps/unify')
+    else:
+        input_directory = Path(input_path)
 
     # If any parents doesn't exist, make it.
     input_directory.mkdir(parents=True, exist_ok=True)
@@ -822,8 +824,11 @@ def unified_graphs(line_specification: dict, input_path: str = './dumps/unify',
                 (np.average(data, axis=0), exclusive_name, line_specification[exclusive_name])
             )
 
-        output_path = './dumps/unify/unified/{}.m'.format(description_file_name) if output_path is None else output_path
-        output_file = Path(output_path)
+        if output_path is None:
+            output_file = Path(__file__).parent.parent.joinpath(
+                'dumps/unify/unified/{}.m'.format(description_file_name))
+        else:
+            output_file = Path(output_path)
 
         # If any parents doesn't exist, make it.
         output_file.parent.mkdir(parents=True, exist_ok=True)
