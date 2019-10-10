@@ -56,7 +56,7 @@ class IndexVector:
 
     @staticmethod
     def actions_occurrences_based_m3_with_repetitions(vectors: list, actions: list,
-                                                      return_vectors: bool = False) -> dict:
+                                                      returns_vectors: bool = False) -> dict:
         """
         This function receives a list on IndexVector objects (where de index of each vector is an integer representing
         an action), and a list of indices (each one representing an action used as index in the previous list).
@@ -66,6 +66,7 @@ class IndexVector:
 
         Then, a dictionary is returned, where keys are actions, and values are non-dominated vector counts.
 
+        :param returns_vectors:
         :param actions:
         :param vectors: list of Vector objects.
 
@@ -143,7 +144,7 @@ class IndexVector:
                 # Add list at end
                 non_dominated.append(aux)
 
-        if return_vectors:
+        if returns_vectors:
             vectors_dict = {action: [] for action in actions}
 
             # for each bucket in non_dominated

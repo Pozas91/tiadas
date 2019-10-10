@@ -14,6 +14,9 @@ class BonusWorldAcyclic(EnvMesh):
     # Possible actions
     _actions = {'RIGHT': 0, 'DOWN': 1}
 
+    # Experiments common hypervolume reference
+    hv_reference = Vector([0, 0, -150])
+
     def __init__(self, initial_state: tuple = (0, 0), default_reward: tuple = (0, 0), seed: int = 0):
         """
         :param initial_state:

@@ -12,6 +12,8 @@ it will move to the bottom row of the same column).
 
 FINAL STATES: To reach any of x-value states.
 
+HV REFERENCE: (-100, -150)
+
 REF: P. Vamplew et al. (2017)
 """
 from models import Vector
@@ -21,6 +23,9 @@ from .env_mesh import EnvMesh
 class SpaceExploration(EnvMesh):
     # Possible actions
     _actions = {'UP': 0, 'UP RIGHT': 1, 'RIGHT': 2, 'DOWN RIGHT': 3, 'DOWN': 4, 'DOWN LEFT': 5, 'LEFT': 6, 'UP LEFT': 7}
+
+    # Experiments common hypervolume reference
+    hv_reference = Vector([-100, -150])
 
     def __init__(self, initial_state: tuple = (5, 2), default_reward: tuple = (0, -1), seed: int = 0):
         """

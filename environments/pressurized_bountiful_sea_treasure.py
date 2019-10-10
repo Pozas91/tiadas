@@ -23,6 +23,9 @@ class PressurizedBountifulSeaTreasure(EnvMesh):
         (-14, 166, -8), (-17, 173, -10), (-19, 175, -11)
     ]
 
+    # Experiments common hypervolume reference
+    hv_reference = Vector([-25, 0, -120])
+
     def __init__(self, initial_state: tuple = (0, 0), default_reward: tuple = (0,), seed: int = 0):
         """
         :param initial_state:

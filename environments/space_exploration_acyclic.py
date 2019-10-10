@@ -3,6 +3,8 @@ A variant of Space Exploration environment for acyclic agents.
 
 Remove all rewards from left side, start at (0, 0) state, and remove some asteroids states. We can go only to RIGHT,
 DOWN RIGHT and DOWN
+
+HV REFERENCE: (-100, -150)
 """
 from models import Vector
 from spaces import DynamicSpace
@@ -12,6 +14,9 @@ from .env_mesh import EnvMesh
 class SpaceExplorationAcyclic(EnvMesh):
     # Possible actions
     _actions = {'RIGHT': 0, 'DOWN RIGHT': 1, 'DOWN': 2}
+
+    # Experiments common hypervolume reference
+    hv_reference = Vector([-100, -150])
 
     def __init__(self, initial_state: tuple = (0, 0), default_reward: tuple = (0, -1), seed: int = 0):
         """

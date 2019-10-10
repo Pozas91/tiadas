@@ -31,10 +31,10 @@ class DeepSeaTreasureRightDown(EnvMesh):
         (-14, 50), (-17, 74), (-19, 124)
     ]
 
-    def __init__(self, initial_state: tuple = (0, 0), 
-                 default_reward: tuple = (0,), 
-                 seed: int = 0, 
-                 columns: int = 0):
+    # Experiments common hypervolume reference
+    hv_reference = Vector([-25, 0])
+
+    def __init__(self, initial_state: tuple = (0, 0), default_reward: tuple = (0,),  seed: int = 0,  columns: int = 0):
         """
         :param initial_state:
         :param default_reward:

@@ -156,24 +156,42 @@ class Agent:
             # Stop conditions
             is_final_state |= (self.max_steps is not None and self.steps >= self.max_steps)
 
-            # Check if is necessary update graph
+            # Update Graph
             if (graph_type is GraphType.STEPS) and (self.total_steps % self.interval_to_get_data == 0):
-                # Update Graph
                 self.update_graph(graph_type=GraphType.STEPS)
-
             elif (graph_type is GraphType.MEMORY) and (self.total_steps % self.interval_to_get_data == 0):
-                # Update Graph
                 self.update_graph(graph_type=GraphType.MEMORY)
-
             elif graph_type is GraphType.TIME:
                 current_time = time.time()
 
                 if (current_time - self.last_time_to_get_graph_data) > self.interval_to_get_data:
-                    # Update Graph
                     self.update_graph(graph_type=GraphType.TIME)
 
                     # Update last execution
                     self.last_time_to_get_graph_data = current_time
+
+    def take_initial_graph_data(self, graph_type: GraphType):
+        """
+        :param graph_type:
+        :return:
+        """
+
+        # Check if is necessary update graph
+        if graph_type is GraphType.STEPS:
+            # Update Graph
+            self.update_graph(graph_type=GraphType.STEPS)
+
+        elif graph_type is GraphType.MEMORY:
+            # Update Graph
+            self.update_graph(graph_type=GraphType.MEMORY)
+
+        elif graph_type is GraphType.EPISODES:
+            # Update Graph
+            self.update_graph(graph_type=GraphType.EPISODES)
+
+        elif graph_type is GraphType.TIME:
+            # Update Graph
+            self.update_graph(graph_type=GraphType.TIME)
 
     def update_graph(self, graph_type: GraphType) -> None:
         """
@@ -251,13 +269,16 @@ class Agent:
 
         self.reference_time_to_train = time.time()
 
+        # Check if the graph needs to be updated (Before training)
+        self.take_initial_graph_data(graph_type=graph_type)
+
         if graph_type is GraphType.TIME:
             self.time_train(execution_time=limit, graph_type=graph_type)
-        elif graph_type is GraphType.STEPS:
-            self.steps_train(steps=limit, graph_type=graph_type)
-        else:
-            # In other case, default method is episode training
+        elif graph_type is GraphType.EPISODES:
             self.episode_train(episodes=limit, graph_type=graph_type)
+        else:
+            # In other case, default method is steps training
+            self.steps_train(steps=limit, graph_type=graph_type)
 
         if graph_type is GraphType.VECTORS_PER_CELL:
             # Update Graph
@@ -275,7 +296,8 @@ class Agent:
             # Do an episode
             self.episode(graph_type=graph_type)
 
-            if (graph_type is GraphType.EPISODES) and (i % Agent.interval_to_get_data == 0):
+            if (graph_type is GraphType.EPISODES) and (self.total_episodes % self.interval_to_get_data == 0):
+                # Update Graph
                 self.update_graph(graph_type=GraphType.EPISODES)
 
     def time_train(self, execution_time: int, graph_type: GraphType):

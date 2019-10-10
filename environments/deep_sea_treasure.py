@@ -33,14 +33,14 @@ class DeepSeaTreasure(EnvMesh):
 
     # Pareto optimal policy vector-values
     pareto_optimal = [
-        Vector([-1, 1]), Vector([-3, 2]), Vector([-5, 3]), Vector([-7, 5]), 
-        Vector([-8, 8]), Vector([-9, 16]), Vector([-13, 24]), Vector([-14, 50]), 
-        Vector([-17, 74]), Vector([-19, 124])
+        Vector([-1, 1]), Vector([-3, 2]), Vector([-5, 3]), Vector([-7, 5]), Vector([-8, 8]), Vector([-9, 16]),
+        Vector([-13, 24]), Vector([-14, 50]), Vector([-17, 74]), Vector([-19, 124])
     ]
 
-    def __init__(self, initial_state: tuple = (0, 0), 
-                 default_reward: tuple = (0,), 
-                 seed: int = 0,
+    # Experiments common hypervolume reference
+    hv_reference = Vector([-25, 0])
+
+    def __init__(self, initial_state: tuple = (0, 0), default_reward: tuple = (0,), seed: int = 0,
                  steps_limit: int = 1000):
         """
         :param initial_state:
@@ -79,12 +79,8 @@ class DeepSeaTreasure(EnvMesh):
         default_reward = (-1,) + default_reward
         default_reward = Vector(default_reward)
 
-        super().__init__(mesh_shape=mesh_shape,  
-                         seed=seed, 
-                         initial_state=initial_state, 
-                         default_reward=default_reward,
-                         finals=finals, 
-                         obstacles=obstacles)
+        super().__init__(mesh_shape=mesh_shape, seed=seed, initial_state=initial_state, default_reward=default_reward,
+                         finals=finals, obstacles=obstacles)
 
         # Step counter and limit
         self.steps_limit = steps_limit

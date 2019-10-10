@@ -23,6 +23,9 @@ class BonusWorld(EnvMesh):
     # Possible actions
     _actions = {'UP': 0, 'RIGHT': 1, 'DOWN': 2, 'LEFT': 3}
 
+    # Experiments common hypervolume reference
+    hv_reference = Vector([0, 0, -150])
+
     def __init__(self, initial_state: tuple = ((0, 0), False), default_reward: tuple = (0, 0), seed: int = 0):
         """
         :param initial_state:

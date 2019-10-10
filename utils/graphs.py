@@ -50,9 +50,11 @@ def write_config_file(timestamp: int, number_of_agents: int, env_name_snake: str
 
 
 def write_v_from_initial_state_file(timestamp: int, seed: int, env_name_snake: str, v_s_0: list,
-                                    agent_type: AgentType, variable, configuration):
+                                    agent_type: AgentType, variable: str, configuration: str,
+                                    evaluation_mechanism: EvaluationMechanism):
     """
     Write V(s0) data.
+    :param evaluation_mechanism:
     :param configuration:
     :param variable:
     :param timestamp:
@@ -64,7 +66,7 @@ def write_v_from_initial_state_file(timestamp: int, seed: int, env_name_snake: s
     """
 
     # Path to save file
-    v_s_0_path = './dumps/{}/data/{}_{}_{}_{}_{}.yml'
+    v_s_0_path = './dumps/{}/data/{}_{}_{}_{}_{}_{}.yml'
 
     # Order vectors by origin Vec(0) nearest
     v_s_0 = um.order_vectors_by_origin_nearest(vectors=v_s_0)
@@ -74,7 +76,8 @@ def write_v_from_initial_state_file(timestamp: int, seed: int, env_name_snake: s
 
     # Create file from above path
     v_s_0_file = Path(
-        v_s_0_path.format(str(agent_type.value), env_name_abbr, seed, variable, configuration, timestamp).lower()
+        v_s_0_path.format(str(agent_type.value), env_name_abbr, seed, variable, configuration, evaluation_mechanism,
+                          timestamp).lower()
     )
 
     # If any parents doesn't exist, make it.
@@ -171,10 +174,11 @@ def compare_solution(vectors: list, solution: list) -> (int, bool):
     return number_of_equals, number_of_equals == len(solution)
 
 
-def update_graphs(graphs: dict, agent: Agent, configuration: str, states_to_observe: list,
+def update_graphs(graphs: dict, graph_type: GraphType, agent: Agent, configuration: str, states_to_observe: list,
                   agent_type: AgentType, graphs_info: dict, solution: list = None):
     """
     Update graph to show
+    :param graph_type:
     :param graphs_info:
     :param solution:
     :param configuration:
@@ -185,61 +189,61 @@ def update_graphs(graphs: dict, agent: Agent, configuration: str, states_to_obse
     :return:
     """
 
-    for graph_type in graphs:
+    # for graph_type in graphs:
 
-        # Recover old data
-        data = graphs[graph_type][agent_type][configuration]
-        data_info = graphs_info[graph_type][agent_type][configuration]
+    # Recover old data
+    data = graphs[graph_type][agent_type][configuration]
+    data_info = graphs_info[graph_type][agent_type][configuration]
 
-        if graph_type is GraphType.MEMORY:
-            agent_data = agent.graph_info[graph_type]
-        elif graph_type is GraphType.VECTORS_PER_CELL:
-            agent_data = agent.graph_info[graph_type]
-        else:
+    if graph_type is GraphType.MEMORY:
+        agent_data = agent.graph_info[graph_type]
+    elif graph_type is GraphType.VECTORS_PER_CELL:
+        agent_data = agent.graph_info[graph_type]
+    else:
 
-            # Prepare new data
-            agent_data, agent_time, agent_steps = list(), list(), list()
-            agent_solutions_found, agent_had_solutions_found = list(), list()
+        # Prepare new data
+        agent_data, agent_time, agent_steps = list(), list(), list()
+        agent_solutions_found, agent_had_solutions_found = list(), list()
 
-            for new_data in agent.graph_info[graph_type][states_to_observe[0]]:
-                # Calc hypervolume
-                hv = uh.calc_hypervolume(list_of_vectors=new_data['data'], reference=agent.hv_reference)
+        for new_data in agent.graph_info[graph_type][states_to_observe[0]]:
+            # Calc hypervolume
+            hv = uh.calc_hypervolume(list_of_vectors=new_data['data'], reference=agent.hv_reference)
 
-                # Add hypervolume to agent_data
-                agent_data.append(hv)
+            # Add hypervolume to agent_data
+            agent_data.append(hv)
 
-                # If solution is given, compare it
-                if solution is not None:
-                    number_of_solutions, solution_found = compare_solution(vectors=new_data['data'], solution=solution)
+            # If solution is given, compare it
+            if solution is not None:
+                number_of_solutions, solution_found = compare_solution(vectors=new_data['data'], solution=solution)
 
-                    # Extract information
-                    agent_time.append(new_data['time'] if solution_found else None)
-                    agent_steps.append(new_data['steps'] if solution_found else None)
-                    agent_solutions_found.append(number_of_solutions)
-                    agent_had_solutions_found.append(solution_found)
+                # Extract information
+                agent_time.append(new_data['time'] if solution_found else None)
+                agent_steps.append(new_data['steps'] if solution_found else None)
+                agent_solutions_found.append(number_of_solutions)
+                agent_had_solutions_found.append(solution_found)
 
-            # Default value
-            agent_time = agent_time if agent_time else [float('inf')]
-            agent_steps = agent_steps if agent_steps else [float('inf')]
-            agent_solutions_found = agent_solutions_found if agent_solutions_found else [0]
-            agent_had_solutions_found = agent_had_solutions_found if agent_had_solutions_found else [False]
+        # Default value
+        agent_time = agent_time if agent_time else [float('inf')]
+        agent_steps = agent_steps if agent_steps else [float('inf')]
+        agent_solutions_found = agent_solutions_found if agent_solutions_found else [0]
+        agent_had_solutions_found = agent_had_solutions_found if agent_had_solutions_found else [False]
 
-            # Additional information
-            data_info['time'].append(min([float('inf') if x is None else x for x in agent_time]))
-            data_info['steps'].append(min([float('inf') if x is None else x for x in agent_steps]))
-            data_info['solutions_found'].append(max([x for x in agent_solutions_found]))
-            data_info['had_solution_found'].append(np.any(agent_had_solutions_found))
+        # Additional information
+        data_info['time'].append(min([float('inf') if x is None else x for x in agent_time]))
+        data_info['steps'].append(min([float('inf') if x is None else x for x in agent_steps]))
+        data_info['solutions_found'].append(max([x for x in agent_solutions_found]))
+        data_info['had_solution_found'].append(np.any(agent_had_solutions_found))
 
-            # Update graph information
-            graphs_info[graph_type][agent_type].update({
-                configuration: data_info
-            })
+        # Update graph information
+        graphs_info[graph_type][agent_type].update({
+            configuration: data_info
+        })
 
-        # Save new data
-        data.append(agent_data)
+    # Save new data
+    data.append(agent_data)
 
-        # Update data in the dictionary
-        graphs[graph_type][agent_type].update({configuration: data})
+    # Update data in the dictionary
+    graphs[graph_type][agent_type].update({configuration: data})
 
 
 def test_agents(environment: Environment, hv_reference: Vector, variable: str, agents_configuration: dict,
@@ -248,6 +252,12 @@ def test_agents(environment: Environment, hv_reference: Vector, variable: str, a
                 gamma: float = 1., solution: list = None, initial_q_value: Vector = None,
                 evaluation_mechanism: EvaluationMechanism = EvaluationMechanism.C):
     """
+    If we choose VECTORS_PER_CELL in graph_configurations, the agent train during `limit` steps, and only get data in
+    the last steps (ignore `interval`).
+
+    If we choose MEMORY in graph_configurations, the agent train during `limit` steps and take data every `interval`
+    steps.
+
     :param initial_q_value:
     :param graph_configuration:
     :param solution:
@@ -298,11 +308,11 @@ def test_agents(environment: Environment, hv_reference: Vector, variable: str, a
     for graph_type in graph_types:
 
         # Extract interval and limit
-        interval = graph_configuration[graph_type]['interval']
+        interval = graph_configuration[graph_type].get('interval', 1)
         limit = graph_configuration[graph_type]['limit']
 
         # Show information
-        print("\tGraph type: {} - [{}/{}]".format(graph_type, limit, interval))
+        print(('\t' * 1) + "Graph type: {} - [{}/{}]".format(graph_type, limit, interval))
 
         # Set interval to get data
         Agent.interval_to_get_data = interval
@@ -311,18 +321,18 @@ def test_agents(environment: Environment, hv_reference: Vector, variable: str, a
         for seed in range(number_of_agents):
 
             # Show information
-            print("\tExecution: {}".format(seed + 1))
+            print(('\t' * 2) + "Execution: {}".format(seed + 1))
 
             # For each configuration
             for agent_type in agents_configuration:
 
                 # Show information
-                print('\t\tAgent: {}'.format(agent_type.value))
+                print(('\t' * 3) + 'Agent: {}'.format(agent_type.value))
 
                 # Extract configuration for that agent
                 for configuration in agents_configuration[agent_type].keys():
                     # Show information
-                    print('\t\t\t{}: {}'.format(variable, configuration), end=' ')
+                    print(('\t' * 4) + '{}: {}'.format(variable, configuration), end=' ')
 
                     # Mark of time
                     t0 = time.time()
@@ -351,17 +361,20 @@ def test_agents(environment: Environment, hv_reference: Vector, variable: str, a
                     # Write vectors found into file
                     write_v_from_initial_state_file(timestamp=timestamp, seed=seed, env_name_snake=env_name_snake,
                                                     v_s_0=v_s_0, variable=variable, agent_type=agent_type,
-                                                    configuration=configuration)
+                                                    configuration=configuration,
+                                                    evaluation_mechanism=evaluation_mechanism)
 
                     # Update graphs
-                    update_graphs(agent=agent, graphs=graphs, configuration=str(configuration), agent_type=agent_type,
+                    update_graphs(graphs=graphs, agent=agent, graph_type=graph_type, configuration=str(configuration),
+                                  agent_type=agent_type,
                                   states_to_observe=states_to_observe, graphs_info=graphs_info, solution=solution)
 
     prepare_data_and_show_graph(timestamp=timestamp, env_name=env_name, env_name_snake=env_name_snake, graphs=graphs,
                                 number_of_agents=number_of_agents, agents_configuration=agents_configuration,
                                 alpha=alpha, epsilon=epsilon, gamma=gamma, graph_configuration=graph_configuration,
                                 max_steps=max_steps, initial_state=environment.initial_state, integer_mode=integer_mode,
-                                variable=variable, graphs_info=graphs_info, evaluation_mechanism=evaluation_mechanism)
+                                variable=variable, graphs_info=graphs_info, evaluation_mechanism=evaluation_mechanism,
+                                solution=solution)
 
 
 def train_agent_and_get_v_s_0(agent_type: AgentType, environment: Environment, graph_type: GraphType, graph_types: set,
@@ -476,9 +489,10 @@ def prepare_data_and_show_graph(timestamp: int, env_name: str, env_name_snake: s
                                 number_of_agents: int, agents_configuration: dict, alpha: float, gamma: float,
                                 epsilon: float, graph_configuration: dict, max_steps: int, initial_state: tuple,
                                 integer_mode: bool, variable: str, graphs_info: dict,
-                                evaluation_mechanism: EvaluationMechanism):
+                                evaluation_mechanism: EvaluationMechanism, solution: list):
     """
     Prepare data to show a graph with the information about results
+    :param solution:
     :param evaluation_mechanism:
     :param graph_configuration:
     :param graphs_info:
@@ -505,6 +519,9 @@ def prepare_data_and_show_graph(timestamp: int, env_name: str, env_name_snake: s
     # Extract vectors per cells graph from all graphs
     vectors_per_cells_graph = graphs.pop(GraphType.VECTORS_PER_CELL, {})
 
+    # Get only first letter of each word
+    env_name_abbr = ''.join([word[0] for word in env_name_snake.split('_')])
+
     for agent_type in vectors_per_cells_graph:
 
         for configuration in agents_configuration[agent_type].keys():
@@ -514,8 +531,8 @@ def prepare_data_and_show_graph(timestamp: int, env_name: str, env_name_snake: s
 
             # Create file from given path.
             matlab_file = Path(
-                graph_path.format(agent_type.value, timestamp, number_of_agents, env_name_snake,
-                                  GraphType.VECTORS_PER_CELL.value, variable, str(configuration)).lower()
+                graph_path.format(agent_type.value, env_name_abbr, number_of_agents, variable, configuration,
+                                  GraphType.VECTORS_PER_CELL.value, timestamp).lower()
             )
 
             # If any parents doesn't exist, make it.
@@ -524,7 +541,7 @@ def prepare_data_and_show_graph(timestamp: int, env_name: str, env_name_snake: s
             with matlab_file.open(mode='w+') as file:
                 file_data = "Z = [\n{}\n];\n".format(''.join([';\n'.join(map(str, x)) for x in process_data]))
                 file_data += 'bar3(Z);\n'
-                file_data += 'zlim([0, 30]);\n'
+                file_data += 'zlim([0, inf]);\n'
                 file_data += "xlabel('Columns');\n"
                 file_data += "ylabel('Rows');\n"
                 file_data += "zlabel('# Vectors');\n"
@@ -552,18 +569,15 @@ def prepare_data_and_show_graph(timestamp: int, env_name: str, env_name_snake: s
 
         # Setting values to graph
         graph_name = graph_type.value
-        graph_limit = graph_configuration[graph_type]['limit']
         graph_interval = graph_configuration[graph_type]['interval']
         y_limit, x_limit = -1, -1
-
-        print('Graph Type: {}'.format(graph_name))
 
         for agent_type in graphs[graph_type]:
 
             for configuration in agents_configuration[agent_type].keys():
 
                 # If is possible that get data, show it
-                if graph_type in (GraphType.EPISODES, GraphType.TIME, GraphType.STEPS):
+                if graph_type in (GraphType.EPISODES, GraphType.TIME, GraphType.STEPS) and solution is not None:
                     show_data_info(agent_type, configuration, graph_type, graphs_info)
 
                 # Recover old data
@@ -592,6 +606,7 @@ def prepare_data_and_show_graph(timestamp: int, env_name: str, env_name_snake: s
                 process_data = np.average(data, axis=0)
                 error = np.std(data, axis=0)
                 x = np.arange(0, data_max_len, 1)
+                x *= graph_interval
 
                 # Limit calc limit in x and y axes
                 x_limit = max(x_limit, x.max())
@@ -603,8 +618,8 @@ def prepare_data_and_show_graph(timestamp: int, env_name: str, env_name_snake: s
 
                 # Create file from given path.
                 matlab_file = Path(
-                    graph_path.format(agent_type.value, timestamp, number_of_agents, env_name_snake, graph_name,
-                                      variable, str(configuration)).lower()
+                    graph_path.format(agent_type.value, env_name_abbr, number_of_agents, variable, configuration,
+                                      graph_name, timestamp).lower()
                 )
 
                 # If any parents doesn't exist, make it.
@@ -618,14 +633,10 @@ def prepare_data_and_show_graph(timestamp: int, env_name: str, env_name_snake: s
                     file.write(file_data)
 
             # Show data
-            if graph_type is GraphType.STEPS:
-                axs[axs_i].set_xlabel('{} x{}'.format(graph_type.value, graph_interval))
-            elif graph_type is GraphType.MEMORY:
-                axs[axs_i].set_xlabel('{} (x{} steps)'.format(graph_type.value, graph_interval))
+            if graph_type is GraphType.MEMORY:
+                axs[axs_i].set_xlabel('{} (steps)'.format(graph_type.value))
             elif graph_type is GraphType.TIME:
-                axs[axs_i].set_xlabel('{} x{}s'.format(graph_type.value, graph_interval))
-            elif graph_type is GraphType.EPISODES:
-                axs[axs_i].set_xlabel('{} x{}'.format(graph_type.value, graph_interval))
+                axs[axs_i].set_xlabel('{} s'.format(graph_type.value))
             else:
                 axs[axs_i].set_xlabel(graph_type.value)
 
@@ -689,7 +700,7 @@ def prepare_data_and_show_graph(timestamp: int, env_name: str, env_name_snake: s
 
     # Define figure path
     plot_file = Path(
-        plot_path.format(timestamp, number_of_agents, env_name_snake).lower()
+        plot_path.format(env_name_abbr, number_of_agents, timestamp).lower()
     )
 
     # If any parents doesn't exist, make it.

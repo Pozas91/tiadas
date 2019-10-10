@@ -602,7 +602,7 @@ class AgentPQL(Agent):
         # NDQs <- ND(all_q). Keep only the non-dominating solutions (We want the vectors, so return_vectors must be
         # True)
         vectors_dict = IndexVector.actions_occurrences_based_m3_with_repetitions(
-            vectors=all_q, actions=action_space, return_vectors=True
+            vectors=all_q, actions=action_space, returns_vectors=True
         )
 
         # Dict where each action has it hypervolume

@@ -12,13 +12,16 @@ REF: Empirical evaluation methods for multi-objective reinforcement learning alg
 """
 from scipy.spatial import distance
 
-from models import VectorFloat
+from models import VectorFloat, Vector
 from .env_mesh import EnvMesh
 
 
 class MoPuddleWorld(EnvMesh):
     # Possible actions
     _actions = {'UP': 0, 'RIGHT': 1, 'DOWN': 2, 'LEFT': 3}
+
+    # Experiments common hypervolume reference
+    hv_reference = Vector([-50, -150])
 
     def __init__(self, default_reward: tuple = (10, 0), penalize_non_goal: float = -1, seed: int = 0,
                  final_state: tuple = (19, 0)):

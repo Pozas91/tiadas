@@ -24,6 +24,9 @@ class DeepSeaTreasureRightDownStochastic(EnvMesh):
         (-1, 1), (-3, 2), (-5, 3), (-7, 5), (-8, 8), (-9, 16), (-13, 24), (-14, 50), (-17, 74), (-19, 124)
     ]
 
+    # Experiments common hypervolume reference
+    hv_reference = Vector([-25, 0])
+
     def __init__(self, initial_state: tuple = (0, 0), default_reward: tuple = (0,), seed: int = 0,
                  transitions: tuple = (0.8, 0.2), columns: int = 10):
         """
