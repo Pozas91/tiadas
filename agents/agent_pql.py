@@ -73,7 +73,7 @@ import numpy as np
 import utils.hypervolume as uh
 import utils.miscellaneous as um
 from environments import Environment
-from models import IndexVector, GraphType, EvaluationMechanism, Vector, VectorFloat
+from models import IndexVector, GraphType, EvaluationMechanism, Vector, VectorDecimal
 from .agent import Agent
 
 
@@ -836,7 +836,7 @@ class AgentPQL(Agent):
 
             elif 'default_reward' in key:
                 # If all elements are int, then default_reward is a integer Vector, otherwise float Vector
-                value = Vector(value) if (all([isinstance(x, int) for x in value])) else VectorFloat(value)
+                value = Vector(value) if (all([isinstance(x, int) for x in value])) else VectorDecimal(value)
 
             vars(environment)[key] = value
 

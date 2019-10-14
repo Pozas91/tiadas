@@ -27,12 +27,8 @@ from .environment import Environment
 
 class EnvMesh(Environment):
 
-    def __init__(self, mesh_shape: tuple, 
-                 default_reward: Vector, 
-                 seed: int = None, 
-                 initial_state: tuple = None, 
-                 obstacles: frozenset = None, 
-                 finals: dict = None):
+    def __init__(self, mesh_shape: tuple, default_reward: Vector, seed: int = None, initial_state: tuple = None,
+                 obstacles: frozenset = None, finals: dict = None):
 
         """
         :param mesh_shape: A tuple where first component represents the x-axis
@@ -50,12 +46,8 @@ class EnvMesh(Environment):
         x, y = mesh_shape
         observation_space = gym.spaces.Tuple((spaces.Discrete(x), spaces.Discrete(y)))
 
-        super().__init__(observation_space=observation_space, 
-                         default_reward=default_reward, 
-                         seed=seed,
-                         initial_state=initial_state, 
-                         obstacles=obstacles, 
-                         finals=finals)
+        super().__init__(observation_space=observation_space, default_reward=default_reward, seed=seed,
+                         initial_state=initial_state, obstacles=obstacles, finals=finals)
 
     def render(self, mode: str = 'human') -> None:
         """
@@ -126,3 +118,18 @@ class EnvMesh(Environment):
 
         # Return (x, y) position
         return new_state
+
+    def states(self) -> set:
+        """
+        Return all possible states of this environment.
+        :return:
+        """
+
+        # Unpack spaces
+        x_space, y_space = self.observation_space.spaces
+
+        # Return all spaces
+        return {(x, y) for x in range(x_space.n) for y in range(y_space.n)} - self.obstacles
+
+    def reachable_states(self, state: tuple, action: int) -> set:
+        return {self.next_state(action=action, state=state)}

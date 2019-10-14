@@ -38,7 +38,7 @@ class DeepSeaTreasure(EnvMesh):
     ]
 
     # Experiments common hypervolume reference
-    hv_reference = Vector([-25, 0])
+    hv_reference = Vector((-25, 0))
 
     def __init__(self, initial_state: tuple = (0, 0), default_reward: tuple = (0,), seed: int = 0,
                  steps_limit: int = 1000):
@@ -133,3 +133,12 @@ class DeepSeaTreasure(EnvMesh):
         :return:
         """
         return state in self.finals.keys() or self.steps >= self.steps_limit
+
+    def transition_reward(self, state: object, action: int, next_state: object) -> Vector:
+        # Default reward
+        reward = self.default_reward.copy()
+
+        # Get treasure reward
+        reward[1] = self.finals.get(next_state, self.default_reward[1])
+
+        return reward

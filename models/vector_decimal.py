@@ -5,21 +5,15 @@ This class has a vector of floats (float64).
 
 import numpy as np
 
+import utils.numbers as un
 from .dominance import Dominance
 from .vector import Vector
 
 
-class VectorFloat(Vector):
+class VectorDecimal(Vector):
     """
     Class Vector with functions to work with float vectors.
     """
-
-    def __init__(self, components):
-        """
-        Vector's init
-        :param components:
-        """
-        super().__init__(components)
 
     def __ge__(self, other):
         """
@@ -29,8 +23,7 @@ class VectorFloat(Vector):
         :return:
         """
         return np.all([
-            a > b or np.isclose(a, b, atol=self.absolute_tolerance, rtol=self.relative_tolerance) for a, b in
-            zip(self.components, other.components)
+            a > b or un.are_equal_two_decimal_numbers(a=a, b=b) for a, b in zip(self.components, other.components)
         ])
 
     def __gt__(self, other):
@@ -42,8 +35,7 @@ class VectorFloat(Vector):
         """
 
         return np.all([
-            a > b and not np.isclose(a, b, atol=self.absolute_tolerance, rtol=self.relative_tolerance) for a, b in
-            zip(self.components, other.components)
+            a > b and not un.are_equal_two_decimal_numbers(a=a, b=b) for a, b in zip(self.components, other.components)
         ])
 
     def __lt__(self, other):
@@ -54,8 +46,7 @@ class VectorFloat(Vector):
         :return:
         """
         return np.all([
-            a < b and not np.isclose(a, b, atol=self.absolute_tolerance, rtol=self.relative_tolerance) for a, b in
-            zip(self.components, other.components)
+            a < b and not un.are_equal_two_decimal_numbers(a=a, b=b) for a, b in zip(self.components, other.components)
         ])
 
     def __le__(self, other):
@@ -66,8 +57,7 @@ class VectorFloat(Vector):
         :return:
         """
         return np.all([
-            a < b or np.isclose(a, b, atol=self.absolute_tolerance, rtol=self.relative_tolerance) for a, b in
-            zip(self.components, other.components)
+            a < b or un.are_equal_two_decimal_numbers(a=a, b=b) for a, b in zip(self.components, other.components)
         ])
 
     @staticmethod
@@ -148,3 +138,51 @@ class VectorFloat(Vector):
                 non_dominated.append(vector_i)
 
         return non_dominated, dominated
+
+    def dominance(self, v2) -> Dominance:
+        """
+        Check dominance between two Vector objects. Float values are allowed
+        and treated with precision according to Vector.relative. It is assumed that all
+        vector components are to be maximized.
+        :param v2: a Vector object
+        :return: an output value according to the Dominance enum.
+        """
+
+        v1_dominate = False
+        v2_dominate = False
+
+        for idx, component in enumerate(self.components):
+
+            # Are equals or close...
+            if un.are_equal_two_decimal_numbers(a=self.components[idx], b=v2.components[idx]):
+                # Nothing to do at moment
+                pass
+
+            elif self.components[idx] > v2.components[idx]:
+                v1_dominate = True
+
+                # If already dominate v2, then both vectors are independent.
+                if v2_dominate:
+                    return Dominance.otherwise
+
+            # v1's component is dominated by v2
+            elif self.components[idx] < v2.components[idx]:
+                v2_dominate = True
+
+                # If already dominate v1, then both vectors are independent.
+                if v1_dominate:
+                    return Dominance.otherwise
+
+        if v1_dominate == v2_dominate:
+            if v1_dominate:  # both, v1_dominate and v2_dominate are True -> vectors are indifferent
+                return Dominance.otherwise
+
+            # Are equals
+            else:  # both, v1_dominate and v2_dominate are False -> vectors are (approximately) equal
+                return Dominance.equals
+
+        elif v1_dominate:  # v1 dominates v2
+            return Dominance.dominate
+
+        else:  # v2 dominates v1
+            return Dominance.is_dominated

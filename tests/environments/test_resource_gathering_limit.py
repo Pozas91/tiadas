@@ -8,7 +8,7 @@ from gym import spaces
 
 from environments import ResourceGatheringLimit
 
-from models import VectorFloat
+from models import VectorDecimal
 
 
 class TestResourceGatheringLimit(unittest.TestCase):
@@ -296,5 +296,5 @@ class TestResourceGatheringLimit(unittest.TestCase):
             new_state, rewards, is_final, _ = self.environment.step(action=self.environment.actions.get('RIGHT'))
 
         self.assertEqual(((4, 1), (0, 1, 1)), new_state)
-        self.assertTrue(VectorFloat.all_close(VectorFloat([0, 0.01, 0.01]), rewards))
+        self.assertTrue(VectorDecimal.all_close(VectorDecimal([0, 0.01, 0.01]), rewards))
         self.assertTrue(is_final)

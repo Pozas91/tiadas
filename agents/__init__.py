@@ -5,3 +5,4 @@ from .agent_pql import AgentPQL
 from .agent_pql_exp import AgentPQLEXP
 from .agent_pql_exp3 import AgentPQLEXP3
 from .agent_q import AgentQ
+from .agent_w import AgentW

@@ -29,19 +29,21 @@ class Environment(gym.Env):
     _actions = dict()
 
     # Icons to render environments
-    _icons = {'BLANK': ' ',
-              'BLOCK': '■', 
-              'TREASURE': '$', 
-              'CURRENT': '☺', 
-              'ENEMY': '×', 
-              'HOME': 'µ', 
-              'FINAL': '$'}
+    _icons = {
+        'BLANK': ' ',
+        'BLOCK': '■',
+        'TREASURE': '$',
+        'CURRENT': '☺',
+        'ENEMY': '×',
+        'HOME': 'µ',
+        'FINAL': '$'
+    }
 
-    def __init__(self, observation_space: gym.spaces, 
-                 default_reward: Vector, 
+    def __init__(self, observation_space: gym.spaces,
+                 default_reward: Vector,
                  seed: int = None,
-                 initial_state: object = None, 
-                 obstacles: frozenset = None, 
+                 initial_state: object = None,
+                 obstacles: frozenset = None,
                  finals: dict = None):
         """
         :param default_reward: Default reward returned by the environment when 
@@ -173,6 +175,46 @@ class Environment(gym.Env):
     def is_final(self, state: object = None) -> bool:
         """
         Return True if state given is terminal, False in otherwise.
+        :return:
+        """
+        raise NotImplemented
+
+    def states(self) -> set:
+        """
+        Return all possible states of this environment.
+        :return:
+        """
+        raise NotImplemented
+
+    def reachable_states(self, state: object, action: int) -> set:
+        """
+        Return all reachable states for pair (s, a) given.
+        :param state:
+        :param action:
+        :return:
+        """
+        raise NotImplemented
+
+    def transition_probability(self, state: object, action: int, next_state: object) -> float:
+        """
+        Return probability to reach `next_state` from `state` using `action`.
+
+        In non-stochastic environments this return always 1.
+
+        :param state: initial state
+        :param action: action to do
+        :param next_state: next state reached
+        :return:
+        """
+        return 1.
+
+    def transition_reward(self, state: object, action: int, next_state: object) -> float:
+        """
+        Return reward for reach `next_state` from `state` using `action`.
+
+        :param state: initial state
+        :param action: action to do
+        :param next_state: next state reached
         :return:
         """
         raise NotImplemented

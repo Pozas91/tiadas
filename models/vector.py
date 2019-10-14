@@ -3,11 +3,12 @@ This class represent a vector of integers (int32) with some necessary features f
 """
 
 import math
+from decimal import Decimal as D
 
 import numpy as np
 
 import utils.models as um
-from .dominance import Dominance
+from models import Dominance
 
 
 class Vector:
@@ -18,20 +19,11 @@ class Vector:
 
     # Number of decimals allowed by int numbers
     decimals_allowed = 2
-
-    # Relative margin to compare of similarity of two elements
-    relative_tolerance = 0
-    absolute_tolerance = 0
+    decimal_exponent = 0.0
 
     @staticmethod
-    def set_absolute_tolerance(absolute_tolerance: float = 0.0, integer_mode: bool = False):
-        multiply_factor = (10 ** Vector.decimals_allowed) if integer_mode else 1
-        Vector.absolute_tolerance = absolute_tolerance * multiply_factor
-
-    @staticmethod
-    def set_relative_tolerance(relative_tolerance: float = 0.0, integer_mode: bool = False):
-        multiply_factor = (10 ** Vector.decimals_allowed) if integer_mode else 1
-        Vector.relative_tolerance = relative_tolerance * multiply_factor
+    def update_decimal_exponent():
+        Vector.decimal_exponent = D(10) ** -(Vector.decimals_allowed - 1)
 
     def __init__(self, components):
         """
@@ -260,8 +252,7 @@ class Vector:
         :param v2:
         :return:
         """
-        return np.allclose(a=self.components, b=v2.components, rtol=Vector.relative_tolerance,
-                           atol=Vector.absolute_tolerance)
+        return np.equal(self.components, v2.components)
 
     def dominance(self, v2) -> Dominance:
         """
@@ -278,8 +269,7 @@ class Vector:
         for idx, component in enumerate(self.components):
 
             # Are equals or close...
-            if math.isclose(a=self.components[idx], b=v2.components[idx], rel_tol=Vector.relative_tolerance,
-                            abs_tol=Vector.absolute_tolerance):
+            if self.components[idx] == v2.components[idx]:
                 # Nothing to do at moment
                 pass
 

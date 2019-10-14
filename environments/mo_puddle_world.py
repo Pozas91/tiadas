@@ -12,7 +12,7 @@ REF: Empirical evaluation methods for multi-objective reinforcement learning alg
 """
 from scipy.spatial import distance
 
-from models import VectorFloat, Vector
+from models import VectorDecimal, Vector
 from .env_mesh import EnvMesh
 
 
@@ -34,7 +34,7 @@ class MoPuddleWorld(EnvMesh):
 
         self.final_state = final_state
         mesh_shape = (20, 20)
-        default_reward = VectorFloat(default_reward)
+        default_reward = VectorDecimal(default_reward)
 
         super().__init__(mesh_shape=mesh_shape, seed=seed, default_reward=default_reward)
 
@@ -45,14 +45,10 @@ class MoPuddleWorld(EnvMesh):
 
         self.current_state = self.reset()
 
-        # Unpack spaces
-        x_space, y_space = self.observation_space.spaces
-        # Get all spaces
-        all_space = [(x, y) for x in range(x_space.n) for y in range(y_space.n)]
         # Get free spaces
-        self.free_spaces = list(set(all_space) - self.puddles)
+        self.free_spaces = list(self.states() - self.puddles)
 
-    def step(self, action: int) -> (tuple, VectorFloat, bool, dict):
+    def step(self, action: int) -> (tuple, VectorDecimal, bool, dict):
         """
         Given an action, do a step
         :param action:
@@ -77,7 +73,6 @@ class MoPuddleWorld(EnvMesh):
 
         # if the current state is in an puddle
         if self.current_state in self.puddles:
-
             # Min distance found!
             min_distance = min(distance.cityblock(self.current_state, state) for state in self.free_spaces)
 
