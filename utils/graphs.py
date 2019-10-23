@@ -4,6 +4,7 @@ import time
 from decimal import Decimal as D
 from pathlib import Path
 
+import gym
 import matplotlib.pyplot as plt
 import numpy as np
 from colorama import Fore, init
@@ -295,6 +296,12 @@ def test_agents(environment: Environment, hv_reference: Vector, variable: str, a
     # Parameters
     if states_to_observe is None:
         states_to_observe = {environment.initial_state}
+
+    complex_states = isinstance(environment.observation_space[0], gym.spaces.Tuple)
+
+    if not complex_states and GraphType.DATA_PER_STATE in graph_types:
+        print(Fore.YELLOW + "This environment has complex states, so DATA_PER_STATE graph is disabled.")
+        graph_configuration.pop(GraphType.DATA_PER_STATE)
 
     # Build environment
     env_name = environment.__class__.__name__
