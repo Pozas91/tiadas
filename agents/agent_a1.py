@@ -16,17 +16,17 @@ import numpy as np
 
 import utils.hypervolume as uh
 import utils.miscellaneous as um
-from .agent_rl import AgentRL
 from environments import Environment
 from models import Vector, IndexVector, VectorDecimal, GraphType, EvaluationMechanism
+from .agent_rl import AgentRL
 
 
 class AgentA1(AgentRL):
 
     def __init__(self, environment: Environment, hv_reference: Vector, alpha: float = 0.1, epsilon: float = 0.1,
                  gamma: float = 1., seed: int = 0, states_to_observe: set = None, max_steps: int = None,
-                 evaluation_mechanism: EvaluationMechanism = EvaluationMechanism.HV,
-                 graph_types: set = None, initial_value: Vector = None):
+                 evaluation_mechanism: EvaluationMechanism = EvaluationMechanism.HV, graph_types: set = None,
+                 initial_value: Vector = None):
         """
         :param environment: An environment where agent does any operation.
         :param alpha: Learning rate
@@ -242,7 +242,6 @@ class AgentA1(AgentRL):
             # In the same for loop, is check if this agent has the graph_type indicated (get dictionary default
             # value)
             for state, data in self.graph_info.get(graph_type, {}).items():
-
                 # Add to train_data Best value (V max)
                 value = self._best_hypervolume(state=state)
 
