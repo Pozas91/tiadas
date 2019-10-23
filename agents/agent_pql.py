@@ -74,15 +74,15 @@ import utils.hypervolume as uh
 import utils.miscellaneous as um
 from environments import Environment
 from models import IndexVector, GraphType, EvaluationMechanism, Vector, VectorDecimal
-from .agent import Agent
+from .agent_rl import AgentRL
 
 
-class AgentPQL(Agent):
+class AgentPQL(AgentRL):
 
     def __init__(self, environment: Environment, epsilon: float = 0.1, gamma: float = 1., seed: int = 0,
                  max_steps: int = None, hv_reference: Vector = None, graph_types: set = None,
-                 evaluation_mechanism: EvaluationMechanism = EvaluationMechanism.HV, initial_q_value: Vector = None,
-                 states_to_observe: list = None, integer_mode: bool = False):
+                 evaluation_mechanism: EvaluationMechanism = EvaluationMechanism.HV, initial_value: Vector = None,
+                 states_to_observe: set = None, integer_mode: bool = False):
 
         """
         :param environment: instance of any environment class.
@@ -103,12 +103,12 @@ class AgentPQL(Agent):
         # Super call __init__
         super().__init__(environment=environment, epsilon=epsilon, gamma=gamma, seed=seed,
                          states_to_observe=states_to_observe, max_steps=max_steps, graph_types=graph_types,
-                         initial_q_value=initial_q_value)
+                         initial_value=initial_value)
 
-        if initial_q_value is None:
+        if initial_value is None:
             self.initial_q_value = self.environment.default_reward.zero_vector
         else:
-            self.initial_q_value = initial_q_value
+            self.initial_q_value = initial_value
 
         # Average observed immediate reward vector.
         self.r = dict()
@@ -127,23 +127,14 @@ class AgentPQL(Agent):
         else:
             raise ValueError('The evaluation mechanism is not valid.')
 
-        # if integer mode is True, all reward vectors received will be converted.
-        self.integer_mode = integer_mode
-
-        if self.integer_mode:
-            hv_reference = hv_reference.to_decimals()
-
         self.hv_reference = hv_reference
 
-    def do_iteration(self) -> bool:
+    def do_step(self) -> bool:
         # Choose action a from s using a policy derived from the Q-set
         action = self.select_action()
 
         # perform chosen action on the environment
         next_state, reward, is_final, info = self.environment.step(action=action)
-
-        if self.integer_mode:
-            reward = reward.to_decimals()
 
         # Increment steps
         self.total_steps += 1
@@ -165,7 +156,7 @@ class AgentPQL(Agent):
         # Update average immediate rewards
         self.update_r_s_a(state=self.state, action=action, reward=reward, occurrences=n_s_a)
 
-        # Proceed to next state
+        # Proceed to next position
         self.state = next_state
 
         return is_final
@@ -184,7 +175,7 @@ class AgentPQL(Agent):
                 sum(len(actions) for states in self.nd.values() for actions in states.values())
             )
 
-        elif graph_type is GraphType.VECTORS_PER_CELL:
+        elif graph_type is GraphType.DATA_PER_STATE:
 
             # Get positions on axis x and y
             x = self.environment.observation_space.spaces[0].n
@@ -196,7 +187,7 @@ class AgentPQL(Agent):
             # By default the size of all states is zero
             z = np.zeros([y, x])
 
-            # Calc number of vectors for each state
+            # Calc number of vectors for each position
             for x, y in valid_states:
                 z[y][x] = sum(len(actions) for actions in self.nd[(x, y)].values())
 
@@ -208,12 +199,12 @@ class AgentPQL(Agent):
             # In the same for loop, is check if this agent has the graph_type indicated (get dictionary default
             # value)
             for state, data in self.graph_info.get(graph_type, {}).items():
-                # Extract V(state) (without operations)
+                # Extract V(position) (without operations)
                 value = self.q_set_from_state(state=state)
 
-                # Add information to that data
+                # Add information to that train_data
                 data.append({
-                    'data': value,
+                    'train_data': value,
                     'time': time.time() - self.reference_time_to_train,
                     'steps': self.total_steps
                 })
@@ -345,14 +336,14 @@ class AgentPQL(Agent):
 
     def best_action(self, state: object = None, info=None) -> int:
         """
-        Return best action for q and state given. The best action is selected according to the method
+        Return best action for q and position given. The best action is selected according to the method
         specified in the self.evaluation_mechanism variable.
         :param info:
         :param state:
         :return:
         """
 
-        # if don't specify a state, get current state.
+        # if don't specify a position, get current position.
         if not state:
             state = self.state
 
@@ -374,14 +365,14 @@ class AgentPQL(Agent):
         """
         Runs an episode using one of the learned policies (policy tracking).
         This method tracks a policy with vector-value 'target' from the
-        start 'state' until a final state is reached.
+        start 'position' until a final position is reached.
 
         IMPORTANT: When the vectors have not entirely converged yet or the transition scheme is stochastic, the equality
         operator should be relaxed. In this case, the action is to be selected that minimizes the difference between the
         left and the right term. In our experiments, we select the action that minimizes the Manhattan distance between
         these terms.
 
-        :param state: initial state
+        :param state: initial position
         :param target: vector value of the policy to follow
         :return:
         """
@@ -422,7 +413,7 @@ class AgentPQL(Agent):
                     # if are equals with relaxed equality operator
                     if v.all_close(target):
                         # This transaction must be determinist s': T(s'|s, a) = 1
-                        state = self.environment.next_state(action=a, state=state)
+                        state = self.environment.next_state(action=a, position=state)
 
                         # Update target
                         target = q
@@ -452,7 +443,7 @@ class AgentPQL(Agent):
             # If path not found
             if not found:
                 # This transaction must be determinist s': T(s'|s, a) = 1
-                state = self.environment.next_state(action=min_action, state=state)
+                state = self.environment.next_state(action=min_action, position=state)
 
                 # Update target
                 target = min_q_target
@@ -470,35 +461,35 @@ class AgentPQL(Agent):
 
     def _best_hypervolume(self, state: object = None) -> float:
         """
-        Return best hypervolume for state given.
+        Return best hypervolume for position given.
         :return:
         """
 
-        # Check if a state is given
+        # Check if a position is given
         state = state if state else self.environment.current_state
 
         # Hypervolume list
         hv = list()
 
-        # Save previous state
+        # Save previous position
         previous_state = self.environment.current_state
         self.environment.current_state = state
 
         for a in self.environment.action_space:
-            # Get Q-set from state given for each possible action.
+            # Get Q-set from position given for each possible action.
             q_set = self.q_set(state=state, action=a)
 
             # Calc hypervolume of Q_set, with reference given.
             hv.append(uh.calc_hypervolume(list_of_vectors=q_set, reference=self.hv_reference))
 
-        # Restore environment correct state
+        # Restore environment correct position
         self.environment.current_state = previous_state
 
         return max(hv)
 
     def hypervolume_evaluation(self, state: object) -> int:
         """
-        Calc the hypervolume for each action in the given state, and returns the int representing the action
+        Calc the hypervolume for each action in the given position, and returns the int representing the action
         with maximum hypervolume. (Approximate) ties are broken choosing randomly among actions with
         (approximately) maximum hypervolume. (EvaluationMechanism.HV)
         :param state:
@@ -511,7 +502,7 @@ class AgentPQL(Agent):
         # for each a in actions
         for a in self.environment.action_space:
 
-            # Get Q-set from state given for each possible action.
+            # Get Q-set from position given for each possible action.
             q_set = self.q_set(state=state, action=a)
 
             # Calc hypervolume of Q_set, with reference given.
@@ -534,7 +525,7 @@ class AgentPQL(Agent):
 
     def cardinality_evaluation(self, state: object) -> int:
         """
-        Calculates the cardinality (number of Pareto-optimal estimates) for each action in the given state,
+        Calculates the cardinality (number of Pareto-optimal estimates) for each action in the given position,
         and returns the int representing an action with maximum cardinality. Ties are broken randomly among
         max cardinality actions.
         (EvaluationMechanism.C)
@@ -551,7 +542,7 @@ class AgentPQL(Agent):
         # for each a in actions
         for a in action_space:
 
-            # Get Q-set from state given for each possible action.
+            # Get Q-set from position given for each possible action.
             q_set = self.q_set(state=state, action=a)
 
             # for each Q in Q_set(s, a)
@@ -592,7 +583,7 @@ class AgentPQL(Agent):
         # for each a in actions
         for a in action_space:
 
-            # Get Q-set from state given for each possible action.
+            # Get Q-set from position given for each possible action.
             q_set = self.q_set(state=state, action=a)
 
             # for each Q in Q_set(s, a)
@@ -625,7 +616,7 @@ class AgentPQL(Agent):
 
     def pareto_evaluation(self, state: object) -> int:
         """
-        Calculates which actions for the current state have at least a Pareto-optimal estimate, and returns one
+        Calculates which actions for the current position have at least a Pareto-optimal estimate, and returns one
          of them (randomly chosen). (EvaluationMechanism.PO)
         :param state:
         :return:
@@ -640,7 +631,7 @@ class AgentPQL(Agent):
         # for each a in actions
         for a in action_space:
 
-            # Get Q-set from state given for each possible action.
+            # Get Q-set from position given for each possible action.
             q_set = self.q_set(state=state, action=a)
 
             # for each Q in Q_set(s, a)
@@ -673,7 +664,7 @@ class AgentPQL(Agent):
         model = super().get_dict_model()
 
         # Own properties
-        model['data'].update({
+        model['train_data'].update({
             'r': [
                 {
                     'key': k, 'value': {'key': int(k2), 'value': v2.tolist()}
@@ -681,7 +672,7 @@ class AgentPQL(Agent):
             ]
         })
 
-        model['data'].update({
+        model['train_data'].update({
             'nd': [
                 {
                     'key': k, 'value': {'key': int(k2), 'value': [vector.tolist() for vector in v2]}
@@ -689,7 +680,7 @@ class AgentPQL(Agent):
             ]
         })
 
-        model['data'].update({
+        model['train_data'].update({
             'n': [
                 {
                     'key': k, 'value': {'key': int(k2), 'value': v2}
@@ -697,18 +688,17 @@ class AgentPQL(Agent):
             ]
         })
 
-        model['data'].update({'hv_reference': self.hv_reference.tolist()})
-        model['data'].update({'evaluation_mechanism': str(self.evaluation_mechanism)})
-        model['data'].update({'integer_mode': self.integer_mode})
-        model['data'].update({'total_episodes': self.total_episodes})
-        model['data'].update({'total_steps': self.total_steps})
-        model['data'].update({'state': list(self.state)})
+        model['train_data'].update({'hv_reference': self.hv_reference.tolist()})
+        model['train_data'].update({'evaluation_mechanism': str(self.evaluation_mechanism)})
+        model['train_data'].update({'total_episodes': self.total_episodes})
+        model['train_data'].update({'total_steps': self.total_steps})
+        model['train_data'].update({'position': list(self.state)})
 
         return model
 
     def non_dominated_vectors_from_state(self, state: object) -> list:
         """
-        Return all non dominate vectors from state given.
+        Return all non dominate vectors from position given.
         :param state:
         :return:
         """
@@ -800,16 +790,16 @@ class AgentPQL(Agent):
         except FileNotFoundError:
             return None
 
-        # Load structured data from indicated file.
+        # Load structured train_data from indicated file.
         model = json.load(file)
 
         # Close file
         file.close()
 
-        # Get meta-data
+        # Get meta-train_data
         meta = model.get('meta')
-        # Get data
-        model_data = model.get('data')
+        # Get train_data
+        model_data = model.get('train_data')
 
         # ENVIRONMENT
         environment = model_data.get('environment')
@@ -822,15 +812,15 @@ class AgentPQL(Agent):
         environment_class_ = getattr(environment_module, environment_class_name)
 
         # Data
-        environment_data = environment.get('data')
+        environment_data = environment.get('train_data')
 
         # Instance
         environment = environment_class_()
 
-        # Set environment data
+        # Set environment train_data
         for key, value in environment_data.items():
 
-            if 'state' in key or 'transitions' in key:
+            if 'position' in key or 'p_stochastic' in key:
                 # Convert to tuples to hash
                 value = um.lists_to_tuples(value)
 
@@ -859,10 +849,9 @@ class AgentPQL(Agent):
         # Data
         epsilon = model_data.get('epsilon')
         gamma = model_data.get('gamma')
-        integer_mode = model_data.get('integer_mode')
         total_episodes = model_data.get('total_episodes')
         total_steps = model_data.get('total_steps')
-        state = tuple(model_data.get('state'))
+        state = tuple(model_data.get('position'))
         max_steps = model_data.get('max_steps')
         seed = model_data.get('seed')
 
@@ -876,7 +865,7 @@ class AgentPQL(Agent):
         # Prepare Graph Types
         graph_types = set()
 
-        # Update 'states_to_observe' data
+        # Update 'states_to_observe' train_data
         states_to_observe = dict()
         for item in model_data.get('states_to_observe'):
 
@@ -897,7 +886,7 @@ class AgentPQL(Agent):
                 state: value
             })
 
-        # Unpack 'r' data
+        # Unpack 'r' train_data
         r = dict()
         for item in model_data.get('r'):
             # Convert to tuples to hash
@@ -911,7 +900,7 @@ class AgentPQL(Agent):
 
             r.get(key).update({action: value})
 
-        # Unpack 'nd' data
+        # Unpack 'nd' train_data
         nd = dict()
         for item in model_data.get('nd'):
             # Convert to tuples to hash
@@ -925,7 +914,7 @@ class AgentPQL(Agent):
 
             nd.get(key).update({action: value})
 
-        # Unpack 'n' data
+        # Unpack 'n' train_data
         n = dict()
         for item in model_data.get('n'):
             # Convert to tuples to hash
@@ -955,9 +944,10 @@ class AgentPQL(Agent):
 
         return model
 
-    def objective_training(self, list_of_vectors: list):
+    def objective_training(self, list_of_vectors: list, graph_type: GraphType = None):
         """
         Train until V(s0) value is close to objective value.
+        :param graph_type:
         :param list_of_vectors:
         :return:
         """
@@ -969,8 +959,7 @@ class AgentPQL(Agent):
 
         while not math.isclose(a=current_hypervolume, b=objective_hypervolume, rel_tol=0.01, abs_tol=0.0):
             # Do an episode
-            # TODO: Is necessary pass to the episode method the graph type
-            self.episode()
+            self.episode(graph_type=graph_type)
 
             # Update hypervolume
             current_hypervolume = self._best_hypervolume(self.environment.initial_state)

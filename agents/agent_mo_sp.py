@@ -65,8 +65,8 @@ from .agent_q import AgentQ
 class AgentMOSP(AgentQ):
 
     def __init__(self, environment: Environment, alpha: float = 0.1, epsilon: float = 0.1, gamma: float = 1.,
-                 seed: int = 0, states_to_observe: list = None, max_steps: int = None, weights: tuple = None,
-                 graph_types: set = None, hv_reference: Vector = None, initial_q_value: float = 0.):
+                 seed: int = 0, states_to_observe: set = None, max_steps: int = None, weights: tuple = None,
+                 graph_types: set = None, hv_reference: Vector = None, initial_value: float = 0.):
         """
         :param environment: An environment where agent does any operation.
         :param alpha: Learning rate
@@ -88,7 +88,7 @@ class AgentMOSP(AgentQ):
         # Super call init
         super().__init__(environment=environment, alpha=alpha, epsilon=epsilon, gamma=gamma, seed=seed,
                          states_to_observe=states_to_observe, max_steps=max_steps, graph_types=graph_types,
-                         initial_q_value=initial_q_value)
+                         initial_value=initial_value)
 
         # Set weights
         self.weights = weights
@@ -113,7 +113,7 @@ class AgentMOSP(AgentQ):
 
     def _update_q_values(self, reward: float, action: int, next_state: object) -> None:
         """
-        Update Q-Dictionary with new data
+        Update Q-Dictionary with new train_data
         :param reward:
         :param action:
         :param next_state:
@@ -248,7 +248,7 @@ class AgentMOSP(AgentQ):
             else:
                 value = uh.calc_hypervolume(list_of_vectors=self.pareto_frontier_found, reference=self.hv_reference)
 
-            # Add to graph data
+            # Add to graph train_data
             data.append(value)
 
             # Update dictionary

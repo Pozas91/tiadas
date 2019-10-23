@@ -7,6 +7,7 @@ class AgentType(Enum):
     SCALARIZED = 'scalarized'
     PQL_EXP = 'pql_exp'
     PQL_EXP_3 = 'pql_exp_3'
+    W = 'w'
 
     def __str__(self):
         return str(self.value)
@@ -23,6 +24,8 @@ class AgentType(Enum):
             result = AgentType.PQL
         elif agent_type == str(AgentType.SCALARIZED.value):
             result = AgentType.SCALARIZED
+        elif agent_type == str(AgentType.W.value):
+            result = AgentType.W
         else:
             raise ValueError('Unknown agent type')
 

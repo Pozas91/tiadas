@@ -2,19 +2,19 @@
 submarine searching for undersea treasures. There are multiple treasure locations
 with varying treasure values. There are two objectives - to minimise the number 
 of steps taken to reach the treasure, and to maximise the value of the treasure. 
-Each episode starts with the vessel in the top left state, and ends when a 
+Each episode starts with the vessel in the top left position, and ends when a
 treasure location is reached or after a given number of actions. Four actions 
 are available to the agent - moving one square to the left, right, up or down. 
 Any action that would cause the agent to leave the grid will leave its position 
 unchanged. The reward received by the agent is a 2-element vector. The first 
 element is a time penalty, which adds -1 on each step. The second element is 
-the treasure value  of the state the agent moves into (zero for any non-terminal
-state).
+the treasure value  of the position the agent moves into (zero for any non-terminal
+position).
 
 Notice that states are represented by a tuple (a, b), where b stands for the
 row (y-axis), and a for the column (x-axis).                                                     
 
-Episodes end whenever a final state (with a treasure) is reached.
+Episodes end whenever a final position (with a treasure) is reached.
 
 Refernce: 
     Empirical Evaluation methods for multi-objective reinforcement learning algorithms
@@ -22,6 +22,7 @@ Refernce:
 
 HV REFERENCE: (-25, 0)
 """
+import gym
 
 from models import Vector
 from .env_mesh import EnvMesh
@@ -40,13 +41,19 @@ class DeepSeaTreasure(EnvMesh):
     # Experiments common hypervolume reference
     hv_reference = Vector((-25, 0))
 
-    def __init__(self, initial_state: tuple = (0, 0), default_reward: tuple = (0,), seed: int = 0,
-                 steps_limit: int = 1000):
+    def __init__(self, initial_state: tuple = (0, 0), default_reward: tuple = (0,), columns: int = 10, seed: int = 0,
+                 action_space: gym.spaces = None):
         """
         :param initial_state:
         :param default_reward:
         :param seed:
         """
+
+        # the original full-size environment.
+        original_mesh_shape = (10, 11)
+
+        if columns < 1 or columns > original_mesh_shape[0]:
+            columns = original_mesh_shape[0]
 
         # Dictionary with final states as keys, and treasure amounts as values.
         finals = {
@@ -62,6 +69,10 @@ class DeepSeaTreasure(EnvMesh):
             (9, 10): 124,
         }
 
+        # Filter finals states
+        finals = dict(filter(lambda x: x[0][0] < columns, finals.items()))
+
+        # Filter obstacles states
         obstacles = frozenset()
         obstacles = obstacles.union([(0, y) for y in range(2, 11)])
         obstacles = obstacles.union([(1, y) for y in range(3, 11)])
@@ -72,41 +83,33 @@ class DeepSeaTreasure(EnvMesh):
         obstacles = obstacles.union([(6, y) for y in range(8, 11)])
         obstacles = obstacles.union([(7, y) for y in range(8, 11)])
         obstacles = obstacles.union([(8, y) for y in range(10, 11)])
+        obstacles = frozenset(filter(lambda x: x[0] < columns, obstacles))
 
-        mesh_shape = (10, 11)
+        # Subspace of the environment to be considered
+        mesh_shape = (columns, 11)
 
         # Default reward plus time (time_inverted, treasure_value)
         default_reward = (-1,) + default_reward
         default_reward = Vector(default_reward)
 
-        super().__init__(mesh_shape=mesh_shape, seed=seed, initial_state=initial_state, default_reward=default_reward,
-                         finals=finals, obstacles=obstacles)
-
-        # Step counter and limit
-        self.steps_limit = steps_limit
-        self.steps = 0
+        super().__init__(mesh_shape=mesh_shape, initial_state=initial_state, default_reward=default_reward,
+                         finals=finals, obstacles=obstacles, seed=seed, action_space=action_space)
 
     def step(self, action: int) -> (tuple, Vector, bool, dict):
         """
         Given an action, do a step
         :param action:
-        :return: (state, (time_inverted, treasure_value), final, info)
+        :return: (position, (time_inverted, treasure_value), final, info)
         """
 
-        # Increment step counter
-        self.steps += 1
-
         # Initialize rewards as vector
-        rewards = self.default_reward.copy()
+        reward = self.default_reward.copy()
 
-        # Get new state
-        new_state = self.next_state(action=action)
-
-        # Update current state
-        self.current_state = new_state
+        # Update current position
+        self.current_state = self.next_state(action=action)
 
         # Get treasure value
-        rewards[1] = self.finals.get(self.current_state, self.default_reward[1])
+        reward[1] = self.finals.get(self.current_state, self.default_reward[1])
 
         # Set info
         info = {}
@@ -114,27 +117,9 @@ class DeepSeaTreasure(EnvMesh):
         # Check is_final
         final = self.is_final(self.current_state)
 
-        return self.current_state, rewards, final, info
+        return self.current_state, reward, final, info
 
-    def reset(self) -> tuple:
-        """
-        Reset environment to initial state.
-        :return:
-        """
-        self.steps = 0
-        self.current_state = self.initial_state
-        return self.current_state
-
-    def is_final(self, state: tuple = None) -> bool:
-        """
-        Return True if the state given is final or the maximum number of
-        steps has been reached, False otherwise.
-        :param state:
-        :return:
-        """
-        return state in self.finals.keys() or self.steps >= self.steps_limit
-
-    def transition_reward(self, state: object, action: int, next_state: object) -> Vector:
+    def transition_reward(self, state: tuple, action: int, next_state: tuple) -> Vector:
         # Default reward
         reward = self.default_reward.copy()
 

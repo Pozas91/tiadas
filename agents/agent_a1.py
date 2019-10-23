@@ -16,17 +16,17 @@ import numpy as np
 
 import utils.hypervolume as uh
 import utils.miscellaneous as um
-from agents import Agent
+from .agent_rl import AgentRL
 from environments import Environment
 from models import Vector, IndexVector, VectorDecimal, GraphType, EvaluationMechanism
 
 
-class AgentA1(Agent):
+class AgentA1(AgentRL):
 
     def __init__(self, environment: Environment, hv_reference: Vector, alpha: float = 0.1, epsilon: float = 0.1,
-                 gamma: float = 1., seed: int = 0, states_to_observe: list = None, max_steps: int = None,
+                 gamma: float = 1., seed: int = 0, states_to_observe: set = None, max_steps: int = None,
                  evaluation_mechanism: EvaluationMechanism = EvaluationMechanism.HV,
-                 graph_types: set = None, integer_mode: bool = True, initial_q_value: Vector = None):
+                 graph_types: set = None, initial_value: Vector = None):
         """
         :param environment: An environment where agent does any operation.
         :param alpha: Learning rate
@@ -47,9 +47,9 @@ class AgentA1(Agent):
 
         # Super call __init__
         super().__init__(environment=environment, epsilon=epsilon, gamma=gamma, seed=seed, graph_types=graph_types,
-                         states_to_observe=states_to_observe, max_steps=max_steps, initial_q_value=initial_q_value)
+                         states_to_observe=states_to_observe, max_steps=max_steps, initial_value=initial_value)
 
-        if initial_q_value is None:
+        if initial_value is None:
             self.initial_q_value = self.environment.default_reward.zero_vector
 
         # Learning factor
@@ -57,19 +57,19 @@ class AgentA1(Agent):
         self.alpha = alpha
 
         # Dictionary that stores all q values. 
-        # Key: state; Value: second level dictionary.
+        # Key: position; Value: second level dictionary.
         # Second level dictionary: key: action; value: third level dictionary
         # Third level dictionary: key :index vector (element from cartesian product);
         #                        value: q-vector (instance of class IndexVector)
         self.q = dict()
 
-        # States known by each state and action
+        # States known by each position and action
         self.s = dict()
 
-        # Return non dominate states for a state given
+        # Return non dominate states for a position given
         self.v = dict()
 
-        # Counter to indexes used by each pair (state, action)
+        # Counter to indexes used by each pair (position, action)
         self.indexes_counter = dict()
 
         # Set of states that need be updated
@@ -80,13 +80,6 @@ class AgentA1(Agent):
             self.evaluation_mechanism = evaluation_mechanism
         else:
             raise ValueError('Evaluation mechanism does not valid.')
-
-        # if integer mode is True, all reward vectors received will be converted.
-        self.integer_mode = integer_mode
-
-        # Hypervolume reference
-        if self.integer_mode:
-            hv_reference = hv_reference.to_decimals()
 
         self.hv_reference = hv_reference
 
@@ -101,7 +94,7 @@ class AgentA1(Agent):
         model = super().get_dict_model()
 
         # Own properties
-        model.get('data').update({
+        model.get('train_data').update({
             'indexes_counter': [
                 {
                     'key': list(k), 'value': v
@@ -109,7 +102,7 @@ class AgentA1(Agent):
             ]
         })
 
-        model.get('data').update({
+        model.get('train_data').update({
             'q': [
                 dict(key=list(state), value={
                     'key': int(action), 'value': {
@@ -120,7 +113,7 @@ class AgentA1(Agent):
             ]
         })
 
-        model.get('data').update({
+        model.get('train_data').update({
             's': [
                 dict(key=list(state), value={
                     'key': int(action), 'value': v2
@@ -128,7 +121,7 @@ class AgentA1(Agent):
             ]
         })
 
-        model.get('data').update({
+        model.get('train_data').update({
             'v': [
                 dict(key=list(state), value={
                     'key': int(vector_index), 'value': v2.tolist()
@@ -136,19 +129,18 @@ class AgentA1(Agent):
             ]
         })
 
-        model.get('data').update({'alpha': self.alpha})
-        model.get('data').update({'hv_reference': self.hv_reference.tolist()})
-        model.get('data').update({'evaluation_mechanism': str(self.evaluation_mechanism)})
-        model.get('data').update({'integer_mode': self.integer_mode})
-        model.get('data').update({'total_episodes': self.total_episodes})
-        model.get('data').update({'total_steps': self.total_steps})
-        model.get('data').update({'state': list(self.state)})
+        model.get('train_data').update({'alpha': self.alpha})
+        model.get('train_data').update({'hv_reference': self.hv_reference.tolist()})
+        model.get('train_data').update({'evaluation_mechanism': str(self.evaluation_mechanism)})
+        model.get('train_data').update({'total_episodes': self.total_episodes})
+        model.get('train_data').update({'total_steps': self.total_steps})
+        model.get('train_data').update({'position': list(self.state)})
 
         return model
 
-    def do_iteration(self) -> bool:
+    def do_step(self) -> bool:
 
-        # If the state is unknown, register it.
+        # If the position is unknown, register it.
         if self.state not in self.q:
             self.q.update({self.state: dict()})
 
@@ -168,14 +160,11 @@ class AgentA1(Agent):
         # Do step on environment
         next_state, reward, is_final_state, info = self.environment.step(action=action)
 
-        if self.integer_mode:
-            reward = reward.to_decimals()
-
         # Increment steps done
         self.total_steps += 1
         self.steps += 1
 
-        # If next_state is a final state and not is register
+        # If next_state is a final position and not is register
         if is_final_state:
 
             # If not is register in V, register it
@@ -187,10 +176,10 @@ class AgentA1(Agent):
                     }
                 })
 
-        # S(s) -> All known states with its action for the state given.
+        # S(s) -> All known states with its action for the position given.
         pair_action_states_known_by_state = self.s.get(self.state)
 
-        # S(s, a) -> All known states for state and action given.
+        # S(s, a) -> All known states for position and action given.
         states_known_by_state = pair_action_states_known_by_state.get(action, list())
 
         # I_s_k
@@ -211,7 +200,7 @@ class AgentA1(Agent):
         # Check if is necessary update V(s) to improve the performance
         self.check_if_need_update_v()
 
-        # Update state
+        # Update position
         self.state = next_state
 
         return is_final_state
@@ -229,7 +218,7 @@ class AgentA1(Agent):
                 sum(len(actions.values()) for states in self.q.values() for actions in states.values())
             )
 
-        elif graph_type is GraphType.VECTORS_PER_CELL:
+        elif graph_type is GraphType.DATA_PER_STATE:
 
             # Get positions on axis x and y
             x = self.environment.observation_space.spaces[0].n
@@ -241,7 +230,7 @@ class AgentA1(Agent):
             # By default the size of all states is zero
             z = np.zeros([y, x])
 
-            # Calc number of vectors for each state
+            # Calc number of vectors for each position
             for x, y in valid_states:
                 z[y, x] = sum(len(actions.values()) for actions in self.q[(x, y)].values())
 
@@ -254,15 +243,10 @@ class AgentA1(Agent):
             # value)
             for state, data in self.graph_info.get(graph_type, {}).items():
 
-                # Add to data Best value (V max)
+                # Add to train_data Best value (V max)
                 value = self._best_hypervolume(state=state)
 
-                # If integer mode is True, is necessary divide value by increment
-                if self.integer_mode:
-                    # Divide value by two powered numbers (hv_reference and reward)
-                    value /= 10 ** (Vector.decimals_allowed * 2)
-
-                # Add to data Best value (V max)
+                # Add to train_data Best value (V max)
                 data.append(value)
 
                 # Update dictionary
@@ -274,17 +258,17 @@ class AgentA1(Agent):
 
     def _best_hypervolume(self, state: object = None) -> float:
         """
-        Return best hypervolume for state given.
+        Return best hypervolume for position given.
         :return:
         """
 
-        # Check if a state is given
+        # Check if a position is given
         state = state if state else self.environment.current_state
 
-        # Get Q-set from state given for each possible action
+        # Get Q-set from position given for each possible action
         v = list(self.v.get(state, {}).values())
 
-        # If v is empty, default is initial_q_value variable.
+        # If v is empty, default is initial_value variable.
         v = v if v else [self.initial_q_value]
 
         # Getting hypervolume
@@ -292,7 +276,7 @@ class AgentA1(Agent):
 
         return hv
 
-    def reverse_episode(self, episodes_per_state: int = 10) -> None:
+    def reverse_episode(self, episodes_per_state: int = 10, graph_type: GraphType = None) -> None:
         """
         Run an episode complete until get a final step
         :return:
@@ -310,7 +294,7 @@ class AgentA1(Agent):
 
         while more_valid_states:
 
-            # Neighbours by objective state
+            # Neighbours by objective position
             all_neighbours = dict()
 
             # Get all neighbours from known objectives
@@ -330,7 +314,7 @@ class AgentA1(Agent):
             # Check if there are more valid states pending
             more_valid_states = number_of_states_to_visit > 0
 
-            # Number of states to visit per episodes per state
+            # Number of states to visit per episodes per position
             total_episodes = number_of_states_to_visit * episodes_per_state
 
             for episode in range(total_episodes):
@@ -342,7 +326,7 @@ class AgentA1(Agent):
                 # Get possible combinations
                 possible_neighbours = filter(lambda x: len(x[1]) > 0, all_neighbours.items())
 
-                # Get random state
+                # Get random position
                 objective_state, associate_states = self.generator.choice(tuple(possible_neighbours))
                 selected_state = self.generator.choice(tuple(associate_states))
 
@@ -356,24 +340,24 @@ class AgentA1(Agent):
                         selected_state: counter_visited_states.get(selected_state) + 1
                     })
 
-                # Change initial state for episode_train
+                # Change initial position for episode_train
                 self.environment.initial_state = selected_state
 
                 # Do an episode
-                self.episode()
+                self.episode(graph_type=graph_type)
 
-                # Do while any objective has any state not empty
+                # Do while any objective has any position not empty
                 states_to_visit = any([x for x in all_neighbours.values()])
 
             distance += 1
 
     def best_action(self, state: object = None) -> int:
         """
-        Return best action a state given.
+        Return best action a position given.
         :return:
         """
 
-        # if don't specify a state, get current state.
+        # if don't specify a position, get current position.
         if not state:
             state = self.state
 
@@ -389,7 +373,7 @@ class AgentA1(Agent):
 
     def hypervolume_evaluation(self, state: object) -> int:
         """
-        Calc the hypervolume for each action in state given. (HV-PQL)
+        Calc the hypervolume for each action in position given. (HV-PQL)
         :param state:
         :return:
         """
@@ -403,7 +387,7 @@ class AgentA1(Agent):
         # for each a in actions
         for a in action_space:
 
-            # Get Q-set from state given for each possible action
+            # Get Q-set from position given for each possible action
             q_set = self.q.get(state, dict()).get(a, {
                 (0,): IndexVector(index=0, vector=self.initial_q_value)
             })
@@ -431,7 +415,7 @@ class AgentA1(Agent):
 
     def cardinality_evaluation(self, state: object) -> int:
         """
-        Calc the cardinality for each action in state given. (C-PQL)
+        Calc the cardinality for each action in position given. (C-PQL)
         :param state:
         :return:
         """
@@ -445,7 +429,7 @@ class AgentA1(Agent):
         # for each a in actions
         for a in action_space:
 
-            # Get Q-set from state given for each possible action
+            # Get Q-set from position given for each possible action
             q_set = self.q.get(state, dict()).get(a, {
                 (0,): IndexVector(index=a, vector=self.initial_q_value)
             })
@@ -470,7 +454,7 @@ class AgentA1(Agent):
 
     def pareto_evaluation(self, state: object) -> int:
         """
-        Calc the pareto for each action in state given. (PO-PQL)
+        Calc the pareto for each action in position given. (PO-PQL)
         :param state:
         :return:
         """
@@ -484,7 +468,7 @@ class AgentA1(Agent):
         # for each a in actions
         for a in action_space:
 
-            # Get Q-set from state given for each possible action
+            # Get Q-set from position given for each possible action
             q_set = self.q.get(state, dict()).get(a, {
                 (0,): IndexVector(index=a, vector=self.initial_q_value)
             })
@@ -537,7 +521,7 @@ class AgentA1(Agent):
         # Index counter
         index_counter = self.indexes_counter.get(state)
 
-        # Data state Q(s)
+        # Data position Q(s)
         data_state = self.q.get(state)
 
         # Data action Q(s, a)
@@ -613,10 +597,10 @@ class AgentA1(Agent):
         # Index counter
         index_counter = self.indexes_counter.get(state)
 
-        # Data state Q(s)
+        # Data position Q(s)
         data_state = self.q.get(state)
 
-        # Data action state Q(s, a)
+        # Data action position Q(s, a)
         data_action = data_state.get(action, dict())
 
         # Control update flag
@@ -685,7 +669,7 @@ class AgentA1(Agent):
 
     def check_if_need_update_v(self) -> None:
 
-        # For each state that need be updated
+        # For each position that need be updated
         for state in self.states_to_update:
             # Get Q(s)
             q_s = self.q[state]
@@ -693,13 +677,13 @@ class AgentA1(Agent):
             # List accumulative to save all vectors
             q_list = list()
 
-            # Save previous state
+            # Save previous position
             previous_state = self.environment.current_state
 
-            # Set new state
+            # Set new position
             self.environment.current_state = state
 
-            # for each action available in state given
+            # for each action available in position given
             for a in self.environment.action_space:
                 # Q(s, a)
                 q_list += q_s.get(a, dict()).values()
@@ -719,7 +703,7 @@ class AgentA1(Agent):
             # Update V(s)
             self.v.update({state: v})
 
-            # Restore state
+            # Restore position
             self.environment.current_state = previous_state
 
         # All pending states are updated
@@ -739,7 +723,7 @@ class AgentA1(Agent):
         :return:
         """
 
-        # Getting relevant indexes for each state
+        # Getting relevant indexes for each position
         indexes = [self.relevant_indexes_of_state(state=iter_state) for iter_state in states]
 
         # Cartesian product of that indexes
@@ -756,7 +740,7 @@ class AgentA1(Agent):
         # First do a deepcopy of original Q-table
         q = deepcopy(self.q)
 
-        # For each state with it action dictionary
+        # For each position with it action dictionary
         for state, action_dict in q.items():
 
             # For each action with it indexes dictionary
@@ -785,7 +769,7 @@ class AgentA1(Agent):
         # First do a deepcopy of original V-values
         v = deepcopy(self.v)
 
-        # For each state with it vectors
+        # For each position with it vectors
         for state, vectors in v.items():
 
             # For each index with it vector
@@ -801,9 +785,10 @@ class AgentA1(Agent):
 
         return v
 
-    def objective_training(self, list_of_vectors: list):
+    def objective_training(self, list_of_vectors: list, graph_type: GraphType = None):
         """
         Train until agent V(0, 0) value is close to objective value.
+        :param graph_type:
         :param list_of_vectors:
         :return:
         """
@@ -815,7 +800,7 @@ class AgentA1(Agent):
 
         while not math.isclose(a=current_hypervolume, b=objective_hypervolume, rel_tol=0.02):
             # Do an episode
-            self.episode()
+            self.episode(graph_type=graph_type)
 
             # Update hypervolume
             current_hypervolume = self._best_hypervolume(self.environment.initial_state)
@@ -914,17 +899,17 @@ class AgentA1(Agent):
         except FileNotFoundError:
             return None
 
-        # Load structured data from indicated file.
+        # Load structured train_data from indicated file.
         model = json.load(file)
 
         # Close file
         file.close()
 
-        # Get meta-data
+        # Get meta-train_data
         # model_meta = model.get('meta')
 
-        # Get data
-        model_data = model.get('data')
+        # Get train_data
+        model_data = model.get('train_data')
 
         # ENVIRONMENT
         environment = model_data.get('environment')
@@ -937,15 +922,15 @@ class AgentA1(Agent):
         environment_class_ = getattr(environment_module, environment_class_name)
 
         # Data
-        environment_data = environment.get('data')
+        environment_data = environment.get('train_data')
 
         # Instance
         environment = environment_class_()
 
-        # Set environment data
+        # Set environment train_data
         for key, value in environment_data.items():
 
-            if 'state' in key or 'transitions' in key:
+            if 'position' in key or 'p_stochastic' in key:
                 # Convert to tuples to hash
                 value = um.lists_to_tuples(value)
 
@@ -975,10 +960,9 @@ class AgentA1(Agent):
         epsilon = model_data.get('epsilon')
         gamma = model_data.get('gamma')
         alpha = model_data.get('alpha')
-        integer_mode = model_data.get('integer_mode')
         total_episodes = model_data.get('total_episodes')
         total_steps = model_data.get('total_steps')
-        state = tuple(model_data.get('state'))
+        state = tuple(model_data.get('position'))
         max_steps = model_data.get('max_steps')
         seed = model_data.get('seed')
 
@@ -992,7 +976,7 @@ class AgentA1(Agent):
         # Prepare Graph Types
         graph_types = set()
 
-        # Update 'states_to_observe' data
+        # Update 'states_to_observe' train_data
         states_to_observe = dict()
         for item in model_data.get('states_to_observe'):
 
@@ -1013,7 +997,7 @@ class AgentA1(Agent):
                 key_state: value
             })
 
-        # Unpack 'indexes_counter' data
+        # Unpack 'indexes_counter' train_data
         indexes_counter = dict()
         for item in model_data.get('indexes_counter'):
             # Convert to tuples for hashing
@@ -1022,7 +1006,7 @@ class AgentA1(Agent):
 
             indexes_counter.update({key: value})
 
-        # Unpack 'v' data
+        # Unpack 'v' train_data
         v = dict()
         for item in model_data.get('v'):
             # Convert to tuples to hash
@@ -1040,7 +1024,7 @@ class AgentA1(Agent):
                 previous_data.append(vector_index)
                 v.update({key: previous_data})
 
-        # Unpack 's' data
+        # Unpack 's' train_data
         s = dict()
         for item in model_data.get('s'):
             # Convert to tuples to hash
@@ -1060,7 +1044,7 @@ class AgentA1(Agent):
                 previous_data.update({action: values})
                 s.update({key: previous_data})
 
-        # Unpack 'q' data
+        # Unpack 'q' train_data
         q = dict()
         for item in model_data.get('q'):
             # Convert to tuples to hash
@@ -1094,7 +1078,7 @@ class AgentA1(Agent):
         # Prepare an instance of model.
         model = AgentA1(environment=environment, epsilon=epsilon, alpha=alpha, gamma=gamma, seed=seed,
                         max_steps=max_steps, hv_reference=hv_reference, evaluation_mechanism=evaluation_mechanism,
-                        graph_types=graph_types, integer_mode=integer_mode)
+                        graph_types=graph_types)
 
         # Set finals settings and return it.
         model.v = v
@@ -1114,7 +1098,7 @@ class AgentA1(Agent):
         :param distance:
         :return:
         """
-        # Decompose from state
+        # Decompose from position
         x_state, y_state = from_state
 
         current_neighbours = {

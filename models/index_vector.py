@@ -26,7 +26,7 @@ class IndexVector:
 
     def __str__(self):
         """
-        Return a string representation of the data in an array, with index associate.
+        Return a string representation of the train_data in an array, with index associate.
         :return:
         """
         return 'I: {}, V: {}'.format(self.index, np.array_str(self.vector.components))

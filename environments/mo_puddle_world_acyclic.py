@@ -3,146 +3,75 @@ Variant of Mo Puddle World for Acyclic agents.
 
 HV REFERENCE: (-50, -150)
 """
+from colorama import Fore
 from scipy.spatial import distance
 
-from models import VectorDecimal
-from spaces import DynamicSpace
-from .env_mesh import EnvMesh
+from environments import MoPuddleWorld
+from models import Vector
+from spaces import Bag
 
 
-class MoPuddleWorldAcyclic(EnvMesh):
+class MoPuddleWorldAcyclic(MoPuddleWorld):
     # Possible actions
     _actions = {'UP': 0, 'RIGHT': 1}
-
-    # Experiments common hypervolume reference
-    hv_reference = VectorDecimal([-50, -150])
 
     def __init__(self, default_reward: tuple = (10, 0), penalize_non_goal: float = -1, seed: int = 0,
                  final_state: tuple = (19, 0)):
         """
         :param default_reward: (non_goal_reached, puddle_penalize)
-        :param penalize_non_goal: While agent does not reach a final state get a penalize.
+        :param penalize_non_goal: While agent does not reach a final position get a penalize.
         :param seed:
-        :param final_state: This environment only has a final state.
+        :param final_state: This environment only has a final position.
         """
 
-        self.final_state = final_state
-        mesh_shape = (20, 20)
-        default_reward = VectorDecimal(default_reward)
+        action_space = Bag([])
+        action_space.seed(seed=seed)
 
-        super().__init__(mesh_shape=mesh_shape, seed=seed, default_reward=default_reward)
+        super().__init__(default_reward=default_reward, penalize_non_goal=penalize_non_goal, seed=seed,
+                         final_state=final_state, action_space=action_space)
 
-        self.puddles = frozenset()
-        self.puddles = self.puddles.union([(x, y) for x in range(0, 11) for y in range(3, 7)])
-        self.puddles = self.puddles.union([(x, y) for x in range(6, 10) for y in range(2, 14)])
-        self.penalize_non_goal = penalize_non_goal
+    def next_position(self, action: int, position: tuple) -> (tuple, bool):
+        # Unpack position (x, y)
+        x, y = position
 
-        self.current_state = self.reset()
+        # Do movement
+        if action == self.actions['RIGHT']:
+            x += 1
+        elif action == self.actions['UP']:
+            y -= 1
 
-        # Trying improve performance
-        self.dynamic_action_space = DynamicSpace([])
-        self.dynamic_action_space.seed(seed=seed)
-        
-        # Get free spaces
-        self.free_spaces = list(self.states() - self.puddles)
+        # Set next position
+        next_position = x, y
 
-    def step(self, action: int) -> (tuple, VectorDecimal, bool, dict):
-        """
-        Given an action, do a step
-        :param action:
-        :return: (state, (non_goal_reached, puddle_penalize), final, info)
-        """
-
-        # Initialize rewards as vector
-        rewards = self.default_reward.copy()
-
-        # Get new state
-        new_state = self.next_state(action=action)
-
-        # Update previous state
-        self.current_state = new_state
-
-        # If agent is in treasure
-        final = self.is_final(self.current_state)
-
-        # Set final reward
-        if not final:
-            rewards[0] = self.penalize_non_goal
-
-        # if the current state is in an puddle
-        if self.current_state in self.puddles:
-            # Min distance found!
-            min_distance = min(distance.cityblock(self.current_state, state) for state in self.free_spaces)
-
-            # Set penalization per distance
-            rewards[1] = -min_distance
-
-        # Set info
-        info = {}
-
-        return self.current_state, rewards, final, info
-
-    def reset(self) -> tuple:
-        """
-        Get random non-goal state to current_value
-        :return:
-        """
-
-        while True:
-            random_space = self.observation_space.sample()
-
-            if random_space != self.final_state:
-                break
-
-        self.current_state = random_space
-        return self.current_state
-
-    def is_final(self, state: tuple = None) -> bool:
-        """
-        Is final if agent is on final state
-        :param state:
-        :return:
-        """
-        return state == self.final_state
+        return next_position, True
 
     def next_state(self, action: int, state: tuple = None) -> tuple:
         """
-        Calc next state with current state and action given. Default is 2-neighbors (UP, RIGHT)
-        :param state: If a state is given, do action from that state.
+        Calc next position with current position and action given. Default is 2-neighbors (UP, RIGHT)
+        :param state: If a position is given, do action from that position.
         :param action: from action_space
-        :return: a new state (or old if is invalid action)
+        :return: a new position (or old if is invalid action)
         """
 
         # Get my position
-        x, y = state if state else self.current_state
+        position = state if state else self.current_state
 
-        # Do movement
-        if action == self._actions['RIGHT']:
-            x += 1
-        elif action == self._actions['UP']:
-            y -= 1
+        next_position, is_valid = self.next_position(action=action, position=position)
 
-        # Set new state
-        new_state = x, y
-
-        if not self.observation_space.contains(new_state) or state == new_state:
-            raise ValueError("Action/State combination isn't valid.")
+        if not self.observation_space.contains(next_position) or not is_valid or position == next_position:
+            raise ValueError('Action/State combination returns a cyclic position.')
 
         # Return (x, y) position
-        return new_state
+        return next_position
 
     @property
-    def action_space(self) -> DynamicSpace:
+    def action_space(self) -> Bag:
         """
         Get a dynamic action space with only valid actions.
         :return:
         """
 
-        # Previous check
-        if not self.observation_space.contains(self.current_state):
-            raise ValueError('Current state {} isn\'t valid.'.format(self.current_state))
-
-        # Get current state
+        # Get current position
         x, y = self.current_state
 
         # Setting possible actions
@@ -154,7 +83,7 @@ class MoPuddleWorldAcyclic(EnvMesh):
         # Check that x_right is not an obstacle and is into mesh
         if self.observation_space.contains((x_right, y)):
             # We can go to right
-            possible_actions.append(self._actions['RIGHT'])
+            possible_actions.append(self.actions['RIGHT'])
 
         # Can we go to UP?
         y_up = y - 1
@@ -162,28 +91,46 @@ class MoPuddleWorldAcyclic(EnvMesh):
         # Check that y_down is not and obstacle and is into mesh
         if self.observation_space.contains((x, y_up)):
             # We can go to down
-            possible_actions.append(self._actions['UP'])
+            possible_actions.append(self.actions['UP'])
 
         # Setting to dynamic_space
-        self.dynamic_action_space.items = possible_actions
+        self._action_space.items = possible_actions
 
         # Update n length
-        self.dynamic_action_space.n = len(possible_actions)
+        self._action_space.n = len(possible_actions)
 
         # Return a list of iterable valid actions
-        return self.dynamic_action_space
+        return self._action_space
 
-    def get_dict_model(self) -> dict:
-        """
-        Get dict model of environment
-        :return:
-        """
+    def transition_reward(self, state: tuple, action: int, next_state: tuple) -> Vector:
 
-        data = super().get_dict_model()
+        # Initialize reward as vector
+        reward = self.default_reward.copy()
 
-        # Clean specific environment data
-        del data['puddles']
-        del data['initial_state']
-        del data['dynamic_action_space']
+        # If agent is in treasure
+        final = self.is_final(next_state)
 
-        return data
+        # Set final reward
+        if not final:
+            reward[0] = self.penalize_non_goal
+
+        # if the current position is in an puddle
+        if next_state in self.puddles:
+            # Min distance found!
+            min_distance = min(distance.cityblock(next_state, state) for state in self.free_spaces)
+
+            # Set penalization per distance
+            reward[1] = -min_distance
+
+        return reward
+
+    def calc_puddle_penalization(self, state: tuple):
+
+        # Get free spaces
+        free_spaces = set(filter(lambda x: x[0] >= state[0] and x[1] <= state[1], self.free_spaces))
+
+        # Min distance found!
+        min_distance = min(distance.cityblock(x, state) for x in free_spaces)
+
+        # Set penalization per distance
+        return -min_distance

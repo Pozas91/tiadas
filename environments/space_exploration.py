@@ -1,7 +1,7 @@
 """The agent controls a spaceship which starts each episode in the location marked ’S’ and aims to discover a
 habitable planet while minimising the amount of radiation to which it is exposed. A penalty of −1 is received for the
 radiation objective on all time-steps, except when in a region of high radiation (marked ’R’) when the penalty is
-−11. A positive reward is received for the mission success objective whenever a terminal state corresponding to a
+−11. A positive reward is received for the mission success objective whenever a terminal position corresponding to a
 planet is reached – the magnitude of this reward reflects the desirability of that planet. If the ship enters a cell
 occupied by an asteroid, the ship is destroyed, the episode ends, and the agent receives a mission success reward of
 −100. The threshold is applied to the mission success objective, meaning that the agent will attempt to minimise
@@ -16,6 +16,9 @@ HV REFERENCE: (-100, -150)
 
 REF: P. Vamplew et al. (2017)
 """
+import gym
+
+import utils.environments as ue
 from models import Vector
 from .env_mesh import EnvMesh
 
@@ -27,7 +30,8 @@ class SpaceExploration(EnvMesh):
     # Experiments common hypervolume reference
     hv_reference = Vector([-100, -150])
 
-    def __init__(self, initial_state: tuple = (5, 2), default_reward: tuple = (0, -1), seed: int = 0):
+    def __init__(self, initial_state: tuple = (5, 2), default_reward: tuple = (0, -1), seed: int = 0,
+                 action_space: gym.spaces = None):
         """
         :param initial_state:
         :param default_reward: (mission_success, radiation)
@@ -45,7 +49,7 @@ class SpaceExploration(EnvMesh):
         default_reward = Vector(default_reward)
 
         super().__init__(mesh_shape=mesh_shape, seed=seed, initial_state=initial_state, default_reward=default_reward,
-                         finals=finals, obstacles=obstacles)
+                         finals=finals, obstacles=obstacles, action_space=action_space)
 
         self.asteroids = {
             (5, 0), (4, 1), (6, 1), (3, 2), (7, 2), (4, 3), (6, 3), (5, 4)
@@ -60,24 +64,22 @@ class SpaceExploration(EnvMesh):
         """
         Given an action, do a step
         :param action:
-        :return: (state, (mission_success, radiation), final, info)
+        :return: (position, (mission_success, radiation), final, info)
         """
 
-        # Initialize rewards as vector
-        rewards = self.default_reward.copy()
-
-        # Get new state
-        new_state = self.next_state(action=action)
+        # Initialize reward as vector
+        reward = self.default_reward.copy()
 
         # Update previous state
-        self.current_state = new_state
+        self.current_state = self.next_state(action=action)
 
         # If the ship crash with asteroid, the ship is destroyed. else mission success.
-        rewards[0] = -100 if self.current_state in self.asteroids else self.finals.get(self.current_state,
-                                                                                       self.default_reward[0])
+        reward[0] = -100 if self.current_state in self.asteroids else self.finals.get(
+            self.current_state, self.default_reward[0]
+        )
 
-        # If agent is in a radiation state, the penalty is -11, else is default radiation
-        rewards[1] = -11 if self.current_state in self.radiations else self.default_reward[1]
+        # If agent is in a radiation position, the penalty is -11, else is default radiation
+        reward[1] = -11 if self.current_state in self.radiations else self.default_reward[1]
 
         # Check if is_final
         final = self.is_final(self.current_state)
@@ -85,112 +87,73 @@ class SpaceExploration(EnvMesh):
         # Set info
         info = {}
 
-        return self.current_state, rewards, final, info
+        return self.current_state, reward, final, info
 
-    def reset(self) -> tuple:
-        """
-        Reset environment to zero.
-        :return:
-        """
-        self.current_state = self.initial_state
-        return self.current_state
-
-    def next_state(self, action: int, state: tuple = None) -> tuple:
-        """
-        Calc next state with current state and action given, in this environment is 8-neighbors.
-        :param state: If a state is given, do action from that state.
-        :param action: from action_space
-        :return:
-        """
+    def next_position(self, action: int, position: tuple) -> (tuple, bool):
 
         # Get my position
-        x, y = state if state else self.current_state
+        x, y = position
 
         # Get observations spaces
         observation_space_x, observation_space_y = self.observation_space.spaces
 
         # Do movement in cyclic mesh
-        if action == self._actions.get('UP'):
-            y = self.__move_up(y=y, limit=observation_space_y.n)
-        elif action == self._actions.get('RIGHT'):
-            x = self.__move_right(x=x, limit=observation_space_x.n)
-        elif action == self._actions.get('DOWN'):
-            y = self.__move_down(y=y, limit=observation_space_y.n)
-        elif action == self._actions.get('LEFT'):
-            x = self.__move_left(x=x, limit=observation_space_x.n)
-        elif action == self._actions.get('UP RIGHT'):
-            y = self.__move_up(y=y, limit=observation_space_y.n)
-            x = self.__move_right(x=x, limit=observation_space_x.n)
-        elif action == self._actions.get('DOWN RIGHT'):
-            y = self.__move_down(y=y, limit=observation_space_y.n)
-            x = self.__move_right(x=x, limit=observation_space_x.n)
-        elif action == self._actions.get('DOWN LEFT'):
-            y = self.__move_down(y=y, limit=observation_space_y.n)
-            x = self.__move_left(x=x, limit=observation_space_x.n)
-        elif action == self._actions.get('UP LEFT'):
-            y = self.__move_up(y=y, limit=observation_space_y.n)
-            x = self.__move_left(x=x, limit=observation_space_x.n)
+        if action == self.actions['UP']:
+            y = ue.move_up(y=y, limit=observation_space_y.n)
+        elif action == self.actions['RIGHT']:
+            x = ue.move_right(x=x, limit=observation_space_x.n)
+        elif action == self.actions['DOWN']:
+            y = ue.move_down(y=y, limit=observation_space_y.n)
+        elif action == self.actions['LEFT']:
+            x = ue.move_left(x=x, limit=observation_space_x.n)
+        elif action == self.actions['UP RIGHT']:
+            y = ue.move_up(y=y, limit=observation_space_y.n)
+            x = ue.move_right(x=x, limit=observation_space_x.n)
+        elif action == self.actions['DOWN RIGHT']:
+            y = ue.move_down(y=y, limit=observation_space_y.n)
+            x = ue.move_right(x=x, limit=observation_space_x.n)
+        elif action == self.actions['DOWN LEFT']:
+            y = ue.move_down(y=y, limit=observation_space_y.n)
+            x = ue.move_left(x=x, limit=observation_space_x.n)
+        elif action == self.actions['UP LEFT']:
+            y = ue.move_up(y=y, limit=observation_space_y.n)
+            x = ue.move_left(x=x, limit=observation_space_x.n)
 
-        # Set new state
-        new_state = x, y
+        # Set next position
+        next_position = x, y
 
-        if not self.observation_space.contains(new_state):
-            # New state is invalid.
-            new_state = self.current_state
+        return next_position, True
+
+    def next_state(self, action: int, state: tuple = None) -> tuple:
+        """
+        Calc next position with current position and action given, in this environment is 8-neighbors.
+        :param state: If a position is given, do action from that position.
+        :param action: from action_space
+        :return:
+        """
+
+        # Get my position
+        position = state if state else self.current_state
+
+        next_position, is_valid = self.next_position(action=action, position=position)
+
+        if not self.observation_space.contains(next_position) or not is_valid:
+            next_position = position
 
         # Return (x, y) position
-        return new_state
-
-    @staticmethod
-    def __move_up(y: int, limit: int = 5) -> int:
-        """
-        Move to up
-        :param y:
-        :param limit:
-        :return:
-        """
-        return (y if y > 0 else limit) - 1
-
-    @staticmethod
-    def __move_right(x: int, limit: int = 13) -> int:
-        """
-        Move to right
-        :param x:
-        :param limit:
-        :return:
-        """
-        return (x + 1) % limit
-
-    @staticmethod
-    def __move_down(y: int, limit: int = 5) -> int:
-        """
-        Move to down
-        :param y:
-        :param limit:
-        :return:
-        """
-        return (y + 1) % limit
-
-    @staticmethod
-    def __move_left(x: int, limit: int = 13) -> int:
-        """
-        Move to left
-        :param x:
-        :param limit:
-        :return:
-        """
-        return (x if x > 0 else limit) - 1
+        return next_position
 
     def is_final(self, state: tuple = None) -> bool:
         """
-        Is final if agent crash with asteroid or is on final state.
+        Is final if agent crash with asteroid or is on final position.
         :param state:
         :return:
         """
 
         # Check if agent crash with asteroid
         crash = state in self.asteroids
-        # Check if agent is in final state
+
+        # Check if agent is in final position
         final = state in self.finals.keys()
 
         return crash or final
@@ -203,8 +166,22 @@ class SpaceExploration(EnvMesh):
 
         data = super().get_dict_model()
 
-        # Clean specific environment data
+        # Clean specific environment train_data
         del data['radiations']
         del data['asteroids']
 
         return data
+
+    def transition_reward(self, state: tuple, action: int, next_state: tuple) -> Vector:
+        # Initialize reward as vector
+        reward = self.default_reward.copy()
+
+        # If the ship crash with asteroid, the ship is destroyed. else mission success.
+        reward[0] = -100 if next_state in self.asteroids else self.finals.get(
+            next_state, reward[0]
+        )
+
+        # If agent is in a radiation position, the penalty is -11, else is default radiation
+        reward[1] = -11 if next_state in self.radiations else reward[1]
+
+        return reward

@@ -55,6 +55,11 @@ class TestEnvironment(unittest.TestCase):
         self.assertTrue(hasattr(self.environment, 'get_dict_model'))
         self.assertTrue(hasattr(self.environment, 'is_final'))
 
+        self.assertIsInstance(self.environment.observation_space, gym.spaces.Space)
+        self.assertIsInstance(self.environment.action_space, gym.spaces.Space)
+
+        self.assertEqual(self.environment.initial_state, self.environment.current_state)
+
     def test_icons(self):
         """
         Testing icons property
@@ -69,6 +74,41 @@ class TestEnvironment(unittest.TestCase):
         """
         self.assertEqual(self.environment._actions, self.environment.actions)
 
+    def test_action_space_length(self):
+        pass
+
+    def test_seed(self):
+        """
+        Testing seed method
+        :return:
+        """
+
+        self.environment.seed(seed=0)
+        n1_1 = self.environment.np_random.randint(0, 10)
+        n1_2 = self.environment.np_random.randint(0, 10)
+
+        self.environment.seed(seed=0)
+        n2_1 = self.environment.np_random.randint(0, 10)
+        n2_2 = self.environment.np_random.randint(0, 10)
+
+        self.assertEqual(n1_1, n2_1)
+        self.assertEqual(n1_2, n2_2)
+
+    def test_reset(self):
+        """
+        Testing reset method
+        :return:
+        """
+
+        # Set current position to random position
+        self.environment.current_state = self.environment.observation_space.sample()
+
+        # Reset environment
+        self.environment.reset()
+
+        # Asserts
+        self.assertEqual(self.environment.initial_state, self.environment.current_state)
+
     def test_get_dict_model(self):
         """"
         Testing get_dict_model method
@@ -80,3 +120,19 @@ class TestEnvironment(unittest.TestCase):
         self.assertEqual(self.environment.initial_state, model.get('initial_state'))
         self.assertEqual(self.environment.current_state, model.get('current_state'))
         self.assertEqual(self.environment.default_reward, model.get('default_reward'))
+
+    def test_states(self):
+        """
+        Testing that all states must be contained into observation space
+        :return:
+        """
+        pass
+
+    def test_reachable_states(self):
+        pass
+
+    def test_transition_probability(self):
+        pass
+
+    def test_transition_reward(self):
+        pass

@@ -28,9 +28,9 @@ class TestResourceGatheringLimit(unittest.TestCase):
         """
 
         # This environment must have another attributes
-        self.assertTrue(hasattr(self.environment, 'gold_states'))
-        self.assertTrue(hasattr(self.environment, 'gem_states'))
-        self.assertTrue(hasattr(self.environment, 'enemies'))
+        self.assertTrue(hasattr(self.environment, 'gold_positions'))
+        self.assertTrue(hasattr(self.environment, 'gem_positions'))
+        self.assertTrue(hasattr(self.environment, 'enemies_positions'))
 
         # By default mesh shape is 5x5
         self.assertEqual(spaces.Tuple((spaces.Discrete(5), spaces.Discrete(5))), self.environment.observation_space)
@@ -38,7 +38,7 @@ class TestResourceGatheringLimit(unittest.TestCase):
         # By default action space is 4 (UP, RIGHT, DOWN, LEFT)
         self.assertIsInstance(self.environment.action_space, spaces.Space)
 
-        # By default initial state is (2, 4)
+        # By default initial position is (2, 4)
         self.assertEqual((2, 4), self.environment.initial_state)
         self.assertEqual(self.environment.initial_state, self.environment.current_state)
 
@@ -67,7 +67,7 @@ class TestResourceGatheringLimit(unittest.TestCase):
         :return:
         """
 
-        # Set current state to random state
+        # Set current position to random position
         self.environment.current_state = self.environment.observation_space.sample()
         self.environment.state[0] = self.environment.np_random.randint(-1, 0)
         self.environment.state[1] = self.environment.np_random.randint(0, 1)
@@ -102,12 +102,12 @@ class TestResourceGatheringLimit(unittest.TestCase):
         """
 
         ################################################################################################################
-        # Begin at state (0, 0) (TOP-LEFT corner)
+        # Begin at position (0, 0) (TOP-LEFT corner)
         ################################################################################################################
         state = (0, 0)
         self.environment.current_state = state
 
-        # Cannot go to UP (Keep in same state)
+        # Cannot go to UP (Keep in same position)
         new_state = self.environment.next_state(action=self.environment.actions.get('UP'))
         self.assertEqual(state, new_state)
 
@@ -119,7 +119,7 @@ class TestResourceGatheringLimit(unittest.TestCase):
         new_state = self.environment.next_state(action=self.environment.actions.get('DOWN'))
         self.assertEqual((state[0], state[1] + 1), new_state)
 
-        # Cannot go to LEFT (Keep in same state)
+        # Cannot go to LEFT (Keep in same position)
         new_state = self.environment.next_state(action=self.environment.actions.get('LEFT'))
         self.assertEqual(state, new_state)
 
@@ -129,11 +129,11 @@ class TestResourceGatheringLimit(unittest.TestCase):
         state = (4, 0)
         self.environment.current_state = state
 
-        # Cannot go to UP (Keep in same state)
+        # Cannot go to UP (Keep in same position)
         new_state = self.environment.next_state(action=self.environment.actions.get('UP'))
         self.assertEqual(state, new_state)
 
-        # Cannot go to RIGHT (Keep in same state)
+        # Cannot go to RIGHT (Keep in same position)
         new_state = self.environment.next_state(action=self.environment.actions.get('RIGHT'))
         self.assertEqual(state, new_state)
 
@@ -141,7 +141,7 @@ class TestResourceGatheringLimit(unittest.TestCase):
         new_state = self.environment.next_state(action=self.environment.actions.get('DOWN'))
         self.assertEqual((state[0], state[1] + 1), new_state)
 
-        # Go to LEFT (Keep in same state)
+        # Go to LEFT (Keep in same position)
         new_state = self.environment.next_state(action=self.environment.actions.get('LEFT'))
         self.assertEqual((state[0] - 1, state[1]), new_state)
 
@@ -155,11 +155,11 @@ class TestResourceGatheringLimit(unittest.TestCase):
         new_state = self.environment.next_state(action=self.environment.actions.get('UP'))
         self.assertEqual((state[0], state[1] - 1), new_state)
 
-        # Cannot go to RIGHT (Keep in same state)
+        # Cannot go to RIGHT (Keep in same position)
         new_state = self.environment.next_state(action=self.environment.actions.get('RIGHT'))
         self.assertEqual(state, new_state)
 
-        # Cannot go to DOWN (Keep in same state)
+        # Cannot go to DOWN (Keep in same position)
         new_state = self.environment.next_state(action=self.environment.actions.get('DOWN'))
         self.assertEqual(state, new_state)
 
@@ -181,11 +181,11 @@ class TestResourceGatheringLimit(unittest.TestCase):
         new_state = self.environment.next_state(action=self.environment.actions.get('RIGHT'))
         self.assertEqual((state[0] + 1, state[1]), new_state)
 
-        # Cannot go to DOWN (Keep in same state)
+        # Cannot go to DOWN (Keep in same position)
         new_state = self.environment.next_state(action=self.environment.actions.get('DOWN'))
         self.assertEqual(state, new_state)
 
-        # Cannot go to LEFT (Keep in same state)
+        # Cannot go to LEFT (Keep in same position)
         new_state = self.environment.next_state(action=self.environment.actions.get('LEFT'))
         self.assertEqual(state, new_state)
 
@@ -198,9 +198,9 @@ class TestResourceGatheringLimit(unittest.TestCase):
         # Simple valid step
         # Reward:
         #   [enemy_attack, gold, gems]
-        # Complex state:
-        #   (state, resources_available)
-        # Remember that initial state is (2, 4)
+        # Complex position:
+        #   (position, resources_available)
+        # Remember that initial position is (2, 4)
 
         # Disable enemy attack
         self.environment.p_attack = 0
@@ -211,29 +211,29 @@ class TestResourceGatheringLimit(unittest.TestCase):
 
         # Do 3 steps to UP (Get a gem)
         for _ in range(3):
-            new_state, rewards, is_final, _ = self.environment.step(action=self.environment.actions.get('UP'))
+            next_state, reward, is_final, _ = self.environment.step(action=self.environment.actions.get('UP'))
 
-        self.assertEqual(((4, 1), (0, 0, 1)), new_state)
-        self.assertEqual([0, 0, 0], rewards)
+        self.assertEqual(((4, 1), (0, 0, 1)), next_state)
+        self.assertEqual([0, 0, 0], reward)
         self.assertFalse(is_final)
 
         _ = self.environment.step(action=self.environment.actions.get('UP'))
 
         # Do 2 steps to LEFT
         for _ in range(2):
-            new_state, rewards, is_final, _ = self.environment.step(action=self.environment.actions.get('LEFT'))
+            next_state, reward, is_final, _ = self.environment.step(action=self.environment.actions.get('LEFT'))
 
-        self.assertEqual(((2, 0), (0, 1, 1)), new_state)
-        self.assertEqual([0, 0, 0], rewards)
+        self.assertEqual(((2, 0), (0, 1, 1)), next_state)
+        self.assertEqual([0, 0, 0], reward)
         self.assertFalse(is_final)
 
         # Go to home
         # Do 4 steps to DOWN
         for _ in range(4):
-            new_state, rewards, is_final, _ = self.environment.step(action=self.environment.actions.get('DOWN'))
+            next_state, reward, is_final, _ = self.environment.step(action=self.environment.actions.get('DOWN'))
 
-        self.assertEqual(((2, 4), (0, 1, 1)), new_state)
-        self.assertEqual([0, 1, 1], rewards)
+        self.assertEqual(((2, 4), (0, 1, 1)), next_state)
+        self.assertEqual([0, 1, 1], reward)
         self.assertTrue(is_final)
 
         ################################################################################################################
@@ -245,21 +245,21 @@ class TestResourceGatheringLimit(unittest.TestCase):
 
         # Do 4 steps to UP
         for _ in range(4):
-            new_state, rewards, is_final, _ = self.environment.step(action=self.environment.actions.get('UP'))
+            next_state, reward, is_final, _ = self.environment.step(action=self.environment.actions.get('UP'))
 
-        self.assertEqual(((2, 0), (0, 1, 0)), new_state)
-        self.assertEqual([0, 0, 0], rewards)
+        self.assertEqual(((2, 0), (0, 1, 0)), next_state)
+        self.assertEqual([0, 0, 0], reward)
         self.assertFalse(is_final)
 
         # Force to enemy attack
         self.environment.p_attack = 1
 
         # Go to enemy position
-        new_state, rewards, is_final, _ = self.environment.step(action=self.environment.actions.get('DOWN'))
+        next_state, reward, is_final, _ = self.environment.step(action=self.environment.actions.get('DOWN'))
 
         # Reset at home
-        self.assertEqual(((2, 4), (-1, 0, 0)), new_state)
-        self.assertEqual([-1, 0, 0], rewards)
+        self.assertEqual(((2, 4), (-1, 0, 0)), next_state)
+        self.assertEqual([-1, 0, 0], reward)
         self.assertTrue(is_final)
 
         ################################################################################################################
@@ -269,7 +269,7 @@ class TestResourceGatheringLimit(unittest.TestCase):
         # Reset environment
         self.environment.reset()
 
-        # Disable enemies attack
+        # Disable enemies_positions attack
         self.environment.p_attack = 0
 
         # Do 4 steps to UP (to get gold)
@@ -281,11 +281,11 @@ class TestResourceGatheringLimit(unittest.TestCase):
             _ = self.environment.step(action=self.environment.actions.get('RIGHT'))
 
         # Get gem
-        new_state, rewards, is_final, _ = self.environment.step(action=self.environment.actions.get('DOWN'))
+        next_state, reward, is_final, _ = self.environment.step(action=self.environment.actions.get('DOWN'))
 
         # Now agent has gold and gem
-        self.assertEqual(((4, 1), (0, 1, 1)), new_state)
-        self.assertEqual([0, 0, 0], rewards)
+        self.assertEqual(((4, 1), (0, 1, 1)), next_state)
+        self.assertEqual([0, 0, 0], reward)
         self.assertFalse(is_final)
 
         # Waste time
@@ -293,8 +293,8 @@ class TestResourceGatheringLimit(unittest.TestCase):
 
         # Do steps until time_limit
         for _ in range(self.environment.time_limit - time_used):
-            new_state, rewards, is_final, _ = self.environment.step(action=self.environment.actions.get('RIGHT'))
+            next_state, reward, is_final, _ = self.environment.step(action=self.environment.actions.get('RIGHT'))
 
-        self.assertEqual(((4, 1), (0, 1, 1)), new_state)
-        self.assertTrue(VectorDecimal.all_close(VectorDecimal([0, 0.01, 0.01]), rewards))
+        self.assertEqual(((4, 1), (0, 1, 1)), next_state)
+        self.assertTrue(VectorDecimal.all_close(VectorDecimal([0, 0.01, 0.01]), reward))
         self.assertTrue(is_final)

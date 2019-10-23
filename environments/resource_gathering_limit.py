@@ -17,16 +17,16 @@ class ResourceGatheringLimit(EnvMesh):
         :param initial_state:
         :param default_reward: (enemy_attack, gold, gems)
         :param seed:
-        :param p_attack: Probability that a enemy attacks when agent stay in an enemy state.
+        :param p_attack: Probability that a enemy attacks when agent stay in an enemy position.
         :param time_limit: When agent does `time_limit` steps terminate current episode.
         """
 
         self.status = VectorDecimal(default_reward)
 
-        # States where there are gold {state: available}
+        # States where there are gold {position: available}
         self.gold_states = {(2, 0): True}
 
-        # States where there is a gem {state: available}
+        # States where there is a gem {position: available}
         self.gem_states = {(4, 1): True}
 
         # Time inverted in find a treasure
@@ -38,7 +38,7 @@ class ResourceGatheringLimit(EnvMesh):
 
         super().__init__(mesh_shape=mesh_shape, seed=seed, initial_state=initial_state, default_reward=default_reward)
 
-        # States where there are enemies
+        # States where there are enemies_positions
         self.enemies = [(3, 0), (2, 1)]
         self.p_attack = p_attack
 
@@ -49,43 +49,43 @@ class ResourceGatheringLimit(EnvMesh):
         :return:
         """
 
-        # Initialize rewards as vector
-        rewards = self.default_reward.copy()
+        # Initialize reward as vector
+        reward = self.default_reward.copy()
 
-        # Get new state
+        # Get new position
         new_state = self.next_state(action=action)
 
-        # Update previous state
+        # Update previous position
         self.current_state = new_state
         self.time += 1
 
         # Check is_final
         final = self.is_final(self.current_state)
 
-        # If the agent is in the same state as an enemy
+        # If the agent is in the same position as an enemy
         if self.current_state in self.enemies:
-            rewards = self.status * 1
+            reward = self.status * 1
 
-        # If the agent is in the same state as gold
+        # If the agent is in the same position as gold
         elif self.current_state in self.gold_states.keys():
             self.__get_gold()
 
-        # If the agent is in the same state as gem
+        # If the agent is in the same position as gem
         elif self.current_state in self.gem_states.keys():
             self.__get_gem()
 
         # If the agent is at home and have gold or gem
         elif self.__at_home():
-            rewards = self.status * 1
+            reward = self.status * 1
 
         if self.time >= self.time_limit:
             # Accumulate reward
-            rewards = self.status / self.time
+            reward = self.status / self.time
 
         # Set info
         info = {}
 
-        return (self.current_state, tuple(self.status)), rewards, final, info
+        return (self.current_state, tuple(self.status)), reward, final, info
 
     def reset(self) -> tuple:
         """
@@ -115,7 +115,7 @@ class ResourceGatheringLimit(EnvMesh):
         for y in range(rows):
             for x in range(cols):
 
-                # Set a state
+                # Set a position
                 state = (x, y)
 
                 if state == self.current_state:
@@ -187,7 +187,7 @@ class ResourceGatheringLimit(EnvMesh):
 
     def __is_checkpoint(self) -> bool:
         """
-        Check if is final state (has gold, gem or both)
+        Check if is final position (has gold, gem or both)
         :return:
         """
 
@@ -216,12 +216,12 @@ class ResourceGatheringLimit(EnvMesh):
 
         data = super().get_dict_model()
 
-        # Prepare environment data
-        data['state'] = self.status.tolist()
+        # Prepare environment train_data
+        data['position'] = self.status.tolist()
 
-        # Clean specific environment data
-        del data['gold_states']
-        del data['gem_states']
-        del data['enemies']
+        # Clean specific environment train_data
+        del data['gold_positions']
+        del data['gem_positions']
+        del data['enemies_positions']
 
         return data

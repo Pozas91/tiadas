@@ -4,7 +4,7 @@ Base class to define environments.
 
 Action space is a discrete number. Actions are in the range [0, n).
 
-Finals is a dictionary where the key is a state, and the value is a reward
+Finals is a dictionary where the key is a position, and the value is a reward
 vector as follows:
 {
     state_1: reward,
@@ -16,6 +16,7 @@ Obstacles is a frozenset of states: {state_1, state_2, ...}
 """
 
 from copy import deepcopy
+from typing import Iterable
 
 import gym
 from gym.utils import seeding
@@ -39,24 +40,20 @@ class Environment(gym.Env):
         'FINAL': '$'
     }
 
-    def __init__(self, observation_space: gym.spaces,
-                 default_reward: Vector,
-                 seed: int = None,
-                 initial_state: object = None,
-                 obstacles: frozenset = None,
-                 finals: dict = None):
+    def __init__(self, observation_space: gym.spaces, default_reward: Vector, action_space: gym.spaces = None,
+                 seed: int = None, initial_state: Iterable = None, obstacles: frozenset = None, finals: object = None):
         """
         :param default_reward: Default reward returned by the environment when 
                                a reward is not defined.
         :param seed: Initial seed. The same is used for _action_space,
                      observation_space, and random number generator
-        :param initial_state: start state for all episodes.
+        :param initial_state: start position for all episodes.
         :param obstacles: inaccessible states.
         :param finals: terminal states for episodes.
         """
 
         # Set action space
-        self._action_space = IterableDiscrete(len(self._actions))
+        self._action_space = action_space if action_space else IterableDiscrete(len(self._actions))
         self._action_space.seed(seed=seed)
 
         # Create the observation space
@@ -68,18 +65,16 @@ class Environment(gym.Env):
         self.initial_seed = seed
         self.seed(seed=seed)
 
-        # Set current environment state
+        # Set current environment position
         assert initial_state is None or self.observation_space.contains(initial_state)
         self.initial_state = initial_state
         self.current_state = self.initial_state
 
         # Set finals states
-        assert finals is None or all([self.observation_space.contains(final) for final in finals.keys()])
-        self.finals = finals
+        self.finals = finals if finals else dict()
 
         # Set obstacles
-        assert obstacles is None or all([self.observation_space.contains(obstacle) for obstacle in obstacles])
-        self.obstacles = obstacles
+        self.obstacles = obstacles if obstacles else frozenset()
 
         # Defaults
         self.default_reward = default_reward
@@ -107,9 +102,9 @@ class Environment(gym.Env):
     def step(self, action: int) -> (object, Vector, bool, dict):
         """
         Standard operation in gym environments. Performs the 'action' in the
-        environment, returning the new state, the vector reward, a boolean
-        value indicating if the reached state is final, and an optional dictionary
-        with miscelaneous information.
+        environment, returning the new position, the vector reward, a boolean
+        value indicating if the reached position is final, and an optional dictionary
+        with miscellaneous information.
         :param action:
         :return: 
         """
@@ -127,10 +122,11 @@ class Environment(gym.Env):
     def reset(self) -> object:
         """
         Standard operation in gym environments. Reset environment to a known
-        initial state.
+        initial position.
         :return:
         """
-        raise NotImplemented
+        self.current_state = self.initial_state
+        return self.current_state
 
     def render(self, mode: str = 'human') -> None:
         """
@@ -142,10 +138,10 @@ class Environment(gym.Env):
 
     def next_state(self, action: int, state: object = None) -> object:
         """
-        Calc next state with current state and action given. Default is 4-neighbors (UP, LEFT, DOWN, RIGHT)
-        :param state: If a state is given, do action from that state.
+        Calc next position with current position and action given. Default is 4-neighbors (UP, LEFT, DOWN, RIGHT)
+        :param state: If a position is given, do action from that position.
         :param action: from action_space
-        :return: a new state (or old if is invalid action)
+        :return: a new position (or old if is invalid action)
         """
         raise NotImplemented
 
@@ -160,7 +156,7 @@ class Environment(gym.Env):
         # Extract properties
         data = vars(model)
 
-        # Prepare data
+        # Prepare train_data
         data['default_reward'] = model.default_reward.tolist()
 
         # Clean Environment Data
@@ -174,10 +170,11 @@ class Environment(gym.Env):
 
     def is_final(self, state: object = None) -> bool:
         """
-        Return True if state given is terminal, False in otherwise.
+        Return True if position given is terminal, False in otherwise.
         :return:
         """
-        raise NotImplemented
+        state = state if state else self.current_state
+        return state in self.finals
 
     def states(self) -> set:
         """
@@ -197,24 +194,24 @@ class Environment(gym.Env):
 
     def transition_probability(self, state: object, action: int, next_state: object) -> float:
         """
-        Return probability to reach `next_state` from `state` using `action`.
+        Return probability to reach `next_state` from `position` using `action`.
 
         In non-stochastic environments this return always 1.
 
-        :param state: initial state
+        :param state: initial position
         :param action: action to do
-        :param next_state: next state reached
+        :param next_state: next position reached
         :return:
         """
         return 1.
 
-    def transition_reward(self, state: object, action: int, next_state: object) -> float:
+    def transition_reward(self, state: object, action: int, next_state: object) -> object:
         """
-        Return reward for reach `next_state` from `state` using `action`.
+        Return reward for reach `next_state` from `position` using `action`.
 
-        :param state: initial state
+        :param state: initial position
         :param action: action to do
-        :param next_state: next state reached
+        :param next_state: next position reached
         :return:
         """
         raise NotImplemented

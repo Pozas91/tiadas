@@ -1,24 +1,17 @@
 """
 Unit tests file where testing test ResourceGathering environment.
 """
-
-import unittest
-
-from gym import spaces
+import gym
 
 from environments import ResourceGathering
-from models import Vector
+from tests.environments.test_env_mesh import TestEnvMesh
 
 
-class TestResourceGathering(unittest.TestCase):
-    environment = None
+class TestResourceGathering(TestEnvMesh):
 
     def setUp(self):
         # Set seed to 0 to testing.
         self.environment = ResourceGathering(seed=0)
-
-    def tearDown(self):
-        self.environment = None
 
     def test_init(self):
         """
@@ -27,38 +20,26 @@ class TestResourceGathering(unittest.TestCase):
         """
 
         # This environment must have another attributes
-        self.assertTrue(hasattr(self.environment, 'gold_states'))
-        self.assertTrue(hasattr(self.environment, 'gem_states'))
-        self.assertTrue(hasattr(self.environment, 'enemies'))
+        self.assertTrue(hasattr(self.environment, 'gold_positions'))
+        self.assertTrue(hasattr(self.environment, 'gem_positions'))
+        self.assertTrue(hasattr(self.environment, 'enemies_positions'))
+        self.assertTrue(hasattr(self.environment, 'home_position'))
 
-        # By default mesh shape is 5x5
-        self.assertEqual(spaces.Tuple((spaces.Discrete(5), spaces.Discrete(5))), self.environment.observation_space)
+        # Observation space
+        self.assertEqual(
+            gym.spaces.Tuple(
+                (
+                    gym.spaces.Tuple((gym.spaces.Discrete(5), gym.spaces.Discrete(5))),
+                    gym.spaces.Tuple((gym.spaces.Discrete(2), gym.spaces.Discrete(2))),
+                )
+            ), self.environment.observation_space
+        )
 
-        # By default action space is 4 (UP, RIGHT, DOWN, LEFT)
-        self.assertIsInstance(self.environment.action_space, spaces.Space)
-
-        # By default initial state is (2, 4)
-        self.assertEqual((2, 4), self.environment.initial_state)
-        self.assertEqual(self.environment.initial_state, self.environment.current_state)
+        # By default initial position is (2, 4)
+        self.assertEqual(((2, 4), (0, 0)), self.environment.initial_state)
 
         # Default reward is (0, 0, 0)
         self.assertEqual((0, 0, 0), self.environment.default_reward)
-
-    def test_seed(self):
-        """
-        Testing seed method
-        :return:
-        """
-        self.environment.seed(seed=0)
-        n1_1 = self.environment.np_random.randint(0, 10)
-        n1_2 = self.environment.np_random.randint(0, 10)
-
-        self.environment.seed(seed=0)
-        n2_1 = self.environment.np_random.randint(0, 10)
-        n2_2 = self.environment.np_random.randint(0, 10)
-
-        self.assertEqual(n1_1, n2_1)
-        self.assertEqual(n1_2, n2_2)
 
     def test_reset(self):
         """
@@ -66,31 +47,27 @@ class TestResourceGathering(unittest.TestCase):
         :return:
         """
 
-        # Set current state to random state
+        # Set current position to random position
         self.environment.current_state = self.environment.observation_space.sample()
-        self.environment.status[0] = self.environment.np_random.randint(-1, 0)
-        self.environment.status[1] = self.environment.np_random.randint(0, 1)
-        self.environment.status[2] = self.environment.np_random.randint(0, 1)
 
         # Get all golds
-        for gold_state in self.environment.gold_states.keys():
-            self.environment.gold_states.update({gold_state: False})
+        for gold_state in self.environment.gold_positions.keys():
+            self.environment.gold_positions.update({gold_state: False})
 
         # Get all gems
-        for gem_state in self.environment.gem_states.keys():
-            self.environment.gem_states.update({gem_state: False})
+        for gem_state in self.environment.gem_positions.keys():
+            self.environment.gem_positions.update({gem_state: False})
 
         # Reset environment
         self.environment.reset()
 
         # Asserts
         self.assertEqual(self.environment.initial_state, self.environment.current_state)
-        self.assertEqual(Vector([0, 0, 0]), self.environment.status)
 
-        for gold_state in self.environment.gold_states.values():
+        for gold_state in self.environment.gold_positions.values():
             self.assertTrue(gold_state)
 
-        for gem_state in self.environment.gem_states.values():
+        for gem_state in self.environment.gem_positions.values():
             self.assertTrue(gem_state)
 
     def test__next_state(self):
@@ -100,92 +77,149 @@ class TestResourceGathering(unittest.TestCase):
         """
 
         ################################################################################################################
-        # Begin at state (0, 0) (TOP-LEFT corner)
+        # Begin at position (0, 0) (TOP-LEFT corner)
         ################################################################################################################
-        state = (0, 0)
+        self.environment.reset()
+
+        state = ((0, 0), (0, 0))
         self.environment.current_state = state
 
-        # Cannot go to UP (Keep in same state)
-        new_state = self.environment.next_state(action=self.environment.actions.get('UP'))
-        self.assertEqual(state, new_state)
+        # Cannot go to UP (Keep in same position)
+        next_state, _ = self.environment.next_state(action=self.environment.actions['UP'])
+        self.assertEqual(state, next_state)
 
         # Go to RIGHT (increment x axis)
-        new_state = self.environment.next_state(action=self.environment.actions.get('RIGHT'))
-        self.assertEqual((state[0] + 1, state[1]), new_state)
+        next_state, _ = self.environment.next_state(action=self.environment.actions['RIGHT'])
+        self.assertEqual(((1, 0), (0, 0)), next_state)
 
         # Go to DOWN (increment y axis)
-        new_state = self.environment.next_state(action=self.environment.actions.get('DOWN'))
-        self.assertEqual((state[0], state[1] + 1), new_state)
+        next_state, _ = self.environment.next_state(action=self.environment.actions['DOWN'])
+        self.assertEqual(((0, 1), (0, 0)), next_state)
 
-        # Cannot go to LEFT (Keep in same state)
-        new_state = self.environment.next_state(action=self.environment.actions.get('LEFT'))
-        self.assertEqual(state, new_state)
+        # Cannot go to LEFT (Keep in same position)
+        next_state, _ = self.environment.next_state(action=self.environment.actions['LEFT'])
+        self.assertEqual(state, next_state)
 
         ################################################################################################################
         # Set to (4, 0) (TOP-RIGHT corner)
         ################################################################################################################
-        state = (4, 0)
+        self.environment.reset()
+
+        state = ((4, 0), (0, 0))
         self.environment.current_state = state
 
-        # Cannot go to UP (Keep in same state)
-        new_state = self.environment.next_state(action=self.environment.actions.get('UP'))
-        self.assertEqual(state, new_state)
+        # Cannot go to UP (Keep in same position)
+        next_state, _ = self.environment.next_state(action=self.environment.actions['UP'])
+        self.assertEqual(state, next_state)
 
-        # Cannot go to RIGHT (Keep in same state)
-        new_state = self.environment.next_state(action=self.environment.actions.get('RIGHT'))
-        self.assertEqual(state, new_state)
+        # Cannot go to RIGHT (Keep in same position)
+        next_state, _ = self.environment.next_state(action=self.environment.actions['RIGHT'])
+        self.assertEqual(state, next_state)
 
         # Go to DOWN (increment y axis)
-        new_state = self.environment.next_state(action=self.environment.actions.get('DOWN'))
-        self.assertEqual((state[0], state[1] + 1), new_state)
+        next_state, _ = self.environment.next_state(action=self.environment.actions['DOWN'])
+        self.assertEqual(((4, 1), (0, 1)), next_state)
 
-        # Go to LEFT (Keep in same state)
-        new_state = self.environment.next_state(action=self.environment.actions.get('LEFT'))
-        self.assertEqual((state[0] - 1, state[1]), new_state)
+        # Go to LEFT (decrement x axis) (enemy)
+        next_state, _ = self.environment.next_state(action=self.environment.actions['LEFT'])
+        self.assertEqual(((2, 4), (0, 0)), next_state)
 
         ################################################################################################################
         # Set to (4, 4) (DOWN-RIGHT corner)
         ################################################################################################################
-        state = (4, 4)
+        self.environment.reset()
+
+        state = ((4, 4), (0, 0))
         self.environment.current_state = state
 
         # Go to UP (decrement y axis)
-        new_state = self.environment.next_state(action=self.environment.actions.get('UP'))
-        self.assertEqual((state[0], state[1] - 1), new_state)
+        next_state, _ = self.environment.next_state(action=self.environment.actions['UP'])
+        self.assertEqual(((4, 3), (0, 0)), next_state)
 
-        # Cannot go to RIGHT (Keep in same state)
-        new_state = self.environment.next_state(action=self.environment.actions.get('RIGHT'))
-        self.assertEqual(state, new_state)
+        # Cannot go to RIGHT (Keep in same position)
+        next_state, _ = self.environment.next_state(action=self.environment.actions['RIGHT'])
+        self.assertEqual(state, next_state)
 
-        # Cannot go to DOWN (Keep in same state)
-        new_state = self.environment.next_state(action=self.environment.actions.get('DOWN'))
-        self.assertEqual(state, new_state)
+        # Cannot go to DOWN (Keep in same position)
+        next_state, _ = self.environment.next_state(action=self.environment.actions['DOWN'])
+        self.assertEqual(state, next_state)
 
         # Go to LEFT (decrement x axis)
-        new_state = self.environment.next_state(action=self.environment.actions.get('LEFT'))
-        self.assertEqual((state[0] - 1, state[1]), new_state)
+        next_state, _ = self.environment.next_state(action=self.environment.actions['LEFT'])
+        self.assertEqual(((3, 4), (0, 0)), next_state)
 
         ################################################################################################################
         # Set to (0, 4) (DOWN-LEFT corner)
         ################################################################################################################
-        state = (0, 4)
+        self.environment.reset()
+
+        state = ((0, 4), (0, 0))
         self.environment.current_state = state
 
         # Go to UP (decrement y axis)
-        new_state = self.environment.next_state(action=self.environment.actions.get('UP'))
-        self.assertEqual((state[0], state[1] - 1), new_state)
+        next_state, _ = self.environment.next_state(action=self.environment.actions['UP'])
+        self.assertEqual(((0, 3), (0, 0)), next_state)
 
         # Go to RIGHT (increment x axis)
-        new_state = self.environment.next_state(action=self.environment.actions.get('RIGHT'))
-        self.assertEqual((state[0] + 1, state[1]), new_state)
+        next_state, _ = self.environment.next_state(action=self.environment.actions['RIGHT'])
+        self.assertEqual(((1, 4), (0, 0)), next_state)
 
-        # Cannot go to DOWN (Keep in same state)
-        new_state = self.environment.next_state(action=self.environment.actions.get('DOWN'))
-        self.assertEqual(state, new_state)
+        # Cannot go to DOWN (Keep in same position)
+        next_state, _ = self.environment.next_state(action=self.environment.actions['DOWN'])
+        self.assertEqual(state, next_state)
 
-        # Cannot go to LEFT (Keep in same state)
-        new_state = self.environment.next_state(action=self.environment.actions.get('LEFT'))
-        self.assertEqual(state, new_state)
+        # Cannot go to LEFT (Keep in same position)
+        next_state, _ = self.environment.next_state(action=self.environment.actions['LEFT'])
+        self.assertEqual(state, next_state)
+
+        ################################################################################################################
+        # Set to (1, 0) and go to get gold
+        ################################################################################################################
+        self.environment.reset()
+
+        state = ((1, 0), (0, 0))
+        self.environment.current_state = state
+
+        next_state, _ = self.environment.next_state(action=self.environment.actions['RIGHT'])
+        self.assertEqual(((2, 0), (1, 0)), next_state)
+
+        ################################################################################################################
+        # Set to (1, 0) and go to get gold, but there isn't
+        ################################################################################################################
+        self.environment.reset()
+
+        state = ((1, 0), (0, 0))
+        self.environment.current_state = state
+        for gold_position in self.environment.gold_positions:
+            self.environment.gold_positions.update({gold_position: False})
+
+        next_state, _ = self.environment.next_state(action=self.environment.actions['RIGHT'])
+        self.assertEqual(((2, 0), (0, 0)), next_state)
+
+        ################################################################################################################
+        # Set to (4, 2) and go to get gem
+        ################################################################################################################
+        self.environment.reset()
+
+        state = ((4, 2), (0, 0))
+        self.environment.current_state = state
+
+        next_state, _ = self.environment.next_state(action=self.environment.actions['UP'])
+        self.assertEqual(((4, 1), (0, 1)), next_state)
+
+        ################################################################################################################
+        # Set to (4, 2) and go to get gem, but there isn't
+        ################################################################################################################
+        self.environment.reset()
+
+        state = ((4, 2), (0, 0))
+        self.environment.current_state = state
+
+        for gem_position in self.environment.gem_positions:
+            self.environment.gem_positions.update({gem_position: False})
+
+        next_state, _ = self.environment.next_state(action=self.environment.actions['UP'])
+        self.assertEqual(((4, 1), (0, 0)), next_state)
 
     def test_step(self):
         """
@@ -196,46 +230,48 @@ class TestResourceGathering(unittest.TestCase):
         # Simple valid step
         # Reward:
         #   [enemy_attack, gold, gems]
-        # Complex state:
-        #   (state, resources_available)
-        # Remember that initial state is (2, 4)
+        # Complex position:
+        #   (position, resources_available)
+        # Remember that initial position is (2, 4)
 
         # Disable enemy attack
         self.environment.p_attack = 0
 
+        next_state, reward, is_final = None, None, None
+
         # Do 2 steps to RIGHT
         for _ in range(2):
-            _ = self.environment.step(action=self.environment.actions.get('RIGHT'))
+            _ = self.environment.step(action=self.environment.actions['RIGHT'])
 
         # Do 3 steps to UP (Get a gem)
         for _ in range(3):
-            new_state, rewards, is_final, _ = self.environment.step(action=self.environment.actions.get('UP'))
+            next_state, reward, is_final, _ = self.environment.step(action=self.environment.actions['UP'])
 
-        self.assertEqual(((4, 1), (0, 0, 1)), new_state)
-        self.assertEqual([0, 0, 0], rewards)
+        self.assertEqual(((4, 1), (0, 1)), next_state)
+        self.assertEqual([0, 0, 0], reward)
         self.assertFalse(is_final)
 
-        _ = self.environment.step(action=self.environment.actions.get('UP'))
+        _ = self.environment.step(action=self.environment.actions['UP'])
 
         # Do 2 steps to LEFT
         for _ in range(2):
-            new_state, rewards, is_final, _ = self.environment.step(action=self.environment.actions.get('LEFT'))
+            next_state, reward, is_final, _ = self.environment.step(action=self.environment.actions['LEFT'])
 
-        self.assertEqual(((2, 0), (0, 1, 1)), new_state)
-        self.assertEqual([0, 0, 0], rewards)
+        self.assertEqual(((2, 0), (1, 1)), next_state)
+        self.assertEqual([0, 0, 0], reward)
         self.assertFalse(is_final)
 
         # Go to home
         # Do 4 steps to DOWN
         for _ in range(4):
-            new_state, rewards, is_final, _ = self.environment.step(action=self.environment.actions.get('DOWN'))
+            next_state, reward, is_final, _ = self.environment.step(action=self.environment.actions['DOWN'])
 
-        self.assertEqual(((2, 4), (0, 1, 1)), new_state)
-        self.assertEqual([0, 1, 1], rewards)
+        self.assertEqual(((2, 4), (1, 1)), next_state)
+        self.assertEqual([0, 1, 1], reward)
         self.assertTrue(is_final)
 
         ################################################################################################################
-        # Trying get golf through enemy
+        # Trying get gold through enemy
         ################################################################################################################
 
         # Reset environment
@@ -243,19 +279,37 @@ class TestResourceGathering(unittest.TestCase):
 
         # Do 4 steps to UP
         for _ in range(4):
-            new_state, rewards, is_final, _ = self.environment.step(action=self.environment.actions.get('UP'))
+            next_state, reward, is_final, _ = self.environment.step(action=self.environment.actions['UP'])
 
-        self.assertEqual(((2, 0), (0, 1, 0)), new_state)
-        self.assertEqual([0, 0, 0], rewards)
+        self.assertEqual(((2, 0), (1, 0)), next_state)
+        self.assertEqual([0, 0, 0], reward)
         self.assertFalse(is_final)
 
         # Force to enemy attack
         self.environment.p_attack = 1
 
         # Go to enemy position
-        new_state, rewards, is_final, _ = self.environment.step(action=self.environment.actions.get('DOWN'))
+        next_state, reward, is_final, _ = self.environment.step(action=self.environment.actions['DOWN'])
 
         # Reset at home
-        self.assertEqual(((2, 4), (-1, 0, 0)), new_state)
-        self.assertEqual([-1, 0, 0], rewards)
+        self.assertEqual(((2, 4), (0, 0)), next_state)
+        self.assertEqual([-1, 0, 0], reward)
         self.assertTrue(is_final)
+
+    def test_states_size(self):
+        self.assertEqual(97, len(self.environment.states()))
+
+    def test_transition_reward(self):
+
+        # In this environment doesn't mind initial state to get the reward
+        state = self.environment.observation_space.sample()
+
+        # Doesn't mind action too.
+        action = self.environment.action_space.sample()
+
+        # An intermediate state
+        self.assertEqual(
+            self.environment.transition_reward(
+                state=state, action=action, next_state=((1, 1), (0, 0))
+            ), self.environment.default_reward
+        )

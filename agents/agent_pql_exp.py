@@ -23,7 +23,7 @@ class AgentPQLEXP(AgentPQL):
         :return:
         """
 
-        # If state is None, then set current state to state.
+        # If position is None, then set current position to position.
         if not state:
             state = self.state
 
@@ -45,100 +45,98 @@ class AgentPQLEXP(AgentPQL):
             # Get best action to exploit reward.
             return self.best_action(state, data)
 
-    def best_action(self, state: object = None, data=None) -> int:
+    def best_action(self, state: object = None, data: object = None) -> int:
         """
         Select action proportional to the credit indicated in info.
-        data is a tuple (maximum_credit, list of tuples: (action, credit))
+        train_data is a tuple (maximum_credit, list of tuples: (action, credit))
+        :param data:
         :param state:
-        :param info:
         :return:
         """
-        len = self.environment.action_space.n
+        action_space_n = self.environment.action_space.n
 
         info = data[1]
 
-        # calculate array of acumulated credit
-        acu = np.zeros(len)
-        sum = 0
-        for i in range(len):
-            sum += info[i][1]
-            acu[i] = sum
+        # calculate array of accumulated credit
+        accumulation = np.zeros(action_space_n)
+        summation = 0
 
-        if sum == 0:
+        for i in range(action_space_n):
+            summation += info[i][1]
+            accumulation[i] = summation
+
+        if summation == 0:
             # print('Warning: zero credit')
             return self.environment.action_space.sample()
 
         # select action with probability proportional to hv
-        num = self.generator.uniform(low=0, high=sum)
+        num = self.generator.uniform(low=0, high=summation)
 
-        # print('--AgentPQLEXP-best_action----info-acu-num-accion------')
+        # print('--AgentPQLEXP-_best_action----info-accumulation-num-accion------')
         # print(info)
-        # print(acu)
+        # print(accumulation)
         # print(num)
 
-        for i in range(len):
-            if num <= acu[i]:
+        for i in range(action_space_n):
+            if num <= accumulation[i]:
                 # print(info[i][0])
                 return info[i][0]
 
-        print('Warning: agent_pql_exp.best_action: seleccionando acción de emergencia')
-        return info[len - 1][0]
+        print('Warning: agent_pql_exp._best_action: seleccionando acción de emergencia')
+        return info[action_space_n - 1][0]
 
-    def _greedy_action(self, state: object = None, data=None) -> int:
+    def _greedy_action(self, state: object = None, data: object = None) -> int:
         """
         Select action proportional to the credit indicated in info.
-        data is a  tuple. The first element is the maximum credit, and the sencond a list of tuples: (action, credit)
+        train_data is a  tuple. The first element is the maximum credit, and the second a list of tuples:
+        (action, credit)
         :param state:
         :param info:
         :return:
         """
-        len = self.environment.action_space.n
+        action_space_n = self.environment.action_space.n
 
         maximum = data[0]
         info = data[1]
 
-        # calculate array of acumulated maximum - credit
-        acu = np.zeros(len)
-        sum = 0
-        for i in range(len):
-            sum += (maximum - info[i][1])
-            acu[i] = sum
+        # calculate array of accumulated maximum - credit
+        accumulation = np.zeros(action_space_n)
+        summation = 0
+        for i in range(action_space_n):
+            summation += (maximum - info[i][1])
+            accumulation[i] = summation
 
-        if sum == 0:
+        if summation == 0:
             # print('Warning: zero credit')
             return self.environment.action_space.sample()
 
         # select action with probability proportional to hv
-        num = self.generator.uniform(low=0, high=sum)
+        num = self.generator.uniform(low=0, high=summation)
 
-        # print('--AgentPQLEXP- greedy_action----info-acu-num-accion------')
-        # print(info)
-        # print(acu)
-        # print(num)
-
-        for i in range(len):
-            if num <= acu[i]:
+        for i in range(action_space_n):
+            if num <= accumulation[i]:
                 # print(info[i][0])
                 return info[i][0]
 
-        print('Warning: agent_pql_exp._greedy_action: seleccionando acción de emergencia')
-        return info[len - 1][0]
+        print('Warning: agent_pql_exp._non_greedy_action: seleccionando acción de emergencia')
+        return info[action_space_n - 1][0]
 
     def calculate_hypervolume(self):
         """
-        Calc the hypervolume for each action and returns a list of tuples (maximum-hv, [(action, hipervolume)*], sum-hv)
-        :param state:
+        Calc the hypervolume for each action and returns a list of tuples
+        (maximum-hv, [(action, hypervolume)*], summation-hv)
         :return:
         """
 
         result = list()
 
         maximum = float('-inf')
-        sum = 0
+        summation = 0
+
         # for each a in actions
         for a in self.environment.action_space:
 
-            # Get Q-set from state given for each possible action.
+            # Get Q-set from position given for each possible action.
             q_set = self.q_set(state=self.state, action=a)
 
             # Calc hypervolume of Q_set, with reference given, and store in list with action
@@ -147,10 +145,10 @@ class AgentPQLEXP(AgentPQL):
             if hv > maximum:
                 maximum = hv
 
-            sum += hv
+            summation += hv
 
-        # return (max-hv, list of tuples, sum-hv).
-        return maximum, result, sum
+        # return (max-hv, list of tuples, summation-hv).
+        return maximum, result, summation
 
     def calculate_cardinality(self):
         """
@@ -159,7 +157,6 @@ class AgentPQLEXP(AgentPQL):
 
         CAUTION: This method assumes actions are integers in a range.
 
-        :param state:
         :return:
         """
 
@@ -172,7 +169,7 @@ class AgentPQLEXP(AgentPQL):
         # for each a in actions
         for a in action_space:
 
-            # Get Q-set from state given for each possible action.
+            # Get Q-set from position given for each possible action.
             q_set = self.q_set(state=self.state, action=a)
 
             # for each Q in Q_set(s, a)
@@ -203,7 +200,6 @@ class AgentPQLEXP(AgentPQL):
 
         CAUTION: This method assumes actions are integers in a range.
 
-        :param state:
         :return:
         """
 
@@ -216,7 +212,7 @@ class AgentPQLEXP(AgentPQL):
         # for each a in actions
         for a in action_space:
 
-            # Get Q-set from state given for each possible action.
+            # Get Q-set from position given for each possible action.
             q_set = self.q_set(state=self.state, action=a)
 
             # for each Q in Q_set(s, a)
@@ -246,7 +242,6 @@ class AgentPQLEXP(AgentPQL):
 
         CAUTION: This method assumes actions are integers in a range.
 
-        :param state:
         :return:
         """
 
@@ -259,7 +254,7 @@ class AgentPQLEXP(AgentPQL):
         # for each a in actions
         for a in action_space:
 
-            # Get Q-set from state given for each possible action.
+            # Get Q-set from position given for each possible action.
             q_set = self.q_set(state=self.state, action=a)
 
             # for each Q in Q_set(s, a)

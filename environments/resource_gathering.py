@@ -16,43 +16,64 @@ FINAL STATE: any of below states.
 REF: Empirical Evaluation methods for multi-objective reinforcement learning algorithms
     (Vamplew, Dazeley, Berry, Issabekov and Dekker) 2011
 """
+import gym
 
 from models import Vector
 from .env_mesh import EnvMesh
+import itertools
 
 
 class ResourceGathering(EnvMesh):
     # Possible actions
     _actions = {'UP': 0, 'RIGHT': 1, 'DOWN': 2, 'LEFT': 3}
 
-    def __init__(self, initial_state: tuple = (2, 4), default_reward: tuple = (0, 0, 0), seed: int = 0,
+    def __init__(self, initial_state: tuple = ((2, 4), (0, 0)), default_reward: tuple = (0, 0, 0), seed: int = 0,
                  p_attack: float = 0.1):
         """
         :param initial_state:
         :param default_reward: (enemy_attack, gold, gems)
         :param seed:
-        :param p_attack: Probability that a enemy attacks when agent stay in an enemy state.
+        :param p_attack: Probability that a enemy attacks when agent stay in an enemy position.
         """
 
-        # Current status of environment, Has agent any gold?, Has agent any gems?
-        self.status = Vector(default_reward)
+        # Positions where there are gold {position: available}
+        self.gold_positions = {(2, 0): True}
 
-        # States where there are gold {state: available}
-        self.gold_states = {(2, 0): True}
-
-        # States where there is a gem {state: available}
-        self.gem_states = {(4, 1): True}
+        # Positions where there is a gem {position: available}
+        self.gem_positions = {(4, 1): True}
 
         mesh_shape = (5, 5)
         default_reward = Vector(default_reward)
 
-        # Super constructor call.
-        super().__init__(mesh_shape=mesh_shape, seed=seed, initial_state=initial_state, default_reward=default_reward)
+        # Build the observation space (position(x, y), quantity(gold, gems))
+        observation_space = gym.spaces.Tuple(
+            (
+                gym.spaces.Tuple(
+                    (gym.spaces.Discrete(mesh_shape[0]), gym.spaces.Discrete(mesh_shape[1]))
+                ),
+                gym.spaces.Tuple(
+                    (gym.spaces.Discrete(2), gym.spaces.Discrete(2))
+                )
+            )
+        )
 
-        # States where there are enemies
-        self.enemies = [(3, 0), (2, 1)]
+        # Define final states
+        finals = {
+            ((2, 4), (1, 0)),
+            ((2, 4), (0, 1)),
+            ((2, 4), (1, 1)),
+        }
+
+        # Super constructor call.
+        super().__init__(mesh_shape=mesh_shape, seed=seed, initial_state=initial_state, default_reward=default_reward,
+                         observation_space=observation_space, finals=finals)
+
+        # States where there are enemies_positions
+        self.enemies_positions = {(3, 0), (2, 1)}
 
         self.p_attack = p_attack
+
+        self.home_position = (2, 4)
 
     def step(self, action: int) -> (tuple, Vector, bool, dict):
         """
@@ -61,38 +82,55 @@ class ResourceGathering(EnvMesh):
         :return:
         """
 
-        # Initialize rewards as vector
-        rewards = self.default_reward.copy()
+        # Initialize reward as vector
+        reward = self.default_reward.copy()
 
-        # Get new state
-        new_state = self.next_state(action=action)
+        # Update previous position
+        self.current_state, attacked = self.next_state(action=action)
 
-        # Update previous state
-        self.current_state = new_state
+        if attacked:
+            reward[0] = -1
 
         # Check is_final
-        final = self.is_final(self.current_state)
+        final = attacked or self.is_final()
 
-        # If the agent is in the same state as an enemy
-        if self.current_state in self.enemies:
-            rewards = self.status * 1
-
-        # If the agent is in the same state as gold
-        elif self.current_state in self.gold_states.keys():
-            self.__get_gold()
-
-        # If the agent is in the same state as gem
-        elif self.current_state in self.gem_states.keys():
-            self.__get_gem()
-
-        # If the agent is at home and have gold or gem
-        elif self.__at_home():
-            rewards = self.status * 1
+        if final:
+            reward[1], reward[2] = self.current_state[1]
 
         # Set info
         info = {}
 
-        return (self.current_state, tuple(self.status.tolist())), rewards, final, info
+        return self.current_state, reward, final, info
+
+    def next_state(self, action: int, state: tuple = None) -> (tuple, bool):
+
+        # Unpack complex state (position, objects(gold, gem))
+        position, objects = state if state else self.current_state
+
+        # Calc next position
+        next_position, is_valid = self.next_position(action=action, position=position)
+
+        # Extra information
+        attacked = False
+
+        # If the next_position isn't valid, reset to the previous position
+        if not self.observation_space[0].contains(next_position) or not is_valid:
+            next_position = position
+
+        if next_position in self.gold_positions and self.gold_positions[next_position]:
+            objects = 1, objects[1]
+            self.gold_positions.update({next_position: False})
+
+        elif next_position in self.gem_positions and self.gem_positions[next_position]:
+            objects = objects[0], 1
+            self.gem_positions.update({next_position: False})
+
+        elif next_position in self.enemies_positions and self.p_attack >= self.np_random.uniform():
+            next_position, objects = self.initial_state
+            next_position = self.home_position
+            attacked = True
+
+        return (next_position, objects), attacked
 
     def reset(self) -> tuple:
         """
@@ -100,116 +138,16 @@ class ResourceGathering(EnvMesh):
         :return:
         """
         self.current_state = self.initial_state
-        self.status = self.default_reward.copy()
 
         # Reset golds positions
-        for gold_state in self.gold_states.keys():
-            self.gold_states.update({gold_state: True})
+        for gold_state in self.gold_positions.keys():
+            self.gold_positions.update({gold_state: True})
 
         # Reset gems positions
-        for gem_state in self.gem_states.keys():
-            self.gem_states.update({gem_state: True})
+        for gem_state in self.gem_positions.keys():
+            self.gem_positions.update({gem_state: True})
 
-        return self.current_state, tuple(self.status.tolist())
-
-    def render(self, **kwargs) -> None:
-        # Get cols (x) and rows (y) from observation space
-        cols, rows = self.observation_space.spaces[0].n, self.observation_space.spaces[1].n
-
-        for y in range(rows):
-            for x in range(cols):
-
-                # Set a state
-                state = (x, y)
-
-                if state == self.current_state:
-                    icon = self._icons.get('CURRENT')
-                elif state in self.gold_states.keys():
-                    icon = self._icons.get('TREASURE')
-                elif state in self.gem_states.keys():
-                    icon = self._icons.get('TREASURE')
-                elif state in self.enemies:
-                    icon = self._icons.get('ENEMY')
-                elif state == self.initial_state:
-                    icon = self._icons.get('HOME')
-                else:
-                    icon = self._icons.get('BLANK')
-
-                # Show col
-                print('| {} '.format(icon), end='')
-
-            # New row
-            print('|')
-
-        # End render
-        print('')
-
-    def __enemy_attack(self) -> bool:
-        """
-        Check if enemy attack you
-        :return:
-        """
-
-        final = False
-
-        if self.p_attack >= self.np_random.uniform():
-            self.reset()
-            self.status[0] = -1
-            final = True
-
-        return final
-
-    def __get_gold(self) -> None:
-        """
-        Check if agent can take the gold.
-        :return:
-        """
-
-        # Check if there is a gold
-        if self.gold_states.get(self.current_state, False):
-            self.status[1] += 1
-            self.gold_states.update({self.current_state: False})
-
-    def __get_gem(self) -> None:
-        """
-        Check if agent can take the gem.
-        :return:
-        """
-
-        # Check if there is a gem
-        if self.gem_states.get(self.current_state, False):
-            self.status[2] += 1
-            self.gem_states.update({self.current_state: False})
-
-    def __at_home(self) -> bool:
-        """
-        Check if agent is at home
-        :return:
-        """
-
-        return self.current_state == self.initial_state
-
-    def __is_checkpoint(self) -> bool:
-        """
-        Check if is final state (has gold, gem or both)
-        :return:
-        """
-
-        return (self.status[1] >= 0 or self.status[2] >= 0) and self.__at_home()
-
-    def is_final(self, state: tuple = None) -> bool:
-        """
-        Is final if the agent is attacked or agent is on checkpoint.
-        :param state:
-        :return:
-        """
-        # Check if agent is attacked
-        attacked = state in self.enemies and self.__enemy_attack()
-
-        # Check if agent is on checkpoint
-        checkpoint = state == self.initial_state and self.__is_checkpoint()
-
-        return attacked or checkpoint
+        return self.current_state
 
     def get_dict_model(self) -> dict:
         """
@@ -219,12 +157,29 @@ class ResourceGathering(EnvMesh):
 
         data = super().get_dict_model()
 
-        # Prepare environment data
-        data['status'] = self.status.tolist()
-
-        # Clean specific environment data
-        del data['gold_states']
-        del data['gem_states']
-        del data['enemies']
+        # Clean specific environment train_data
+        del data['gold_positions']
+        del data['gem_positions']
+        del data['enemies_positions']
+        del data['home_position']
 
         return data
+
+    def states(self) -> set:
+
+        # Unpack spaces
+        x_position, y_position = self.observation_space[0]
+
+        # Calc basic states
+        basic_states = {
+                           (x, y) for x in range(x_position.n) for y in range(y_position.n)
+                       } - self.obstacles
+
+        # Calc product of basic states with objects
+        states = set(itertools.product(basic_states, {(0, 0), (0, 1), (1, 0), (1, 1)})).difference(self.finals)
+
+        # Return all spaces
+        return states
+
+    # def transition_reward(self, state: tuple, action: int, next_state: tuple) -> tuple:
+

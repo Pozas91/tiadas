@@ -6,9 +6,6 @@ from .deep_sea_treasure import DeepSeaTreasure
 
 
 class DeepSeaTreasureMixed(DeepSeaTreasure):
-    # Possible actions
-    _actions = {'UP': 0, 'RIGHT': 1, 'DOWN': 2, 'LEFT': 3}
-
     # Pareto optimal
     pareto_optimal = [
         (-1, 1), (-3, 2), (-5, 10), (-7, 11), (-8, 12), (-9, 13), (-13, 15), (-14, 18.5), (-17, 19), (-19, 20)
@@ -38,32 +35,4 @@ class DeepSeaTreasureMixed(DeepSeaTreasure):
         }
 
         # Default reward plus time (time_inverted, treasure_value)
-        default_reward = (-1,) + default_reward
-        self.default_reward = VectorDecimal(default_reward)
-
-    def step(self, action: int) -> (tuple, VectorDecimal, bool, dict):
-        """
-        Given an action, do a step
-        :param action:
-        :return: (state, (time_inverted, treasure_value), final, info)
-        """
-
-        # Initialize rewards as vector
-        rewards = self.default_reward.copy()
-
-        # Get new state
-        new_state = self.next_state(action=action)
-
-        # Update previous state
-        self.current_state = new_state
-
-        # Get treasure value
-        rewards[1] = self.finals.get(self.current_state, self.default_reward[1])
-
-        # Set info
-        info = {}
-
-        # Check is_final
-        final = self.is_final(self.current_state)
-
-        return self.current_state, rewards, final, info
+        self.default_reward = VectorDecimal(self.default_reward)

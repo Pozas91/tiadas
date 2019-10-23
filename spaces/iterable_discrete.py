@@ -20,7 +20,7 @@ class IterableDiscrete(Discrete):
             raise StopIteration
 
     def __repr__(self):
-        return "IterableDiscrete(%d)" % self.n
+        return "IterableDiscrete({})" % self.n
 
     def __eq__(self, other):
         return isinstance(other, IterableDiscrete) and self.n == other.n

@@ -6,7 +6,8 @@ class GraphType(Enum):
     EPISODES = 'episodes'
     TIME = 'time'
     MEMORY = 'memory'
-    VECTORS_PER_CELL = 'vectors_per_cell'
+    DATA_PER_STATE = 'data_per_state'
+    SWEEP = 'sweep'
 
     def __str__(self):
         return str(self.value)
@@ -23,10 +24,12 @@ class GraphType(Enum):
             result = GraphType.EPISODES
         elif graph_type == str(GraphType.MEMORY.value):
             result = GraphType.MEMORY
-        elif graph_type == str(GraphType.VECTORS_PER_CELL.value):
-            result = GraphType.VECTORS_PER_CELL
+        elif graph_type == str(GraphType.DATA_PER_STATE.value):
+            result = GraphType.DATA_PER_STATE
         elif graph_type == str(GraphType.TIME.value):
             result = GraphType.TIME
+        elif graph_type == str(GraphType.SWEEP.value):
+            result = GraphType.SWEEP
         else:
             raise ValueError('Unknown graph type')
 

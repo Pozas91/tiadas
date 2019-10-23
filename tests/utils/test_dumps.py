@@ -46,7 +46,7 @@ class TestDumps(unittest.TestCase):
                          hv_reference=hv_reference, evaluation_mechanism=evaluation_mechanism, gamma=gamma,
                          max_steps=max_steps, integer_mode=True)
 
-        # Train to modify data.
+        # Train to modify train_data.
         agent.episode_train(episodes=episodes)
 
         # Save and load as new agent.
@@ -105,7 +105,7 @@ class TestDumps(unittest.TestCase):
                          hv_reference=hv_reference, evaluation_mechanism=evaluation_mechanism, gamma=gamma,
                          max_steps=max_steps)
 
-        # Train to modify data.
+        # Train to modify train_data.
         agent.episode_train(episodes=episodes)
 
         # Save and load as new agent.
@@ -160,7 +160,7 @@ class TestDumps(unittest.TestCase):
                          hv_reference=hv_reference, evaluation_mechanism=evaluation_mechanism, gamma=gamma,
                          max_steps=max_steps)
 
-        # Train to modify data.
+        # Train to modify train_data.
         agent.episode_train(episodes=episodes)
 
         # Save and load as new agent.
@@ -209,7 +209,7 @@ class TestDumps(unittest.TestCase):
                          hv_reference=hv_reference, evaluation_mechanism=evaluation_mechanism, gamma=gamma,
                          max_steps=max_steps)
 
-        # Train to modify data.
+        # Train to modify train_data.
         agent.episode_train(episodes=episodes)
 
         # Save and load as new agent.
@@ -260,7 +260,7 @@ class TestDumps(unittest.TestCase):
                          hv_reference=hv_reference, evaluation_mechanism=evaluation_mechanism, gamma=gamma,
                          max_steps=max_steps)
 
-        # Train to modify data.
+        # Train to modify train_data.
         agent.episode_train(episodes=episodes)
 
         # Save and load as new agent.
@@ -309,7 +309,7 @@ class TestDumps(unittest.TestCase):
                          hv_reference=hv_reference, evaluation_mechanism=evaluation_mechanism, gamma=gamma,
                          max_steps=max_steps)
 
-        # Train to modify data.
+        # Train to modify train_data.
         agent.episode_train(episodes=episodes)
 
         # Save and load as new agent.
@@ -356,7 +356,7 @@ class TestDumps(unittest.TestCase):
                          hv_reference=hv_reference, evaluation_mechanism=evaluation_mechanism, gamma=gamma,
                          max_steps=max_steps)
 
-        # Train to modify data.
+        # Train to modify train_data.
         agent.episode_train(episodes=episodes)
 
         # Save and load as new agent.
@@ -404,7 +404,7 @@ class TestDumps(unittest.TestCase):
                          hv_reference=hv_reference, evaluation_mechanism=evaluation_mechanism, gamma=gamma,
                          max_steps=max_steps)
 
-        # Train to modify data.
+        # Train to modify train_data.
         agent.episode_train(episodes=episodes)
 
         # Save and load as new agent.
@@ -452,7 +452,7 @@ class TestDumps(unittest.TestCase):
                          hv_reference=hv_reference, evaluation_mechanism=evaluation_mechanism, gamma=gamma,
                          max_steps=max_steps)
 
-        # Train to modify data.
+        # Train to modify train_data.
         agent.episode_train(episodes=episodes)
 
         # Save and load as new agent.
@@ -500,7 +500,7 @@ class TestDumps(unittest.TestCase):
                          hv_reference=hv_reference, evaluation_mechanism=evaluation_mechanism, gamma=gamma,
                          max_steps=max_steps)
 
-        # Train to modify data.
+        # Train to modify train_data.
         agent.episode_train(episodes=episodes)
 
         # Save and load as new agent.
@@ -551,7 +551,7 @@ class TestDumps(unittest.TestCase):
                          hv_reference=hv_reference, evaluation_mechanism=evaluation_mechanism, gamma=gamma,
                          max_steps=max_steps)
 
-        # Train to modify data.
+        # Train to modify train_data.
         agent.episode_train(episodes=episodes)
 
         # Save and load as new agent.
@@ -600,7 +600,7 @@ class TestDumps(unittest.TestCase):
                          hv_reference=hv_reference, evaluation_mechanism=evaluation_mechanism, gamma=gamma,
                          max_steps=max_steps)
 
-        # Train to modify data.
+        # Train to modify train_data.
         agent.episode_train(episodes=episodes)
 
         # Save and load as new agent.

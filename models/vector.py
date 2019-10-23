@@ -19,11 +19,12 @@ class Vector:
 
     # Number of decimals allowed by int numbers
     decimals_allowed = 2
-    decimal_exponent = 0.0
+    decimal_exponent = D(10) ** -(decimals_allowed - 1)
 
     @staticmethod
-    def update_decimal_exponent():
-        Vector.decimal_exponent = D(10) ** -(Vector.decimals_allowed - 1)
+    def set_decimals_allowed(decimals_allowed: int):
+        Vector.decimals_allowed = decimals_allowed
+        Vector.decimal_exponent = D(10) ** -(decimals_allowed - 1)
 
     def __init__(self, components):
         """
@@ -77,7 +78,7 @@ class Vector:
 
     def __str__(self):
         """
-        Return a string representation of the data in an array.
+        Return a string representation of the train_data in an array.
         :return:
         """
         return np.array_str(self.components)

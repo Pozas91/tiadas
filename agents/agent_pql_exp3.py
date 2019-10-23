@@ -16,9 +16,9 @@ class AgentPQLEXP3(AgentPQLEXP):
 
     def best_action(self, state: object = None, data: object = None) -> int:
         """
-        Select action proportional to the credit indicated in data. If necessary, selection probabilities are
+        Select action proportional to the credit indicated in train_data. If necessary, selection probabilities are
         smoothed.
-        data is a tuple (maximum_credit, list of tuples: (action, credit), sum_credit)
+        train_data is a tuple (maximum_credit, list of tuples: (action, credit), sum_credit)
 
          Let E be the maximum credit, N the number of actions, and S the sum of all credits.
         If E > 2S/N, then laplacian smoothing is carried out (otherwise, it is not always possible to calculate
@@ -37,12 +37,12 @@ class AgentPQLEXP3(AgentPQLEXP):
         # cantidad a añadir para suavizar las probabilidades
         k = max(0, (e - ((2 * s) / n)))
 
-        # calculate array of acumulated credit
-        acu = np.zeros(n)
+        # calculate array of accumulated credit
+        accumulation = np.zeros(n)
         summation = 0  # al final debería ser s + nk
         for i in range(n):
             summation += info[i][1] + k
-            acu[i] = summation
+            accumulation[i] = summation
 
         if summation == 0:
             # print('Warning: zero credit')
@@ -51,25 +51,25 @@ class AgentPQLEXP3(AgentPQLEXP):
         # select action with probability proportional to hv
         random_number = self.generator.uniform(low=0, high=summation)
 
-        # print('--AgentPQLEXP-best_action----info-acu-num-accion------')
+        # print('--AgentPQLEXP-_best_action----info-accumulation-num-accion------')
         # print(info)
-        # print(acu)
+        # print(accumulation)
         # print(num)
 
         for i in range(n):
-            if random_number <= acu[i]:
+            if random_number <= accumulation[i]:
                 # self._acumula(info[i][0], True)
                 # print(info[i][0])
                 return info[i][0]
 
-        print('Warning: agent_pql_exp.best_action: seleccionando acción de emergencia')
+        print('Warning: agent_pql_exp._best_action: seleccionando acción de emergencia')
         return info[n - 1][0]
 
     def _greedy_action(self, state: object = None, data: object = None) -> int:
         """
         Select action with probability inversely proportional to the credit indicated in info.
         If necessary, probabilities are smoothed so that with epsilon = 0.5, a random walk is obtained.
-        data is a  tuple. The first element is the maximum credit, the sencond a list of tuples: (action, credit),
+        train_data is a  tuple. The first element is the maximum credit, the sencond a list of tuples: (action, credit),
         and the third the sum of credits.
 
         :param state:
@@ -128,7 +128,7 @@ class AgentPQLEXP3(AgentPQLEXP):
                 # self._acumula(info[i][0], False)
                 return info[i][0]
 
-        print('Warning: agent_pql_exp2._greedy_action: seleccionando acción de emergencia')
+        print('Warning: agent_pql_exp2._non_greedy_action: seleccionando acción de emergencia')
         return info[n - 1][0]
 
     # def _acumula(self, accion, greedy):

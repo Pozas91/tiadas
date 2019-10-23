@@ -2,15 +2,12 @@
 Unit tests file where testing EnvMesh.
 """
 
-import unittest
-
-import gym
-
 from environments.env_mesh import EnvMesh
 from models import Vector
+from tests.environments.test_environment import TestEnvironment
 
 
-class TestEnvMesh(unittest.TestCase):
+class TestEnvMesh(TestEnvironment):
 
     def setUp(self):
         # Mesh shape
@@ -19,15 +16,23 @@ class TestEnvMesh(unittest.TestCase):
         # Default reward
         default_reward = Vector([1, 2, 1])
 
+        # Obstacles
+        obstacles = frozenset({
+            (0, 0), (1, 1)
+        })
+
         # Set seed to 0 to testing.
-        self.environment = EnvMesh(mesh_shape=mesh_shape, default_reward=default_reward, seed=0)
+        self.environment = EnvMesh(mesh_shape=mesh_shape, default_reward=default_reward, seed=0, obstacles=obstacles)
 
-    def tearDown(self):
-        self.environment = None
-
-    def test_observation_space(self):
-        """"
-        Testing observation_space attribute
+    def test_states(self):
         """
-
-        self.assertIsInstance(self.environment.observation_space, gym.spaces.Tuple)
+        Testing that all states must be contained into observation space
+        :return:
+        """
+        self.assertTrue(
+            all(
+                self.environment.observation_space.contains(
+                    state) and state not in self.environment.obstacles and state not in self.environment.finals
+                for state in self.environment.states()
+            )
+        )

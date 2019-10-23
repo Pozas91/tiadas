@@ -1,22 +1,17 @@
 """
-Such as DeepSeaTreasure environment but has a vector of transitions probabilities, which will be used when an action
+Such as DeepSeaTreasure environment but has a vector of p_stochastic probabilities, which will be used when an action
 is to be taken.
 
 HV REFERENCE: (-25, 0)
 """
+from environments import DeepSeaTreasure
 from models import Vector
-from .env_mesh import EnvMesh
 
 
-class DeepSeaTreasureStochastic(EnvMesh):
-    # Possible actions
-    _actions = {'UP': 0, 'RIGHT': 1, 'DOWN': 2, 'LEFT': 3}
-
-    # Experiments common hypervolume reference
-    hv_reference = Vector([-25, 0])
+class DeepSeaTreasureStochastic(DeepSeaTreasure):
 
     def __init__(self, initial_state: tuple = (0, 0), default_reward: tuple = (0,), seed: int = 0,
-                 n_transition: float = 0.3):
+                 n_transition: float = 0.3, columns: int = 10):
         """
         :param initial_state:
         :param default_reward:
@@ -24,40 +19,7 @@ class DeepSeaTreasureStochastic(EnvMesh):
         :param n_transition: if is 0, the action affected by the transition is always the same action.
         """
 
-        # List of all treasures and its reward.
-        finals = {
-            (0, 1): 1,
-            (1, 2): 2,
-            (2, 3): 3,
-            (3, 4): 5,
-            (4, 4): 8,
-            (5, 4): 16,
-            (6, 7): 24,
-            (7, 7): 50,
-            (8, 9): 74,
-            (9, 10): 124,
-        }
-
-        mesh_shape = (10, 11)
-
-        # Default reward plus time (time_inverted, treasure_value)
-        default_reward = (-1,) + default_reward
-        default_reward = Vector(default_reward)
-
-        obstacles = frozenset()
-        obstacles = obstacles.union([(0, y) for y in range(2, 11)])
-        obstacles = obstacles.union([(1, y) for y in range(3, 11)])
-        obstacles = obstacles.union([(2, y) for y in range(4, 11)])
-        obstacles = obstacles.union([(3, y) for y in range(5, 11)])
-        obstacles = obstacles.union([(4, y) for y in range(5, 11)])
-        obstacles = obstacles.union([(5, y) for y in range(5, 11)])
-        obstacles = obstacles.union([(6, y) for y in range(8, 11)])
-        obstacles = obstacles.union([(7, y) for y in range(8, 11)])
-        obstacles = obstacles.union([(8, y) for y in range(10, 11)])
-
-        # Check transaction probability
-        super().__init__(mesh_shape=mesh_shape, seed=seed, default_reward=default_reward, initial_state=initial_state,
-                         finals=finals, obstacles=obstacles)
+        super().__init__(initial_state=initial_state, default_reward=default_reward, seed=seed, columns=columns)
 
         # Transaction
         assert 0 <= n_transition <= 1.
@@ -69,44 +31,17 @@ class DeepSeaTreasureStochastic(EnvMesh):
         """
         Given an action, do a step
         :param action:
-        :return: (state, (time_inverted, treasure_value), final, info)
+        :return: (position, (time_inverted, treasure_value), final, info)
         """
 
         # Get probability action
         action = self.__probability_action(action=action)
 
-        # Initialize rewards as vector
-        rewards = self.default_reward.copy()
-
-        # Get new state
-        new_state = self.next_state(action=action)
-
-        # Update previous state
-        self.current_state = new_state
-
-        # Get treasure value
-        rewards[1] = self.finals.get(self.current_state, self.default_reward[1])
-
-        # Set info
-        info = {}
-
-        # Check is_final
-        final = self.is_final(self.current_state)
-
-        return self.current_state, rewards, final, info
-
-    def reset(self) -> tuple:
-        """
-        Reset environment to zero.
-        :return:
-        """
-        self.current_state = self.initial_state
-
-        return self.current_state
+        return super().step(action=action)
 
     def __probability_action(self, action: int) -> int:
         """
-        Decide probability action after apply probabilistic transitions.
+        Decide probability action after apply probabilistic p_stochastic.
         :param action:
         :return:
         """
@@ -131,10 +66,31 @@ class DeepSeaTreasureStochastic(EnvMesh):
         # Cyclic direction
         return (direction + action) % self.action_space.n
 
-    def is_final(self, state: tuple = None) -> bool:
-        """
-        Is final if agent is on final state.
-        :param state:
-        :return:
-        """
-        return state in self.finals.keys()
+    def transition_probability(self, state: object, action: int, next_state: object) -> float:
+
+        probability = self.transitions[1]
+
+        # Unpack position
+        x, y = state
+
+        # Movement possibilities
+        up = x, y - 1
+        right = x + 1, y
+        down = x, y + 1
+        left = x - 1, y
+
+        straight_movement = (
+                (action == self.actions['UP'] and up == next_state) or
+                (action == self.actions['RIGHT'] and right == next_state) or
+                (action == self.actions['DOWN'] and down == next_state) or
+                (action == self.actions['LEFT'] and left == next_state)
+        )
+
+        if straight_movement:
+            probability = self.transitions[0]
+
+        return probability
+
+    def reachable_states(self, state: tuple, action: int) -> set:
+        # Return all possible states reachable with any action
+        return {self.next_state(action=a, state=state) for a in self.actions.values()}

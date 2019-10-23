@@ -1,7 +1,7 @@
 """
 Q-Learning agent to resolve environments trough reinforcement learning.
 
-The data structure of q dictionary is as follows:
+The train_data structure of q dictionary is as follows:
 
 {
     state_1: {action_1: reward, action_2: reward, action_3: reward, ...},
@@ -10,20 +10,20 @@ The data structure of q dictionary is as follows:
     ...
 }
 """
-import math
 from copy import deepcopy
 
 import numpy as np
 
+import utils.numbers as un
+from .agent_rl import AgentRL
 from environments import Environment
-from models import GraphType, VectorDecimal, Vector
-from .agent import Agent
+from models import GraphType, VectorDecimal
 
 
-class AgentQ(Agent):
+class AgentQ(AgentRL):
     def __init__(self, environment: Environment, alpha: float = 0.1, epsilon: float = 0.1, gamma: float = 1.,
-                 seed: int = 0, states_to_observe: list = None, max_steps: int = None,
-                 graph_types: set = None, initial_q_value: float = 0.):
+                 seed: int = 0, states_to_observe: set = None, max_steps: int = None, graph_types: set = None,
+                 initial_value: float = 0.):
         """
         :param environment: An environment where agent does any operation.
         :param alpha: Learning rate
@@ -41,7 +41,7 @@ class AgentQ(Agent):
 
         # Super call __init__
         super().__init__(environment=environment, epsilon=epsilon, gamma=gamma, seed=seed,
-                         initial_q_value=initial_q_value, states_to_observe=states_to_observe, max_steps=max_steps,
+                         initial_value=initial_value, states_to_observe=states_to_observe, max_steps=max_steps,
                          graph_types=graph_types)
 
         # Learning factor
@@ -51,7 +51,7 @@ class AgentQ(Agent):
         # Initialize to Q-Learning values
         self.q = dict()
 
-        # Rewards history data
+        # Rewards history train_data
         self.rewards_history = list()
 
     def walk(self, from_state: object = None) -> list:
@@ -63,7 +63,7 @@ class AgentQ(Agent):
         # Reset mesh
         self.state = self.environment.reset()
 
-        # Check if other initial state is selected
+        # Check if other initial position is selected
         if from_state:
             self.state = from_state
 
@@ -89,7 +89,7 @@ class AgentQ(Agent):
             # Append to rewards history
             history.append(reward)
 
-            # Update state
+            # Update position
             self.state = next_state
 
             # Check timeout
@@ -98,7 +98,7 @@ class AgentQ(Agent):
 
         return history
 
-    def do_iteration(self) -> bool:
+    def do_step(self) -> bool:
 
         # Get an action
         action = self.select_action()
@@ -119,7 +119,7 @@ class AgentQ(Agent):
         # Update Q-Values
         self._update_q_values(reward=reward, action=action, next_state=next_state)
 
-        # Update state
+        # Update position
         self.state = next_state
 
         return is_final_state
@@ -132,10 +132,10 @@ class AgentQ(Agent):
         """
 
         for state, data in self.graph_info[graph_type].items():
-            # Add to data Best value (V max)
+            # Add to train_data Best value (V max)
             value = self._best_reward(state=state)
 
-            # Add to data Best value (V max)
+            # Add to train_data Best value (V max)
             data.append(value)
 
             # Update dictionary
@@ -143,7 +143,7 @@ class AgentQ(Agent):
 
     def _update_q_values(self, reward: float, action: int, next_state: object) -> None:
         """
-        Update Q-Dictionary with new data
+        Update Q-Dictionary with new train_data
         :param reward:
         :param action:
         :param next_state:
@@ -160,15 +160,15 @@ class AgentQ(Agent):
         # Q(St, At) <- (1 - alpha) * Q(St, At) + alpha * (r + y * Q(St_1, action))
         new_value = (1 - self.alpha) * old_value + self.alpha * (reward + next_max * self.gamma)
 
-        # Prepare new data
+        # Prepare new train_data
         new_data = {action: new_value}
 
-        # If we know this state
+        # If we know this position
         if self.state in self.q:
             # Update value for the action done.
             self.q.get(self.state).update(new_data)
         else:
-            # Set a new dictionary for this state
+            # Set a new dictionary for this position
             self.q.update({self.state: new_data})
 
     def show_q(self) -> None:
@@ -183,7 +183,7 @@ class AgentQ(Agent):
         Show all states with it's best action
         :return:
         """
-        # For each state in q
+        # For each position in q
         for state in self.q.keys():
             best_action = self.best_action(state=state)
 
@@ -201,11 +201,11 @@ class AgentQ(Agent):
 
     def best_action(self, state: object = None) -> int:
         """
-        Return best action for q and state given.
+        Return best action for q and position given.
         :return:
         """
 
-        # if don't specify a state, get current state.
+        # if don't specify a position, get current position.
         if state is None:
             state = self.state
 
@@ -228,8 +228,7 @@ class AgentQ(Agent):
             reward = possible_actions.get(possible_action)
 
             # If current value is close to new value
-            if math.isclose(a=reward, b=max_reward, rel_tol=Vector.relative_tolerance,
-                            abs_tol=Vector.absolute_tolerance):
+            if un.are_equal_two_decimal_numbers(a=reward, b=max_reward):
 
                 # Append another possible action
                 actions.append(possible_action)
@@ -250,11 +249,11 @@ class AgentQ(Agent):
 
     def _best_reward(self, state: object) -> float:
         """
-        Return best reward for q and state given
+        Return best reward for q and position given
         :return:
         """
 
-        # If this state is a final state, then reward is zero.
+        # If this position is a final position, then reward is zero.
         if self.environment.is_final(state):
             reward = 0.0
         else:
@@ -276,7 +275,7 @@ class AgentQ(Agent):
     @property
     def v(self) -> float:
         """
-        Get best value from initial state -> V_max(0, 0)
+        Get best value from initial position -> V_max(0, 0)
         :return:
         """
         return self._best_reward(state=self.environment.initial_state)
@@ -308,19 +307,19 @@ class AgentQ(Agent):
             # Print result
             print('State: {} -> V: {}'.format(state, max(rewards)))
 
-    def objective_training(self, objective: float) -> None:
+    def objective_training(self, objective: float, graph_type: GraphType = None) -> None:
         """
         Train until agent V(0, 0) value is close to objective value.
+        :param graph_type:
         :param objective:
         :return:
         """
 
-        while not math.isclose(a=self.v, b=objective, rel_tol=Vector.relative_tolerance,
-                               abs_tol=Vector.absolute_tolerance):
+        while not un.are_equal_two_decimal_numbers(a=self.v, b=objective):
             # Do an episode
-            self.episode()
+            self.episode(graph_type=graph_type)
 
-    def exhaustive_train(self) -> None:
+    def exhaustive_train(self, graph_type: GraphType = None) -> None:
         """
         Train until Agent is stabilized
         :return:
@@ -340,7 +339,7 @@ class AgentQ(Agent):
             q_previous = deepcopy(self.q)
 
             # Do an episode
-            self.episode()
+            self.episode(graph_type=graph_type)
 
             # Increment steps
             steps += 1
@@ -353,8 +352,6 @@ class AgentQ(Agent):
                 steps_margin += 1
             else:
                 steps_margin = 0
-
-        print(steps)
 
     def get_accumulated_reward(self, from_state: object = None) -> VectorDecimal:
         """
@@ -398,7 +395,7 @@ class AgentQ(Agent):
 
             while i < len_a_states and are_similar:
 
-                # Get a state
+                # Get a position
                 state = a_states[i]
 
                 # Get actions from dictionaries
