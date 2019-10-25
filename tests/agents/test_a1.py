@@ -19,8 +19,7 @@ class TestA1(unittest.TestCase):
         self.seed = 0
 
         # Build instance of agent
-        self.agent = AgentA1(seed=self.seed, environment=self.environment, integer_mode=True,
-                             hv_reference=Vector([-25, 0]))
+        self.agent = AgentA1(seed=self.seed, environment=self.environment, hv_reference=Vector([-25, 0]))
 
     def tearDown(self):
         self.agent = None
@@ -36,7 +35,6 @@ class TestA1(unittest.TestCase):
         self.assertTrue(hasattr(self.agent, 's') and isinstance(self.agent.s, dict))
         self.assertTrue(hasattr(self.agent, 'v') and isinstance(self.agent.v, dict))
         self.assertTrue(hasattr(self.agent, 'indexes_counter') and isinstance(self.agent.indexes_counter, dict))
-        self.assertTrue(hasattr(self.agent, 'integer_mode') and isinstance(self.agent.integer_mode, bool))
         self.assertTrue(hasattr(self.agent, 'hv_reference') and isinstance(self.agent.hv_reference, Vector))
 
     def test_reset_steps(self):

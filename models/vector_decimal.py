@@ -3,17 +3,24 @@ This class represent a vector with some features necessaries for our program.
 This class has a vector of floats (float64).
 """
 
-import numpy as np
-
 import utils.numbers as un
 from .dominance import Dominance
 from .vector import Vector
+import numpy as np
 
 
 class VectorDecimal(Vector):
     """
     Class Vector with functions to work with float vectors.
     """
+
+    def __init__(self, components):
+        """
+        Vector's init
+        :param components: a numpy array, list or tuple of dtype items
+        """
+
+        super().__init__(np.array(components, dtype=float))
 
     def __ge__(self, other):
         """
@@ -22,9 +29,9 @@ class VectorDecimal(Vector):
         :param other:
         :return:
         """
-        return np.all([
+        return all(
             a > b or un.are_equal_two_decimal_numbers(a=a, b=b) for a, b in zip(self.components, other.components)
-        ])
+        )
 
     def __gt__(self, other):
         """
@@ -34,9 +41,9 @@ class VectorDecimal(Vector):
         :return:
         """
 
-        return np.all([
+        return all(
             a > b and not un.are_equal_two_decimal_numbers(a=a, b=b) for a, b in zip(self.components, other.components)
-        ])
+        )
 
     def __lt__(self, other):
         """
@@ -45,9 +52,9 @@ class VectorDecimal(Vector):
         :param other:
         :return:
         """
-        return np.all([
+        return all(
             a < b and not un.are_equal_two_decimal_numbers(a=a, b=b) for a, b in zip(self.components, other.components)
-        ])
+        )
 
     def __le__(self, other):
         """
@@ -56,9 +63,9 @@ class VectorDecimal(Vector):
         :param other:
         :return:
         """
-        return np.all([
+        return all(
             a < b or un.are_equal_two_decimal_numbers(a=a, b=b) for a, b in zip(self.components, other.components)
-        ])
+        )
 
     @staticmethod
     def m3_max_2_lists_not_duplicates(vectors: list) -> (list, list):
@@ -151,22 +158,24 @@ class VectorDecimal(Vector):
         v1_dominate = False
         v2_dominate = False
 
-        for idx, component in enumerate(self.components):
+        for idx, component_v1 in enumerate(self.components):
+
+            component_v2 = v2.components[idx]
 
             # Are equals or close...
-            if un.are_equal_two_decimal_numbers(a=self.components[idx], b=v2.components[idx]):
+            if un.are_equal_two_decimal_numbers(a=component_v1, b=component_v2):
                 # Nothing to do at moment
                 pass
 
-            elif self.components[idx] > v2.components[idx]:
+            elif component_v1 > component_v2:
                 v1_dominate = True
 
                 # If already dominate v2, then both vectors are independent.
                 if v2_dominate:
                     return Dominance.otherwise
 
-            # v1's component is dominated by v2
-            elif self.components[idx] < v2.components[idx]:
+            # v1's component_v1 is dominated by v2
+            elif component_v1 < component_v2:
                 v2_dominate = True
 
                 # If already dominate v1, then both vectors are independent.

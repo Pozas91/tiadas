@@ -82,7 +82,7 @@ class AgentPQL(AgentRL):
     def __init__(self, environment: Environment, epsilon: float = 0.1, gamma: float = 1., seed: int = 0,
                  max_steps: int = None, hv_reference: Vector = None, graph_types: set = None,
                  evaluation_mechanism: EvaluationMechanism = EvaluationMechanism.HV, initial_value: Vector = None,
-                 states_to_observe: set = None, integer_mode: bool = False):
+                 states_to_observe: set = None):
 
         """
         :param environment: instance of any environment class.
@@ -206,11 +206,11 @@ class AgentPQL(AgentRL):
                 data.append({
                     'train_data': value,
                     'time': time.time() - self.reference_time_to_train,
-                    'steps': self.total_steps
+                    'iterations': self.total_steps
                 })
 
                 # Update dictionary
-                self.graph_info.get(graph_type).update({state: data})
+                self.graph_info[graph_type].update({state: data})
 
     def get_and_update_n_s_a(self, state: object, action: int) -> int:
         """
@@ -929,9 +929,8 @@ class AgentPQL(AgentRL):
             n.get(key).update({action: value})
 
         # Prepare an instance of model.
-        model = AgentPQL(environment=environment, epsilon=epsilon, gamma=gamma, seed=seed,
-                         max_steps=max_steps, hv_reference=hv_reference,
-                         evaluation_mechanism=evaluation_mechanism, integer_mode=integer_mode, graph_types=graph_types)
+        model = AgentPQL(environment=environment, epsilon=epsilon, gamma=gamma, seed=seed, max_steps=max_steps,
+                         hv_reference=hv_reference, evaluation_mechanism=evaluation_mechanism, graph_types=graph_types)
 
         # Set finals settings and return it.
         model.r = r

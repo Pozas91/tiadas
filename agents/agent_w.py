@@ -181,7 +181,7 @@ class AgentW(Agent):
                 data.append({
                     'train_data': value,
                     'time': time.time() - self.reference_time_to_train,
-                    'sweep': self.total_sweeps
+                    'iterations': self.total_sweeps
                 })
 
                 # Update dictionary

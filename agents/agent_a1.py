@@ -26,7 +26,7 @@ class AgentA1(AgentRL):
     def __init__(self, environment: Environment, hv_reference: Vector, alpha: float = 0.1, epsilon: float = 0.1,
                  gamma: float = 1., seed: int = 0, states_to_observe: set = None, max_steps: int = None,
                  evaluation_mechanism: EvaluationMechanism = EvaluationMechanism.HV, graph_types: set = None,
-                 initial_value: Vector = None):
+                 initial_value: VectorDecimal = None):
         """
         :param environment: An environment where agent does any operation.
         :param alpha: Learning rate
@@ -50,7 +50,7 @@ class AgentA1(AgentRL):
                          states_to_observe=states_to_observe, max_steps=max_steps, initial_value=initial_value)
 
         if initial_value is None:
-            self.initial_q_value = self.environment.default_reward.zero_vector
+            self.initial_q_value = VectorDecimal(self.environment.default_reward.zero_vector)
 
         # Learning factor
         assert 0 < alpha <= 1
@@ -160,6 +160,9 @@ class AgentA1(AgentRL):
         # Do step on environment
         next_state, reward, is_final_state, info = self.environment.step(action=action)
 
+        # Convert to decimal vector
+        reward = VectorDecimal(reward)
+
         # Increment steps done
         self.total_steps += 1
         self.steps += 1
@@ -242,18 +245,21 @@ class AgentA1(AgentRL):
             # In the same for loop, is check if this agent has the graph_type indicated (get dictionary default
             # value)
             for state, data in self.graph_info.get(graph_type, {}).items():
-                # Add to train_data Best value (V max)
-                value = self._best_hypervolume(state=state)
+                # Extract V(state) (without operations)
+                value = list(self.v.get(state, {}).values())
 
-                # Add to train_data Best value (V max)
-                data.append(value)
+                # Set default value
+                value = value if value else [self.initial_q_value]
+
+                # Add information to that train_data
+                data.append({
+                    'train_data': value,
+                    'time': time.time() - self.reference_time_to_train,
+                    'iterations': self.total_steps
+                })
 
                 # Update dictionary
                 self.graph_info[graph_type].update({state: data})
-
-            if graph_type is GraphType.TIME:
-                # Update last execution
-                self.last_time_to_get_graph_data = time.time()
 
     def _best_hypervolume(self, state: object = None) -> float:
         """
@@ -350,7 +356,7 @@ class AgentA1(AgentRL):
 
             distance += 1
 
-    def best_action(self, state: object = None) -> int:
+    def _best_action(self, state: object = None, info: object = None) -> int:
         """
         Return best action a position given.
         :return:
@@ -730,60 +736,6 @@ class AgentA1(AgentRL):
 
         return cartesian_product, indexes
 
-    def q_real(self):
-        """
-        Return a real values of Q-table
-        :return:
-        """
-
-        # First do a deepcopy of original Q-table
-        q = deepcopy(self.q)
-
-        # For each position with it action dictionary
-        for state, action_dict in q.items():
-
-            # For each action with it indexes dictionary
-            for action, indexes_dict in action_dict.items():
-                # For each index with it index_vector (with a int vector associated multiplied by Vector.decimals)
-                for index, index_vector in indexes_dict.items():
-                    # Divide that vector by Vector.decimals to convert in original float vector
-                    index_vector.vector = VectorDecimal(
-                        index_vector.vector.components / (10 ** Vector.decimals_allowed)
-                    )
-
-                    # Update Q-table dictionary
-                    indexes_dict.update({index: index_vector})
-                    action_dict.update({action: indexes_dict})
-                    q.update({state: action_dict})
-
-        # Return Q-table transformed
-        return q
-
-    def v_real(self) -> dict:
-        """
-        Return a real values of V-values
-        :return:
-        """
-
-        # First do a deepcopy of original V-values
-        v = deepcopy(self.v)
-
-        # For each position with it vectors
-        for state, vectors in v.items():
-
-            # For each index with it vector
-            for index, vector in vectors.items():
-                # Divide that vector by Vector.decimals to convert in original float vector
-                vectors.update({
-                    index: VectorDecimal(
-                        vector.components / (10 ** Vector.decimals_allowed)
-                    )
-                })
-                # Update V-values dictionary
-                v.update({state: vectors})
-
-        return v
-
     def objective_training(self, list_of_vectors: list, graph_type: GraphType = None):
         """
         Train until agent V(0, 0) value is close to objective value.
@@ -935,7 +887,7 @@ class AgentA1(AgentRL):
 
             elif 'default_reward' in key:
                 # If all elements are int, then default_reward is a integer Vector, otherwise float Vector
-                value = Vector(value) if (all([isinstance(x, int) for x in value])) else VectorDecimal(value)
+                value = VectorDecimal(value)
 
             vars(environment)[key] = value
 

@@ -9,7 +9,7 @@ from copy import deepcopy
 
 import numpy as np
 
-from models import Dominance, Vector, VectorDecimal
+from models import Dominance, VectorDecimal
 
 
 class TestVectorFloat(unittest.TestCase):
@@ -23,8 +23,7 @@ class TestVectorFloat(unittest.TestCase):
     def setUp(self):
 
         # Vector configuration
-        Vector.set_absolute_tolerance(absolute_tolerance=0.01, integer_mode=False)
-        Vector.decimals_allowed = 2
+        VectorDecimal.set_decimals_allowed(decimals_allowed=2)
 
         self.first_quadrant = (
             [

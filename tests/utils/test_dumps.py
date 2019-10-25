@@ -10,6 +10,7 @@ from agents import AgentPQL
 from environments import *
 from models import Vector, EvaluationMechanism
 
+
 class TestDumps(unittest.TestCase):
 
     def setUp(self) -> None:
@@ -36,7 +37,6 @@ class TestDumps(unittest.TestCase):
 
         # Vector configuration
         Vector.decimals_allowed = 2
-        Vector.set_absolute_tolerance(absolute_tolerance=0.01, integer_mode=True)
 
         # Instance of Environment
         env = BonusWorld(initial_state=initial_state, default_reward=default_reward, seed=seed)
@@ -44,7 +44,7 @@ class TestDumps(unittest.TestCase):
         # Instance of AgentMOMP
         agent = AgentPQL(environment=env, epsilon=epsilon, states_to_observe=states_to_observe,
                          hv_reference=hv_reference, evaluation_mechanism=evaluation_mechanism, gamma=gamma,
-                         max_steps=max_steps, integer_mode=True)
+                         max_steps=max_steps)
 
         # Train to modify train_data.
         agent.episode_train(episodes=episodes)

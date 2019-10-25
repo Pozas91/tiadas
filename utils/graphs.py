@@ -1,7 +1,6 @@
 import math
 import os
 import time
-from decimal import Decimal as D
 from pathlib import Path
 
 import gym
@@ -11,11 +10,14 @@ from colorama import Fore, init
 
 import utils.hypervolume as uh
 import utils.miscellaneous as um
+import utils.numbers as un
 from agents import Agent, AgentPQL, AgentMOSP, AgentA1, AgentPQLEXP, AgentPQLEXP3, AgentW
 from environments import Environment
 from models import AgentType, GraphType, Vector, EvaluationMechanism
 
 init(autoreset=True)
+
+dumps_directory = Path(__file__).parent.parent.joinpath('dumps')
 
 
 def write_config_file(timestamp: int, number_of_agents: int, env_name_snake: str, **kwargs):
@@ -28,13 +30,13 @@ def write_config_file(timestamp: int, number_of_agents: int, env_name_snake: str
     """
 
     # Path to save file
-    config_path = './dumps/config/{}_{}_{}.config'
+    config_path = 'config/{}_{}_{}.config'
 
     # Get only first letter of each word
     env_name_abbr = ''.join([word[0] for word in env_name_snake.split('_')])
 
     # Create file from above path
-    config_file = Path(
+    config_file = dumps_directory.joinpath(
         config_path.format(env_name_abbr, number_of_agents, timestamp).lower()
     )
 
@@ -78,13 +80,13 @@ def dumps_train_data(timestamp: int, seed: int, env_name_snake: str, agent_type:
     """
 
     # Path to save file
-    data_path = './dumps/{}/train_data/{}_{}_{}_{}_{}_{}.yml'
+    data_path = '{}/train_data/{}_{}_{}_{}_{}_{}.yml'
 
     # Get only first letter of each word
     env_name_abbr = ''.join([word[0] for word in env_name_snake.split('_')])
 
     # Create file from above path
-    data_file = Path(
+    data_file = dumps_directory.joinpath(
         data_path.format(str(agent_type.value), env_name_abbr, seed, variable, configuration, evaluation_mechanism,
                          timestamp).lower()
     )
@@ -126,7 +128,7 @@ def initialize_graph_data(graph_types: set, agents_configuration: dict) -> (dict
                 data_evaluations_info.update({
                     '{}'.format(configuration): {
                         'time': list(),
-                        'steps': list(),
+                        'iterations': list(),
                         'solutions_found': list(),
                         'had_solution_found': list(),
                     }
@@ -152,7 +154,6 @@ def compare_solution(vectors: list, solution: list) -> (int, bool):
     :return:
     """
 
-    exponent = D(10) ** -(Vector.decimals_allowed - 1)
     equals_counter = list()
 
     for vector in vectors:
@@ -165,7 +166,7 @@ def compare_solution(vectors: list, solution: list) -> (int, bool):
                 continue
 
             are_equals = np.all([
-                D(x).quantize(exponent) == D(y).quantize(exponent)
+                un.are_equal_two_decimal_numbers(a=x, b=y)
                 for x, y in zip(vector.components.astype(float), vector_solution.components.astype(float))
             ])
 
@@ -208,7 +209,7 @@ def update_graphs(graphs: dict, graph_type: GraphType, agent: Agent, configurati
     else:
 
         # Prepare new train_data
-        agent_data, agent_time, agent_steps = list(), list(), list()
+        agent_data, agent_time, agent_iterations = list(), list(), list()
         agent_solutions_found, agent_had_solutions_found = list(), list()
 
         for new_data in agent.graph_info[graph_type][states_to_observe[0]]:
@@ -224,24 +225,23 @@ def update_graphs(graphs: dict, graph_type: GraphType, agent: Agent, configurati
 
             # If solution is given, compare it
             if solution is not None:
-                number_of_solutions, solution_found = compare_solution(vectors=new_data['train_data'],
-                                                                       solution=solution)
+                n_solutions, solution_found = compare_solution(vectors=new_data['train_data'], solution=solution)
 
                 # Extract information
                 agent_time.append(new_data['time'] if solution_found else None)
-                agent_steps.append(new_data['steps'] if solution_found else None)
-                agent_solutions_found.append(number_of_solutions)
+                agent_iterations.append(new_data['iterations'] if solution_found else None)
+                agent_solutions_found.append(n_solutions)
                 agent_had_solutions_found.append(solution_found)
 
         # Default value
         agent_time = agent_time if agent_time else [float('inf')]
-        agent_steps = agent_steps if agent_steps else [float('inf')]
+        agent_iterations = agent_iterations if agent_iterations else [float('inf')]
         agent_solutions_found = agent_solutions_found if agent_solutions_found else [0]
         agent_had_solutions_found = agent_had_solutions_found if agent_had_solutions_found else [False]
 
         # Additional information
         old_data_info_list['time'].append(min([float('inf') if x is None else x for x in agent_time]))
-        old_data_info_list['steps'].append(min([float('inf') if x is None else x for x in agent_steps]))
+        old_data_info_list['iterations'].append(min([float('inf') if x is None else x for x in agent_iterations]))
         old_data_info_list['solutions_found'].append(max([x for x in agent_solutions_found]))
         old_data_info_list['had_solution_found'].append(np.any(agent_had_solutions_found))
 
@@ -259,15 +259,14 @@ def update_graphs(graphs: dict, graph_type: GraphType, agent: Agent, configurati
 
 def test_agents(environment: Environment, hv_reference: Vector, variable: str, agents_configuration: dict,
                 graph_configuration: dict, epsilon: float = None, alpha: float = None, max_steps: int = None,
-                states_to_observe: list = None, integer_mode: bool = False, number_of_agents: int = 30,
-                gamma: float = 1., solution: list = None, initial_q_value: Vector = None,
-                evaluation_mechanism: EvaluationMechanism = None):
+                states_to_observe: list = None, number_of_agents: int = 30, gamma: float = 1., solution: list = None,
+                initial_q_value: Vector = None, evaluation_mechanism: EvaluationMechanism = None):
     """
-    If we choose DATA_PER_STATE in graph_configurations, the agent train during `limit` steps, and only get train_data in
-    the last steps (ignore `interval`).
+    If we choose DATA_PER_STATE in graph_configurations, the agent train during `limit` steps, and only get train_data
+    in the last steps (ignore `interval`).
 
-    If we choose MEMORY in graph_configurations, the agent train during `limit` steps and take train_data every `interval`
-    steps.
+    If we choose MEMORY in graph_configurations, the agent train during `limit` steps and take train_data every
+    `interval` steps.
 
     :param initial_q_value:
     :param graph_configuration:
@@ -280,7 +279,6 @@ def test_agents(environment: Environment, hv_reference: Vector, variable: str, a
     :param alpha:
     :param max_steps:
     :param states_to_observe:
-    :param integer_mode:
     :param number_of_agents:
     :param gamma:
     :param evaluation_mechanism:
@@ -348,6 +346,7 @@ def test_agents(environment: Environment, hv_reference: Vector, variable: str, a
 
                 # Extract configuration for that agent
                 for configuration in agents_configuration[agent_type].keys():
+
                     # Show information
                     print(('\t' * 4) + '{}: {}'.format(variable, configuration), end=' ')
 
@@ -364,14 +363,17 @@ def test_agents(environment: Environment, hv_reference: Vector, variable: str, a
                         'evaluation_mechanism': evaluation_mechanism, 'initial_value': initial_q_value
                     }
 
-                    # Modify current configuration
-                    parameters.update({variable: configuration})
+                    if variable == 'decimals_allowed':
+                        Vector.set_decimals_allowed(decimals_allowed=configuration)
+                    else:
+                        # Modify current configuration
+                        parameters.update({variable: configuration})
 
                     agent, v_s_0 = train_agent_and_get_v_s_0(agent_type=agent_type, environment=environment,
                                                              graph_type=graph_type, graph_types=graph_types,
                                                              hv_reference=hv_reference, initial_q_value=initial_q_value,
-                                                             integer_mode=integer_mode, limit=limit, seed=seed,
-                                                             parameters=parameters, states_to_observe=states_to_observe)
+                                                             limit=limit, seed=seed, parameters=parameters,
+                                                             states_to_observe=states_to_observe)
 
                     print('-> {:.2f}s'.format(time.time() - t0))
 
@@ -409,8 +411,8 @@ def test_agents(environment: Environment, hv_reference: Vector, variable: str, a
 
 
 def train_agent_and_get_v_s_0(agent_type: AgentType, environment: Environment, graph_type: GraphType, graph_types: set,
-                              hv_reference: Vector, initial_q_value: Vector, integer_mode: bool, limit: int,
-                              parameters: dict, seed: int, states_to_observe: set):
+                              hv_reference: Vector, initial_q_value: Vector, limit: int, parameters: dict, seed: int,
+                              states_to_observe: set) -> (Agent, set):
     """
     :param agent_type:
     :param environment:
@@ -418,7 +420,6 @@ def train_agent_and_get_v_s_0(agent_type: AgentType, environment: Environment, g
     :param graph_types:
     :param hv_reference:
     :param initial_q_value:
-    :param integer_mode:
     :param limit:
     :param parameters:
     :param seed:
@@ -479,22 +480,21 @@ def train_agent_and_get_v_s_0(agent_type: AgentType, environment: Environment, g
         # Build an instance of agent
         if agent_type is AgentType.PQL:
             agent = AgentPQL(environment=environment, seed=seed, hv_reference=hv_reference,
-                             graph_types=graph_types, states_to_observe=states_to_observe,
-                             integer_mode=integer_mode, **parameters)
+                             graph_types=graph_types, states_to_observe=states_to_observe, **parameters)
+
         elif agent_type is AgentType.PQL_EXP:
             agent = AgentPQLEXP(environment=environment, seed=seed, hv_reference=hv_reference,
-                                graph_types=graph_types, states_to_observe=states_to_observe,
-                                integer_mode=integer_mode, **parameters)
+                                graph_types=graph_types, states_to_observe=states_to_observe, **parameters)
+
         elif agent_type is AgentType.PQL_EXP_3:
             agent = AgentPQLEXP3(environment=environment, seed=seed, hv_reference=hv_reference,
-                                 graph_types=graph_types, states_to_observe=states_to_observe,
-                                 integer_mode=integer_mode, **parameters)
+                                 graph_types=graph_types, states_to_observe=states_to_observe, **parameters)
 
         # Train the agent
         agent.train(graph_type=graph_type, limit=limit)
 
         # Non-dominated vectors found in V(s0)
-        v_s_0 = agent.q_set_from_state(state=agent.environment.initial_state)
+        v_s_0 = set(agent.q_set_from_state(state=agent.environment.initial_state))
 
     elif agent_type is AgentType.A1:
 
@@ -505,11 +505,8 @@ def train_agent_and_get_v_s_0(agent_type: AgentType, environment: Environment, g
         # Train the agent
         agent.train(graph_type=graph_type, limit=limit)
 
-        # Non-dominated vectors found in V(s0)
-        v_real = agent.v_real()
-
         # Extract V from s0, by default is `initial_value`
-        v_s_0 = v_real.get(agent.environment.initial_state, {0: initial_q_value}).values()
+        v_s_0 = set(agent.v.get(agent.environment.initial_state, {0: initial_q_value}).values())
 
     elif agent_type is AgentType.W:
 
@@ -529,7 +526,7 @@ def train_agent_and_get_v_s_0(agent_type: AgentType, environment: Environment, g
         agent.train(graph_type=graph_type, limit=limit)
 
         # Non-dominated vectors found in V(s0)
-        v_s_0 = agent.v[agent.environment.initial_state]
+        v_s_0 = set(agent.v[agent.environment.initial_state])
 
     return agent, v_s_0
 
@@ -561,8 +558,8 @@ def prepare_data_and_show_graph(timestamp: int, env_name: str, env_name_snake: s
     """
 
     # Path to save file
-    graph_path = './dumps/{}/graphs/{}_{}_{}_{}_{}_{}_{}.m'
-    plot_path = './dumps/plots/{}_{}_{}.png'
+    graph_path = '{}/graphs/{}_{}_{}_{}_{}_{}_{}.m'
+    plot_path = 'plots/{}_{}_{}.png'
 
     # Extract vectors per cells graph from all graphs
     vectors_per_cells_graph = graphs.pop(GraphType.DATA_PER_STATE, {})
@@ -578,7 +575,7 @@ def prepare_data_and_show_graph(timestamp: int, env_name: str, env_name_snake: s
             process_data = np.average(data, axis=0).tolist()
 
             # Create file from given path.
-            matlab_file = Path(
+            matlab_file = dumps_directory.joinpath(
                 graph_path.format(agent_type.value, env_name_abbr, number_of_agents, variable, configuration,
                                   GraphType.DATA_PER_STATE.value, evaluation_mechanism, timestamp).lower()
             )
@@ -670,7 +667,7 @@ def prepare_data_and_show_graph(timestamp: int, env_name: str, env_name_snake: s
                                     label='{} {}'.format(agent_type.value, configuration), color=color)
 
                 # Create file from given path.
-                matlab_file = Path(
+                matlab_file = dumps_directory.joinpath(
                     graph_path.format(agent_type.value, env_name_abbr, number_of_agents, variable, configuration,
                                       graph_name, evaluation_mechanism, timestamp).lower()
                 )
@@ -735,20 +732,22 @@ def prepare_data_and_show_graph(timestamp: int, env_name: str, env_name_snake: s
     if variable is not 'max_steps' and max_steps is not None:
         basic_information.append(r'max_steps={}'.format(max_steps))
 
+    if variable is not 'decimals_allowed':
+        basic_information.append(r'decimals_allowed={}'.format(Vector.decimals_allowed))
+
     if variable is not 'evaluation_mechanism' and evaluation_mechanism is not None:
         basic_information.append(r'evaluation_mechanism={}'.format(evaluation_mechanism))
 
     text_information = '\n'.join(basic_information + [
         r'initial_state={}'.format(initial_state),
-        r'decimals_allowed={}'.format(Vector.decimals_allowed),
-        r'max_y_data={}'.format(max_data),
+        r'max_y_data={:.3f}'.format(max_data),
         r'# agents={}'.format(number_of_agents)
     ])
 
     plt.text(0.85, 0.5, text_information, bbox=props, transform=plt.gcf().transFigure)
 
     # Define figure path
-    plot_file = Path(
+    plot_file = dumps_directory.joinpath(
         plot_path.format(env_name_abbr, number_of_agents, timestamp).lower()
     )
 
@@ -762,6 +761,9 @@ def prepare_data_and_show_graph(timestamp: int, env_name: str, env_name_snake: s
 
 
 def show_data_info(agent_type, configuration, graph_type, graphs_info):
+    # Header from data info
+    print('Information about data from configuration: {} \n'.format(configuration))
+
     # Data info
     data_info = graphs_info[graph_type][agent_type][str(configuration)]
     # Output Text: Algorithm_Mechanism & average & std & max & min
@@ -780,16 +782,15 @@ def show_data_info(agent_type, configuration, graph_type, graphs_info):
                              info_time_min))
     # Information about steps
     # Keep finite elements
-    data_info['steps'] = list(filter(math.isfinite, data_info['steps']))
+    data_info['iterations'] = list(filter(math.isfinite, data_info['iterations']))
     # If hasn't any element return [-1] list
-    data_info['steps'] = data_info['steps'] if data_info['steps'] else [-1]
-    info_steps_avg = np.average(data_info['steps'])
-    info_steps_std = np.std(data_info['steps'])
-    info_steps_max = np.max(data_info['steps'])
-    info_steps_min = np.min(data_info['steps'])
-    print('\tSteps:')
-    print(output_text.format(agent_type, configuration, info_steps_avg, info_steps_std, info_steps_max,
-                             info_steps_min))
+    data_info['iterations'] = data_info['iterations'] if data_info['iterations'] else [-1]
+    info_iterations_avg = np.average(data_info['iterations'])
+    info_iterations_std = np.std(data_info['iterations'])
+    info_iterations_max = np.max(data_info['iterations'])
+    info_iterations_min = np.min(data_info['iterations'])
+    print('\tIterations:')
+    print(output_text.format(agent_type, configuration, info_iterations_avg, info_iterations_std, info_iterations_max, info_iterations_min))
     # Information about solutions_found
     info_solutions_found_avg = np.average(data_info['solutions_found'])
     info_solutions_found_std = np.std(data_info['solutions_found'])
@@ -814,7 +815,7 @@ def unified_graphs(line_specification: dict, input_path: str = None, output_path
 
     # Create an instance of Path with input and output paths.
     if input_path is None:
-        input_directory = Path(__file__).parent.parent.joinpath('dumps/unify')
+        input_directory = dumps_directory.joinpath('unify')
     else:
         input_directory = Path(input_path)
 
@@ -885,8 +886,7 @@ def unified_graphs(line_specification: dict, input_path: str = None, output_path
             )
 
         if output_path is None:
-            output_file = Path(__file__).parent.parent.joinpath(
-                'dumps/unify/unified/{}.m'.format(description_file_name))
+            output_file = dumps_directory.joinpath('unify/unified/{}.m'.format(description_file_name))
         else:
             output_file = Path(output_path)
 
