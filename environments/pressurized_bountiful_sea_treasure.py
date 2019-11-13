@@ -87,7 +87,7 @@ class PressurizedBountifulSeaTreasure(EnvMesh):
         """
         Given an action, do a step
         :param action:
-        :return: (position, (time_inverted, treasure_value), final, info)
+        :return: (position, (time_inverted, treasure_value), final, extra)
         """
 
         # Initialize reward as vector
@@ -102,7 +102,7 @@ class PressurizedBountifulSeaTreasure(EnvMesh):
         # Water pressure (y-coordinate)
         reward[2] = -(self.current_state[1] + 1)
 
-        # Set info
+        # Set extra
         info = {}
 
         # Check is_final

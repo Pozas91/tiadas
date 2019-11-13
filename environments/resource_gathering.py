@@ -16,11 +16,12 @@ FINAL STATE: any of below states.
 REF: Empirical Evaluation methods for multi-objective reinforcement learning algorithms
     (Vamplew, Dazeley, Berry, Issabekov and Dekker) 2011
 """
+import itertools
+
 import gym
 
 from models import Vector
 from .env_mesh import EnvMesh
-import itertools
 
 
 class ResourceGathering(EnvMesh):
@@ -97,7 +98,7 @@ class ResourceGathering(EnvMesh):
         if final:
             reward[1], reward[2] = self.current_state[1]
 
-        # Set info
+        # Set extra
         info = {}
 
         return self.current_state, reward, final, info
@@ -137,7 +138,9 @@ class ResourceGathering(EnvMesh):
         Reset environment to zero.
         :return:
         """
-        self.current_state = self.initial_state
+
+        # Reset to initial seed
+        self.seed(seed=self.initial_seed)
 
         # Reset golds positions
         for gold_state in self.gold_positions.keys():
@@ -147,6 +150,7 @@ class ResourceGathering(EnvMesh):
         for gem_state in self.gem_positions.keys():
             self.gem_positions.update({gem_state: True})
 
+        self.current_state = self.initial_state
         return self.current_state
 
     def get_dict_model(self) -> dict:
@@ -182,4 +186,3 @@ class ResourceGathering(EnvMesh):
         return states
 
     # def transition_reward(self, state: tuple, action: int, next_state: tuple) -> tuple:
-

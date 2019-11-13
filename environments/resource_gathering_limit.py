@@ -82,7 +82,7 @@ class ResourceGatheringLimit(EnvMesh):
             # Accumulate reward
             reward = self.status / self.time
 
-        # Set info
+        # Set extra
         info = {}
 
         return (self.current_state, tuple(self.status)), reward, final, info
@@ -92,7 +92,10 @@ class ResourceGatheringLimit(EnvMesh):
         Reset environment to zero.
         :return:
         """
-        self.current_state = self.initial_state
+
+        # Reset to initial seed
+        self.seed(seed=self.initial_seed)
+
         self.status = self.default_reward.copy()
 
         # Reset golds positions
@@ -106,6 +109,7 @@ class ResourceGatheringLimit(EnvMesh):
         # Reset time inverted
         self.time = 0
 
+        self.current_state = self.initial_state
         return self.current_state, tuple(self.status.tolist())
 
     def render(self, **kwargs) -> None:

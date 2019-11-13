@@ -11,7 +11,7 @@ from tests.environments.test_env_mesh import TestEnvMesh
 class TestBuridanAss(TestEnvMesh):
 
     def setUp(self):
-        # Set seed to 0 to testing.
+        # Set initial_seed to 0 to testing.
         self.environment = BuridanAss(seed=0)
 
     def test_init(self):
@@ -250,19 +250,22 @@ class TestBuridanAss(TestEnvMesh):
         self.environment.reset()
 
         # Wasteful steps for the donkey to be hungry
-        for _ in range(10):
+        for _ in range(3):
             next_state, reward, is_final, _ = self.environment.step(action=self.environment.actions['RIGHT'])
 
         # Donkey has hungry.
-        self.assertEqual(((2, 1), {(0, 0), (2, 2)}, 9), next_state)
-        self.assertEqual([-1.0, 0, -1.0], reward)
+        # Food stack (0, 0) is stolen.
+        self.assertEqual(((2, 1), {(2, 2)}, 3), next_state)
+        self.assertEqual([0.0, -0.5, -1.0], reward)
         self.assertFalse(is_final)
+
+        for _ in range(7):
+            next_state, reward, is_final, _ = self.environment.step(action=self.environment.actions['RIGHT'])
 
         # Go to DOWN (2, 2)
         next_state, reward, is_final, _ = self.environment.step(action=self.environment.actions['DOWN'])
-        # Food stack (0, 0) is stolen.
         self.assertEqual(((2, 2), {(2, 2)}, 9), next_state)
-        self.assertEqual([-1, -0.5, -1.], reward)
+        self.assertEqual([-1, 0.0, -1.], reward)
 
         # Go to STAY (2, 2)
         next_state, reward, is_final, _ = self.environment.step(action=self.environment.actions['STAY'])

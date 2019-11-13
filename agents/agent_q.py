@@ -15,9 +15,9 @@ from copy import deepcopy
 import numpy as np
 
 import utils.numbers as un
-from .agent_rl import AgentRL
 from environments import Environment
 from models import GraphType, VectorDecimal
+from .agent_rl import AgentRL
 
 
 class AgentQ(AgentRL):
@@ -81,7 +81,7 @@ class AgentQ(AgentRL):
             self.steps += 1
 
             # Get an action
-            action = self.best_action()
+            action = self._best_action()
 
             # Do step on environment
             next_state, reward, is_final_state, info = self.environment.step(action=action)
@@ -185,8 +185,7 @@ class AgentQ(AgentRL):
         """
         # For each position in q
         for state in self.q.keys():
-            best_action = self.best_action(state=state)
-
+            best_action = self._best_action(state=state)
             print("State: {} -> Action: {}".format(state, best_action))
 
     def reset(self) -> None:
@@ -194,12 +193,15 @@ class AgentQ(AgentRL):
         Reset agent, forgetting previous q-values
         :return:
         """
+        # Super call to reset method
+        super().reset()
+
         self.rewards_history = list()
         self.q = dict()
         self.state = self.environment.reset()
         self.steps = 0
 
-    def best_action(self, state: object = None) -> int:
+    def _best_action(self, state: object = None, extra: object = None) -> int:
         """
         Return best action for q and position given.
         :return:
@@ -267,7 +269,7 @@ class AgentQ(AgentRL):
                     possible_actions.update({action: self.initial_q_value})
 
             # Get best action and use it to get best reward.
-            action = self.best_action(state=state)
+            action = self._best_action(state=state)
             reward = possible_actions.get(action)
 
         return reward

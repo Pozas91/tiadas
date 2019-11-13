@@ -53,7 +53,7 @@ class MoPuddleWorld(EnvMesh):
         """
         Given an action, do a step
         :param action:
-        :return: (position, (non_goal_reached, puddle_penalize), final, info)
+        :return: (position, (non_goal_reached, puddle_penalize), final, extra)
         """
 
         # Initialize reward as vector
@@ -74,7 +74,7 @@ class MoPuddleWorld(EnvMesh):
             # Set penalization per distance
             reward[1] = self.calc_puddle_penalization(state=self.current_state)
 
-        # Set info
+        # Set extra
         info = {}
 
         return self.current_state, reward, final, info
@@ -92,11 +92,13 @@ class MoPuddleWorld(EnvMesh):
         :return:
         """
 
-        while True:
-            random_space = self.observation_space.sample()
+        # Reset to initial seed
+        self.seed(seed=self.initial_seed)
 
-            if random_space != self.final_state:
-                break
+        random_space = None
+
+        while random_space == self.final_state:
+            random_space = self.observation_space.sample()
 
         self.current_state = random_space
         return self.current_state

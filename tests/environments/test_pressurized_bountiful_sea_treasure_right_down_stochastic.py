@@ -10,7 +10,7 @@ from tests.environments.test_pressurized_bountiful_sea_treasure import TestPress
 class TestPressurizedBountifulSeaTreasureRightDownStochastic(TestPressurizedBountifulSeaTreasure):
 
     def setUp(self):
-        # Set seed to 0 to testing.
+        # Set initial_seed to 0 to testing.
         self.environment = PressurizedBountifulSeaTreasureRightDownStochastic(seed=0)
 
     def test_action_space_length(self):

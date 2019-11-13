@@ -9,7 +9,7 @@ Save rewards, N and occurrences independently, to calculate Q-set on runtime.
 Evaluation mechanisms available
     - HV-PQL: Based on hypervolume
     - C-PQL: Based on cardinality of the set of Pareto-optimal vectors
-    - PO-PQL: Based on existance of at least one Pareto-optimal vector
+    - PO-PQL: Based on existence of at least one Pareto-optimal vector
     
     
 Sample call: 
@@ -62,9 +62,7 @@ This seems faster than using either deepcopy (≈ 247% faster) or copy
 """
 import datetime
 import importlib
-import json
 import math
-import os
 import time
 from copy import deepcopy
 
@@ -72,8 +70,9 @@ import numpy as np
 
 import utils.hypervolume as uh
 import utils.miscellaneous as um
+from agents import Agent
 from environments import Environment
-from models import IndexVector, GraphType, EvaluationMechanism, Vector, VectorDecimal
+from models import IndexVector, GraphType, EvaluationMechanism, Vector, VectorDecimal, AgentType
 from .agent_rl import AgentRL
 
 
@@ -325,6 +324,10 @@ class AgentPQL(AgentRL):
         Reset agent, forgetting previous dictionaries
         :return:
         """
+
+        # Super call to reset method
+        super().reset()
+
         self.r = dict()
         self.nd = dict()
         self.n = dict()
@@ -334,11 +337,11 @@ class AgentPQL(AgentRL):
         self.reset_steps()
         self.reset_graph_info()
 
-    def best_action(self, state: object = None, info=None) -> int:
+    def _best_action(self, state: object = None, extra: object = None) -> int:
         """
         Return best action for q and position given. The best action is selected according to the method
         specified in the self.evaluation_mechanism variable.
-        :param info:
+        :param extra:
         :param state:
         :return:
         """
@@ -480,7 +483,7 @@ class AgentPQL(AgentRL):
             q_set = self.q_set(state=state, action=a)
 
             # Calc hypervolume of Q_set, with reference given.
-            hv.append(uh.calc_hypervolume(list_of_vectors=q_set, reference=self.hv_reference))
+            hv.append(uh.calc_hypervolume(vectors=q_set, reference=self.hv_reference))
 
         # Restore environment correct position
         self.environment.current_state = previous_state
@@ -506,7 +509,7 @@ class AgentPQL(AgentRL):
             q_set = self.q_set(state=state, action=a)
 
             # Calc hypervolume of Q_set, with reference given.
-            evaluation = uh.calc_hypervolume(list_of_vectors=q_set, reference=self.hv_reference)
+            evaluation = uh.calc_hypervolume(vectors=q_set, reference=self.hv_reference)
 
             # If current value is close to new value
             if math.isclose(a=evaluation, b=max_evaluation):
@@ -598,7 +601,7 @@ class AgentPQL(AgentRL):
 
         # Dict where each action has it hypervolume
         hypervolume_actions = {
-            action: uh.calc_hypervolume(list_of_vectors=vectors, reference=self.hv_reference) if len(vectors) > 0
+            action: uh.calc_hypervolume(vectors=vectors, reference=self.hv_reference) if len(vectors) > 0
             else 0.0
             for action, vectors in vectors_dict.items()
         }
@@ -737,64 +740,10 @@ class AgentPQL(AgentRL):
         return '{}_{}_{}_{}'.format(agent, environment, evaluation_mechanism, date)
 
     @staticmethod
-    def load(filename: str = None, environment: Environment = None, evaluation_mechanism: EvaluationMechanism = None):
-        """
-        Load json string from file and convert to dictionary.
-        :param evaluation_mechanism: It is an evaluation mechanism that you want load
-        :param environment: It is an environment that you want load.
-        :param filename: If is None, then get last timestamp file from 'dumps' dir.
-        :return:
-        """
-
-        # Check if filename is None
-        if filename is None:
-
-            # Check if environment is also None
-            if environment is None:
-                raise ValueError('If you has not indicated a filename, you must indicate a environment.')
-
-            # Check if evaluation mechanism is also None
-            if evaluation_mechanism is None:
-                raise ValueError('If you has not indicated a filename, you must indicate a evaluation mechanism.')
-
-            # Get environment name in snake case
-            environment = um.str_to_snake_case(environment.__class__.__name__)
-
-            # Get evaluation mechanism name in snake case
-            evaluation_mechanism = um.str_to_snake_case(str(evaluation_mechanism.value))
-
-            # Filter str
-            filter_str = '{}_{}'.format(environment, evaluation_mechanism)
-
-            # Filter files with that environment and evaluation mechanism
-            files = filter(lambda f: filter_str in f,
-                           [path.name for path in os.scandir(AgentPQL.dumps_path) if path.is_file()])
-
-            # Files to list
-            files = list(files)
-
-            # Sort list of files
-            files.sort()
-
-            # At least must have a file
-            if files:
-                # Get last filename
-                filename = files[-1]
-
-        # Prepare file path
-        file_path = AgentPQL.dumps_file_path(filename)
-
-        # Read file from path
-        try:
-            file = file_path.open(mode='r', encoding='UTF-8')
-        except FileNotFoundError:
-            return None
+    def load(filename: str = None, **kwargs) -> object:
 
         # Load structured train_data from indicated file.
-        model = json.load(file)
-
-        # Close file
-        file.close()
+        model = Agent.load(filename=filename, agent_type=AgentType.PQL)
 
         # Get meta-train_data
         meta = model.get('meta')
@@ -830,7 +779,7 @@ class AgentPQL(AgentRL):
 
             vars(environment)[key] = value
 
-        # Set seed
+        # Set initial_seed
         environment.seed(seed=environment.initial_seed)
 
         # Get default reward as reference
@@ -853,7 +802,7 @@ class AgentPQL(AgentRL):
         total_steps = model_data.get('total_steps')
         state = tuple(model_data.get('position'))
         max_steps = model_data.get('max_steps')
-        seed = model_data.get('seed')
+        seed = model_data.get('initial_seed')
 
         # Recover evaluation mechanism from string
         evaluation_mechanism = EvaluationMechanism.from_string(
@@ -954,7 +903,7 @@ class AgentPQL(AgentRL):
         # Calc current hypervolume
         current_hypervolume = self._best_hypervolume(self.environment.initial_state)
 
-        objective_hypervolume = uh.calc_hypervolume(list_of_vectors=list_of_vectors, reference=self.hv_reference)
+        objective_hypervolume = uh.calc_hypervolume(vectors=list_of_vectors, reference=self.hv_reference)
 
         while not math.isclose(a=current_hypervolume, b=objective_hypervolume, rel_tol=0.01, abs_tol=0.0):
             # Do an episode

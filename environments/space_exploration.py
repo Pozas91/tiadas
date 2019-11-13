@@ -64,7 +64,7 @@ class SpaceExploration(EnvMesh):
         """
         Given an action, do a step
         :param action:
-        :return: (position, (mission_success, radiation), final, info)
+        :return: (position, (mission_success, radiation), final, extra)
         """
 
         # Initialize reward as vector
@@ -84,7 +84,7 @@ class SpaceExploration(EnvMesh):
         # Check if is_final
         final = self.is_final(self.current_state)
 
-        # Set info
+        # Set extra
         info = {}
 
         return self.current_state, reward, final, info

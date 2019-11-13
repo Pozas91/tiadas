@@ -10,7 +10,7 @@ from tests.environments.test_env_mesh import TestEnvMesh
 class TestResourceGathering(TestEnvMesh):
 
     def setUp(self):
-        # Set seed to 0 to testing.
+        # Set initial_seed to 0 to testing.
         self.environment = ResourceGathering(seed=0)
 
     def test_init(self):

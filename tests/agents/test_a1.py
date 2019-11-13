@@ -15,7 +15,7 @@ class TestA1(unittest.TestCase):
     environment = DeepSeaTreasureRightDown()
 
     def setUp(self):
-        # Set seed to 0 to testing.
+        # Set initial_seed to 0 to testing.
         self.seed = 0
 
         # Build instance of agent
@@ -53,17 +53,17 @@ class TestA1(unittest.TestCase):
 
     def test_reset_graph_info(self):
         """
-        Testing reset graph info method.
+        Testing reset graph extra method.
         :return:
         """
 
-        # Set graph info
+        # Set graph extra
         self.agent.graph_info = {
             (0, 0): [1, 2, 3, 4, 5, 6],
             (1, 1): [1, 2, 30, 4, 5, 6],
         }
 
-        # Reset graph info
+        # Reset graph extra
         self.agent.reset_graph_info()
 
         for state in self.agent.graph_info.keys():

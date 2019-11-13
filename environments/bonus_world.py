@@ -91,7 +91,7 @@ class BonusWorld(EnvMesh):
         """
         Given an action, do a step
         :param action:
-        :return: (position, (objective 1, objective 2, time), final, info)
+        :return: (position, (objective 1, objective 2, time), final, extra)
         """
 
         # Initialize reward as vector
@@ -108,7 +108,7 @@ class BonusWorld(EnvMesh):
             reward[0] *= 2
             reward[1] *= 2
 
-        # Set info
+        # Set extra
         info = {}
 
         # Update current position

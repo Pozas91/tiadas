@@ -43,7 +43,7 @@ def write_config_file(timestamp: int, number_of_agents: int, env_name_snake: str
     # If any parents doesn't exist, make it.
     config_file.parent.mkdir(parents=True, exist_ok=True)
 
-    with config_file.open(mode='w+') as file:
+    with config_file.open(mode='w+', encoding='UTF-8') as file:
         file_data = ''
 
         for key, value in kwargs.items():
@@ -52,22 +52,22 @@ def write_config_file(timestamp: int, number_of_agents: int, env_name_snake: str
         file.write(file_data)
 
 
-def structure_to_str_recursively(data, level: int = 0) -> str:
+def structures_to_yaml(data, level: int = 0) -> str:
     result = ''
 
     for k, v in sorted(data.items(), key=lambda x: x[0]):
         if isinstance(v, dict):
-            result += '\t' * level + "{}\n".format(k) + structure_to_str_recursively(data=v, level=level + 1)
+            result += ' ' * (level * 2) + "{}:\n".format(k) + structures_to_yaml(data=v, level=level + 1)
         else:
-            result += '\t' * level + "{} = {}\n".format(k, v)
+            result += ' ' * (level * 2) + "{}: {}\n".format(k, v)
 
     return result
 
 
 def dumps_train_data(timestamp: int, seed: int, env_name_snake: str, agent_type: AgentType, variable: str,
-                     configuration: str, evaluation_mechanism: EvaluationMechanism, train_data: dict):
+                     configuration: str, evaluation_mechanism: EvaluationMechanism, train_data: dict, **kwargs):
     """
-    Write V(s0) data.
+    Write V(s0) extra.
     :param evaluation_mechanism:
     :param configuration:
     :param variable:
@@ -80,7 +80,7 @@ def dumps_train_data(timestamp: int, seed: int, env_name_snake: str, agent_type:
     """
 
     # Path to save file
-    data_path = '{}/train_data/{}_{}_{}_{}_{}_{}.yml'
+    data_path = '{}/train_data/{}_{}_{}_{}_{}_{}_{}.yml'
 
     # Get only first letter of each word
     env_name_abbr = ''.join([word[0] for word in env_name_snake.split('_')])
@@ -88,14 +88,14 @@ def dumps_train_data(timestamp: int, seed: int, env_name_snake: str, agent_type:
     # Create file from above path
     data_file = dumps_directory.joinpath(
         data_path.format(str(agent_type.value), env_name_abbr, seed, variable, configuration, evaluation_mechanism,
-                         timestamp).lower()
+                         timestamp, kwargs['columns']).lower()
     )
 
     # If any parents doesn't exist, make it.
     data_file.parent.mkdir(parents=True, exist_ok=True)
 
-    with data_file.open(mode='w+') as file:
-        file.write(structure_to_str_recursively(data=train_data))
+    with data_file.open(mode='w+', encoding='UTF-8') as file:
+        file.write(structures_to_yaml(data=train_data))
 
 
 def initialize_graph_data(graph_types: set, agents_configuration: dict) -> (dict, dict):
@@ -206,6 +206,8 @@ def update_graphs(graphs: dict, graph_type: GraphType, agent: Agent, configurati
         agent_data = agent.graph_info[graph_type]
     elif graph_type is GraphType.DATA_PER_STATE:
         agent_data = agent.graph_info[graph_type]
+    elif graph_type is GraphType.V_S_0:
+        agent_data = agent.graph_info[graph_type]
     else:
 
         # Prepare new train_data
@@ -216,7 +218,7 @@ def update_graphs(graphs: dict, graph_type: GraphType, agent: Agent, configurati
 
             if hasattr(agent, 'hv_reference'):
                 # Calc hypervolume
-                data = uh.calc_hypervolume(list_of_vectors=new_data['train_data'], reference=agent.hv_reference)
+                data = uh.calc_hypervolume(vectors=new_data['train_data'], reference=agent.hv_reference)
             else:
                 data = new_data['train_data']
 
@@ -332,7 +334,7 @@ def test_agents(environment: Environment, hv_reference: Vector, variable: str, a
         # Set interval to get train_data
         Agent.interval_to_get_data = interval
 
-        # Execute a iteration with different seed for each agent indicate
+        # Execute a iteration with different initial_seed for each agent indicate
         for seed in range(number_of_agents):
 
             # Show information
@@ -390,13 +392,16 @@ def test_agents(environment: Environment, hv_reference: Vector, variable: str, a
 
                     # Order vectors by origin Vec(0) nearest
                     train_data.update({
-                        'v_s_0': um.order_vectors_by_origin_nearest(vectors=v_s_0)
+                        'v_s_0': um.order_vectors_by_origin_nearest(vectors=v_s_0),
+                        # 'q': agent.q,
+                        # 'v': agent.v
                     })
 
                     # Write vectors found into file
                     dumps_train_data(timestamp=timestamp, seed=seed, env_name_snake=env_name_snake,
                                      train_data=train_data, variable=variable, agent_type=agent_type,
-                                     configuration=configuration, evaluation_mechanism=evaluation_mechanism)
+                                     configuration=configuration, evaluation_mechanism=evaluation_mechanism,
+                                     columns=environment.observation_space[0].n)
 
                     # Update graphs
                     update_graphs(graphs=graphs, agent=agent, graph_type=graph_type, configuration=str(configuration),
@@ -583,7 +588,7 @@ def prepare_data_and_show_graph(timestamp: int, env_name: str, env_name_snake: s
             # If any parents doesn't exist, make it.
             matlab_file.parent.mkdir(parents=True, exist_ok=True)
 
-            with matlab_file.open(mode='w+') as file:
+            with matlab_file.open(mode='w+', encoding='UTF-8') as file:
                 file_data = "Z = [\n{}\n];\n".format(''.join([';\n'.join(map(str, x)) for x in process_data]))
                 file_data += 'bar3(Z);\n'
                 file_data += 'zlim([0, inf]);\n'
@@ -631,41 +636,6 @@ def prepare_data_and_show_graph(timestamp: int, env_name: str, env_name_snake: s
                 data = graphs[graph_type][agent_type][str(configuration)]
                 color = agents_configuration[agent_type][configuration]
 
-                # Calc max length
-                data_max_len = max(len(x) for x in data)
-
-                # Change to same length at all arrays (to do the average)
-                for i, x_steps in enumerate(data):
-
-                    # Length of x
-                    len_x = len(x_steps)
-
-                    # Difference
-                    difference = data_max_len - len_x
-
-                    # If x is not empty
-                    if len_x > 0:
-                        data[i] = np.append(x_steps, [x_steps[-1]] * difference)
-                    else:
-                        data[i] = [0] * difference
-
-                # Processing train_data
-                process_data = np.average(data, axis=0)
-                error = np.std(data, axis=0)
-                x = np.arange(0, data_max_len, 1)
-                x *= graph_interval
-
-                if graph_type in (GraphType.SWEEP, GraphType.EPISODES, GraphType.STEPS, GraphType.TIME):
-                    max_data = max(max_data, max(process_data))
-
-                # Limit calc limit in x and y axes
-                x_limit = max(x_limit, x.max())
-                y_limit = max(y_limit, process_data.max())
-
-                # Set graph to current evaluation mechanism
-                axs[axs_i].errorbar(x=x, y=process_data, yerr=error, errorevery=math.ceil(data_max_len * 0.1),
-                                    label='{} {}'.format(agent_type.value, configuration), color=color)
-
                 # Create file from given path.
                 matlab_file = dumps_directory.joinpath(
                     graph_path.format(agent_type.value, env_name_abbr, number_of_agents, variable, configuration,
@@ -675,12 +645,79 @@ def prepare_data_and_show_graph(timestamp: int, env_name: str, env_name_snake: s
                 # If any parents doesn't exist, make it.
                 matlab_file.parent.mkdir(parents=True, exist_ok=True)
 
-                with matlab_file.open(mode='w+') as file:
-                    file_data = "x = [{}]\n".format(', '.join(map(str, x)))
-                    file_data += "Y = [\n{}\n]\n".format(';\n'.join([', '.join(map(str, x)) for x in data]))
-                    file_data += "means = mean(Y);\n"
-                    file_data += 'plot(x, means);\n'
-                    file.write(file_data)
+                if graph_type is GraphType.V_S_0:
+
+                    # for i_iteration_data, iteration_data in enumerate(full_data[0]):
+                    #     # Extract points
+                    #     x = [v[0] for v in iteration_data]
+                    #     y = [v[1] for v in iteration_data]
+                    #
+                    #     axs[axs_i].scatter(x=x, y=y, label='{} iteration'.format(i_iteration_data + 1))
+
+                    colors = ['r', 'm', 'y', 'g', 'c']
+                    labels = list()
+
+                    with matlab_file.open(mode='w+', encoding='UTF-8') as file:
+                        file_data = 'figure;\n'
+                        file_data += 'hold on;\n\n'
+
+                        for i_iteration_data, iteration_data in enumerate(data[0]):
+                            # Extract points
+                            x = [v[0] for v in iteration_data]
+                            y = [v[1] for v in iteration_data]
+
+                            file_data += "X = [{}]\n".format(', '.join(map(str, x)))
+                            file_data += "Y = [{}]\n".format(', '.join(map(str, y)))
+                            file_data += 'scatter(X, Y, \'{}\', \'s\');\n\n'.format(colors[i_iteration_data % 5])
+
+                            labels.append('{} iteration'.format(i_iteration_data + 1))
+
+                        file_data += 'legend({});\n'.format(', '.join("'{}'".format(label) for label in labels))
+                        file_data += 'hold off;'
+                        file.write(file_data)
+
+                else:
+                    # Calc max length
+                    max_length_x = max(len(x) for x in data)
+
+                    # Change to same length at all arrays (to do the average)
+                    for i, x_steps in enumerate(data):
+
+                        # Length of x
+                        len_x = len(x_steps)
+
+                        # Difference
+                        difference = max_length_x - len_x
+
+                        # If x is not empty
+                        if len_x > 0:
+                            data[i] = np.append(x_steps, [x_steps[-1]] * difference)
+                        else:
+                            data[i] = [0] * difference
+
+                    # Processing train_data
+                    process_data = np.average(data, axis=0)
+                    error = np.std(data, axis=0)
+                    x = np.arange(0, max_length_x, 1)
+                    x *= graph_interval
+
+                    if graph_type in (GraphType.SWEEP, GraphType.EPISODES, GraphType.STEPS, GraphType.TIME):
+                        max_data = max(max_data, max(process_data))
+
+                    # Limit calc limit in x and y axes
+                    x_limit = max(x_limit, x.max())
+                    y_limit = max(y_limit, process_data.max())
+
+                    # Set graph to current evaluation mechanism
+                    axs[axs_i].errorbar(x=x, y=process_data, yerr=error, errorevery=math.ceil(max_length_x * 0.1),
+                                        label='{} {}'.format(agent_type.value, configuration), color=color)
+
+                    with matlab_file.open(mode='w+', encoding='UTF-8') as file:
+                        file_data = "x = [{}]\n".format(', '.join(map(str, x)))
+                        file_data += "Y = [\n{}\n]\n".format(';\n'.join([', '.join(map(str, x)) for x in data]))
+                        file_data += "means = mean(Y);\n"
+                        file_data += 'plot(x, means);\n'
+                        file.write(file_data)
 
             # Show train_data
             if graph_type is GraphType.MEMORY:
@@ -761,10 +798,10 @@ def prepare_data_and_show_graph(timestamp: int, env_name: str, env_name_snake: s
 
 
 def show_data_info(agent_type, configuration, graph_type, graphs_info):
-    # Header from data info
-    print('Information about data from configuration: {} \n'.format(configuration))
+    # Header from extra extra
+    print('Information about extra from configuration: {} \n'.format(configuration))
 
-    # Data info
+    # Data extra
     data_info = graphs_info[graph_type][agent_type][str(configuration)]
     # Output Text: Algorithm_Mechanism & average & std & max & min
     output_text = '\t\t{}_{} & {:.2f} & {:.2f} & {:.2f} & {:.2f} \\\\'
@@ -790,7 +827,8 @@ def show_data_info(agent_type, configuration, graph_type, graphs_info):
     info_iterations_max = np.max(data_info['iterations'])
     info_iterations_min = np.min(data_info['iterations'])
     print('\tIterations:')
-    print(output_text.format(agent_type, configuration, info_iterations_avg, info_iterations_std, info_iterations_max, info_iterations_min))
+    print(output_text.format(agent_type, configuration, info_iterations_avg, info_iterations_std, info_iterations_max,
+                             info_iterations_min))
     # Information about solutions_found
     info_solutions_found_avg = np.average(data_info['solutions_found'])
     info_solutions_found_std = np.std(data_info['solutions_found'])
@@ -860,7 +898,7 @@ def unified_graphs(line_specification: dict, input_path: str = None, output_path
             read = False
 
             # Open as file
-            with open(file, mode='r') as f:
+            with file.open(mode='r', encoding='UTF-8') as f:
 
                 for line in f:
 
@@ -893,7 +931,7 @@ def unified_graphs(line_specification: dict, input_path: str = None, output_path
         # If any parents doesn't exist, make it.
         output_file.parent.mkdir(parents=True, exist_ok=True)
 
-        with output_file.open(mode='w+') as f:
+        with output_file.open(mode='w+', encoding='UTF-8') as f:
             file_data = 'figure;\n'
             file_data += 'hold on;\n\n'
             file_data += 'X = [{}];\n\n'.format(', '.join(map(str, range(x_axis))))
@@ -910,4 +948,4 @@ def unified_graphs(line_specification: dict, input_path: str = None, output_path
             f.write(file_data)
 
     else:
-        print(Fore.RED + "Input path doesn't exists")
+        raise ValueError("Input path doesn't exists")

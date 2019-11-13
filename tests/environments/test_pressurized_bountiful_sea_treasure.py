@@ -12,7 +12,7 @@ from tests.environments.test_env_mesh import TestEnvMesh
 class TestPressurizedBountifulSeaTreasure(TestEnvMesh):
 
     def setUp(self):
-        # Set seed to 0 to testing.
+        # Set initial_seed to 0 to testing.
         self.environment = PressurizedBountifulSeaTreasure(seed=0)
 
     def test_init(self):

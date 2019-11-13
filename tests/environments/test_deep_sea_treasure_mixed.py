@@ -10,7 +10,7 @@ from tests.environments.test_deep_sea_treasure import TestDeepSeaTreasure
 class TestDeepSeaTreasureMixed(TestDeepSeaTreasure):
 
     def setUp(self):
-        # Set seed to 0 to testing.
+        # Set initial_seed to 0 to testing.
         self.environment = DeepSeaTreasureMixed(seed=0)
 
     def test_step(self):

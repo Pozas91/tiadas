@@ -99,7 +99,7 @@ class DeepSeaTreasure(EnvMesh):
         """
         Given an action, do a step
         :param action:
-        :return: (position, (time_inverted, treasure_value), final, info)
+        :return: (position, (time_inverted, treasure_value), final, extra)
         """
 
         # Initialize rewards as vector
@@ -111,7 +111,7 @@ class DeepSeaTreasure(EnvMesh):
         # Get treasure value
         reward[1] = self.finals.get(self.current_state, self.default_reward[1])
 
-        # Set info
+        # Set extra
         info = {}
 
         # Check is_final

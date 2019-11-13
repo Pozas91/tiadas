@@ -8,7 +8,7 @@ import numpy as np
 
 from agents import AgentPQL
 from environments import *
-from models import Vector, EvaluationMechanism
+from models import Vector, EvaluationMechanism, GraphType
 
 
 class TestDumps(unittest.TestCase):
@@ -24,19 +24,19 @@ class TestDumps(unittest.TestCase):
         Testing agent with BonusWorld environment.
         :return:
         """
-        initial_state = (1, 1)
+        initial_state = ((1, 1), False)
         default_reward = (1, 1)
         seed = 1
         hv_reference = Vector([-100, -100, -100])
         evaluation_mechanism = EvaluationMechanism.PO
         epsilon = 0.4
-        states_to_observe = [(0, 0)]
+        states_to_observe = {((1, 1), False)}
         episodes = np.random.randint(1, 10)
         gamma = 0.99
         max_steps = None
 
         # Vector configuration
-        Vector.decimals_allowed = 2
+        Vector.set_decimals_allowed(decimals_allowed=2)
 
         # Instance of Environment
         env = BonusWorld(initial_state=initial_state, default_reward=default_reward, seed=seed)
@@ -47,7 +47,7 @@ class TestDumps(unittest.TestCase):
                          max_steps=max_steps)
 
         # Train to modify train_data.
-        agent.episode_train(episodes=episodes)
+        agent.episode_train(episodes=episodes, graph_type=GraphType.EPISODES)
 
         # Save and load as new agent.
         agent.save()
@@ -59,7 +59,7 @@ class TestDumps(unittest.TestCase):
         self.assertEqual(agent.gamma, agent_loaded.gamma)
         self.assertEqual(agent.max_steps, agent_loaded.max_steps)
         self.assertEqual(agent.graph_info, agent_loaded.states_to_observe)
-        self.assertEqual(agent.seed, agent_loaded.seed)
+        self.assertEqual(agent.initial_seed, agent_loaded.seed)
         self.assertEqual(agent.r, agent_loaded.r)
         self.assertEqual(agent.nd, agent_loaded.nd)
         self.assertEqual(agent.n, agent_loaded.n)
@@ -83,7 +83,7 @@ class TestDumps(unittest.TestCase):
         hv_reference = Vector([-5, -5, -5])
         evaluation_mechanism = EvaluationMechanism.PO
         epsilon = 0.11
-        states_to_observe = [(1, 1)]
+        states_to_observe = {(1, 1)}
         episodes = np.random.randint(10, 50)
         gamma = 0.99
         max_steps = None
@@ -106,7 +106,7 @@ class TestDumps(unittest.TestCase):
                          max_steps=max_steps)
 
         # Train to modify train_data.
-        agent.episode_train(episodes=episodes)
+        agent.episode_train(episodes=episodes, graph_type=GraphType.EPISODES)
 
         # Save and load as new agent.
         agent.save()
@@ -118,7 +118,7 @@ class TestDumps(unittest.TestCase):
         self.assertEqual(agent.gamma, agent_loaded.gamma)
         self.assertEqual(agent.max_steps, agent_loaded.max_steps)
         self.assertEqual(agent.graph_info, agent_loaded.states_to_observe)
-        self.assertEqual(agent.seed, agent_loaded.seed)
+        self.assertEqual(agent.initial_seed, agent_loaded.seed)
         self.assertEqual(agent.r, agent_loaded.r)
         self.assertEqual(agent.nd, agent_loaded.nd)
         self.assertEqual(agent.n, agent_loaded.n)
@@ -147,7 +147,7 @@ class TestDumps(unittest.TestCase):
         hv_reference = Vector([-20, 0])
         evaluation_mechanism = EvaluationMechanism.PO
         epsilon = 0.4
-        states_to_observe = [(0, 0)]
+        states_to_observe = {(0, 0)}
         episodes = np.random.randint(10, 50)
         gamma = 0.99
         max_steps = None
@@ -161,7 +161,7 @@ class TestDumps(unittest.TestCase):
                          max_steps=max_steps)
 
         # Train to modify train_data.
-        agent.episode_train(episodes=episodes)
+        agent.episode_train(episodes=episodes, graph_type=GraphType.EPISODES)
 
         # Save and load as new agent.
         agent.save()
@@ -173,56 +173,7 @@ class TestDumps(unittest.TestCase):
         self.assertEqual(agent.gamma, agent_loaded.gamma)
         self.assertEqual(agent.max_steps, agent_loaded.max_steps)
         self.assertEqual(agent.graph_info, agent_loaded.states_to_observe)
-        self.assertEqual(agent.seed, agent_loaded.seed)
-        self.assertEqual(agent.r, agent_loaded.r)
-        self.assertEqual(agent.nd, agent_loaded.nd)
-        self.assertEqual(agent.n, agent_loaded.n)
-        self.assertEqual(agent.hv_reference, agent_loaded.hv_reference)
-        self.assertEqual(agent.evaluation_mechanism, agent_loaded.evaluation_mechanism)
-
-        # Environment
-        self.assertEqual(agent.environment.initial_state, agent_loaded.environment.initial_state)
-        self.assertEqual(agent.environment.initial_seed, agent_loaded.environment.initial_seed)
-        self.assertEqual(agent.environment.default_reward, agent_loaded.environment.default_reward)
-
-    def test_deep_sea_treasure_simplified(self):
-        """
-        Testing agent with DeepSeaTreasureSimplified environment.
-        :return:
-        """
-        initial_state = (1, 1)
-        default_reward = (1,)
-        seed = 1
-        hv_reference = Vector([-20, 0])
-        evaluation_mechanism = EvaluationMechanism.PO
-        epsilon = 0.11
-        states_to_observe = [(0, 0)]
-        episodes = np.random.randint(10, 50)
-        gamma = 0.99
-        max_steps = None
-
-        # Instance of Environment
-        env = DeepSeaTreasureSimplified(initial_state=initial_state, default_reward=default_reward, seed=seed)
-
-        # Instance of AgentMOMP
-        agent = AgentPQL(environment=env, epsilon=epsilon, states_to_observe=states_to_observe,
-                         hv_reference=hv_reference, evaluation_mechanism=evaluation_mechanism, gamma=gamma,
-                         max_steps=max_steps)
-
-        # Train to modify train_data.
-        agent.episode_train(episodes=episodes)
-
-        # Save and load as new agent.
-        agent.save()
-        agent_loaded = AgentPQL.load(environment=env, evaluation_mechanism=evaluation_mechanism)
-
-        # Agent
-        self.assertEqual(type(agent), type(agent_loaded))
-        self.assertEqual(agent.epsilon, agent_loaded.epsilon)
-        self.assertEqual(agent.gamma, agent_loaded.gamma)
-        self.assertEqual(agent.max_steps, agent_loaded.max_steps)
-        self.assertEqual(agent.graph_info, agent_loaded.states_to_observe)
-        self.assertEqual(agent.seed, agent_loaded.seed)
+        self.assertEqual(agent.initial_seed, agent_loaded.seed)
         self.assertEqual(agent.r, agent_loaded.r)
         self.assertEqual(agent.nd, agent_loaded.nd)
         self.assertEqual(agent.n, agent_loaded.n)
@@ -245,7 +196,7 @@ class TestDumps(unittest.TestCase):
         hv_reference = Vector([-20, 0])
         evaluation_mechanism = EvaluationMechanism.PO
         epsilon = 0.11
-        states_to_observe = [(0, 0)]
+        states_to_observe = {(0, 0)}
         episodes = np.random.randint(10, 50)
         gamma = 0.99
         max_steps = None
@@ -261,7 +212,7 @@ class TestDumps(unittest.TestCase):
                          max_steps=max_steps)
 
         # Train to modify train_data.
-        agent.episode_train(episodes=episodes)
+        agent.episode_train(episodes=episodes, graph_type=GraphType.EPISODES)
 
         # Save and load as new agent.
         agent.save()
@@ -273,7 +224,7 @@ class TestDumps(unittest.TestCase):
         self.assertEqual(agent.gamma, agent_loaded.gamma)
         self.assertEqual(agent.max_steps, agent_loaded.max_steps)
         self.assertEqual(agent.graph_info, agent_loaded.states_to_observe)
-        self.assertEqual(agent.seed, agent_loaded.seed)
+        self.assertEqual(agent.initial_seed, agent_loaded.seed)
         self.assertEqual(agent.r, agent_loaded.r)
         self.assertEqual(agent.nd, agent_loaded.nd)
         self.assertEqual(agent.n, agent_loaded.n)
@@ -295,7 +246,7 @@ class TestDumps(unittest.TestCase):
         hv_reference = Vector([-100, -100])
         evaluation_mechanism = EvaluationMechanism.PO
         epsilon = 0.11
-        states_to_observe = [0]
+        states_to_observe = {0}
         episodes = np.random.randint(10, 50)
         gamma = 0.99
         max_steps = 10
@@ -310,7 +261,7 @@ class TestDumps(unittest.TestCase):
                          max_steps=max_steps)
 
         # Train to modify train_data.
-        agent.episode_train(episodes=episodes)
+        agent.episode_train(episodes=episodes, graph_type=GraphType.EPISODES)
 
         # Save and load as new agent.
         agent.save()
@@ -322,7 +273,7 @@ class TestDumps(unittest.TestCase):
         self.assertEqual(agent.gamma, agent_loaded.gamma)
         self.assertEqual(agent.max_steps, agent_loaded.max_steps)
         self.assertEqual(agent.graph_info, agent_loaded.states_to_observe)
-        self.assertEqual(agent.seed, agent_loaded.seed)
+        self.assertEqual(agent.initial_seed, agent_loaded.seed)
         self.assertEqual(agent.r, agent_loaded.r)
         self.assertEqual(agent.nd, agent_loaded.nd)
         self.assertEqual(agent.n, agent_loaded.n)
@@ -342,7 +293,7 @@ class TestDumps(unittest.TestCase):
         hv_reference = Vector([-100, -100])
         evaluation_mechanism = EvaluationMechanism.PO
         epsilon = 0.11
-        states_to_observe = [0]
+        states_to_observe = {0}
         episodes = np.random.randint(10, 50)
         gamma = 0.99
         max_steps = 10
@@ -357,7 +308,7 @@ class TestDumps(unittest.TestCase):
                          max_steps=max_steps)
 
         # Train to modify train_data.
-        agent.episode_train(episodes=episodes)
+        agent.episode_train(episodes=episodes, graph_type=GraphType.EPISODES)
 
         # Save and load as new agent.
         agent.save()
@@ -369,7 +320,7 @@ class TestDumps(unittest.TestCase):
         self.assertEqual(agent.gamma, agent_loaded.gamma)
         self.assertEqual(agent.max_steps, agent_loaded.max_steps)
         self.assertEqual(agent.graph_info, agent_loaded.states_to_observe)
-        self.assertEqual(agent.seed, agent_loaded.seed)
+        self.assertEqual(agent.initial_seed, agent_loaded.seed)
         self.assertEqual(agent.r, agent_loaded.r)
         self.assertEqual(agent.nd, agent_loaded.nd)
         self.assertEqual(agent.n, agent_loaded.n)
@@ -391,7 +342,7 @@ class TestDumps(unittest.TestCase):
         hv_reference = Vector([-100, -100])
         evaluation_mechanism = EvaluationMechanism.PO
         epsilon = 0.3
-        states_to_observe = [(0, 0)]
+        states_to_observe = {(0, 0)}
         episodes = np.random.randint(10, 40)
         gamma = 0.99
         max_steps = None
@@ -405,7 +356,7 @@ class TestDumps(unittest.TestCase):
                          max_steps=max_steps)
 
         # Train to modify train_data.
-        agent.episode_train(episodes=episodes)
+        agent.episode_train(episodes=episodes, graph_type=GraphType.EPISODES)
 
         # Save and load as new agent.
         agent.save()
@@ -417,7 +368,7 @@ class TestDumps(unittest.TestCase):
         self.assertEqual(agent.gamma, agent_loaded.gamma)
         self.assertEqual(agent.max_steps, agent_loaded.max_steps)
         self.assertEqual(agent.graph_info, agent_loaded.states_to_observe)
-        self.assertEqual(agent.seed, agent_loaded.seed)
+        self.assertEqual(agent.initial_seed, agent_loaded.seed)
         self.assertEqual(agent.r, agent_loaded.r)
         self.assertEqual(agent.nd, agent_loaded.nd)
         self.assertEqual(agent.n, agent_loaded.n)
@@ -439,7 +390,7 @@ class TestDumps(unittest.TestCase):
         hv_reference = Vector([-20, -20, -20])
         evaluation_mechanism = EvaluationMechanism.PO
         epsilon = 0.11
-        states_to_observe = [(0, 0)]
+        states_to_observe = {(0, 0)}
         episodes = np.random.randint(10, 50)
         gamma = 0.99
         max_steps = None
@@ -453,7 +404,7 @@ class TestDumps(unittest.TestCase):
                          max_steps=max_steps)
 
         # Train to modify train_data.
-        agent.episode_train(episodes=episodes)
+        agent.episode_train(episodes=episodes, graph_type=GraphType.EPISODES)
 
         # Save and load as new agent.
         agent.save()
@@ -465,7 +416,7 @@ class TestDumps(unittest.TestCase):
         self.assertEqual(agent.gamma, agent_loaded.gamma)
         self.assertEqual(agent.max_steps, agent_loaded.max_steps)
         self.assertEqual(agent.graph_info, agent_loaded.states_to_observe)
-        self.assertEqual(agent.seed, agent_loaded.seed)
+        self.assertEqual(agent.initial_seed, agent_loaded.seed)
         self.assertEqual(agent.r, agent_loaded.r)
         self.assertEqual(agent.nd, agent_loaded.nd)
         self.assertEqual(agent.n, agent_loaded.n)
@@ -486,7 +437,7 @@ class TestDumps(unittest.TestCase):
         hv_reference = Vector([-20, -20, -20])
         evaluation_mechanism = EvaluationMechanism.PO
         epsilon = 0.11
-        states_to_observe = [(0, 0)]
+        states_to_observe = {(0, 0)}
         episodes = np.random.randint(10, 50)
         gamma = 0.99
         max_steps = None
@@ -501,7 +452,7 @@ class TestDumps(unittest.TestCase):
                          max_steps=max_steps)
 
         # Train to modify train_data.
-        agent.episode_train(episodes=episodes)
+        agent.episode_train(episodes=episodes, graph_type=GraphType.EPISODES)
 
         # Save and load as new agent.
         agent.save()
@@ -513,7 +464,7 @@ class TestDumps(unittest.TestCase):
         self.assertEqual(agent.gamma, agent_loaded.gamma)
         self.assertEqual(agent.max_steps, agent_loaded.max_steps)
         self.assertEqual(agent.graph_info, agent_loaded.states_to_observe)
-        self.assertEqual(agent.seed, agent_loaded.seed)
+        self.assertEqual(agent.initial_seed, agent_loaded.seed)
         self.assertEqual(agent.r, agent_loaded.r)
         self.assertEqual(agent.nd, agent_loaded.nd)
         self.assertEqual(agent.n, agent_loaded.n)
@@ -536,7 +487,7 @@ class TestDumps(unittest.TestCase):
         hv_reference = Vector([-20, -20, -20])
         evaluation_mechanism = EvaluationMechanism.PO
         epsilon = 0.4
-        states_to_observe = [(0, 0)]
+        states_to_observe = {(0, 0)}
         episodes = np.random.randint(10, 50)
         gamma = 0.99
         max_steps = None
@@ -552,7 +503,7 @@ class TestDumps(unittest.TestCase):
                          max_steps=max_steps)
 
         # Train to modify train_data.
-        agent.episode_train(episodes=episodes)
+        agent.episode_train(episodes=episodes, graph_type=GraphType.EPISODES)
 
         # Save and load as new agent.
         agent.save()
@@ -564,7 +515,7 @@ class TestDumps(unittest.TestCase):
         self.assertEqual(agent.gamma, agent_loaded.gamma)
         self.assertEqual(agent.max_steps, agent_loaded.max_steps)
         self.assertEqual(agent.graph_info, agent_loaded.states_to_observe)
-        self.assertEqual(agent.seed, agent_loaded.seed)
+        self.assertEqual(agent.initial_seed, agent_loaded.seed)
         self.assertEqual(agent.r, agent_loaded.r)
         self.assertEqual(agent.nd, agent_loaded.nd)
         self.assertEqual(agent.n, agent_loaded.n)
@@ -587,7 +538,7 @@ class TestDumps(unittest.TestCase):
         hv_reference = Vector([-20, -20])
         evaluation_mechanism = EvaluationMechanism.PO
         epsilon = 0.11
-        states_to_observe = [(0, 0)]
+        states_to_observe = {(0, 0)}
         episodes = np.random.randint(10, 50)
         gamma = 0.99
         max_steps = None
@@ -601,7 +552,7 @@ class TestDumps(unittest.TestCase):
                          max_steps=max_steps)
 
         # Train to modify train_data.
-        agent.episode_train(episodes=episodes)
+        agent.episode_train(episodes=episodes, graph_type=GraphType.EPISODES)
 
         # Save and load as new agent.
         agent.save()
@@ -613,7 +564,7 @@ class TestDumps(unittest.TestCase):
         self.assertEqual(agent.gamma, agent_loaded.gamma)
         self.assertEqual(agent.max_steps, agent_loaded.max_steps)
         self.assertEqual(agent.graph_info, agent_loaded.states_to_observe)
-        self.assertEqual(agent.seed, agent_loaded.seed)
+        self.assertEqual(agent.initial_seed, agent_loaded.seed)
         self.assertEqual(agent.r, agent_loaded.r)
         self.assertEqual(agent.nd, agent_loaded.nd)
         self.assertEqual(agent.n, agent_loaded.n)

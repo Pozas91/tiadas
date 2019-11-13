@@ -42,7 +42,7 @@ class Vector:
         print(v1[0]) -> "10"
         print(v1.components[0]) -> "10"
 
-        :param item:
+        :param index:
         :return: the component in the index position
         """
         return self.components[index]
@@ -200,19 +200,13 @@ class Vector:
         """
         return np.all(np.less_equal(self.components, other.components))
 
-    def to_decimals(self):
+    def __round__(self, n=None):
         """
-        Multiply current vector components by 10^decimals_allowed attribute to allow a specific number of decimals
+        Return a vector with components rounded
+        :param n:
         :return:
         """
-        return self.__class__(np.multiply(self.components, 10 ** Vector.decimals_allowed))
-
-    def by_decimals(self):
-        """
-        Divide current class to rollback to_decimals() operation
-        :return:
-        """
-        return self.__class__(np.divide(self.components, 10 ** Vector.decimals_allowed))
+        return self.__class__([round(component, n) for component in self.components])
 
     @um.lazy_property
     def zero_vector(self):
@@ -307,7 +301,7 @@ class Vector:
     def m3_max(vectors: list) -> list:
         """
         :param vectors : list of Vector objects, float values are assumed.
-        
+
         :return: a list with non-dominated vectors applying the m3 algorithm of
         Bentley, Clarkson and Levine (1990).
             We assume that:
@@ -381,7 +375,7 @@ class Vector:
     def m3_max_2_lists(vectors: list) -> (list, list):
         """
         :param vectors : list of Vector objects.
-        
+
         :return: a list with non-dominated vectors applying the m3 algorithm of
         Bentley, Clarkson and Levine (1990).
             We assume that:
@@ -465,7 +459,7 @@ class Vector:
     def m3_max_2_lists_not_duplicates(vectors: list) -> (list, list):
         """
         :param vectors: list of Vector objects.
-        
+
         :return: a list with non-dominated vectors applying the m3 algorithm of
         Bentley, Clarkson and Levine (1990).
             We assume that:

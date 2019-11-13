@@ -15,7 +15,7 @@ class TestResourceGatheringLimit(unittest.TestCase):
     environment = None
 
     def setUp(self):
-        # Set seed to 0 to testing.
+        # Set initial_seed to 0 to testing.
         self.environment = ResourceGatheringLimit(seed=0)
 
     def tearDown(self):
@@ -47,7 +47,7 @@ class TestResourceGatheringLimit(unittest.TestCase):
 
     def test_seed(self):
         """
-        Testing seed method
+        Testing initial_seed method
         :return:
         """
         self.environment.seed(seed=0)

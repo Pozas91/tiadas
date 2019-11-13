@@ -43,9 +43,9 @@ class Environment(gym.Env):
     def __init__(self, observation_space: gym.spaces, default_reward: Vector, action_space: gym.spaces = None,
                  seed: int = None, initial_state: Iterable = None, obstacles: frozenset = None, finals: object = None):
         """
-        :param default_reward: Default reward returned by the environment when 
+        :param default_reward: Default reward returned by the environment when
                                a reward is not defined.
-        :param seed: Initial seed. The same is used for _action_space,
+        :param seed: Initial initial_seed. The same is used for _action_space,
                      observation_space, and random number generator
         :param initial_state: start position for all episodes.
         :param obstacles: inaccessible states.
@@ -60,7 +60,7 @@ class Environment(gym.Env):
         self.observation_space = observation_space
         self.observation_space.seed(seed=seed)
 
-        # Prepare random seed
+        # Prepare random initial_seed
         self.np_random = None
         self.initial_seed = seed
         self.seed(seed=seed)
@@ -106,13 +106,13 @@ class Environment(gym.Env):
         value indicating if the reached position is final, and an optional dictionary
         with miscellaneous information.
         :param action:
-        :return: 
+        :return:
         """
         raise NotImplemented
 
     def seed(self, seed: int = None) -> list:
         """
-        Standard operation in gym environments. Generate seed
+        Standard operation in gym environments. Generate initial_seed
         :param seed:
         :return:
         """
@@ -125,6 +125,10 @@ class Environment(gym.Env):
         initial position.
         :return:
         """
+
+        # Reset to initial seed
+        self.seed(seed=self.initial_seed)
+
         self.current_state = self.initial_state
         return self.current_state
 
@@ -183,6 +187,29 @@ class Environment(gym.Env):
         """
         raise NotImplemented
 
+    def ordered_states(self, reverse: bool = False) -> list:
+        """
+        Return all possible states of this environment ordered.
+        :param reverse:
+        :return:
+        """
+        raise NotImplemented
+
+    def quantify_state(self, state: object, **kwargs) -> int:
+        """
+        This method return a number to can quantify states for order its.
+        Ex.
+        Where the first state is the upper-left and will increase along the rows.
+        | 1 | 4 | 7 |
+        -------------
+        | 2 | 5 | 8 |
+        -------------
+        | 3 | 6 | 9 |
+        :param state:
+        :return:
+        """
+        raise NotImplemented
+
     def reachable_states(self, state: object, action: int) -> set:
         """
         Return all reachable states for pair (s, a) given.
@@ -205,7 +232,7 @@ class Environment(gym.Env):
         """
         return 1.
 
-    def transition_reward(self, state: object, action: int, next_state: object) -> object:
+    def transition_reward(self, state: object, action: int, next_state: object) -> Vector:
         """
         Return reward for reach `next_state` from `position` using `action`.
 

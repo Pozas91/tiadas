@@ -11,7 +11,7 @@ from tests.environments.test_environment import TestEnvironment
 class TestNonRecurrentRings(TestEnvironment):
 
     def setUp(self):
-        # Set seed to 0 to testing.
+        # Set initial_seed to 0 to testing.
         self.environment = NonRecurrentRings(seed=0)
 
     def test_init(self):

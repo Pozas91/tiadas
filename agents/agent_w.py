@@ -19,12 +19,12 @@ import time
 
 from agents import Agent
 from environments import Environment
-from models import Vector, VectorDecimal, GraphType
+from models import Vector, GraphType, AgentType
 
 
 class AgentW(Agent):
     available_graph_types = {
-        GraphType.MEMORY, GraphType.SWEEP, GraphType.TIME, GraphType.DATA_PER_STATE
+        GraphType.MEMORY, GraphType.SWEEP, GraphType.TIME, GraphType.DATA_PER_STATE, GraphType.V_S_0
     }
 
     def __init__(self, environment: Environment, gamma: float = 1., seed: int = 0, initial_value: Vector = None,
@@ -77,8 +77,10 @@ class AgentW(Agent):
             self.sweep()
 
             if (graph_type is GraphType.SWEEP) and (self.total_sweeps % self.interval_to_get_data == 0):
-                # Update Graph
                 self.update_graph(graph_type=GraphType.SWEEP)
+
+            if (graph_type is GraphType.V_S_0) and (self.total_sweeps % self.interval_to_get_data == 0):
+                self.update_graph(graph_type=GraphType.V_S_0)
 
             if (graph_type is GraphType.MEMORY) and (self.total_sweeps % self.interval_to_get_data == 0):
                 self.update_graph(graph_type=GraphType.MEMORY)
@@ -116,14 +118,16 @@ class AgentW(Agent):
 
                 for s2 in s2_set:
                     # If this position is unknown return empty set
-                    lv.append(v2.get(s2, [VectorDecimal(self.initial_q_value)]))
+                    # lv.append(v2.get(s2, [VectorDecimal(self.initial_q_value)]))
+                    lv.append(v2.get(s2, [Vector(self.initial_q_value)]))
 
                 # Calc cartesian product of each reachable states
                 cartesian_product = itertools.product(*lv)
 
                 for product in cartesian_product:
 
-                    summation = VectorDecimal(self.environment.default_reward.zero_vector)
+                    # summation = VectorDecimal(self.environment.default_reward.zero_vector)
+                    summation = Vector(self.environment.default_reward.zero_vector)
 
                     for j, s2 in enumerate(s2_set):
                         # Probability to reach that position
@@ -144,7 +148,8 @@ class AgentW(Agent):
                     t.update({a: t_a})
 
             # V(s) <- ND[U T(a)]
-            u_t = list(set.union(*t.values()))
+            u_t = set.union(*t.values())
+            u_t = list(map(lambda x: round(x, Vector.decimals_allowed), u_t))
             self.v.update({s: Vector.m3_max(u_t)})
 
     def update_graph(self, graph_type: GraphType) -> None:
@@ -153,9 +158,16 @@ class AgentW(Agent):
             raise ValueError('Invalid GraphType {} for this agent.'.format(graph_type))
 
         elif graph_type is GraphType.MEMORY:
+
             # Count number of vectors in non dominate dictionary
             self.graph_info[graph_type].append(
                 sum(len(vectors) for vectors in self.v.values())
+            )
+
+        elif graph_type is GraphType.V_S_0:
+
+            self.graph_info[graph_type].append(
+                self.v.get(self.environment.initial_state, [self.initial_q_value])
             )
 
         elif graph_type is GraphType.DATA_PER_STATE:
@@ -163,7 +175,7 @@ class AgentW(Agent):
             # Extract only states with information
             valid_states = self.v.keys()
 
-            # Generate data
+            # Generate extra
             data = {state: len(self.v[state]) for state in valid_states}
 
             # Save that information
@@ -186,3 +198,12 @@ class AgentW(Agent):
 
                 # Update dictionary
                 self.graph_info.get(graph_type).update({state: data})
+
+    @staticmethod
+    def load(filename: str = None, **kwargs) -> object:
+
+        model = Agent.load(filename=filename, agent_type=AgentType.W)
+
+        # model['states_to_observe'] = model['states_to_observe']
+
+        return None

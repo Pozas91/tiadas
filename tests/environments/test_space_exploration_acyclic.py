@@ -10,7 +10,7 @@ from tests.environments.test_space_exploration import TestSpaceExploration
 class TestSpaceExplorationAcyclic(TestSpaceExploration):
 
     def setUp(self):
-        # Set seed to 0 to testing.
+        # Set initial_seed to 0 to testing.
         self.environment = SpaceExplorationAcyclic(seed=0)
 
     def test_action_space_length(self):

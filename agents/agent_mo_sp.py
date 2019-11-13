@@ -246,7 +246,7 @@ class AgentMOSP(AgentQ):
             if not self.pareto_frontier_found:
                 value = self.initial_q_value
             else:
-                value = uh.calc_hypervolume(list_of_vectors=self.pareto_frontier_found, reference=self.hv_reference)
+                value = uh.calc_hypervolume(vectors=self.pareto_frontier_found, reference=self.hv_reference)
 
             # Add to graph train_data
             data.append(value)

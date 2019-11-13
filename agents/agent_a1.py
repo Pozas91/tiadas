@@ -9,7 +9,6 @@ import json
 import math
 import os
 import time
-from copy import deepcopy
 
 import gym
 import numpy as np
@@ -277,7 +276,7 @@ class AgentA1(AgentRL):
         v = v if v else [self.initial_q_value]
 
         # Getting hypervolume
-        hv = uh.calc_hypervolume(list_of_vectors=v, reference=self.hv_reference)
+        hv = uh.calc_hypervolume(vectors=v, reference=self.hv_reference)
 
         return hv
 
@@ -356,7 +355,7 @@ class AgentA1(AgentRL):
 
             distance += 1
 
-    def _best_action(self, state: object = None, info: object = None) -> int:
+    def _best_action(self, state: object = None, extra: object = None) -> int:
         """
         Return best action a position given.
         :return:
@@ -401,7 +400,7 @@ class AgentA1(AgentRL):
             q_set = [q.vector for q in q_set.values()]
 
             # Calc hypervolume of Q_set, with reference given
-            evaluation = uh.calc_hypervolume(list_of_vectors=q_set, reference=self.hv_reference)
+            evaluation = uh.calc_hypervolume(vectors=q_set, reference=self.hv_reference)
 
             # If current value is close to new value
             if math.isclose(a=evaluation, b=max_evaluation):
@@ -597,13 +596,13 @@ class AgentA1(AgentRL):
         cartesian_product, relevant_indexes = self.cartesian_product_of_relevant_indexes(states=known_states)
 
         # Prepare V to do queries
-        v = self.v.get(next_state)
+        v = self.v[next_state]
 
         # Index counter
-        index_counter = self.indexes_counter.get(state)
+        index_counter = self.indexes_counter[state]
 
         # Data position Q(s)
-        data_state = self.q.get(state)
+        data_state = self.q[state]
 
         # Data action position Q(s, a)
         data_action = data_state.get(action, dict())
@@ -624,7 +623,7 @@ class AgentA1(AgentRL):
             next_state_reference_vector_index = p[next_state_p_position]
 
             # alpha * (reward + gamma * associate_vector)
-            next_q = (reward + v.get(next_state_reference_vector_index) * self.gamma) * self.alpha
+            next_q = (reward + v[next_state_reference_vector_index] * self.gamma) * self.alpha
 
             # Q_{n - 1}(s, a, p)
             previous_q = data_state.get(action, {}).get(p)
@@ -747,7 +746,7 @@ class AgentA1(AgentRL):
         # Calc current hypervolume
         current_hypervolume = self._best_hypervolume(self.environment.initial_state)
 
-        objective_hypervolume = uh.calc_hypervolume(list_of_vectors=list_of_vectors, reference=self.hv_reference)
+        objective_hypervolume = uh.calc_hypervolume(vectors=list_of_vectors, reference=self.hv_reference)
 
         while not math.isclose(a=current_hypervolume, b=objective_hypervolume, rel_tol=0.02):
             # Do an episode
@@ -828,7 +827,7 @@ class AgentA1(AgentRL):
 
             # Filter files with that environment and evaluation mechanism
             files = filter(lambda f: filter_str in f,
-                           [path.name for path in os.scandir(AgentA1.dumps_path) if path.is_file()])
+                           [path.name for path in os.scandir(AgentA1.models_dumps_path) if path.is_file()])
 
             # Files to list
             files = list(files)
@@ -842,7 +841,7 @@ class AgentA1(AgentRL):
                 filename = files[-1]
 
         # Prepare file path
-        file_path = AgentA1.dumps_file_path(filename)
+        file_path = AgentA1.models_dumps_file_path(filename)
 
         # Read file from path
         try:
@@ -891,7 +890,7 @@ class AgentA1(AgentRL):
 
             vars(environment)[key] = value
 
-        # Set seed
+        # Set initial_seed
         environment.seed(seed=environment.initial_seed)
 
         # Get default reward as reference
@@ -915,7 +914,7 @@ class AgentA1(AgentRL):
         total_steps = model_data.get('total_steps')
         state = tuple(model_data.get('position'))
         max_steps = model_data.get('max_steps')
-        seed = model_data.get('seed')
+        seed = model_data.get('initial_seed')
 
         # Recover evaluation mechanism from string
         evaluation_mechanism = EvaluationMechanism.from_string(
@@ -1049,6 +1048,7 @@ class AgentA1(AgentRL):
         :param distance:
         :return:
         """
+        raise NotImplemented
         # Decompose from position
         x_state, y_state = from_state
 

@@ -55,13 +55,13 @@ class AgentRL(Agent):
 
         return action
 
-    def _non_greedy_action(self, state: object, info: object = None) -> int:
+    def _non_greedy_action(self, state: object, extra: object = None) -> int:
         """
         Select action according to the greedy policy. The default method is to randomly sample the
-        action_space in the environment. The method accepts an optional argument info intended for
+        action_space in the environment. The method accepts an optional argument extra intended for
         agent dependent information, possibly shared with the method _best_action
         :param state:
-        :param info: agent dependent information (optional)
+        :param extra: agent dependent information (optional)
         :return:
         """
         return self.environment.action_space.sample()
@@ -108,9 +108,9 @@ class AgentRL(Agent):
                     # Update last execution
                     self.last_time_to_get_graph_data = current_time
 
-    def _best_action(self, state: object = None, info: object = None) -> int:
+    def _best_action(self, state: object = None, extra: object = None) -> int:
         """
-        Return best action a position given. The method accepts an optional argument info intended for
+        Return best action a position given. The method accepts an optional argument extra intended for
         agent dependent information, possibly shared with the method _best_action
         :return:
         """

@@ -14,7 +14,7 @@ class TestAgent(unittest.TestCase):
     environment = DeepSeaTreasure()
 
     def setUp(self):
-        # Set seed to 0 to testing.
+        # Set initial_seed to 0 to testing.
         self.agent = Agent(seed=0, environment=self.environment)
 
     def tearDown(self):
@@ -36,7 +36,7 @@ class TestAgent(unittest.TestCase):
         self.assertTrue(hasattr(self.agent, 'total_episodes'))
         self.assertTrue(hasattr(self.agent, 'graph_info'))
         self.assertTrue(hasattr(self.agent, 'position'))
-        self.assertTrue(hasattr(self.agent, 'seed'))
+        self.assertTrue(hasattr(self.agent, 'initial_seed'))
         self.assertTrue(hasattr(self.agent, 'generator'))
 
         # All agents must be have next methods.
@@ -66,17 +66,17 @@ class TestAgent(unittest.TestCase):
 
     def test_reset_graph_info(self):
         """
-        Testing reset graph info method.
+        Testing reset graph extra method.
         :return:
         """
 
-        # Set graph info
+        # Set graph extra
         self.agent.graph_info = {
             (0, 0): [1, 2, 3, 4, 5, 6],
             (1, 1): [1, 2, 30, 4, 5, 6],
         }
 
-        # Reset graph info
+        # Reset graph extra
         self.agent.reset_graph_info()
 
         for state in self.agent.graph_info.keys():

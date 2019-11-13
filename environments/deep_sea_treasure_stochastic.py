@@ -31,7 +31,7 @@ class DeepSeaTreasureStochastic(DeepSeaTreasure):
         """
         Given an action, do a step
         :param action:
-        :return: (position, (time_inverted, treasure_value), final, info)
+        :return: (position, (time_inverted, treasure_value), final, extra)
         """
 
         # Get probability action

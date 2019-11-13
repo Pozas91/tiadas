@@ -14,7 +14,7 @@ class TestBonusWorld(TestEnvMesh):
     environment = None
 
     def setUp(self):
-        # Set seed to 0 to testing.
+        # Set initial_seed to 0 to testing.
         self.environment = BonusWorld(seed=0)
 
     def test_init(self):

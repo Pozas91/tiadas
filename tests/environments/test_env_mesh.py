@@ -21,7 +21,7 @@ class TestEnvMesh(TestEnvironment):
             (0, 0), (1, 1)
         })
 
-        # Set seed to 0 to testing.
+        # Set initial_seed to 0 to testing.
         self.environment = EnvMesh(mesh_shape=mesh_shape, default_reward=default_reward, seed=0, obstacles=obstacles)
 
     def test_states(self):

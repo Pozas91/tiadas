@@ -2,6 +2,7 @@
 Base Agent class, other agent classes inherited from this.
 """
 import json
+import os
 import time
 from pathlib import Path
 from pprint import pprint
@@ -9,16 +10,13 @@ from pprint import pprint
 import matplotlib
 import numpy as np
 
+import configurations as conf
 import utils.miscellaneous as um
 from environments import Environment
-from models import GraphType, Vector
+from models import GraphType, AgentType
 
 
 class Agent:
-    # Indent of the JSON file where the agent will be saved
-    json_indent = 2
-    # Get dumps path from this file path
-    dumps_path = Path('{}/../../dumps/models'.format(__file__))
     # Each unit the agent get train_data
     interval_to_get_data = 1
     # Graph types available depending to the agent
@@ -32,7 +30,7 @@ class Agent:
         :param seed: Seed used for np.random.RandomState method.
         :param states_to_observe: List of states from which graphical output is provided.
         :param max_steps: Limit of steps per episode.
-        :param graph_types: Types of graphs where we want extract data
+        :param graph_types: Types of graphs where we want extract extra
         :param initial_value: default value for vectors and another calc.
         """
 
@@ -55,16 +53,17 @@ class Agent:
         # Graph types
         self.graph_types = graph_types
 
-        # Initialize graph info
+        # Initialize graph extra
         self.graph_info = dict()
         self.reset_graph_info()
 
         # Current Agent State if the initial position of environment
         self.state = self.environment.initial_state
 
-        # Initialize Random Generator with `seed` as initial seed.
-        self.seed = seed
-        self.generator = np.random.RandomState(seed=seed)
+        # Initialize Random Generator with `initial_seed` as initial seed.
+        self.generator = None
+        self.initial_seed = seed
+        self.seed(seed=seed)
 
         # Initial execution time
         self.last_time_to_get_graph_data = time.time()
@@ -85,10 +84,12 @@ class Agent:
 
     def reset(self) -> None:
         """
-        Reset agent, forgetting previous q-values
+        Reset agent
         :return:
         """
-        raise NotImplemented
+
+        # Reset initial seed
+        self.seed(seed=self.initial_seed)
 
     def reset_totals(self) -> None:
         """
@@ -116,6 +117,11 @@ class Agent:
                 GraphType.MEMORY: list()
             })
 
+        if GraphType.V_S_0 in self.graph_types:
+            self.graph_info.update({
+                GraphType.V_S_0: list()
+            })
+
         if GraphType.DATA_PER_STATE in self.graph_types:
             self.graph_info.update({
                 GraphType.DATA_PER_STATE: list()
@@ -123,7 +129,7 @@ class Agent:
 
     def show_graph_info(self) -> None:
         """
-        Show graph info
+        Show graph extra
         :return:
         """
         pprint(self.graph_info)
@@ -134,7 +140,7 @@ class Agent:
         :return:
         """
         print('- Agent information! -')
-        print("Seed: {}".format(self.seed))
+        print("Seed: {}".format(self.initial_seed))
         print("Gamma: {}".format(self.gamma))
 
     def time_train(self, execution_time: int, graph_type: GraphType):
@@ -179,7 +185,7 @@ class Agent:
                         'key': str(k), 'value': {'key': k2 if isinstance(k2, int) else list(k2), 'value': v2}
                     } for k, v in self.graph_info.items() for k2, v2 in v.items()
                 ],
-                'seed': self.seed
+                'initial_seed': self.initial_seed
             }
         }
 
@@ -191,7 +197,7 @@ class Agent:
         :return:
         """
         model = self.get_dict_model()
-        return json.dumps(model, indent=self.json_indent)
+        return json.dumps(model, indent=conf.json_indent)
 
     def json_filename(self) -> str:
         """
@@ -199,15 +205,18 @@ class Agent:
         :return:
         """
         # Get environment name in snake case
-        environment = um.str_to_snake_case(self.environment.__class__.__name__)
+        env_name_snake = um.str_to_snake_case(self.environment.__class__.__name__)
+
+        # Get only first letter of each word
+        env_name_abbr = ''.join([word[0] for word in env_name_snake.split('_')])
 
         # Get evaluation mechanism in snake case
-        agent = um.str_to_snake_case(self.__class__.__name__)
+        agent_name = um.str_to_snake_case(self.__class__.__name__).split('_')[1]
 
         # Get timestamp
         timestamp = int(time.time())
 
-        return '{}_{}_{}'.format(agent, environment, timestamp)
+        return '{}_{}_{}'.format(agent_name, env_name_abbr, timestamp)
 
     def save(self, filename: str = None) -> None:
         """
@@ -220,7 +229,7 @@ class Agent:
             filename = self.json_filename()
 
         # Prepare file path
-        file_path = self.dumps_file_path(filename=filename)
+        file_path = conf.models_path.joinpath(filename)
 
         # If any parents doesn't exist, make it.
         file_path.parent.mkdir(parents=True, exist_ok=True)
@@ -229,13 +238,48 @@ class Agent:
         model = self.get_dict_model()
 
         # Open file with filename in write mode with UTF-8 encoding.
-        with file_path.open('w', encoding='UTF-8') as file:
-            json.dump(model, file, indent=self.json_indent)
+        with file_path.open(mode='w', encoding='UTF-8') as file:
+            json.dump(model, file, indent=conf.json_indent)
 
     @staticmethod
-    def dumps_file_path(filename: str) -> Path:
+    def load(filename: str = None, **kwargs) -> object:
+        """
+        This method load an agent from filename given.
+        :param filename: If is None, then get last timestamp file from 'dumps/models' dir.
+        :return:
+        """
+
+        if not filename:
+            try:
+                # Get last file from models directory (higher timestamp)
+                filename = sorted(
+                    filter(
+                        # Get only filenames for this agent (first part of name)
+                        lambda path: AgentType.from_string(path.name.split('_')[0]) is kwargs['agent_type'],
+                        os.scandir(conf.models_path)
+                    ),
+                    # Order filenames by timestamp (last part of name)
+                    key=lambda path: int(path.name.split('_')[-1])
+                )[-1]
+            except Exception as error:
+                print('Cannot read from {} directory because: {}'.format(conf.models_path, error))
+
+        # Read file from path
+        model_path = Path(filename)
+        model_file = model_path.open(mode='r', encoding='UTF-8')
+
+        # Load structured train_data from indicated file.
+        model = json.load(model_file)
+
+        # Close file
+        model_file.close()
+
+        return model
+
+    @staticmethod
+    def models_dumps_file_path(filename: str) -> Path:
         # Return path from file name
-        return Agent.dumps_path.joinpath(filename)
+        return conf.models_path.joinpath(filename)
 
     def do_iteration(self, graph_type: GraphType) -> None:
         """
@@ -243,3 +287,6 @@ class Agent:
         :return:
         """
         raise NotImplemented
+
+    def seed(self, seed: int = None) -> None:
+        self.generator = np.random.RandomState(seed=seed)

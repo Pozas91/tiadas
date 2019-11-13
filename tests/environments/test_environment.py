@@ -19,7 +19,7 @@ class TestEnvironment(unittest.TestCase):
         # Default reward
         default_reward = Vector([1, 2, 1])
 
-        # Set seed to 0 to testing.
+        # Set initial_seed to 0 to testing.
         self.environment = Environment(observation_space=observation_space, default_reward=default_reward, seed=0)
 
     def tearDown(self):
@@ -48,7 +48,7 @@ class TestEnvironment(unittest.TestCase):
 
         # All agents must be have next methods.
         self.assertTrue(hasattr(self.environment, 'step'))
-        self.assertTrue(hasattr(self.environment, 'seed'))
+        self.assertTrue(hasattr(self.environment, 'initial_seed'))
         self.assertTrue(hasattr(self.environment, 'reset'))
         self.assertTrue(hasattr(self.environment, 'render'))
         self.assertTrue(hasattr(self.environment, 'next_state'))
@@ -79,7 +79,7 @@ class TestEnvironment(unittest.TestCase):
 
     def test_seed(self):
         """
-        Testing seed method
+        Testing initial_seed method
         :return:
         """
 

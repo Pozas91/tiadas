@@ -3,10 +3,11 @@ This class represent a vector with some features necessaries for our program.
 This class has a vector of floats (float64).
 """
 
+import numpy as np
+
 import utils.numbers as un
 from .dominance import Dominance
 from .vector import Vector
-import numpy as np
 
 
 class VectorDecimal(Vector):
@@ -65,6 +66,12 @@ class VectorDecimal(Vector):
         """
         return all(
             a < b or un.are_equal_two_decimal_numbers(a=a, b=b) for a, b in zip(self.components, other.components)
+        )
+
+    def all_close(self, v2) -> bool:
+
+        return all(
+            un.are_equal_two_decimal_numbers(a=a, b=b) for a, b in zip(self.components, v2.components)
         )
 
     @staticmethod

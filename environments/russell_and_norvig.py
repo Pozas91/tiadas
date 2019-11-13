@@ -63,7 +63,7 @@ class RussellNorvig(EnvMesh):
         # Check if is final position
         final = self.is_final(self.current_state)
 
-        # Set info
+        # Set extra
         info = {}
 
         return self.current_state, reward, final, info

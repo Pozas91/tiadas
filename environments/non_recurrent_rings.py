@@ -117,7 +117,7 @@ class NonRecurrentRings(Environment):
         # Check if is final position
         final = self.is_final()
 
-        # Set info
+        # Set extra
         info = {}
 
         return next_state, reward, final, info

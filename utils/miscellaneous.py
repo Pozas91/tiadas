@@ -8,7 +8,6 @@ from scipy.spatial.distance import cityblock
 
 from models import Vector
 
-
 def lists_to_tuples(x):
     """
     Convert a list given into tuple recursively.
@@ -59,7 +58,7 @@ def order_vectors_by_origin_nearest(vectors: list) -> list:
     """
 
     # Get all vectors with its distance to origin.
-    distances = {tuple(vector.components.tolist()): distance_to_origin(vector) for vector in vectors}
+    distances = {tuple(vector): distance_to_origin(vector) for vector in vectors}
 
     # Sort dictionary by value from lower to higher.
     return sorted(distances, key=distances.get, reverse=False)

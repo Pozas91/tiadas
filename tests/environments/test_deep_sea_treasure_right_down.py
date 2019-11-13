@@ -9,7 +9,7 @@ from tests.environments.test_deep_sea_treasure import TestDeepSeaTreasure
 class TestDeepSeaTreasureRightDown(TestDeepSeaTreasure):
 
     def setUp(self):
-        # Set seed to 0 to testing.
+        # Set initial_seed to 0 to testing.
         self.environment = DeepSeaTreasureRightDown(seed=0)
 
     def test_action_space_length(self):

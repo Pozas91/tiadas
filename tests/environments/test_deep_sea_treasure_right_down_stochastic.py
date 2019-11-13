@@ -10,7 +10,7 @@ from tests.environments.test_deep_sea_treasure_right_down import TestDeepSeaTrea
 class TestDeepSeaTreasureRightDownStochastic(TestDeepSeaTreasureRightDown):
 
     def setUp(self):
-        # Set seed to 0 to testing.
+        # Set initial_seed to 0 to testing.
         self.environment = DeepSeaTreasureRightDownStochastic(seed=0)
 
     def test_action_space_length(self):

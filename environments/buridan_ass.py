@@ -149,7 +149,7 @@ class BuridanAss(EnvMesh):
         # If action is different to stay, donkey is walking and have a penalize.
         reward[2] = self.default_reward[2] if self.actions['STAY'] == action else self.walking_penalty
 
-        # Set info
+        # Set extra
         info = {}
 
         # Check is_final
@@ -158,11 +158,13 @@ class BuridanAss(EnvMesh):
         return self.current_state, reward, final, info
 
     def reset(self) -> tuple:
-        self.current_state = self.initial_state
+        # Reset to initial seed
+        self.seed(seed=self.initial_seed)
 
         for state_with_food in self.food_counter.keys():
             self.food_counter.update({state_with_food: 0})
 
+        self.current_state = self.initial_state
         return self.current_state
 
     def __near_food(self, position: tuple) -> frozenset:

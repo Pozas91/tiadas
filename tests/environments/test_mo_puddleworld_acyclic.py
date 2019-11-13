@@ -9,7 +9,7 @@ from tests.environments.test_mo_puddleworld import TestMoPuddleWorld
 class TestMoPuddleWorldAcyclic(TestMoPuddleWorld):
 
     def setUp(self):
-        # Set seed to 0 to testing.
+        # Set initial_seed to 0 to testing.
         self.environment = MoPuddleWorldAcyclic(seed=0)
 
     def test_action_space_length(self):

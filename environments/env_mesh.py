@@ -36,7 +36,7 @@ class EnvMesh(Environment):
         :param mesh_shape: A tuple where first component represents the x-axis (i.e. columns), and the second component
             the y-axis (i.e. rows).
         :param default_reward: Default reward returned by the environment when a  reward is not defined.
-        :param seed: Initial seed for the random number generator.
+        :param seed: Initial initial_seed for the random number generator.
         :param initial_state: start position for each episode.
         :param obstacles: inaccessible states.
         :param finals: terminal states for episodes.
@@ -46,6 +46,9 @@ class EnvMesh(Environment):
             # Create the mesh
             x, y = mesh_shape
             observation_space = gym.spaces.Tuple((spaces.Discrete(x), spaces.Discrete(y)))
+
+        # Save mesh shape
+        self.mesh_shape = mesh_shape
 
         super().__init__(observation_space=observation_space, default_reward=default_reward, seed=seed,
                          initial_state=initial_state, obstacles=obstacles, finals=finals, action_space=action_space)
@@ -150,3 +153,21 @@ class EnvMesh(Environment):
 
     def reachable_states(self, state: tuple, action: int) -> set:
         return {self.next_state(action=action, state=state)}
+
+    def ordered_states(self, reverse: bool = False) -> list:
+
+        # Convert set into list
+        states = list(self.states())
+
+        # Order in function of quantify state function
+        states.sort(
+            key=lambda state: self.quantify_state(state=state, height=self.mesh_shape[1]),
+            reverse=reverse
+        )
+
+        # Return ordered states
+        return states
+
+    def quantify_state(self, state: object, **kwargs) -> int:
+        x, y = state
+        return x * kwargs['height'] + y

@@ -40,22 +40,22 @@ class AgentPQLEXP(AgentPQL):
 
         if self.generator.uniform(low=0., high=1.) < self.epsilon:
             # Get random action to explore possibilities
-            return self._greedy_action(state, data)
+            return self._non_greedy_action(state, data)
         else:
             # Get best action to exploit reward.
-            return self.best_action(state, data)
+            return self._best_action(state, data)
 
-    def best_action(self, state: object = None, data: object = None) -> int:
+    def _best_action(self, state: object = None, extra: object = None) -> int:
         """
-        Select action proportional to the credit indicated in info.
+        Select action proportional to the credit indicated in extra.
         train_data is a tuple (maximum_credit, list of tuples: (action, credit))
-        :param data:
+        :param extra:
         :param state:
         :return:
         """
         action_space_n = self.environment.action_space.n
 
-        info = data[1]
+        info = extra[1]
 
         # calculate array of accumulated credit
         accumulation = np.zeros(action_space_n)
@@ -72,32 +72,32 @@ class AgentPQLEXP(AgentPQL):
         # select action with probability proportional to hv
         num = self.generator.uniform(low=0, high=summation)
 
-        # print('--AgentPQLEXP-_best_action----info-accumulation-num-accion------')
-        # print(info)
+        # print('--AgentPQLEXP-_best_action----extra-accumulation-num-accion------')
+        # print(extra)
         # print(accumulation)
         # print(num)
 
         for i in range(action_space_n):
             if num <= accumulation[i]:
-                # print(info[i][0])
+                # print(extra[i][0])
                 return info[i][0]
 
         print('Warning: agent_pql_exp._best_action: seleccionando acción de emergencia')
         return info[action_space_n - 1][0]
 
-    def _greedy_action(self, state: object = None, data: object = None) -> int:
+    def _non_greedy_action(self, state: object = None, extra: object = None) -> int:
         """
-        Select action proportional to the credit indicated in info.
+        Select action proportional to the credit indicated in extra.
         train_data is a  tuple. The first element is the maximum credit, and the second a list of tuples:
         (action, credit)
         :param state:
-        :param info:
+        :param extra:
         :return:
         """
         action_space_n = self.environment.action_space.n
 
-        maximum = data[0]
-        info = data[1]
+        maximum = extra[0]
+        info = extra[1]
 
         # calculate array of accumulated maximum - credit
         accumulation = np.zeros(action_space_n)
@@ -115,7 +115,7 @@ class AgentPQLEXP(AgentPQL):
 
         for i in range(action_space_n):
             if num <= accumulation[i]:
-                # print(info[i][0])
+                # print(extra[i][0])
                 return info[i][0]
 
         print('Warning: agent_pql_exp._non_greedy_action: seleccionando acción de emergencia')
@@ -140,7 +140,7 @@ class AgentPQLEXP(AgentPQL):
             q_set = self.q_set(state=self.state, action=a)
 
             # Calc hypervolume of Q_set, with reference given, and store in list with action
-            hv = uh.calc_hypervolume(list_of_vectors=q_set, reference=self.hv_reference)
+            hv = uh.calc_hypervolume(vectors=q_set, reference=self.hv_reference)
             result.append((a, hv))
             if hv > maximum:
                 maximum = hv
@@ -276,7 +276,7 @@ class AgentPQLEXP(AgentPQL):
             chv = 0
 
             if len(vectors[a]) > 0:
-                chv = uh.calc_hypervolume(list_of_vectors=vectors[a], reference=self.hv_reference)
+                chv = uh.calc_hypervolume(vectors=vectors[a], reference=self.hv_reference)
 
             result.append((a, chv))
             maximum = max(maximum, chv)

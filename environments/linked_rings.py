@@ -151,7 +151,7 @@ class LinkedRings(Environment):
         # Check is_final
         final = self.is_final()
 
-        # Set info
+        # Set extra
         info = {}
 
         return next_state, reward, final, info
