@@ -4,10 +4,10 @@ two actions are allowed in each position. For states in the rightmost column
 (i.e. the largest possible second component) only DOWN is allowed. For all other
 states, RIGHT and DOWN are allowed.
 
-Notice that the constructor allows a 'columns' parameter that can be used to indicate the
-number of columns in the environment to be considered, starting from the left
+Notice that the constructor allows a 'diagonals' parameter that can be used to indicate the
+number of diagonals in the environment to be considered, starting from the left
 hand side. This allows experimenting with 'subspaces' in the domain, i.e.
-the same environment, buy considering only the first k columns.
+the same environment, buy considering only the first k diagonals.
 
 Notice that is_final does not consider here a maximum number of steps for each
 episode (while DeepSeaTreasure does).
@@ -33,9 +33,9 @@ class DeepSeaTreasureRightDown(DeepSeaTreasure):
         :param initial_state:
         :param default_reward:
         :param seed:
-        :param columns: Number of columns to be used to build this environment
+        :param columns: Number of diagonals to be used to build this environment
                         (allows experimenting with an identical environment,
-                        but considering only the first k columns).
+                        but considering only the first k diagonals).
         """
 
         # Action space

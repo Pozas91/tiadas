@@ -17,14 +17,12 @@ class Vector:
     Vectors are represented internally as one-dimensional numpy arrays of the indicated type (int by default).
     """
 
-    # Number of decimals allowed by int numbers
-    decimals_allowed = 2
-    decimal_exponent = D(10) ** -(decimals_allowed - 1)
+    # Set decimal precision, by default two decimals (0.01)
+    decimal_precision = D('0.01')
 
     @staticmethod
-    def set_decimals_allowed(decimals_allowed: int):
-        Vector.decimals_allowed = decimals_allowed
-        Vector.decimal_exponent = D(10) ** -(decimals_allowed - 1)
+    def set_decimal_precision(decimal_precision: float):
+        Vector.decimal_precision = D(str(decimal_precision))
 
     def __init__(self, components):
         """

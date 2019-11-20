@@ -36,7 +36,7 @@ class TestDumps(unittest.TestCase):
         max_steps = None
 
         # Vector configuration
-        Vector.set_decimals_allowed(decimals_allowed=2)
+        Vector.set_decimal_precision(decimal_precision=2)
 
         # Instance of Environment
         env = BonusWorld(initial_state=initial_state, default_reward=default_reward, seed=seed)

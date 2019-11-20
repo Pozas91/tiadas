@@ -22,7 +22,7 @@ class DeepSeaTreasureRightDownStochastic(DeepSeaTreasureRightDown):
         :param initial_state:
         :param default_reward:
         :param seed:
-        :param columns: Number of columns to use with this environment.
+        :param columns: Number of diagonals to use with this environment.
         :param p_stochastic: transition probability model. Is the probability of achieving the desired result of the
         action (i.e. moving right in RIGHT_PROB, and down with DOWN_PROB).
         """

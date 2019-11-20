@@ -119,5 +119,11 @@ class RussellNorvig(EnvMesh):
         return probability
 
     def reachable_states(self, state: tuple, action: int) -> set:
+        # Set current state with state indicated
+        self.current_state = state
+
+        # Get all actions available
+        actions = self.action_space.copy()
+
         # Return all possible states reachable with any action
-        return {self.next_state(action=a, state=state) for a in self.actions.values() if a != a + 2}
+        return {self.next_state(action=a, state=state) for a in actions if a != a + 2}

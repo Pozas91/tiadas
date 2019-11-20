@@ -23,7 +23,7 @@ class TestVectorFloat(unittest.TestCase):
     def setUp(self):
 
         # Vector configuration
-        VectorDecimal.set_decimals_allowed(decimals_allowed=2)
+        VectorDecimal.set_decimal_precision(decimal_precision=2)
 
         self.first_quadrant = (
             [

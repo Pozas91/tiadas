@@ -1,9 +1,9 @@
 """
 Base class to define environments with an observation_space defined by a mesh.
-Mesh is a grid of columns per rows, where the minimum value is (0, 0), and maximum 
-value is (columns - 1, rows - 1).
-The top-left corner is (0, 0), the top-right corner is (columns - 1, 0), bottom-left 
-corner is (0, rows - 1) and bottom-right corner is (columns - 1, rows - 1).
+Mesh is a grid of diagonals per rows, where the minimum value is (0, 0), and maximum
+value is (diagonals - 1, rows - 1).
+The top-left corner is (0, 0), the top-right corner is (diagonals - 1, 0), bottom-left
+corner is (0, rows - 1) and bottom-right corner is (diagonals - 1, rows - 1).
 
 Action space is a discrete number. Actions are in the range [0, n).
 
@@ -33,7 +33,7 @@ class EnvMesh(Environment):
                  action_space: gym.spaces = None):
 
         """
-        :param mesh_shape: A tuple where first component represents the x-axis (i.e. columns), and the second component
+        :param mesh_shape: A tuple where first component represents the x-axis (i.e. diagonals), and the second component
             the y-axis (i.e. rows).
         :param default_reward: Default reward returned by the environment when a  reward is not defined.
         :param seed: Initial initial_seed for the random number generator.
@@ -148,10 +148,15 @@ class EnvMesh(Environment):
         x_position, y_position = self.observation_space.spaces
 
         # Return all spaces
-        return {(x, y) for x in range(x_position.n) for y in range(y_position.n)} - (
-            self.obstacles.union(set(self.finals.keys())))
+        return {
+                   (x, y) for x in range(x_position.n) for y in range(y_position.n)
+               } - (self.obstacles.union(set(self.finals.keys())))
 
     def reachable_states(self, state: tuple, action: int) -> set:
+        # Set current state
+        self.current_state = state
+
+        # Return next state
         return {self.next_state(action=action, state=state)}
 
     def ordered_states(self, reverse: bool = False) -> list:

@@ -38,7 +38,7 @@ class PressurizedBountifulSeaTreasure(EnvMesh):
 
         original_mesh_shape = (10, 11)
 
-        # Reduce the number of columns
+        # Reduce the number of diagonals
         if columns < 1 or columns > original_mesh_shape[0]:
             columns = original_mesh_shape[0]
 

@@ -37,11 +37,11 @@ class ResourceGathering(EnvMesh):
         :param p_attack: Probability that a enemy attacks when agent stay in an enemy position.
         """
 
-        # Positions where there are gold {position: available}
-        self.gold_positions = {(2, 0): True}
+        # Positions where there are gold.
+        self.gold_positions = {(2, 0)}
 
-        # Positions where there is a gem {position: available}
-        self.gem_positions = {(4, 1): True}
+        # Positions where there is a gem.
+        self.gem_positions = {(4, 1)}
 
         mesh_shape = (5, 5)
         default_reward = Vector(default_reward)
@@ -118,13 +118,11 @@ class ResourceGathering(EnvMesh):
         if not self.observation_space[0].contains(next_position) or not is_valid:
             next_position = position
 
-        if next_position in self.gold_positions and self.gold_positions[next_position]:
+        if next_position in self.gold_positions:
             objects = 1, objects[1]
-            self.gold_positions.update({next_position: False})
 
-        elif next_position in self.gem_positions and self.gem_positions[next_position]:
+        elif next_position in self.gem_positions:
             objects = objects[0], 1
-            self.gem_positions.update({next_position: False})
 
         elif next_position in self.enemies_positions and self.p_attack >= self.np_random.uniform():
             next_position, objects = self.initial_state
@@ -141,14 +139,6 @@ class ResourceGathering(EnvMesh):
 
         # Reset to initial seed
         self.seed(seed=self.initial_seed)
-
-        # Reset golds positions
-        for gold_state in self.gold_positions.keys():
-            self.gold_positions.update({gold_state: True})
-
-        # Reset gems positions
-        for gem_state in self.gem_positions.keys():
-            self.gem_positions.update({gem_state: True})
 
         self.current_state = self.initial_state
         return self.current_state
@@ -185,4 +175,71 @@ class ResourceGathering(EnvMesh):
         # Return all spaces
         return states
 
-    # def transition_reward(self, state: tuple, action: int, next_state: tuple) -> tuple:
+    def warning_position(self, state: tuple, action: int):
+        return (state[0] == (3, 1) and action == self.actions['UP']) or \
+               (state[0] == (3, 1) and action == self.actions['LEFT']) or \
+               (state[0] == (4, 0) and action == self.actions['LEFT']) or \
+               (state[0] == (2, 2) and action == self.actions['UP']) or \
+               (state[0] == (1, 1) and action == self.actions['RIGHT']) or \
+               (state[0] == (2, 0) and action == self.actions['DOWN']) or \
+               (state[0] == (2, 0) and action == self.actions['RIGHT'])
+
+    def transition_reward(self, state: tuple, action: int, next_state: tuple) -> Vector:
+        # Initialize reward as vector
+        reward = self.default_reward.copy()
+
+        # Default attacked is false
+        attacked = False
+
+        if self.warning_position(state=state, action=action) and next_state[0] == (4, 2):
+            attacked = True
+
+        if attacked:
+            reward[0] = -1
+
+        final = attacked or self.is_final(state=next_state)
+
+        if final:
+            reward[1], reward[2] = next_state[1]
+
+        return reward
+
+    def transition_probability(self, state: tuple, action: int, next_state: tuple) -> float:
+
+        transition_probability = 1.
+
+        if self.warning_position(state=state, action=action):
+            transition_probability = self.p_attack if (next_state[0] == (4, 2)) else 1. - self.p_attack
+
+        return transition_probability
+
+    def reachable_states(self, state: tuple, action: int) -> set:
+
+        reachable_states = set()
+
+        if state[0] == (3, 1) and action == self.actions['UP']:
+            reachable_states.add(((3, 0), state[1]))
+            reachable_states.add((self.home_position, (0, 0)))
+        elif state[0] == (3, 1) and action == self.actions['LEFT']:
+            reachable_states.add(((2, 1), state[1]))
+            reachable_states.add((self.home_position, (0, 0)))
+        elif state[0] == (4, 0) and action == self.actions['LEFT']:
+            reachable_states.add(((3, 0), state[1]))
+            reachable_states.add((self.home_position, (0, 0)))
+        elif state[0] == (2, 2) and action == self.actions['UP']:
+            reachable_states.add(((2, 1), state[1]))
+            reachable_states.add((self.home_position, (0, 0)))
+        elif state[0] == (1, 1) and action == self.actions['RIGHT']:
+            reachable_states.add(((2, 1), state[1]))
+            reachable_states.add((self.home_position, (0, 0)))
+        elif state[0] == (2, 0) and action == self.actions['DOWN']:
+            reachable_states.add(((2, 1), state[1]))
+            reachable_states.add((self.home_position, (0, 0)))
+        elif state[0] == (2, 0) and action == self.actions['RIGHT']:
+            reachable_states.add(((3, 0), state[1]))
+            reachable_states.add((self.home_position, (0, 0)))
+        else:
+            reachable_states.add(self.next_state(action=action, state=state)[0])
+
+        # Return all possible states reachable with any action
+        return reachable_states

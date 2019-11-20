@@ -1,4 +1,4 @@
-from decimal import Decimal as D
+from decimal import Decimal
 
 from models import Vector
 
@@ -10,15 +10,16 @@ def are_equal_two_decimal_numbers(a: float, b: float) -> bool:
     :param b:
     :return:
     """
-    return D(a).quantize(Vector.decimal_exponent) == D(b).quantize(Vector.decimal_exponent)
+    return Decimal(a).quantize(Vector.decimal_precision) == Decimal(b).quantize(Vector.decimal_precision)
 
 
-def round_with_precision(number: float, precision: float) -> float:
+def round_with_precision(number: float, precision: Decimal) -> float:
     """
     Round a number with precision given.
     :param number:
     :param precision:
     :return:
     """
-    n_of_decimals = str(precision)[::-1].find('.')
+    n_of_decimals = abs(precision.as_tuple().exponent)
+    precision = float(precision)
     return round(round(number / precision) * precision, n_of_decimals)

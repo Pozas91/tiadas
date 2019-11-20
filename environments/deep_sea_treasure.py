@@ -1,4 +1,4 @@
-"""The environment is a grid of 10 rows and 11 columns. The agent controls a 
+"""The environment is a grid of 10 rows and 11 diagonals. The agent controls a
 submarine searching for undersea treasures. There are multiple treasure locations
 with varying treasure values. There are two objectives - to minimise the number 
 of steps taken to reach the treasure, and to maximise the value of the treasure. 

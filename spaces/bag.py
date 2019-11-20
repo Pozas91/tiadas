@@ -1,4 +1,5 @@
 from collections import Counter
+from copy import copy
 
 from gym.spaces import Space
 
@@ -32,5 +33,14 @@ class Bag(Space):
     def __repr__(self):
         return "Bag({})".format(self.items)
 
+    def __str__(self):
+        return "Bag({})".format(self.items)
+
     def __eq__(self, other):
         return isinstance(other, Bag) and Counter(self.items) == Counter(other.items)
+
+    def __copy__(self):
+        return Bag(self.items)
+
+    def copy(self):
+        return copy(self)

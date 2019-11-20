@@ -31,7 +31,7 @@ class AgentSimulation:
 
     def simulate(self, policy: tuple, states: list) -> np.ndarray:
         """
-        Simulate the given policy until the value converge with `Vector.decimals_allowed` decimals.
+        Simulate the given policy until the value converge with `Vector.decimal_precision`.
         `states` list is a list of ordered states, necessary to know the state position in the policy tuple.
         :param policy:
         :param states:

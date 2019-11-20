@@ -16,6 +16,8 @@ from .mo_puddle_world_acyclic import MoPuddleWorldAcyclic
 from .non_recurrent_rings import NonRecurrentRings
 from .pressurized_bountiful_sea_treasure import PressurizedBountifulSeaTreasure
 from .pressurized_bountiful_sea_treasure_right_down_stochastic import PressurizedBountifulSeaTreasureRightDownStochastic
+from .pyramid_mdp import PyramidMDP
+from .pyramid_mdp_no_bounces import PyramidMDPNoBounces
 from .resource_gathering import ResourceGathering
 from .resource_gathering_limit import ResourceGatheringLimit
 from .russell_and_norvig import RussellNorvig

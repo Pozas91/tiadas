@@ -8,12 +8,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 from colorama import Fore, init
 
-import utils.hypervolume as uh
-import utils.miscellaneous as um
-import utils.numbers as un
 from agents import Agent, AgentPQL, AgentMOSP, AgentA1, AgentPQLEXP, AgentPQLEXP3, AgentW
 from environments import Environment
 from models import AgentType, GraphType, Vector, EvaluationMechanism
+from .hypervolume import calc_hypervolume
+from .miscellaneous import str_to_snake_case, order_vectors_by_origin_nearest
+from .numbers import are_equal_two_decimal_numbers
 
 init(autoreset=True)
 
@@ -88,7 +88,7 @@ def dumps_train_data(timestamp: int, seed: int, env_name_snake: str, agent_type:
     # Create file from above path
     data_file = dumps_directory.joinpath(
         data_path.format(str(agent_type.value), env_name_abbr, seed, variable, configuration, evaluation_mechanism,
-                         timestamp, kwargs['columns']).lower()
+                         timestamp, kwargs['diagonals']).lower()
     )
 
     # If any parents doesn't exist, make it.
@@ -166,7 +166,7 @@ def compare_solution(vectors: list, solution: list) -> (int, bool):
                 continue
 
             are_equals = np.all([
-                un.are_equal_two_decimal_numbers(a=x, b=y)
+                are_equal_two_decimal_numbers(a=x, b=y)
                 for x, y in zip(vector.components.astype(float), vector_solution.components.astype(float))
             ])
 
@@ -218,7 +218,7 @@ def update_graphs(graphs: dict, graph_type: GraphType, agent: Agent, configurati
 
             if hasattr(agent, 'hv_reference'):
                 # Calc hypervolume
-                data = uh.calc_hypervolume(vectors=new_data['train_data'], reference=agent.hv_reference)
+                data = calc_hypervolume(vectors=new_data['train_data'], reference=agent.hv_reference)
             else:
                 data = new_data['train_data']
 
@@ -305,7 +305,7 @@ def test_agents(environment: Environment, hv_reference: Vector, variable: str, a
 
     # Build environment
     env_name = environment.__class__.__name__
-    env_name_snake = um.str_to_snake_case(env_name)
+    env_name_snake = str_to_snake_case(env_name)
 
     # File timestamp
     timestamp = int(time.time())
@@ -365,8 +365,8 @@ def test_agents(environment: Environment, hv_reference: Vector, variable: str, a
                         'evaluation_mechanism': evaluation_mechanism, 'initial_value': initial_q_value
                     }
 
-                    if variable == 'decimals_allowed':
-                        Vector.set_decimals_allowed(decimals_allowed=configuration)
+                    if variable == 'decimal_precision':
+                        Vector.set_decimal_precision(decimal_precision=configuration)
                     else:
                         # Modify current configuration
                         parameters.update({variable: configuration})
@@ -392,7 +392,7 @@ def test_agents(environment: Environment, hv_reference: Vector, variable: str, a
 
                     # Order vectors by origin Vec(0) nearest
                     train_data.update({
-                        'v_s_0': um.order_vectors_by_origin_nearest(vectors=v_s_0),
+                        'v_s_0': order_vectors_by_origin_nearest(vectors=v_s_0),
                         # 'q': agent.q,
                         # 'v': agent.v
                     })
@@ -769,8 +769,8 @@ def prepare_data_and_show_graph(timestamp: int, env_name: str, env_name_snake: s
     if variable is not 'max_steps' and max_steps is not None:
         basic_information.append(r'max_steps={}'.format(max_steps))
 
-    if variable is not 'decimals_allowed':
-        basic_information.append(r'decimals_allowed={}'.format(Vector.decimals_allowed))
+    if variable is not 'decimal_precision':
+        basic_information.append(r'decimal_precision={}'.format(Vector.decimal_precision))
 
     if variable is not 'evaluation_mechanism' and evaluation_mechanism is not None:
         basic_information.append(r'evaluation_mechanism={}'.format(evaluation_mechanism))

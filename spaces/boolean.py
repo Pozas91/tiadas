@@ -1,4 +1,5 @@
 from collections import Counter
+from copy import copy
 
 from gym.spaces import Space
 
@@ -18,5 +19,14 @@ class Boolean(Space):
     def __repr__(self):
         return "Boolean({})".format(self.booleans)
 
+    def __str__(self):
+        return "Boolean({})".format(self.booleans)
+
     def __eq__(self, other):
         return isinstance(other, Boolean) and Counter(self.booleans) == Counter(other.booleans)
+
+    def __copy__(self):
+        return Boolean()
+
+    def copy(self):
+        return copy(self)

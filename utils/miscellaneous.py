@@ -1,12 +1,14 @@
 """
 Useful functions used in this project
 """
+import math
 import re
 
 import numpy as np
 from scipy.spatial.distance import cityblock
 
 from models import Vector
+
 
 def lists_to_tuples(x):
     """
@@ -85,8 +87,9 @@ def math_is_close(a: float, b: float, rel_tol: float = 1e-09, abs_tol: float = 0
     :return:
     """
 
-    return round(abs(a - b), Vector.decimals_allowed) <= max(
-        round(rel_tol * max(abs(a), abs(b)), Vector.decimals_allowed), abs_tol)
+    # return round(abs(a - b), Vector.decimal_allowed) <= max(
+    #     round(rel_tol * max(abs(a), abs(b)), Vector.decimal_allowed), abs_tol)
+    return math.isclose(a, b, rel_tol, abs_tol)
 
 
 def str_to_snake_case(text: str) -> str:
