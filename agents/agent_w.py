@@ -98,46 +98,6 @@ class AgentW(Agent):
             if (graph_type is GraphType.MEMORY) and (self.total_sweeps % self.interval_to_get_data == 0):
                 self.update_graph(graph_type=GraphType.MEMORY)
 
-            # # TODO: Borrar esta parte de abajo
-            # # Modify i-index
-            # i += 1
-            # print('{}-iterations'.format(i))
-            #
-            # if i in range(5, sweeps + 1, 5):
-            #     # Convert to vectors
-            #     vectors = {key: [vector.tolist() for vector in vectors] for key, vectors in self.v.items()}
-            #
-            #     # Prepare full_data to dumps
-            #     data = {
-            #         # 'time': '{}s'.format(total_time),
-            #         # 'diagonals': diagonals,
-            #         'memory': {
-            #             'v_s_0': len(self.v[self.environment.initial_state]),
-            #             'full': sum(len(vectors) for vectors in self.v.values())
-            #         },
-            #         'vectors': vectors
-            #     }
-            #
-            #     # Dumps partial execution
-            #     timestamp = int(time.time())
-            #
-            #     # Environment name
-            #     environment = um.str_to_snake_case(self.environment.__class__.__name__)
-            #
-            #     # Get only first letter of each word
-            #     env_name_abbr = ''.join([word[0] for word in environment.split('_')])
-            #
-            #     # Specify full path
-            #     file_path = Path(__file__).parent.parent.joinpath(
-            #         'dumps/w/train_data/{}_w_{}_{}_{}.yml'.format(env_name_abbr, timestamp, Vector.decimal_precision, i)
-            #     )
-            #
-            #     # If any parents doesn't exist, make it.
-            #     file_path.parent.mkdir(parents=True, exist_ok=True)
-            #
-            #     with file_path.open(mode='w+', encoding='UTF-8') as f:
-            #         f.write(structures_to_yaml(data=data))
-
     def sweep(self):
 
         # Increment total sweeps
