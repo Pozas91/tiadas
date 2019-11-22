@@ -97,7 +97,7 @@ class MoPuddleWorld(EnvMesh):
 
         random_space = None
 
-        while random_space == self.final_state:
+        while random_space is None or random_space == self.final_state:
             random_space = self.observation_space.sample()
 
         self.current_state = random_space

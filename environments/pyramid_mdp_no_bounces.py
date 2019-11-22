@@ -67,3 +67,20 @@ class PyramidMDPNoBounces(PyramidMDP):
 
         # Return a list of iterable valid actions
         return self._action_space
+
+    def reachable_states(self, state: tuple, action: int) -> set:
+
+        # Set current state with state indicated
+        self.current_state = state
+
+        # Get all actions available
+        actions = self.action_space.copy()
+
+        # Unpack position
+        x, y = state
+
+        if (x <= 0 and self.actions['LEFT'] in actions) or (y <= 0 and self.actions['UP'] in actions):
+            raise ValueError('Action/State combination returns a cyclic position.')
+
+        # Return all possible states reachable with any action
+        return {self.next_state(action=a, state=state) for a in actions}

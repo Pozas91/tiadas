@@ -50,25 +50,11 @@ class TestResourceGathering(TestEnvMesh):
         # Set current position to random position
         self.environment.current_state = self.environment.observation_space.sample()
 
-        # Get all golds
-        for gold_state in self.environment.gold_positions.keys():
-            self.environment.gold_positions.update({gold_state: False})
-
-        # Get all gems
-        for gem_state in self.environment.gem_positions.keys():
-            self.environment.gem_positions.update({gem_state: False})
-
         # Reset environment
         self.environment.reset()
 
         # Asserts
         self.assertEqual(self.environment.initial_state, self.environment.current_state)
-
-        for gold_state in self.environment.gold_positions.values():
-            self.assertTrue(gold_state)
-
-        for gem_state in self.environment.gem_positions.values():
-            self.assertTrue(gem_state)
 
     def test__next_state(self):
         """
@@ -190,11 +176,9 @@ class TestResourceGathering(TestEnvMesh):
 
         state = ((1, 0), (0, 0))
         self.environment.current_state = state
-        for gold_position in self.environment.gold_positions:
-            self.environment.gold_positions.update({gold_position: False})
 
         next_state, _ = self.environment.next_state(action=self.environment.actions['RIGHT'])
-        self.assertEqual(((2, 0), (0, 0)), next_state)
+        self.assertEqual(((2, 0), (1, 0)), next_state)
 
         ################################################################################################################
         # Set to (4, 2) and go to get gem
@@ -215,11 +199,11 @@ class TestResourceGathering(TestEnvMesh):
         state = ((4, 2), (0, 0))
         self.environment.current_state = state
 
-        for gem_position in self.environment.gem_positions:
-            self.environment.gem_positions.update({gem_position: False})
-
         next_state, _ = self.environment.next_state(action=self.environment.actions['UP'])
-        self.assertEqual(((4, 1), (0, 0)), next_state)
+        self.assertEqual(((4, 1), (0, 1)), next_state)
+
+    def test_action_space_length(self):
+        self.assertEqual(4, self.environment.action_space.n)
 
     def test_step(self):
         """
@@ -297,19 +281,232 @@ class TestResourceGathering(TestEnvMesh):
         self.assertTrue(is_final)
 
     def test_states_size(self):
-        self.assertEqual(97, len(self.environment.states()))
+        self.assertEqual(93, len(self.environment.states()))
 
     def test_transition_reward(self):
 
         # In this environment doesn't mind initial state to get the reward
-        state = self.environment.observation_space.sample()
+        for state in self.environment.states():
 
-        # Doesn't mind action too.
-        action = self.environment.action_space.sample()
+            self.environment.current_state = state
 
-        # An intermediate state
-        self.assertEqual(
-            self.environment.transition_reward(
-                state=state, action=action, next_state=((1, 1), (0, 0))
-            ), self.environment.default_reward
-        )
+            # Doesn't mind action too.
+            for a in self.environment.action_space:
+
+                for reachable_state in self.environment.reachable_states(state=state, action=a):
+
+                    # Decompose next state
+                    next_position, next_objects = reachable_state
+
+                    reward = self.environment.transition_reward(state=state, action=a, next_state=reachable_state)
+
+                    # Reach any final state
+                    if reachable_state in {
+                        ((2, 4), (0, 1)), ((2, 4), (1, 0)), ((2, 4), (1, 1))
+                    }:
+                        expected_reward = list(next_objects)
+                        expected_reward.insert(0, 0)
+
+                        self.assertEqual(expected_reward, reward)
+
+                    # It's attacked
+                    elif self.environment.warning_position(state=state, action=a) and next_position == (2, 4):
+                        self.assertEqual([-1, 0, 0], reward)
+
+                    # Default reward
+                    else:
+                        self.assertEqual([0, 0, 0], reward)
+
+    def test_get_dict_model(self):
+        super().test_get_dict_model()
+
+        model = self.environment.get_dict_model()
+
+        self.assertIsNone(model.get('gold_positions'))
+        self.assertIsNone(model.get('gem_positions'))
+        self.assertIsNone(model.get('enemies_positions'))
+        self.assertIsNone(model.get('home_position'))
+
+    def test_reachable_states(self):
+
+        limit_x = (self.environment.observation_space[0][0].n - 1)
+        limit_y = (self.environment.observation_space[0][1].n - 1)
+
+        # For any state the following happens
+        for state in self.environment.states():
+
+            # Decompose state
+            position, objects = state
+
+            # Decompose elements
+            (x, y) = position
+            (gold, gems) = objects
+
+            # Go to UP
+            reachable_states = self.environment.reachable_states(state=state, action=self.environment.actions['UP'])
+            reachable_states_len = len(reachable_states)
+
+            expected_reachable_states = set()
+            expected_reachable_states_len = 1
+
+            if position == (2, 2):
+                expected_reachable_states_len = 2
+                expected_reachable_states.add(((2, 4), (0, 0)))
+                expected_reachable_states.add(((2, 1), objects))
+
+            elif position == (3, 1) or position == (3, 0):
+                expected_reachable_states_len = 2
+                expected_reachable_states.add(((2, 4), (0, 0)))
+                expected_reachable_states.add(((3, 0), objects))
+
+            elif position == (4, 2):
+                expected_reachable_states.add(((x, y - 1), (gold, 1)))
+
+            elif position == (2, 1):
+                expected_reachable_states.add(((x, y - 1), (1, gems)))
+
+            elif y <= 0:
+                expected_reachable_states.add(((x, y), objects))
+
+            elif y > 0:
+                expected_reachable_states.add(((x, y - 1), objects))
+
+            self.assertEqual(expected_reachable_states_len, reachable_states_len)
+            self.assertTrue(
+                all(
+                    element in expected_reachable_states for element in reachable_states
+                ) and
+                all(
+                    element in reachable_states for element in expected_reachable_states
+                )
+            )
+
+            # Go to RIGHT
+            reachable_states = self.environment.reachable_states(state=state, action=self.environment.actions['RIGHT'])
+            reachable_states_len = len(reachable_states)
+
+            expected_reachable_states = set()
+            expected_reachable_states_len = 1
+
+            if position == (2, 0):
+                expected_reachable_states_len = 2
+                expected_reachable_states.add(((2, 4), (0, 0)))
+                expected_reachable_states.add(((3, 0), objects))
+
+            elif position == (1, 1):
+                expected_reachable_states_len = 2
+                expected_reachable_states.add(((2, 4), (0, 0)))
+                expected_reachable_states.add(((2, 1), objects))
+
+            elif position == (3, 1):
+                expected_reachable_states.add(((x + 1, y), (gold, 1)))
+
+            elif position == (1, 0):
+                expected_reachable_states.add(((x + 1, y), (1, gems)))
+
+            elif x >= limit_x:
+                expected_reachable_states.add(((x, y), objects))
+
+            elif x < limit_x:
+                expected_reachable_states.add(((x + 1, y), objects))
+
+            self.assertEqual(expected_reachable_states_len, reachable_states_len)
+            self.assertTrue(
+                all(
+                    element in expected_reachable_states for element in reachable_states
+                ) and
+                all(
+                    element in reachable_states for element in expected_reachable_states
+                )
+            )
+
+            # Go to DOWN
+            reachable_states = self.environment.reachable_states(state=state, action=self.environment.actions['DOWN'])
+            reachable_states_len = len(reachable_states)
+
+            expected_reachable_states = set()
+            expected_reachable_states_len = 1
+
+            if position == (2, 0):
+                expected_reachable_states_len = 2
+                expected_reachable_states.add(((2, 4), (0, 0)))
+                expected_reachable_states.add(((2, 1), objects))
+
+            elif position == (4, 0):
+                expected_reachable_states.add(((x, y + 1), (gold, 1)))
+
+            elif y >= limit_y:
+                expected_reachable_states.add(((x, y), objects))
+
+            elif y < limit_y:
+                expected_reachable_states.add(((x, y + 1), objects))
+
+            self.assertEqual(expected_reachable_states_len, reachable_states_len)
+            self.assertTrue(
+                all(
+                    element in expected_reachable_states for element in reachable_states
+                ) and
+                all(
+                    element in reachable_states for element in expected_reachable_states
+                )
+            )
+
+            # Go to LEFT
+            reachable_states = self.environment.reachable_states(state=state, action=self.environment.actions['LEFT'])
+            reachable_states_len = len(reachable_states)
+
+            expected_reachable_states = set()
+            expected_reachable_states_len = 1
+
+            if position == (4, 0):
+                expected_reachable_states_len = 2
+                expected_reachable_states.add(((2, 4), (0, 0)))
+                expected_reachable_states.add(((3, 0), objects))
+
+            elif position == (3, 1):
+                expected_reachable_states_len = 2
+                expected_reachable_states.add(((2, 4), (0, 0)))
+                expected_reachable_states.add(((2, 1), objects))
+
+            elif position == (3, 0):
+                expected_reachable_states.add(((x - 1, y), (1, gems)))
+
+            elif x <= 0:
+                expected_reachable_states.add(((x, y), objects))
+
+            elif x > 0:
+                expected_reachable_states.add(((x - 1, y), objects))
+
+            self.assertEqual(expected_reachable_states_len, reachable_states_len)
+            self.assertTrue(
+                all(
+                    element in expected_reachable_states for element in reachable_states
+                ) and
+                all(
+                    element in reachable_states for element in expected_reachable_states
+                )
+            )
+
+    def test_transition_probability(self):
+
+        for state in self.environment.states():
+
+            self.environment.current_state = state
+
+            for a in self.environment.action_space:
+
+                for reachable_state in self.environment.reachable_states(state=state, action=a):
+
+                    probability = self.environment.transition_probability(
+                        state=state, action=a, next_state=reachable_state
+                    )
+
+                    if self.environment.warning_position(state=state, action=a):
+
+                        if reachable_state[0] == (2, 4):
+                            self.assertEqual(self.environment.p_attack, probability)
+                        else:
+                            self.assertEqual(1. - self.environment.p_attack, probability)
+
+                    else:
+                        self.assertEqual(1., probability)

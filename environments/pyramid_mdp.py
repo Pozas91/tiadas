@@ -16,6 +16,7 @@ HV REFERENCE: (-20, -20)
 """
 import gym
 
+import utils.environments as ue
 from environments import EnvMesh
 from models import Vector
 
@@ -114,24 +115,14 @@ class PyramidMDP(EnvMesh):
         return self.finals.get(next_state, self.default_reward.copy())
 
     def transition_probability(self, state: tuple, action: int, next_state: tuple) -> float:
-
         # Probability
         desired_probability = self.n_transition
 
-        # Unpack position
-        x, y = state
-
-        # Movement possibilities
-        up = x, y - 1
-        right = x + 1, y
-        down = x, y + 1
-        left = x - 1, y
-
         desired_transition = (
-                (action == self.actions['UP'] and (up == next_state or next_state == state)) or
-                (action == self.actions['RIGHT'] and (right == next_state or next_state == state)) or
-                (action == self.actions['DOWN'] and (down == next_state or next_state == state)) or
-                (action == self.actions['LEFT'] and (left == next_state or next_state == state))
+            (action == self.actions['UP'] and ue.is_on_up_or_same_position(state=state, next_state=next_state)) or
+            (action == self.actions['RIGHT'] and ue.is_on_right_or_same_position(state=state, next_state=next_state)) or
+            (action == self.actions['DOWN'] and ue.is_on_down_or_same_position(state=state, next_state=next_state)) or
+            (action == self.actions['LEFT'] and ue.is_on_left_or_same_position(state=state, next_state=next_state))
         )
 
         if not desired_transition:

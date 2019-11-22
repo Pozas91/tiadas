@@ -1,2 +1,2 @@
-from .json import json_indent
+from .files import json_indent, yml_indent
 from .paths import models_path

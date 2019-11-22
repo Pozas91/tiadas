@@ -212,13 +212,13 @@ class TestRusselAndNorvig(TestEnvMesh):
                     n_actions = len(self.environment.actions)
                     coefficient = (n_actions - action)
 
-                    if ue.is_on_up(state=state, next_state=next_state):
+                    if ue.is_on_up_or_same_position(state=state, next_state=next_state):
                         self.assertEqual(self.environment.transitions[(coefficient + 0) % n_actions], probability)
-                    elif ue.is_on_right(state=state, next_state=next_state):
+                    elif ue.is_on_right_or_same_position(state=state, next_state=next_state):
                         self.assertEqual(self.environment.transitions[(coefficient + 1) % n_actions], probability)
-                    elif ue.is_on_down(state=state, next_state=next_state):
+                    elif ue.is_on_down_or_same_position(state=state, next_state=next_state):
                         self.assertEqual(self.environment.transitions[(coefficient + 2) % n_actions], probability)
-                    elif ue.is_on_left(state=state, next_state=next_state):
+                    elif ue.is_on_left_or_same_position(state=state, next_state=next_state):
                         self.assertEqual(self.environment.transitions[(coefficient + 3) % n_actions], probability)
 
     def test_reachable_states(self):

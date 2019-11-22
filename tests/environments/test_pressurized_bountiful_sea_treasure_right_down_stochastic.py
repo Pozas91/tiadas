@@ -203,14 +203,14 @@ class TestPressurizedBountifulSeaTreasureRightDownStochastic(TestPressurizedBoun
 
                     if action == self.environment.actions['RIGHT_PROB']:
 
-                        if ue.is_on_right(state=state, next_state=next_state):
+                        if ue.is_on_right_or_same_position(state=state, next_state=next_state):
                             self.assertEqual(1. - self.environment.p_stochastic, probability)
                         else:
                             self.assertEqual(self.environment.p_stochastic, probability)
 
                     elif action == self.environment.actions['DOWN_PROB']:
 
-                        if ue.is_on_down(state=state, next_state=next_state):
+                        if ue.is_on_down_or_same_position(state=state, next_state=next_state):
                             self.assertEqual(1. - self.environment.p_stochastic, probability)
                         else:
                             self.assertEqual(self.environment.p_stochastic, probability)

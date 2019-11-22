@@ -107,11 +107,11 @@ class RussellNorvig(EnvMesh):
         n_actions = len(self.actions)
         coefficient = (n_actions - action)
 
-        if ue.is_on_up(state=state, next_state=next_state):
+        if ue.is_on_up_or_same_position(state=state, next_state=next_state):
             probability = self.transitions[(coefficient + 0) % n_actions]
-        elif ue.is_on_right(state=state, next_state=next_state):
+        elif ue.is_on_right_or_same_position(state=state, next_state=next_state):
             probability = self.transitions[(coefficient + 1) % n_actions]
-        elif ue.is_on_down(state=state, next_state=next_state):
+        elif ue.is_on_down_or_same_position(state=state, next_state=next_state):
             probability = self.transitions[(coefficient + 2) % n_actions]
         else:
             probability = self.transitions[(coefficient + 3) % n_actions]
