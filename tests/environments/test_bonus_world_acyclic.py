@@ -14,7 +14,7 @@ class TestBonusWorldAcyclic(TestBonusWorld):
 
     def test_action_space_length(self):
         # By default action space is 2 (RIGHT, DOWN)
-        self.assertEqual(len(self.environment.actions), 2)
+        self.assertEqual(self.environment.action_space.n, 2)
 
     def test__next_state(self):
         """

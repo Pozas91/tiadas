@@ -147,6 +147,12 @@ class TestDeepSeaTreasureStochastic(TestDeepSeaTreasure):
 
     def test_transition_probability(self):
 
+        # Get actions
+        action_up = self.environment.actions['UP']
+        action_down = self.environment.actions['DOWN']
+        action_right = self.environment.actions['RIGHT']
+        action_left = self.environment.actions['LEFT']
+
         # For all states, for all actions and for all next_state possibles, transition probability must be return 1.
         for state in self.environment.states():
 
@@ -164,11 +170,11 @@ class TestDeepSeaTreasureStochastic(TestDeepSeaTreasure):
                     n_actions = len(self.environment.actions)
                     coefficient = (n_actions - action)
 
-                    if ue.is_on_up(state=state, next_state=next_state):
+                    if action == action_up and ue.is_on_up_or_same_position(state=state, next_state=next_state):
                         self.assertEqual(self.environment.transitions[(coefficient + 0) % n_actions], probability)
-                    elif ue.is_on_right(state=state, next_state=next_state):
+                    elif action == action_right and ue.is_on_right_or_same_position(state=state, next_state=next_state):
                         self.assertEqual(self.environment.transitions[(coefficient + 1) % n_actions], probability)
-                    elif ue.is_on_down(state=state, next_state=next_state):
+                    elif action == action_down and ue.is_on_down_or_same_position(state=state, next_state=next_state):
                         self.assertEqual(self.environment.transitions[(coefficient + 2) % n_actions], probability)
-                    elif ue.is_on_left(state=state, next_state=next_state):
+                    elif action == action_left and ue.is_on_left_or_same_position(state=state, next_state=next_state):
                         self.assertEqual(self.environment.transitions[(coefficient + 3) % n_actions], probability)

@@ -29,7 +29,7 @@ class TestMoPuddleWorld(TestEnvMesh):
 
     def test_action_space_length(self):
         # By default action space is 4 (UP, RIGHT, DOWN, LEFT)
-        self.assertEqual(len(self.environment.actions), 4)
+        self.assertEqual(self.environment.action_space.n, 4)
 
     def test_reset(self):
         """

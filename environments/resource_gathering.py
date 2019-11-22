@@ -170,7 +170,18 @@ class ResourceGathering(EnvMesh):
                        } - self.obstacles
 
         # Calc product of basic states with objects
-        states = set(itertools.product(basic_states, {(0, 0), (0, 1), (1, 0), (1, 1)})).difference(self.finals)
+        states = set(
+            itertools.product(basic_states, {(0, 0), (0, 1), (1, 0), (1, 1)})
+        ).difference(
+            self.finals
+        ).difference(
+            {
+                # Gold forbidden states
+                ((2, 0), (0, 0)), ((2, 0), (0, 1)),
+                # Gems forbidden states
+                ((4, 1), (0, 0)), ((4, 1), (1, 0)),
+            }
+        )
 
         # Return all spaces
         return states
@@ -191,7 +202,7 @@ class ResourceGathering(EnvMesh):
         # Default attacked is false
         attacked = False
 
-        if self.warning_position(state=state, action=action) and next_state[0] == (4, 2):
+        if self.warning_position(state=state, action=action) and next_state[0] == (2, 4):
             attacked = True
 
         if attacked:
@@ -209,7 +220,7 @@ class ResourceGathering(EnvMesh):
         transition_probability = 1.
 
         if self.warning_position(state=state, action=action):
-            transition_probability = self.p_attack if (next_state[0] == (4, 2)) else 1. - self.p_attack
+            transition_probability = self.p_attack if (next_state[0] == (2, 4)) else 1. - self.p_attack
 
         return transition_probability
 
@@ -217,7 +228,7 @@ class ResourceGathering(EnvMesh):
 
         reachable_states = set()
 
-        if state[0] == (3, 1) and action == self.actions['UP']:
+        if (state[0] == (3, 1) or state[0] == (3, 0)) and action == self.actions['UP']:
             reachable_states.add(((3, 0), state[1]))
             reachable_states.add((self.home_position, (0, 0)))
         elif state[0] == (3, 1) and action == self.actions['LEFT']:

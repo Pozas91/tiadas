@@ -4,6 +4,7 @@ is to be taken.
 
 HV REFERENCE: (-25, 0)
 """
+import utils.environments as ue
 from environments import DeepSeaTreasure
 from models import Vector
 
@@ -66,24 +67,15 @@ class DeepSeaTreasureStochastic(DeepSeaTreasure):
         # Cyclic direction
         return (direction + action) % self.action_space.n
 
-    def transition_probability(self, state: object, action: int, next_state: object) -> float:
+    def transition_probability(self, state: tuple, action: int, next_state: tuple) -> float:
 
         probability = self.transitions[1]
 
-        # Unpack position
-        x, y = state
-
-        # Movement possibilities
-        up = x, y - 1
-        right = x + 1, y
-        down = x, y + 1
-        left = x - 1, y
-
         straight_movement = (
-                (action == self.actions['UP'] and up == next_state) or
-                (action == self.actions['RIGHT'] and right == next_state) or
-                (action == self.actions['DOWN'] and down == next_state) or
-                (action == self.actions['LEFT'] and left == next_state)
+            (action == self.actions['UP'] and ue.is_on_up_or_same_position(state=state, next_state=next_state)) or
+            (action == self.actions['RIGHT'] and ue.is_on_right_or_same_position(state=state, next_state=next_state)) or
+            (action == self.actions['DOWN'] and ue.is_on_down_or_same_position(state=state, next_state=next_state)) or
+            (action == self.actions['LEFT'] and ue.is_on_left_or_same_position(state=state, next_state=next_state))
         )
 
         if straight_movement:

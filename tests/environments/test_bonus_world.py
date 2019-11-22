@@ -11,7 +11,6 @@ from tests.environments.test_env_mesh import TestEnvMesh
 
 
 class TestBonusWorld(TestEnvMesh):
-    environment = None
 
     def setUp(self):
         # Set initial_seed to 0 to testing.
@@ -44,7 +43,7 @@ class TestBonusWorld(TestEnvMesh):
 
     def test_action_space_length(self):
         # By default action space is 4 (UP, RIGHT, DOWN, LEFT)
-        self.assertEqual(len(self.environment.actions), 4)
+        self.assertEqual(self.environment.action_space.n, 4)
 
     def test__next_state(self):
         """

@@ -1,6 +1,6 @@
 # TIADAS
 
-Parrafo para la descripción del proyecto
+Párrafo para la descripción del proyecto
 
 ## Empezando
 
