@@ -59,7 +59,7 @@ class AgentW(Agent):
         # Vector reference to calc hypervolume
         self.hv_reference = hv_reference
 
-    def train(self, graph_type: GraphType, limit: int):
+    def train(self, limit: int, graph_type: GraphType = None):
 
         self.reference_time_to_train = time.time()
 
@@ -76,7 +76,7 @@ class AgentW(Agent):
             # Update Graph
             self.update_graph(graph_type=GraphType.DATA_PER_STATE)
 
-    def sweep_train(self, sweeps: int, graph_type: GraphType):
+    def sweep_train(self, sweeps: int, graph_type: GraphType = None):
         """
         Return this agent trained with `sweeps` sweeps.
         :param sweeps:
