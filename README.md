@@ -69,4 +69,4 @@ ESte proyecto está bajo licencia tal tal tal, para ver licencia visitar el arch
 Agradecimientos a:
 * Uno
 * Dos
-* Tres
+* Tresa
