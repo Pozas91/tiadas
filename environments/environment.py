@@ -187,7 +187,7 @@ class Environment(gym.Env):
         """
         raise NotImplemented
 
-    def ordered_states(self, reverse: bool = False) -> list:
+    def sorted_states(self, reverse: bool = False) -> list:
         """
         Return all possible states of this environment ordered.
         :param reverse:

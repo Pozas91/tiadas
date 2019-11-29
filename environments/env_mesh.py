@@ -159,20 +159,14 @@ class EnvMesh(Environment):
         # Return next state
         return {self.next_state(action=action, state=state)}
 
-    def ordered_states(self, reverse: bool = False) -> list:
-
-        # Convert set into list
-        states = list(self.states())
-
-        # Order in function of quantify state function
-        states.sort(
-            key=lambda state: self.quantify_state(state=state, height=self.mesh_shape[1]),
-            reverse=reverse
-        )
-
-        # Return ordered states
-        return states
+    def sorted_states(self, reverse: bool = False) -> list:
+        """
+        Sort states based on quantification of each state
+        :param reverse:
+        :return:
+        """
+        return sorted(self.states(), key=lambda state: self.quantify_state(state=state), reverse=reverse)
 
     def quantify_state(self, state: object, **kwargs) -> int:
         x, y = state
-        return x * kwargs['height'] + y
+        return x * self.mesh_shape[1] + y
