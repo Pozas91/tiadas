@@ -102,3 +102,15 @@ def str_to_snake_case(text: str) -> str:
     """
     s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', string=text)
     return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
+
+
+def structures_to_yaml(data, level: int = 0) -> str:
+    result = ''
+
+    for k, v in sorted(data.items(), key=lambda x: x[0]):
+        if isinstance(v, dict):
+            result += ' ' * (level * 2) + "{}:\n".format(k) + structures_to_yaml(data=v, level=level + 1)
+        else:
+            result += ' ' * (level * 2) + "{}: {}\n".format(k, v)
+
+    return result

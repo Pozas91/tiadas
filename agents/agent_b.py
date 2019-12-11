@@ -1,12 +1,11 @@
 import itertools
 import time
 
-import utils.graphs as ug
 import utils.miscellaneous as um
+import utils.numbers as un
 from configurations.paths import dumps_path
 from environments import Environment
 from models import Vector
-import utils.numbers as un
 
 
 class AgentB:
@@ -151,4 +150,4 @@ class AgentB:
         file_path.parent.mkdir(parents=True, exist_ok=True)
 
         with file_path.open(mode='w+', encoding='UTF-8') as f:
-            f.write(ug.structures_to_yaml(data=data))
+            f.write(um.structures_to_yaml(data=data))

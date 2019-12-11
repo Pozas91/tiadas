@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from colorama import Fore, init
 
+import utils.miscellaneous as um
 from agents import Agent, AgentPQL, AgentMOSP, AgentA1, AgentPQLEXP, AgentPQLEXP3, AgentW
 from environments import Environment
 from models import AgentType, GraphType, Vector, EvaluationMechanism
@@ -52,18 +53,6 @@ def write_config_file(timestamp: int, number_of_agents: int, env_name_snake: str
         file.write(file_data)
 
 
-def structures_to_yaml(data, level: int = 0) -> str:
-    result = ''
-
-    for k, v in sorted(data.items(), key=lambda x: x[0]):
-        if isinstance(v, dict):
-            result += ' ' * (level * 2) + "{}:\n".format(k) + structures_to_yaml(data=v, level=level + 1)
-        else:
-            result += ' ' * (level * 2) + "{}: {}\n".format(k, v)
-
-    return result
-
-
 def dumps_train_data(timestamp: int, seed: int, env_name_snake: str, agent_type: AgentType, variable: str,
                      configuration: str, evaluation_mechanism: EvaluationMechanism, train_data: dict, **kwargs):
     """
@@ -95,7 +84,7 @@ def dumps_train_data(timestamp: int, seed: int, env_name_snake: str, agent_type:
     data_file.parent.mkdir(parents=True, exist_ok=True)
 
     with data_file.open(mode='w+', encoding='UTF-8') as file:
-        file.write(structures_to_yaml(data=train_data))
+        file.write(um.structures_to_yaml(data=train_data))
 
 
 def initialize_graph_data(graph_types: set, agents_configuration: dict) -> (dict, dict):
