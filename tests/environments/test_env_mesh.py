@@ -31,8 +31,10 @@ class TestEnvMesh(TestEnvironment):
         """
         self.assertTrue(
             all(
-                self.environment.observation_space.contains(
-                    state) and state not in self.environment.obstacles and state not in self.environment.finals
+                self.environment.observation_space.contains(state) and
+                state not in self.environment.obstacles and
+                state not in self.environment.finals
+                
                 for state in self.environment.states()
             )
         )

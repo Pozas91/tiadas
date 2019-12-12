@@ -19,7 +19,7 @@ from .pressurized_bountiful_sea_treasure_right_down_stochastic import Pressurize
 from .pyramid_mdp import PyramidMDP
 from .pyramid_mdp_no_bounces import PyramidMDPNoBounces
 from .resource_gathering import ResourceGathering
-from .resource_gathering_limit import ResourceGatheringLimit
+from .resource_gathering_episodic import ResourceGatheringEpisodic
 from .russell_and_norvig import RussellNorvig
 from .space_exploration import SpaceExploration
 from .space_exploration_acyclic import SpaceExplorationAcyclic

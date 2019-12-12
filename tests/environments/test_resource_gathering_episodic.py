@@ -1,8 +1,9 @@
 """
 Unit tests file where testing test ResourceGatheringLimit environment.
 """
-from environments import ResourceGatheringLimit
-from models import VectorDecimal
+import random
+
+from environments import ResourceGatheringEpisodic
 from tests.environments.test_resource_gathering import TestResourceGathering
 
 
@@ -10,7 +11,24 @@ class TestResourceGatheringLimit(TestResourceGathering):
 
     def setUp(self):
         # Set initial_seed to 0 to testing.
-        self.environment = ResourceGatheringLimit(seed=0)
+        self.environment = ResourceGatheringEpisodic(seed=0)
+
+    def test_init(self):
+
+        # Super method call
+        super().test_init()
+
+        self.assertTrue(hasattr(self.environment, 'steps'))
+        self.assertTrue(hasattr(self.environment, 'steps_limit'))
+
+    def test_reset(self):
+
+        self.environment.steps = random.randint(0, 1000)
+
+        # Super method call
+        super().test_reset()
+
+        self.assertEqual(0, self.environment.steps)
 
     def test_step(self):
         """
@@ -91,12 +109,15 @@ class TestResourceGatheringLimit(TestResourceGathering):
         self.environment.current_state = ((3, 4), (1, 1))
 
         # Waste time
-        time_used = self.environment.time
+        steps_used = self.environment.steps
 
         # Do steps until time_limit
-        for _ in range(self.environment.time_limit - time_used):
+        for _ in range(self.environment.steps_limit - steps_used):
             next_state, reward, is_final, _ = self.environment.step(action=self.environment.actions.get('RIGHT'))
 
         self.assertEqual(((4, 4), (1, 1)), next_state)
-        self.assertEqual([0, 0.01, 0.01], reward)
+        self.assertEqual([0, 0, 0], reward)
         self.assertTrue(is_final)
+
+    def test_states_size(self):
+        self.assertEqual(93, len(self.environment.states()))

@@ -198,7 +198,7 @@ class BuridanAss(EnvMesh):
         for food_state in unprotected_food:
             # Get a random uniform number [0., 1.]
 
-            if self.np_random.uniform() >= self.p_stolen:
+            if self.p_stolen >= self.np_random.uniform():
                 self.food_counter.update({food_state: self.n_appear})
                 penalize += self.stolen_penalty
 

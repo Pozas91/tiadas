@@ -24,6 +24,7 @@ class TestResourceGathering(TestEnvMesh):
         self.assertTrue(hasattr(self.environment, 'gem_positions'))
         self.assertTrue(hasattr(self.environment, 'enemies_positions'))
         self.assertTrue(hasattr(self.environment, 'home_position'))
+        self.assertTrue(hasattr(self.environment, 'attacked'))
 
         # Observation space
         self.assertEqual(
@@ -49,12 +50,14 @@ class TestResourceGathering(TestEnvMesh):
 
         # Set current position to random position
         self.environment.current_state = self.environment.observation_space.sample()
+        self.environment.attacked = True
 
         # Reset environment
         self.environment.reset()
 
         # Asserts
         self.assertEqual(self.environment.initial_state, self.environment.current_state)
+        self.assertEqual(False, self.environment.attacked)
 
     def test__next_state(self):
         """
@@ -71,19 +74,19 @@ class TestResourceGathering(TestEnvMesh):
         self.environment.current_state = state
 
         # Cannot go to UP (Keep in same position)
-        next_state, _ = self.environment.next_state(action=self.environment.actions['UP'])
+        next_state = self.environment.next_state(action=self.environment.actions['UP'])
         self.assertEqual(state, next_state)
 
         # Go to RIGHT (increment x axis)
-        next_state, _ = self.environment.next_state(action=self.environment.actions['RIGHT'])
+        next_state = self.environment.next_state(action=self.environment.actions['RIGHT'])
         self.assertEqual(((1, 0), (0, 0)), next_state)
 
         # Go to DOWN (increment y axis)
-        next_state, _ = self.environment.next_state(action=self.environment.actions['DOWN'])
+        next_state = self.environment.next_state(action=self.environment.actions['DOWN'])
         self.assertEqual(((0, 1), (0, 0)), next_state)
 
         # Cannot go to LEFT (Keep in same position)
-        next_state, _ = self.environment.next_state(action=self.environment.actions['LEFT'])
+        next_state = self.environment.next_state(action=self.environment.actions['LEFT'])
         self.assertEqual(state, next_state)
 
         ################################################################################################################
@@ -95,19 +98,19 @@ class TestResourceGathering(TestEnvMesh):
         self.environment.current_state = state
 
         # Cannot go to UP (Keep in same position)
-        next_state, _ = self.environment.next_state(action=self.environment.actions['UP'])
+        next_state = self.environment.next_state(action=self.environment.actions['UP'])
         self.assertEqual(state, next_state)
 
         # Cannot go to RIGHT (Keep in same position)
-        next_state, _ = self.environment.next_state(action=self.environment.actions['RIGHT'])
+        next_state = self.environment.next_state(action=self.environment.actions['RIGHT'])
         self.assertEqual(state, next_state)
 
         # Go to DOWN (increment y axis)
-        next_state, _ = self.environment.next_state(action=self.environment.actions['DOWN'])
+        next_state = self.environment.next_state(action=self.environment.actions['DOWN'])
         self.assertEqual(((4, 1), (0, 1)), next_state)
 
         # Go to LEFT (decrement x axis) (enemy)
-        next_state, _ = self.environment.next_state(action=self.environment.actions['LEFT'])
+        next_state = self.environment.next_state(action=self.environment.actions['LEFT'])
         self.assertEqual(((2, 4), (0, 0)), next_state)
 
         ################################################################################################################
@@ -119,19 +122,19 @@ class TestResourceGathering(TestEnvMesh):
         self.environment.current_state = state
 
         # Go to UP (decrement y axis)
-        next_state, _ = self.environment.next_state(action=self.environment.actions['UP'])
+        next_state = self.environment.next_state(action=self.environment.actions['UP'])
         self.assertEqual(((4, 3), (0, 0)), next_state)
 
         # Cannot go to RIGHT (Keep in same position)
-        next_state, _ = self.environment.next_state(action=self.environment.actions['RIGHT'])
+        next_state = self.environment.next_state(action=self.environment.actions['RIGHT'])
         self.assertEqual(state, next_state)
 
         # Cannot go to DOWN (Keep in same position)
-        next_state, _ = self.environment.next_state(action=self.environment.actions['DOWN'])
+        next_state = self.environment.next_state(action=self.environment.actions['DOWN'])
         self.assertEqual(state, next_state)
 
         # Go to LEFT (decrement x axis)
-        next_state, _ = self.environment.next_state(action=self.environment.actions['LEFT'])
+        next_state = self.environment.next_state(action=self.environment.actions['LEFT'])
         self.assertEqual(((3, 4), (0, 0)), next_state)
 
         ################################################################################################################
@@ -143,19 +146,19 @@ class TestResourceGathering(TestEnvMesh):
         self.environment.current_state = state
 
         # Go to UP (decrement y axis)
-        next_state, _ = self.environment.next_state(action=self.environment.actions['UP'])
+        next_state = self.environment.next_state(action=self.environment.actions['UP'])
         self.assertEqual(((0, 3), (0, 0)), next_state)
 
         # Go to RIGHT (increment x axis)
-        next_state, _ = self.environment.next_state(action=self.environment.actions['RIGHT'])
+        next_state = self.environment.next_state(action=self.environment.actions['RIGHT'])
         self.assertEqual(((1, 4), (0, 0)), next_state)
 
         # Cannot go to DOWN (Keep in same position)
-        next_state, _ = self.environment.next_state(action=self.environment.actions['DOWN'])
+        next_state = self.environment.next_state(action=self.environment.actions['DOWN'])
         self.assertEqual(state, next_state)
 
         # Cannot go to LEFT (Keep in same position)
-        next_state, _ = self.environment.next_state(action=self.environment.actions['LEFT'])
+        next_state = self.environment.next_state(action=self.environment.actions['LEFT'])
         self.assertEqual(state, next_state)
 
         ################################################################################################################
@@ -166,7 +169,7 @@ class TestResourceGathering(TestEnvMesh):
         state = ((1, 0), (0, 0))
         self.environment.current_state = state
 
-        next_state, _ = self.environment.next_state(action=self.environment.actions['RIGHT'])
+        next_state = self.environment.next_state(action=self.environment.actions['RIGHT'])
         self.assertEqual(((2, 0), (1, 0)), next_state)
 
         ################################################################################################################
@@ -177,7 +180,7 @@ class TestResourceGathering(TestEnvMesh):
         state = ((1, 0), (0, 0))
         self.environment.current_state = state
 
-        next_state, _ = self.environment.next_state(action=self.environment.actions['RIGHT'])
+        next_state = self.environment.next_state(action=self.environment.actions['RIGHT'])
         self.assertEqual(((2, 0), (1, 0)), next_state)
 
         ################################################################################################################
@@ -188,7 +191,7 @@ class TestResourceGathering(TestEnvMesh):
         state = ((4, 2), (0, 0))
         self.environment.current_state = state
 
-        next_state, _ = self.environment.next_state(action=self.environment.actions['UP'])
+        next_state = self.environment.next_state(action=self.environment.actions['UP'])
         self.assertEqual(((4, 1), (0, 1)), next_state)
 
         ################################################################################################################
@@ -199,7 +202,7 @@ class TestResourceGathering(TestEnvMesh):
         state = ((4, 2), (0, 0))
         self.environment.current_state = state
 
-        next_state, _ = self.environment.next_state(action=self.environment.actions['UP'])
+        next_state = self.environment.next_state(action=self.environment.actions['UP'])
         self.assertEqual(((4, 1), (0, 1)), next_state)
 
     def test_action_space_length(self):
@@ -252,7 +255,7 @@ class TestResourceGathering(TestEnvMesh):
 
         self.assertEqual(((2, 4), (1, 1)), next_state)
         self.assertEqual([0, 1, 1], reward)
-        self.assertTrue(is_final)
+        self.assertFalse(is_final)
 
         ################################################################################################################
         # Trying get gold through enemy
@@ -278,10 +281,10 @@ class TestResourceGathering(TestEnvMesh):
         # Reset at home
         self.assertEqual(((2, 4), (0, 0)), next_state)
         self.assertEqual([-1, 0, 0], reward)
-        self.assertTrue(is_final)
+        self.assertFalse(is_final)
 
     def test_states_size(self):
-        self.assertEqual(93, len(self.environment.states()))
+        self.assertEqual(96, len(self.environment.states()))
 
     def test_transition_reward(self):
 

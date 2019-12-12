@@ -23,6 +23,33 @@ def lists_to_tuples(x):
     return tuple(map(lists_to_tuples, x))
 
 
+def tuples_to_string(x, level: int = 1):
+    """
+    Convert nested tuples into a string.
+    :param x:
+    :param level:
+    :return:
+    """
+
+    if not isinstance(x, tuple):
+        return str(x)
+
+    separator = ':' * level
+
+    return separator.join(map(lambda y: tuples_to_string(y, level + 1), x))
+
+
+def string_to_tuples(x, level: int = 1):
+    """
+    Invert operation of tuples_to_string
+    :param x:
+    :param level:
+    :return:
+    """
+
+    pass
+
+
 def sum_a_vector_and_a_list_of_vectors(v: Vector, v_list: list):
     """
     Performs a vector-sum between a vector v and a set of vectors V.
@@ -114,3 +141,7 @@ def structures_to_yaml(data, level: int = 0) -> str:
             result += ' ' * (level * 2) + "{}: {}\n".format(k, v)
 
     return result
+
+
+def structures_to_json(data, level: int = 0) -> str:
+    result = ''

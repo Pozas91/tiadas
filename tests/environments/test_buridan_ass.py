@@ -200,6 +200,9 @@ class TestBuridanAss(TestEnvMesh):
         :return:
         """
 
+        # Disable probability to stole
+        self.environment.p_stolen = 0
+
         # Simple valid step, at each step penalizes -1.
         next_state, reward, is_final, info = self.environment.step(action=self.environment.actions['DOWN'])
 
@@ -228,6 +231,9 @@ class TestBuridanAss(TestEnvMesh):
         self.assertEqual([0, 0., -1], reward)
         self.assertFalse(is_final)
 
+        # Set probability to stolen on 1
+        self.environment.p_stolen = 1.
+
         # Go to DOWN
         next_state, reward, is_final, _ = self.environment.step(action=self.environment.actions['DOWN'])
 
@@ -249,14 +255,16 @@ class TestBuridanAss(TestEnvMesh):
         # Reset environment
         self.environment.reset()
 
+        # Disable probability to stole
+        self.environment.p_stolen = 0
+
         # Wasteful steps for the donkey to be hungry
         for _ in range(3):
             next_state, reward, is_final, _ = self.environment.step(action=self.environment.actions['RIGHT'])
 
         # Donkey has hungry.
-        # Food stack (0, 0) is stolen.
-        self.assertEqual(((2, 1), {(2, 2)}, 3), next_state)
-        self.assertEqual([0.0, -0.5, -1.0], reward)
+        self.assertEqual(((2, 1), {(2, 2), (0, 0)}, 3), next_state)
+        self.assertEqual([0.0, 0.0, -1.0], reward)
         self.assertFalse(is_final)
 
         for _ in range(7):
@@ -264,15 +272,18 @@ class TestBuridanAss(TestEnvMesh):
 
         # Go to DOWN (2, 2)
         next_state, reward, is_final, _ = self.environment.step(action=self.environment.actions['DOWN'])
-        self.assertEqual(((2, 2), {(2, 2)}, 9), next_state)
+        self.assertEqual(((2, 2), {(2, 2), (0, 0)}, 9), next_state)
         self.assertEqual([-1, 0.0, -1.], reward)
+
+        # Ensure probability to stolen
+        self.environment.p_stolen = 1.
 
         # Go to STAY (2, 2)
         next_state, reward, is_final, _ = self.environment.step(action=self.environment.actions['STAY'])
 
         # Donkey has ate.
         self.assertEqual(((2, 2), frozenset(), 0), next_state)
-        self.assertEqual([0, 0, 0], reward)
+        self.assertEqual([0, -0.5, 0], reward)
         self.assertTrue(is_final)
 
     def test_states(self):
