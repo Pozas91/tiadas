@@ -329,6 +329,7 @@ class TestResourceGathering(TestEnvMesh):
         self.assertIsNone(model.get('gem_positions'))
         self.assertIsNone(model.get('enemies_positions'))
         self.assertIsNone(model.get('home_position'))
+        self.assertIsNone(model.get('checkpoints_states'))
 
     def test_reachable_states(self):
 

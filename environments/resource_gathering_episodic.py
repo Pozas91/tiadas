@@ -1,6 +1,9 @@
 """
 Episodic version of ResourceGathering.
 
+REF: 'A temporal difference method for multi-objective reinforcement learning'
+    (Manuela Ruíz-Montiel, Lawrence Mandow, José-Luis Pérez-de-la-Cruz 2017)
+
 FINAL STATES: Return at home with any object or attacked by enemy.
 """
 
