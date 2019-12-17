@@ -141,7 +141,3 @@ def structures_to_yaml(data, level: int = 0) -> str:
             result += ' ' * (level * 2) + "{}: {}\n".format(k, v)
 
     return result
-
-
-def structures_to_json(data, level: int = 0) -> str:
-    result = ''

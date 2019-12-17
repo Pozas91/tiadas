@@ -23,18 +23,6 @@ from models import Vector, GraphType, AgentType
 from .agent import Agent
 
 
-def structures_to_yaml(data, level: int = 0) -> str:
-    result = ''
-
-    for k, v in sorted(data.items(), key=lambda x: x[0]):
-        if isinstance(v, dict):
-            result += ' ' * (level * 2) + "{}:\n".format(k) + structures_to_yaml(data=v, level=level + 1)
-        else:
-            result += ' ' * (level * 2) + "{}: {}\n".format(k, v)
-
-    return result
-
-
 class AgentW(Agent):
     available_graph_types = {
         GraphType.MEMORY, GraphType.SWEEP, GraphType.TIME, GraphType.DATA_PER_STATE, GraphType.V_S_0
@@ -58,6 +46,16 @@ class AgentW(Agent):
 
         # Vector reference to calc hypervolume
         self.hv_reference = hv_reference
+
+    def stop_condition(self, graph_type: GraphType = None, **kwargs) -> bool:
+
+        if graph_type is GraphType.TIME:
+            execution_time = kwargs.get('execution_time')
+            stop_condition = (time.time() - self.reference_time_to_train) < execution_time
+        else:
+            self.sw
+
+        return stop_condition
 
     def train(self, limit: int, graph_type: GraphType = None):
 
