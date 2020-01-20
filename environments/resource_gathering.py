@@ -28,8 +28,12 @@ class ResourceGathering(EnvMesh):
     # Possible actions
     _actions = {'UP': 0, 'RIGHT': 1, 'DOWN': 2, 'LEFT': 3}
 
+    # Reference
+    hv_reference = Vector((-10, -10, -10))
+
     def __init__(self, initial_state: tuple = ((2, 4), (0, 0)), default_reward: tuple = (0, 0, 0), seed: int = 0,
-                 p_attack: float = 0.1):
+                 p_attack: float = 0.1, mesh_shape: tuple = (5, 5), gold_positions: frozenset = frozenset({(2, 0)}),
+                 gem_positions: frozenset = frozenset({(4, 1)})):
         """
         :param initial_state:
         :param default_reward: (enemy_attack, gold, gems)
@@ -37,13 +41,6 @@ class ResourceGathering(EnvMesh):
         :param p_attack: Probability that a enemy attacks when agent stay in an enemy position.
         """
 
-        # Positions where there are gold.
-        self.gold_positions = {(2, 0)}
-
-        # Positions where there is a gem.
-        self.gem_positions = {(4, 1)}
-
-        mesh_shape = (5, 5)
         default_reward = Vector(default_reward)
 
         # Build the observation space (position(x, y), quantity(gold, gems))
@@ -65,17 +62,19 @@ class ResourceGathering(EnvMesh):
         super().__init__(mesh_shape=mesh_shape, seed=seed, initial_state=initial_state, default_reward=default_reward,
                          observation_space=observation_space, finals=finals)
 
-        self.checkpoints_states = {
-            ((2, 4), (1, 0)),
-            ((2, 4), (0, 1)),
-            ((2, 4), (1, 1)),
-        }
+        # Positions where there are gold.
+        self.gold_positions = gold_positions
+
+        # Positions where there is a gem.
+        self.gem_positions = gem_positions
 
         # States where there are enemies_positions
         self.enemies_positions = {(3, 0), (2, 1)}
         self.p_attack = p_attack
         self.home_position = (2, 4)
         self.attacked = False
+
+        self.checkpoints_states = set(itertools.product(self.home_position, {(1, 0), (0, 1), (1, 1)}))
 
     def step(self, action: int) -> (tuple, Vector, bool, dict):
         """
@@ -170,9 +169,9 @@ class ResourceGathering(EnvMesh):
         x_position, y_position = self.observation_space[0]
 
         # Calc basic states
-        basic_states = {
-                           (x, y) for x in range(x_position.n) for y in range(y_position.n)
-                       } - self.obstacles
+        basic_states = set(
+            (x, y) for x in range(x_position.n) for y in range(y_position.n)
+        ).difference(self.obstacles)
 
         # Calc product of basic states with objects
         states = set(
@@ -180,19 +179,22 @@ class ResourceGathering(EnvMesh):
         ).difference(
             self.finals
         ).difference(
-            {
-                # Gold forbidden states
-                ((2, 0), (0, 0)), ((2, 0), (0, 1)),
-                # Gems forbidden states
-                ((4, 1), (0, 0)), ((4, 1), (1, 0)),
-            }
+            # Cannot be in gold positions without gold.
+            set(
+                itertools.product(self.gold_positions, {(0, 0), (0, 1)})
+            ).union(
+                # Cannot be in gem positions without gem.
+                set(
+                    itertools.product(self.gem_positions, {(0, 0), (1, 0)})
+                )
+            )
         )
 
         # Return all spaces
         return states
 
-    def warning_position(self, state: tuple, action: int):
-        return (state[0] == (3, 1) and action == self.actions['UP']) or \
+    def warning_action(self, state: tuple, action: int):
+        return ((state[0] == (3, 1) or state[0] == (3, 0)) and action == self.actions['UP']) or \
                (state[0] == (3, 1) and action == self.actions['LEFT']) or \
                (state[0] == (4, 0) and action == self.actions['LEFT']) or \
                (state[0] == (2, 2) and action == self.actions['UP']) or \
@@ -207,11 +209,11 @@ class ResourceGathering(EnvMesh):
         # Default attacked is false
         self.attacked = False
 
-        if self.warning_position(state=state, action=action) and next_state[0] == (2, 4):
+        if self.warning_action(state=state, action=action) and next_state[0] == self.home_position:
             self.attacked = True
 
         if self.attacked:
-            reward = [-1, 0, 0]
+            reward[0], reward[1], reward[2] = -1, 0, 0
         elif next_state in self.checkpoints_states:
             reward[1], reward[2] = next_state[1]
 
@@ -221,8 +223,8 @@ class ResourceGathering(EnvMesh):
 
         transition_probability = 1.
 
-        if self.warning_position(state=state, action=action):
-            transition_probability = self.p_attack if (next_state[0] == (2, 4)) else 1. - self.p_attack
+        if self.warning_action(state=state, action=action):
+            transition_probability = self.p_attack if (next_state[0] == self.home_position) else 1. - self.p_attack
 
         return transition_probability
 

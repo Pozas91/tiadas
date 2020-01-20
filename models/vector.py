@@ -8,7 +8,7 @@ from decimal import Decimal as D
 import numpy as np
 
 import utils.models as um
-from models import Dominance
+from .dominance import Dominance
 
 
 class Vector:
@@ -106,7 +106,10 @@ class Vector:
         :return:
         """
 
-        return self.__class__(np.add(self.components, other))
+        if isinstance(other, Vector):
+            return self.__class__(self.components + other.components)
+        else:
+            return self.__class__(self.components + other)
 
     def __sub__(self, other):
         """
@@ -120,7 +123,10 @@ class Vector:
         :return:
         """
 
-        return self.__class__(np.subtract(self.components, other))
+        if isinstance(other, Vector):
+            return self.__class__(self.components - other.components)
+        else:
+            return self.__class__(self.components - other)
 
     def __mul__(self, other):
         """
@@ -133,7 +139,10 @@ class Vector:
         :return:
         """
 
-        return self.__class__(np.multiply(self.components, other))
+        if isinstance(other, Vector):
+            return self.__class__(self.components * other.components)
+        else:
+            return self.__class__(self.components * other)
 
     def __truediv__(self, other):
         """
@@ -145,7 +154,11 @@ class Vector:
         :param other:
         :return:
         """
-        return self.__class__(np.divide(self.components, other))
+
+        if isinstance(other, Vector):
+            return self.__class__(np.divide(self.components, other.components))
+        else:
+            return self.__class__(np.divide(self.components, other))
 
     def __pow__(self, power, modulo=None):
         """
@@ -212,7 +225,7 @@ class Vector:
         Return a zero vector of same type and len that this vector
         :return:
         """
-        return self.__class__(np.zeros_like(self.components))
+        return self * 0
 
     def copy(self):
         """
@@ -259,14 +272,14 @@ class Vector:
         v1_dominate = False
         v2_dominate = False
 
-        for idx, component in enumerate(self.components):
+        for a, b in zip(self.components, v2.components):
 
             # Are equals or close...
-            if self.components[idx] == v2.components[idx]:
+            if a == b:
                 # Nothing to do at moment
                 pass
 
-            elif self.components[idx] > v2.components[idx]:
+            elif a > b:
                 v1_dominate = True
 
                 # If already dominate v2, then both vectors are independent.
@@ -274,7 +287,7 @@ class Vector:
                     return Dominance.otherwise
 
             # v1's component is dominated by v2
-            elif self.components[idx] < v2.components[idx]:
+            elif a < b:
                 v2_dominate = True
 
                 # If already dominate v1, then both vectors are independent.
@@ -329,13 +342,13 @@ class Vector:
                 dominance = vector_i.dominance(v2=vector_j)
 
                 # `vector_i` dominate `vector_j`
-                if dominance == Dominance.dominate:
+                if dominance is Dominance.dominate:
 
                     # Remove non-dominated vector
                     non_dominated.pop(idx_j)
 
                 # `vector_j` dominate `vector_i`
-                elif dominance == Dominance.is_dominated:
+                elif dominance is Dominance.is_dominated:
 
                     # Remove non-dominated vector
                     non_dominated.pop(idx_j)
@@ -344,13 +357,13 @@ class Vector:
                     discarded = True
 
                 # `vector_i` and `vector_j` are similar or equals
-                elif dominance == Dominance.equals:
+                elif dominance is Dominance.equals:
                     # Stop to search (keep last one)
                     equals = True
                     break
 
                 # If dominance is otherwise, continue searching
-                if dominance == Dominance.otherwise:
+                if dominance is Dominance.otherwise:
                     # Search in next element
                     idx_j += 1
                 else:

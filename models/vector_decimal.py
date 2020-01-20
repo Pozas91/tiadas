@@ -165,16 +165,14 @@ class VectorDecimal(Vector):
         v1_dominate = False
         v2_dominate = False
 
-        for idx, component_v1 in enumerate(self.components):
-
-            component_v2 = v2.components[idx]
+        for a, b in zip(self.components, v2.components):
 
             # Are equals or close...
-            if un.are_equal_two_decimal_numbers(a=component_v1, b=component_v2):
+            if un.are_equal_two_decimal_numbers(a=a, b=b):
                 # Nothing to do at moment
                 pass
 
-            elif component_v1 > component_v2:
+            elif a > b:
                 v1_dominate = True
 
                 # If already dominate v2, then both vectors are independent.
@@ -182,7 +180,7 @@ class VectorDecimal(Vector):
                     return Dominance.otherwise
 
             # v1's component_v1 is dominated by v2
-            elif component_v1 < component_v2:
+            elif a < b:
                 v2_dominate = True
 
                 # If already dominate v1, then both vectors are independent.
