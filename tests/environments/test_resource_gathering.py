@@ -313,7 +313,7 @@ class TestResourceGathering(TestEnvMesh):
                         self.assertEqual(expected_reward, reward)
 
                     # It's attacked
-                    elif self.environment.warning_position(state=state, action=a) and next_position == (2, 4):
+                    elif self.environment.warning_action(state=state, action=a) and next_position == (2, 4):
                         self.assertEqual([-1, 0, 0], reward)
 
                     # Default reward
@@ -505,7 +505,7 @@ class TestResourceGathering(TestEnvMesh):
                         state=state, action=a, next_state=reachable_state
                     )
 
-                    if self.environment.warning_position(state=state, action=a):
+                    if self.environment.warning_action(state=state, action=a):
 
                         if reachable_state[0] == (2, 4):
                             self.assertEqual(self.environment.p_attack, probability)

@@ -106,7 +106,6 @@ def manhattan_distance(a: Vector, b: Vector) -> float:
 
 def math_is_close(a: float, b: float, rel_tol: float = 1e-09, abs_tol: float = 0.0):
     """
-
     :param a:
     :param b:
     :param rel_tol:
@@ -116,7 +115,7 @@ def math_is_close(a: float, b: float, rel_tol: float = 1e-09, abs_tol: float = 0
 
     # return round(abs(a - b), Vector.decimal_allowed) <= max(
     #     round(rel_tol * max(abs(a), abs(b)), Vector.decimal_allowed), abs_tol)
-    return math.isclose(a, b, rel_tol, abs_tol)
+    return math.isclose(a=a, b=b, rel_tol=rel_tol, abs_tol=abs_tol)
 
 
 def str_to_snake_case(text: str) -> str:

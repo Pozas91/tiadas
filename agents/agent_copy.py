@@ -74,11 +74,6 @@ class Agent:
         # Time as reference to mark vectors for graphs
         self.reference_time_to_train = None
 
-    def seed(self, seed: int = None) -> None:
-        self.generator = np.random.RandomState(seed=seed)
-
-    # MARK: Information
-
     def update_graph(self, graph_type: GraphType) -> None:
         """
         Update specific graph type
@@ -87,29 +82,12 @@ class Agent:
         """
         raise NotImplemented
 
-    def show_graph_info(self) -> None:
-        """
-        Show graph extra
-        :return:
-        """
-        pprint(self.graph_info)
-
-    def print_information(self) -> None:
-        """
-        Print basic information about agent
-        :return:
-        """
-        print('- Agent information! -')
-        print("Seed: {}".format(self.initial_seed))
-        print("Gamma: {}".format(self.gamma))
-
-    # MARK: Resets
-
     def reset(self) -> None:
         """
         Reset agent
         :return:
         """
+
         # Reset initial seed
         self.seed(seed=self.initial_seed)
 
@@ -149,22 +127,33 @@ class Agent:
                 GraphType.DATA_PER_STATE: list()
             })
 
-    # MARK: Train model
-
-    def do_iteration(self, **kwargs) -> None:
+    def show_graph_info(self) -> None:
         """
-        Does an iteration
+        Show graph extra
         :return:
         """
-        raise NotImplemented
+        pprint(self.graph_info)
 
-    def train(self, **kwargs) -> None:
+    def print_information(self) -> None:
         """
-        Train this model
+        Print basic information about agent
+        :return:
         """
-        raise NotImplemented
+        print('- Agent information! -')
+        print("Seed: {}".format(self.initial_seed))
+        print("Gamma: {}".format(self.gamma))
 
-    # MARK: Dumps model
+    def time_train(self, execution_time: int, graph_type: GraphType):
+        """
+        Return this agent trained during `time_execution` seconds.
+        :param graph_type:
+        :param execution_time:
+        :return:
+        """
+
+        while (time.time() - self.reference_time_to_train) < execution_time:
+            # Do an iteration
+            self.do_iteration(graph_type=graph_type)
 
     def get_dict_model(self) -> dict:
         """
@@ -291,3 +280,13 @@ class Agent:
     def models_dumps_file_path(filename: str) -> Path:
         # Return path from file name
         return conf.models_path.joinpath(filename)
+
+    def do_iteration(self, graph_type: GraphType) -> None:
+        """
+        Does an iteration
+        :return:
+        """
+        raise NotImplemented
+
+    def seed(self, seed: int = None) -> None:
+        self.generator = np.random.RandomState(seed=seed)

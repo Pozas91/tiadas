@@ -22,10 +22,10 @@ class IterableDiscrete(Discrete):
             raise StopIteration
 
     def __repr__(self):
-        return "IterableDiscrete({})" % self.n
+        return "IterableDiscrete({})".format(self.n)
 
     def __str__(self):
-        return "IterableDiscrete({})" % self.n
+        return "IterableDiscrete({})".format(self.n)
 
     def __eq__(self, other):
         return isinstance(other, IterableDiscrete) and self.n == other.n
