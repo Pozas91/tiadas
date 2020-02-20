@@ -4,20 +4,23 @@ Agent W.
 The W algorithm is an implementation of an adaptation of the approximation algorithm described by D.J White in
 "Multi-objective infinite-horizon discounted Markov decision process".
 
-We consider the case of a finite set of states `S`, a finite set of actions A(s) ∀s ∈ S, and a vector reward `r`
-associated to each transition (s, a, s') from position `s` to position `s'` through action `a`.
+We consider the case of a finite set of states `S`, a finite set of actions A(state) ∀state ∈ S, and a vector reward `r`
+associated to each transition (state, a, state') from position `state` to position `state'` through action `a`.
 
-The algorithm approximates V(s), the set of non-dominated vector values for every position `s`.
+The algorithm approximates V(state), the set of non-dominated vector values for every position `state`.
 
 We consider the following operations and functions:
 • ND(X), the set of non-dominated vectors from vector set X ⊂ R^n.
-• r(s, a, s'), the vector reward associated to transition (s, a, s').
-• p(s, a, s'), the transition probability associated to transition (s, a, s').
+• r(state, a, state'), the vector reward associated to transition (state, a, state').
+• p(state, a, state'), the transition probability associated to transition (state, a, state').
 """
 import itertools
 import time
+from copy import deepcopy
+from typing import Tuple, List, Dict
 
 import utils.hypervolume as uh
+import utils.miscellaneous as um
 import utils.numbers as un
 from environments import Environment
 from models import Vector, GraphType, AgentType
@@ -40,7 +43,7 @@ class AgentW(Agent):
         # Check if initial_value is given
         self.initial_q_value = self.environment.default_reward.zero_vector if initial_value is None else initial_value
 
-        # Vector with a vector set for each possible position `s`
+        # Vector with a vector set for each possible position `state`
         self.v = dict()
 
         # Total sweeps
@@ -159,6 +162,13 @@ class AgentW(Agent):
                 first = False
 
     def has_converged(self, v_k: dict, v_k_1: dict, tolerance: float) -> bool:
+        """
+        Check if a policy has converged
+        :param v_k:
+        :param v_k_1:
+        :param tolerance:
+        :return:
+        """
 
         # By default
         converged = False
@@ -169,7 +179,7 @@ class AgentW(Agent):
             differences = list()
 
             for key, vectors_v_k_s in v_k.items():
-                # Recover vectors from both V's
+                # Recover vectors from both V'state
                 vectors_v_k_1_s = v_k_1[key]
 
                 # If the checks get here, we calculate the hypervolume
@@ -189,10 +199,10 @@ class AgentW(Agent):
                 # If all checks are right, convergence will be True, but at the moment...
                 converged = False
 
-                # Recover vectors from both V's
+                # Recover vectors from both V'state
                 vectors_v_k_1_s = v_k_1[key]
 
-                # V_k(s) and V_K_1(s) has different lengths
+                # V_k(state) and V_K_1(state) has different lengths
                 if not (len(vectors_v_k_s) == len(vectors_v_k_1_s)):
                     break
 
@@ -203,7 +213,7 @@ class AgentW(Agent):
                 # Check if absolute difference is lower than tolerance
                 converged = abs(hv_v_k_1 - hv_v_k) < tolerance
 
-                # If difference between HV(V_k(s)) and HV(V_k_1(s)) is greater than tolerance, not converged
+                # If difference between HV(V_k(state)) and HV(V_k_1(state)) is greater than tolerance, not converged
                 if not converged:
                     break
 
@@ -270,7 +280,7 @@ class AgentW(Agent):
         # For each state available
         for s in self.environment.states():
 
-            # A(s) <- Extract all actions available from position `s`
+            # A(state) <- Extract all actions available from position `state`
             self.environment.current_state = s
 
             # Vector of Empty sets
@@ -285,7 +295,7 @@ class AgentW(Agent):
                 # Empty set for this a (T(a))
                 t_a = set()
 
-                # Get all reachable states for that pair of (s, a)
+                # Get all reachable states for that pair of (state, a)
                 s2_set = self.environment.reachable_states(state=s, action=a)
 
                 lv = list()
@@ -319,7 +329,7 @@ class AgentW(Agent):
 
                     t.update({a: t_a})
 
-            # V(s) <- ND[U T(a)]
+            # V(state) <- ND[U T(a)]
             u_t = set.union(*t.values())
             u_t = list(map(lambda x: un.round_with_precision(x, Vector.decimal_precision), u_t))
             self.v.update({s: Vector.m3_max(u_t)})
@@ -328,3 +338,158 @@ class AgentW(Agent):
     def load(filename: str = None, **kwargs) -> object:
         # TODO: Finish this method
         return Agent.load(filename=filename, agent_type=AgentType.W)
+
+    def recover_policy(self, *kwargs) -> Tuple[List, Dict]:
+
+        # Do a deepcopy from state and reset it.
+        environment_copy = deepcopy(self.environment)
+        self.environment.reset()
+
+        # Extract initial state
+        s: tuple = kwargs['initial_state']
+
+        # Extract objective vector
+        objective_vector: Vector = kwargs['index']
+
+        # Final trace
+        trace = list()
+        policy = dict()
+        simulate = True
+
+        # Set of si
+        states_with_objective = {(s, objective_vector)}
+
+        while simulate:
+
+            # Extract next relevant state
+            s, objective_vector = states_with_objective.pop()
+
+            # Set current state
+            self.environment.current_state = s
+
+            # Get all actions available
+            actions = self.environment.action_space.copy()
+
+            # States trace
+            states_trace = {s: dict()}
+
+            # Best parameters
+            lowest_distance = float('inf')
+
+            # Best options
+            best_possible_objective = None
+
+            # For a in actions
+            for a in actions:
+                # Get reachable states
+                reachable_states = self.environment.reachable_states(state=s, action=a)
+
+                # Extract v(si) for each si in S
+                v_reachable_states = {
+                    v: self.v.get(v, [self.environment.default_reward.zero_vector]) for v in reachable_states
+                }
+
+                # States trace action
+                states_trace_action = {a: dict()}
+
+                # Calc cartesian product
+                cartesian_product = itertools.product(*v_reachable_states.values())
+
+                # For each cartesian product
+                for product in cartesian_product:
+
+                    # Summation
+                    summation = self.environment.default_reward.zero_vector
+
+                    for j, s2 in enumerate(reachable_states):
+                        # Probability to reach that position
+                        p = self.environment.transition_probability(state=s, action=a, next_state=s2)
+
+                        # Reward to reach that position
+                        r = self.environment.transition_reward(state=s, action=a, next_state=s2)
+
+                        # Get previous value per gamma
+                        previous_value = product[j] * self.gamma
+
+                        # Summation
+                        summation += (r + previous_value) * p
+
+                    # Nearest
+                    euclidean_distance = um.euclidean_distance(objective_vector, summation)
+
+                    # Save trace (First element is v, and second is euclidean distance)
+                    states_trace_action[a].update({product: [summation, euclidean_distance]})
+
+                    # Check new information
+                    if euclidean_distance <= lowest_distance:
+                        lowest_distance = euclidean_distance
+                        policy.update({s: a})
+
+                        # Prepare next states to recover_policy, except if it are final states.
+                        best_possible_objective = {
+                            (next_s, product[i]) for i, next_s in enumerate(v_reachable_states)
+                            if not self.environment.is_final(state=next_s)
+                        }
+
+                # Update states trace
+                states_trace[s].update(states_trace_action)
+
+                # Update trace
+                trace.append(states_trace.copy())
+
+            # Update best possible options
+            states_with_objective = states_with_objective.union(best_possible_objective)
+
+            # Continue with the simulation?
+            simulate = len(states_with_objective) > 0
+
+        # Restore original environment
+        self.environment = environment_copy
+
+        # Return simulation
+        return trace, policy
+
+    def evaluate_policy(self, policy: dict, tolerance: float = 0.) -> Dict:
+
+        # Initialize all vectors to zero
+        vectors = {s: self.environment.default_reward.zero_vector for s in policy.keys()}
+
+        # Initialize looping variable
+        looping = True
+
+        # Continue until A do not change more than tolerance variable
+        while looping:
+            # A <- 0
+            variation = self.environment.default_reward.zero_vector
+
+            # For each state in S
+            for s in policy.keys():
+                # Initial v
+                v = vectors[s]
+                a = policy[s]
+
+                # Initialize summation to zero vector
+                summation = self.environment.default_reward.zero_vector
+
+                for next_s in self.environment.reachable_states(state=s, action=a):
+                    # Calc probability
+                    p = self.environment.transition_probability(state=s, action=a, next_state=next_s)
+                    # Calc reward
+                    r = self.environment.transition_reward(state=s, action=a, next_state=next_s)
+                    # v'
+                    next_v = vectors.get(next_s, self.environment.default_reward.zero_vector)
+                    # Summation
+                    summation += ((next_v * self.gamma) + r) * p
+
+                # V(state) <- summation
+                vectors[s] = summation
+
+                # A <- max(A, |v - V(state)|)
+                abs_difference = abs(v - vectors[s])
+                variation = max(variation, abs_difference)
+
+            # Update looping variable
+            tolerance_checking = [component < tolerance for component in variation]
+            looping = not all(tolerance_checking)
+
+        return vectors

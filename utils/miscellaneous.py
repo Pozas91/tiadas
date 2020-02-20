@@ -67,7 +67,7 @@ def euclidean_distance(a: Vector, b: Vector) -> float:
     :param b:
     :return:
     """
-    return np.linalg.norm(a - b)
+    return np.linalg.norm(a.components - b.components)
 
 
 def distance_to_origin(a: Vector) -> float:

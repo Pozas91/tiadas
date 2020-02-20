@@ -1,4 +1,3 @@
-Cython
 colorama
 scipy
 pygmo
@@ -7,3 +6,4 @@ matplotlib
 gym
 python>=3.6
 PyYAML
+pickle

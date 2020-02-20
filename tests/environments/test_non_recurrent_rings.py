@@ -1,5 +1,5 @@
 """
-Unit tests file where testing NonRecurrentRings environment.
+Unit tests path where testing NonRecurrentRings environment.
 """
 
 from gym import spaces

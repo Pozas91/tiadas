@@ -1,5 +1,5 @@
 """
-Unit tests file where testing BonusWorld environment.
+Unit tests path where testing BonusWorld environment.
 """
 
 import gym

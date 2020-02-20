@@ -1,5 +1,5 @@
 """
-Unit tests file where testing test ResourceGathering environment.
+Unit tests path where testing test ResourceGathering environment.
 """
 import gym
 
@@ -312,7 +312,7 @@ class TestResourceGathering(TestEnvMesh):
 
                         self.assertEqual(expected_reward, reward)
 
-                    # It's attacked
+                    # It'state attacked
                     elif self.environment.warning_action(state=state, action=a) and next_position == (2, 4):
                         self.assertEqual([-1, 0, 0], reward)
 

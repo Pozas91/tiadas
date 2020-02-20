@@ -180,7 +180,7 @@ class AgentQ(AgentRL):
 
     def show_policy(self) -> None:
         """
-        Show all states with it's best action
+        Show all states with it'state best action
         :return:
         """
         # For each position in q
@@ -219,11 +219,11 @@ class AgentQ(AgentRL):
             if action not in possible_actions:
                 possible_actions.update({action: self.initial_q_value})
 
-        # Get max by value, and get it's action
+        # Get max by value, and get it'state action
         actions = list()
         max_reward = float('-inf')
 
-        # Check all actions with it's rewards
+        # Check all actions with it'state rewards
         for possible_action in possible_actions:
 
             # Get current Value

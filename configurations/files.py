@@ -1,4 +1,4 @@
-# Indent of the JSON file where the agent will be saved
+# Indent of the JSON path where the agent will be saved
 json_indent = 2
 
 # Indent of the YML files

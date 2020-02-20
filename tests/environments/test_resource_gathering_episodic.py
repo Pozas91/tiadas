@@ -1,5 +1,5 @@
 """
-Unit tests file where testing test ResourceGatheringLimit environment.
+Unit tests path where testing test ResourceGatheringLimit environment.
 """
 import random
 

@@ -30,13 +30,13 @@ def write_config_file(timestamp: int, number_of_agents: int, env_name_snake: str
     :return:
     """
 
-    # Path to save file
+    # Path to save path
     config_path = 'config/{}_{}_{}.config'
 
     # Get only first letter of each word
     env_name_abbr = ''.join([word[0] for word in env_name_snake.split('_')])
 
-    # Create file from above path
+    # Create path from above path
     config_file = dumps_directory.joinpath(
         config_path.format(env_name_abbr, number_of_agents, timestamp).lower()
     )
@@ -68,13 +68,13 @@ def dumps_train_data(timestamp: int, seed: int, env_name_snake: str, agent_type:
     :return:
     """
 
-    # Path to save file
+    # Path to save path
     data_path = '{}/train_data/{}_{}_{}_{}_{}_{}_{}.yml'
 
     # Get only first letter of each word
     env_name_abbr = ''.join([word[0] for word in env_name_snake.split('_')])
 
-    # Create file from above path
+    # Create path from above path
     data_file = dumps_directory.joinpath(
         data_path.format(str(agent_type.value), env_name_abbr, seed, variable, configuration, evaluation_mechanism,
                          timestamp, kwargs['diagonals']).lower()
@@ -299,7 +299,7 @@ def test_agents(environment: Environment, hv_reference: Vector, variable: str, a
     # File timestamp
     timestamp = int(time.time())
 
-    # Write all information in configuration file
+    # Write all information in configuration path
     write_config_file(timestamp=timestamp, number_of_agents=number_of_agents, env_name_snake=env_name_snake,
                       seed=','.join(map(str, range(number_of_agents))), epsilon=epsilon, alpha=alpha, gamma=gamma,
                       max_steps=max_steps, variable=variable, agents_configuration=agents_configuration,
@@ -386,7 +386,7 @@ def test_agents(environment: Environment, hv_reference: Vector, variable: str, a
                         # 'v': agent.v
                     })
 
-                    # Write vectors found into file
+                    # Write vectors found into path
                     dumps_train_data(timestamp=timestamp, seed=seed, env_name_snake=env_name_snake,
                                      train_data=train_data, variable=variable, agent_type=agent_type,
                                      configuration=configuration, evaluation_mechanism=evaluation_mechanism,
@@ -441,7 +441,7 @@ def train_agent_and_get_v_s_0(agent_type: AgentType, environment: Environment, g
         # Get p point from agent test
         p = agent.get_accumulated_reward(from_state=environment.initial_state)
 
-        # Add point found to pareto's frontier found
+        # Add point found to pareto'state frontier found
         agent.pareto_frontier_found.append(p)
 
         # Reset agent to episode_train again with others weights
@@ -457,7 +457,7 @@ def train_agent_and_get_v_s_0(agent_type: AgentType, environment: Environment, g
         # Get q point from agent test.
         q = agent.get_accumulated_reward(from_state=environment.initial_state)
 
-        # Add point found to pareto's frontier found
+        # Add point found to pareto'state frontier found
         agent.pareto_frontier_found.append(q)
 
         # Search pareto points
@@ -551,7 +551,7 @@ def prepare_data_and_show_graph(timestamp: int, env_name: str, env_name_snake: s
     :return:
     """
 
-    # Path to save file
+    # Path to save path
     graph_path = '{}/graphs/{}_{}_{}_{}_{}_{}_{}.m'
     plot_path = 'plots/{}_{}_{}.png'
 
@@ -568,7 +568,7 @@ def prepare_data_and_show_graph(timestamp: int, env_name: str, env_name_snake: s
             data = vectors_per_cells_graph[agent_type][str(configuration)]
             process_data = np.average(data, axis=0).tolist()
 
-            # Create file from given path.
+            # Create path from given path.
             matlab_file = dumps_directory.joinpath(
                 graph_path.format(agent_type.value, env_name_abbr, number_of_agents, variable, configuration,
                                   GraphType.DATA_PER_STATE.value, evaluation_mechanism, timestamp).lower()
@@ -625,7 +625,7 @@ def prepare_data_and_show_graph(timestamp: int, env_name: str, env_name_snake: s
                 data = graphs[graph_type][agent_type][str(configuration)]
                 color = agents_configuration[agent_type][configuration]
 
-                # Create file from given path.
+                # Create path from given path.
                 matlab_file = dumps_directory.joinpath(
                     graph_path.format(agent_type.value, env_name_abbr, number_of_agents, variable, configuration,
                                       graph_name, evaluation_mechanism, timestamp).lower()
@@ -657,7 +657,7 @@ def prepare_data_and_show_graph(timestamp: int, env_name: str, env_name_snake: s
 
                             file_data += "X = [{}]\n".format(', '.join(map(str, x)))
                             file_data += "Y = [{}]\n".format(', '.join(map(str, y)))
-                            file_data += 'scatter(X, Y, \'{}\', \'s\');\n\n'.format(colors[i_iteration_data % 5])
+                            file_data += 'scatter(X, Y, \'{}\', \'state\');\n\n'.format(colors[i_iteration_data % 5])
 
                             labels.append('{} iteration'.format(i_iteration_data + 1))
 
@@ -712,7 +712,7 @@ def prepare_data_and_show_graph(timestamp: int, env_name: str, env_name_snake: s
             if graph_type is GraphType.MEMORY:
                 axs[axs_i].set_xlabel('{} (steps)'.format(graph_type.value))
             elif graph_type is GraphType.TIME:
-                axs[axs_i].set_xlabel('{} s'.format(graph_type.value))
+                axs[axs_i].set_xlabel('{} state'.format(graph_type.value))
             else:
                 axs[axs_i].set_xlabel(graph_type.value)
 
@@ -860,15 +860,15 @@ def unified_graphs(line_specification: dict, input_path: str = None, output_path
         # X range to x axis
         x_axis = 0
 
-        # Define description file name
+        # Define description path name
         description_file_name = None
 
         for file in files:
 
-            # Extract parts of file name
+            # Extract parts of path name
             file_name = file.name.split('.m')[0].split('_')
 
-            # Extract the import part from file name (two last words without extension)
+            # Extract the import part from path name (two last words without extension)
             exclusive_name = ' '.join(file_name[-2:]).lower()
 
             current_description_file_name = '_'.join(file_name[2: -2] + file_name[1:2] + file_name[0:1])
@@ -886,7 +886,7 @@ def unified_graphs(line_specification: dict, input_path: str = None, output_path
             # Boolean flag to know if we must read that line
             read = False
 
-            # Open as file
+            # Open as path
             with file.open(mode='r', encoding='UTF-8') as f:
 
                 for line in f:

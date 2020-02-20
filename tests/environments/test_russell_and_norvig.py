@@ -1,5 +1,5 @@
 """
-Unit tests file where testing RusselAndNorvig environment.
+Unit tests path where testing RusselAndNorvig environment.
 """
 
 from gym import spaces

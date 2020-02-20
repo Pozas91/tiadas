@@ -1,5 +1,5 @@
 """
-Unit tests file where testing MoPuddleWorld environment.
+Unit tests path where testing MoPuddleWorld environment.
 """
 
 from gym import spaces

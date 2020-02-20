@@ -26,7 +26,7 @@ Sample call:
         agent.episode_train() # Optional you can pass a number of episodes, e.g. agent.episode_train(episodes=3000)
     
     
-    2) write agent to file
+    2) write agent to path
     
         # Instance of environment
         env = DeepSeaTreasure()
@@ -34,11 +34,11 @@ Sample call:
         # Instance of agent
         agent = AgentPQL(environment=env)
 
-        # Write to file
+        # Write to path
         agent.save() # Optional you can pass a filename, e.g. agent.save(filename='my_agent')
     
     
-    3) read agent from file
+    3) read agent from path
     
         # Instance of environment
         env = DeepSeaTreasure()
@@ -129,7 +129,7 @@ class AgentPQL(AgentRL):
         self.hv_reference = hv_reference
 
     def do_step(self) -> bool:
-        # Choose action a from s using a policy derived from the Q-set
+        # Choose action a from state using a policy derived from the Q-set
         action = self.select_action()
 
         # perform chosen action on the environment
@@ -141,12 +141,12 @@ class AgentPQL(AgentRL):
 
         # Check if is final
         if is_final:
-            # ND(s, a) <- Zero vector
+            # ND(state, a) <- Zero vector
             nd_s_a_dict = self.nd.get(self.state, {})
             nd_s_a_dict.update({action: [self.initial_q_value]})
             self.nd.update({self.state: nd_s_a_dict})
         else:
-            # Update ND policies of s' in s
+            # Update ND policies of state' in state
             self.update_nd_s_a(state=self.state, action=action, next_state=next_state)
 
         # Update numbers of occurrences
@@ -213,15 +213,15 @@ class AgentPQL(AgentRL):
 
     def get_and_update_n_s_a(self, state: object, action: int) -> int:
         """
-        Update n(s, a) dictionary.
+        Update n(state, a) dictionary.
         :param state:
         :param action:
         :return:
         """
 
-        # Get n(s) dict
+        # Get n(state) dict
         n_s_a_dict = self.n.get(state, {})
-        # Get n(s, a) value
+        # Get n(state, a) value
         n_s_a = (n_s_a_dict.get(action, 0) + 1)
         # Update with the increment.
         n_s_a_dict.update({action: n_s_a})
@@ -232,7 +232,7 @@ class AgentPQL(AgentRL):
 
     def update_r_s_a(self, state: object, action: int, reward: Vector, occurrences: int) -> None:
         """
-        Update r(s, a) dictionary.
+        Update r(state, a) dictionary.
         :param state:
         :param action:
         :param reward:
@@ -240,20 +240,20 @@ class AgentPQL(AgentRL):
         :return:
         """
 
-        # Get R(s) dict.
+        # Get R(state) dict.
         r_s_a_dict = self.r.get(state, {})
-        # Get R(s, a) value.
+        # Get R(state, a) value.
         r_s_a = r_s_a_dict.get(action, self.environment.default_reward.zero_vector)
-        # Update R(s, a)
+        # Update R(state, a)
         r_s_a += (reward - r_s_a) / occurrences
-        # Update with new R(s, a)
+        # Update with new R(state, a)
         r_s_a_dict.update({action: r_s_a})
         # Update R dictionary
         self.r.update({state: r_s_a_dict})
 
     def update_nd_s_a(self, state: object, action: int, next_state: object) -> None:
         """
-        Update ND(s, a)
+        Update ND(state, a)
         :param state:
         :param action:
         :param next_state:
@@ -265,42 +265,42 @@ class AgentPQL(AgentRL):
 
         # for each action in actions
         for a in self.environment.action_space:
-            # Get Q(s, a)
+            # Get Q(state, a)
             q = self.q_set(state=next_state, action=a)
 
             # Union with flatten mode.
             union += q
 
-        # Update ND policies of s' in s
+        # Update ND policies of state' in state
         nd_s_a = self.environment.default_reward.m3_max(union)
 
-        # ND(s, a) <- (ND(U_a' Q_set(s', a'))
+        # ND(state, a) <- (ND(U_a' Q_set(state', a'))
         nd_s_a_dict = self.nd.get(state, {})
         nd_s_a_dict.update({action: nd_s_a})
         self.nd.update({state: nd_s_a_dict})
 
     def q_set(self, state: object, action: int) -> list:
         """
-        Calc on run-time Q(s, a)
+        Calc on run-time Q(state, a)
         :param state:
         :param action:
         :return:
         """
 
-        # Get R(s, a) with default.
+        # Get R(state, a) with default.
         r_s_a = self.r.get(state, {}).get(action, self.environment.default_reward.zero_vector)
 
-        # Get ND(s, a)
+        # Get ND(state, a)
         non_dominated_vectors = self.nd.get(state, {}).get(action, [self.initial_q_value])
 
-        # R(s, a) + y*ND
+        # R(state, a) + y*ND
         q_set = [r_s_a + (non_dominated * self.gamma) for non_dominated in non_dominated_vectors]
 
         return q_set
 
     def q_set_from_state(self, state: object) -> list:
         """
-        Calc Q(s)
+        Calc Q(state)
         :param state:
         :return:
         """
@@ -310,13 +310,13 @@ class AgentPQL(AgentRL):
 
         # for each action in actions
         for a in self.environment.action_space:
-            # Get Q(s, a)
+            # Get Q(state, a)
             q = self.q_set(state=state, action=a)
 
             # Union with flatten mode.
             union += q
 
-        # Return Q(s)
+        # Return Q(state)
         return self.environment.default_reward.m3_max(union)
 
     def reset(self) -> None:
@@ -384,7 +384,7 @@ class AgentPQL(AgentRL):
         # Flag to indicate that path could be wrong.
         approximate_path = False
 
-        # While s is not terminal
+        # While state is not terminal
         while not self.environment.is_final(state=state):
 
             # Path found
@@ -402,10 +402,10 @@ class AgentPQL(AgentRL):
                 if found:
                     break
 
-                # Retrieve R(s, a)
+                # Retrieve R(state, a)
                 r = self.r.get(state).get(a)
 
-                # Retrieve ND(s, a)
+                # Retrieve ND(state, a)
                 nd = self.nd.get(state).get(a)
 
                 for q in nd:
@@ -415,7 +415,7 @@ class AgentPQL(AgentRL):
 
                     # if are equals with relaxed equality operator
                     if v.all_close(target):
-                        # This transaction must be determinist s': T(s'|s, a) = 1
+                        # This transaction must be determinist state': T(state'|state, a) = 1
                         state = self.environment.next_state(action=a, position=state)
 
                         # Update target
@@ -445,7 +445,7 @@ class AgentPQL(AgentRL):
 
             # If path not found
             if not found:
-                # This transaction must be determinist s': T(s'|s, a) = 1
+                # This transaction must be determinist state': T(state'|state, a) = 1
                 state = self.environment.next_state(action=min_action, position=state)
 
                 # Update target
@@ -548,7 +548,7 @@ class AgentPQL(AgentRL):
             # Get Q-set from position given for each possible action.
             q_set = self.q_set(state=state, action=a)
 
-            # for each Q in Q_set(s, a)
+            # for each Q in Q_set(state, a)
             for q in q_set:
                 all_q.append(IndexVector(index=a, vector=q))
 
@@ -589,7 +589,7 @@ class AgentPQL(AgentRL):
             # Get Q-set from position given for each possible action.
             q_set = self.q_set(state=state, action=a)
 
-            # for each Q in Q_set(s, a)
+            # for each Q in Q_set(state, a)
             for q in q_set:
                 all_q.append(IndexVector(index=a, vector=q))
 
@@ -637,7 +637,7 @@ class AgentPQL(AgentRL):
             # Get Q-set from position given for each possible action.
             q_set = self.q_set(state=state, action=a)
 
-            # for each Q in Q_set(s, a)
+            # for each Q in Q_set(state, a)
             for q in q_set:
                 all_q.append(IndexVector(index=a, vector=q))
 
@@ -663,7 +663,7 @@ class AgentPQL(AgentRL):
         :return:
         """
 
-        # Get parent's model
+        # Get parent'state model
         model = super().get_dict_model()
 
         # Own properties
@@ -722,7 +722,7 @@ class AgentPQL(AgentRL):
 
     def json_filename(self) -> str:
         """
-        Generate a filename for json dump file
+        Generate a filename for json dump path
         :return:
         """
         # Get environment name in snake case
@@ -742,7 +742,7 @@ class AgentPQL(AgentRL):
     @staticmethod
     def load(filename: str = None, **kwargs) -> object:
 
-        # Load structured train_data from indicated file.
+        # Load structured train_data from indicated path.
         model = Agent.load(filename=filename, agent_type=AgentType.PQL)
 
         # Get meta-train_data

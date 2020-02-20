@@ -1,5 +1,5 @@
 """
-Unit tests file where testing EnvMesh.
+Unit tests path where testing EnvMesh.
 """
 
 from environments.env_mesh import EnvMesh

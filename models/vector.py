@@ -26,10 +26,9 @@ class Vector:
 
     def __init__(self, components):
         """
-        Vector's init
+        Vector'state init
         :param components: a numpy array, list or tuple of dtype items
         """
-
         self.components = np.array(components)
 
     def __getitem__(self, index):
@@ -58,6 +57,13 @@ class Vector:
         :return:
         """
         self.components[key] = value
+
+    def __abs__(self):
+        """
+        Return absolute value of components
+        :return:
+        """
+        return self.__class__(np.absolute(self.components))
 
     def __len__(self):
         """
@@ -286,7 +292,7 @@ class Vector:
                 if v2_dominate:
                     return Dominance.otherwise
 
-            # v1's component is dominated by v2
+            # v1'state component is dominated by v2
             elif a < b:
                 v2_dominate = True
 

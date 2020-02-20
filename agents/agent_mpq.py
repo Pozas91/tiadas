@@ -8,6 +8,7 @@ import json
 import math
 import os
 import time
+from typing import Dict, List, Tuple
 
 import gym
 import numpy as np
@@ -24,7 +25,7 @@ class AgentMPQ(AgentRL):
     def __init__(self, environment: Environment, hv_reference: Vector, alpha: float = 0.1, epsilon: float = 0.1,
                  gamma: float = 1., seed: int = 0, states_to_observe: set = None, max_steps: int = None,
                  evaluation_mechanism: EvaluationMechanism = EvaluationMechanism.HV, graph_types: set = None,
-                 initial_value: VectorDecimal = None):
+                 initial_value: VectorDecimal = None, convergence_graph: bool = False):
         """
         :param environment: An environment where agent does any operation.
         :param alpha: Learning rate
@@ -81,6 +82,10 @@ class AgentMPQ(AgentRL):
 
         self.hv_reference = hv_reference
 
+        # Set if we want the graph of the convergence
+        self.convergence_graph = convergence_graph
+        self.convergence_graph_data = list()
+
     def get_dict_model(self) -> dict:
         """
         Get a dictionary of model
@@ -88,7 +93,7 @@ class AgentMPQ(AgentRL):
         :return:
         """
 
-        # Get parent's model
+        # Get parent'state model
         model = super().get_dict_model()
 
         # Own properties
@@ -112,7 +117,7 @@ class AgentMPQ(AgentRL):
         })
 
         model.get('train_data').update({
-            's': [
+            'state': [
                 dict(key=list(state), value={
                     'key': int(action), 'value': v2
                 }) for state, v in self.s.items() for action, v2 in v.items()
@@ -165,6 +170,9 @@ class AgentMPQ(AgentRL):
         self.total_steps += 1
         self.steps += 1
 
+        if self.total_episodes >= 21238 and (self.state == (0, 0)):
+            print('Q: \n{} \n\nV: \n{}'.format(self.q, self.v))
+
         # If next_state is a final position and not is register
         if is_final_state:
 
@@ -177,10 +185,10 @@ class AgentMPQ(AgentRL):
                     }
                 })
 
-        # S(s) -> All known states with its action for the position given.
+        # S(state) -> All known states with its action for the position given.
         pair_action_states_known_by_state = self.s.get(self.state)
 
-        # S(s, a) -> All known states for position and action given.
+        # S(state, a) -> All known states for position and action given.
         states_known_by_state = pair_action_states_known_by_state.get(action, list())
 
         # I_s_k
@@ -191,14 +199,14 @@ class AgentMPQ(AgentRL):
 
         # Check if sk not in S, and I_s_k is not empty
         if not next_state_is_in_states_known and relevant_indexes_of_next_state:
-            # Q_n = N_n(s, a)
+            # Q_n = N_n(state, a)
             self.new_operation(state=self.state, action=action, reward=reward, next_state=next_state)
 
         elif next_state_is_in_states_known:
-            # Q_n = U_n(s, a)
+            # Q_n = U_n(state, a)
             self.update_operation(state=self.state, action=action, reward=reward, next_state=next_state)
 
-        # Check if is necessary update V(s) to improve the performance
+        # Check if is necessary update V(state) to improve the performance
         self.check_if_need_update_v()
 
         # Update position
@@ -278,81 +286,6 @@ class AgentMPQ(AgentRL):
         hv = uh.calc_hypervolume(vectors=v, reference=self.hv_reference)
 
         return hv
-
-    def reverse_episode(self, episodes_per_state: int = 10, graph_type: GraphType = None) -> None:
-        """
-        Run an episode complete until get a final step
-        :return:
-        """
-
-        objective_states = set(self.environment.finals.keys())
-        invalid_states = objective_states.union(self.environment.obstacles)
-
-        visited_states = {key: set() for key in objective_states}
-
-        counter_visited_states = dict()
-
-        more_valid_states = True
-        distance = 1
-
-        while more_valid_states:
-
-            # Neighbours by objective position
-            all_neighbours = dict()
-
-            # Get all neighbours from known objectives
-            for state in objective_states:
-                # Getting nearest neighbours (removing visited_states)
-                neighbours = set(filter(
-                    lambda x: self.environment.observation_space.contains(x) and x not in invalid_states,
-                    self.calc_neighbours(from_state=state, distance=distance)
-                )) - visited_states.get(state)
-
-                all_neighbours.update({state: neighbours})
-
-            # Getting total states to visit
-            states_to_visit = set().union(*all_neighbours.values())
-            number_of_states_to_visit = len(states_to_visit)
-
-            # Check if there are more valid states pending
-            more_valid_states = number_of_states_to_visit > 0
-
-            # Number of states to visit per episodes per position
-            total_episodes = number_of_states_to_visit * episodes_per_state
-
-            for episode in range(total_episodes):
-
-                if not states_to_visit:
-                    print('Not more states to visit. Stop in episode {}'.format(episode))
-                    break
-
-                # Get possible combinations
-                possible_neighbours = filter(lambda x: len(x[1]) > 0, all_neighbours.items())
-
-                # Get random position
-                objective_state, associate_states = self.generator.choice(tuple(possible_neighbours))
-                selected_state = self.generator.choice(tuple(associate_states))
-
-                # Interesting counter
-                if selected_state not in counter_visited_states:
-                    counter_visited_states.update({
-                        selected_state: 1
-                    })
-                else:
-                    counter_visited_states.update({
-                        selected_state: counter_visited_states.get(selected_state) + 1
-                    })
-
-                # Change initial position for episode_train
-                self.environment.initial_state = selected_state
-
-                # Do an episode
-                self.episode(graph_type=graph_type)
-
-                # Do while any objective has any position not empty
-                states_to_visit = any([x for x in all_neighbours.values()])
-
-            distance += 1
 
     def _best_action(self, state: object = None, extra: object = None) -> int:
         """
@@ -437,7 +370,7 @@ class AgentMPQ(AgentRL):
                 (0,): IndexVector(index=a, vector=self.initial_q_value)
             })
 
-            # for each Q in Q_set(s, a)
+            # for each Q in Q_set(state, a)
             for q in q_set.values():
                 all_q.append(IndexVector(index=a, vector=q.vector))
 
@@ -476,7 +409,7 @@ class AgentMPQ(AgentRL):
                 (0,): IndexVector(index=a, vector=self.initial_q_value)
             })
 
-            # for each Q in Q_set(s, a)
+            # for each Q in Q_set(state, a)
             for q in q_set.values():
                 all_q.append(IndexVector(index=a, vector=q.vector))
 
@@ -524,10 +457,10 @@ class AgentMPQ(AgentRL):
         # Index counter
         index_counter = self.indexes_counter.get(state)
 
-        # Data position Q(s)
+        # Data position Q(state)
         data_state = self.q.get(state)
 
-        # Data action Q(s, a)
+        # Data action Q(state, a)
         data_action = data_state.get(action, dict())
 
         # Control update flag
@@ -538,31 +471,31 @@ class AgentMPQ(AgentRL):
             # p is p_prime less index of next_state (p = p' / sk)
             p = p_prime[:next_state_position] + p_prime[next_state_position + 1:]
 
-            # p[s_k]
+            # p'[s_k]
             next_state_index = p_prime[next_state_position]
 
             # alpha * (reward + gamma * associate_vector)
             next_q = (reward + v.get(next_state_index) * self.gamma) * self.alpha
 
-            # Q_{n - 1}(s, a, p)
+            # Q_{n - 1}(state, a, p)
             previous_q = data_state.get(action, {}).get(p)
 
-            # If not exists Q_{n - 1}(s, a, p), then create a new IndexVector with the next index available.
+            # If not exists Q_{n - 1}(state, a, p), then create a new IndexVector with the next index available.
             if not previous_q:
-                # Q_{n - 1}(s, a, p)
+                # Q_{n - 1}(state, a, p)
                 previous_q = self.default_vector_value(index=index_counter)
 
                 # Update index counter
                 index_counter += 1
                 self.indexes_counter[state] = index_counter
 
-            # (1 - alpha) * Q_{n - 1}(s, a, p)
+            # (1 - alpha) * Q_{n - 1}(state, a, p)
             previous_q = previous_q * (1 - self.alpha)
 
-            # Q(s, a)
+            # Q(state, a)
             q = IndexVector(index=previous_q.index, vector=previous_q.vector + next_q)
 
-            # Q(s, a, p_prime)
+            # Q(state, a, p_prime)
             data_action.update({p_prime: q})
 
             # Need delete previous index of table if is necessary
@@ -570,6 +503,7 @@ class AgentMPQ(AgentRL):
                 data_action.pop(p, None)
 
             data_state.update({action: data_action})
+
             need_update_v = True
 
         # Check if is necessary update V vectors
@@ -585,7 +519,7 @@ class AgentMPQ(AgentRL):
         :return:
         """
 
-        # Prepare to add next_state to known states
+        # Prepare to add next_state to known states: S(state, a)
         known_states = self.s.get(state).get(action, list())
 
         # Save index of next_state (sk)
@@ -600,10 +534,10 @@ class AgentMPQ(AgentRL):
         # Index counter
         index_counter = self.indexes_counter[state]
 
-        # Data position Q(s)
+        # Data position Q(state)
         data_state = self.q[state]
 
-        # Data action position Q(s, a)
+        # Data action position Q(state, a)
         data_action = data_state.get(action, dict())
 
         # Control update flag
@@ -612,7 +546,7 @@ class AgentMPQ(AgentRL):
         # Control of positions used updates to remove orphans vectors
         positions_updated = set()
 
-        # For each tuple in cartesian product
+        # For each tuple in cartesian product (p)
         for p in cartesian_product:
 
             # Position updated
@@ -621,28 +555,31 @@ class AgentMPQ(AgentRL):
             # p[s_k]
             next_state_reference_vector_index = p[next_state_p_position]
 
-            # alpha * (reward + gamma * associate_vector)
-            next_q = (reward + v[next_state_reference_vector_index] * self.gamma) * self.alpha
+            # associate vector
+            associate_vector = v[next_state_reference_vector_index]
 
-            # Q_{n - 1}(s, a, p)
+            # alpha * (reward + gamma * associate_vector)
+            next_q = (reward + associate_vector * self.gamma) * self.alpha
+
+            # Q_{n - 1}(state, a, p)
             previous_q = data_state.get(action, {}).get(p)
 
-            # If not exists Q_{n - 1}(s, a, p), then create a new IndexVector with the next index available.
+            # If not exists Q_{n - 1}(state, a, p), then create a new IndexVector with the next index available.
             if not previous_q:
-                # Q_{n - 1}(s, a, p)
+                # Q_{n - 1}(state, a, p)
                 previous_q = self.default_vector_value(index_counter)
 
                 # Update index counter
                 index_counter += 1
                 self.indexes_counter[state] = index_counter
 
-            # (1 - alpha) * Q_{n - 1}(s, a, p)
+            # (1 - alpha) * Q_{n - 1}(state, a, p)
             previous_q = previous_q * (1 - self.alpha)
 
-            # Q(s, a)
+            # Q(state, a)
             q = IndexVector(index=previous_q.index, vector=previous_q.vector + next_q)
 
-            # Q(s, a, p)
+            # Q(state, a, p)
             data_action.update({p: q})
             data_state.update({action: data_action})
 
@@ -652,7 +589,7 @@ class AgentMPQ(AgentRL):
         # Get positions from table
         all_positions = set(data_action.keys())
 
-        # Deleting difference between all_positions and positions_updated to del orphans vectors
+        # Deleting difference between all_positions and positions_updated to del zombies vectors
         for position in all_positions - positions_updated:
             # Removing orphan vector
             del data_state[action][position]
@@ -663,7 +600,7 @@ class AgentMPQ(AgentRL):
 
     def default_vector_value(self, index):
         """
-        This method get a default value if a vector doesn't exist. It's possible change the zero vector for a
+        This method get a default value if a vector doesn't exist. It'state possible change the zero vector for a
         heuristic function.
         :param index:
         :return:
@@ -674,7 +611,7 @@ class AgentMPQ(AgentRL):
 
         # For each position that need be updated
         for state in self.states_to_update:
-            # Get Q(s)
+            # Get Q(state)
             q_s = self.q[state]
 
             # List accumulative to save all vectors
@@ -688,10 +625,10 @@ class AgentMPQ(AgentRL):
 
             # for each action available in position given
             for a in self.environment.action_space:
-                # Q(s, a)
+                # Q(state, a)
                 q_list += q_s.get(a, dict()).values()
 
-            # Get all non dominated vectors -> V(s)
+            # Get all non dominated vectors -> V(state)
             non_dominated_vectors, _ = self.environment.default_reward.m3_max_2_lists_with_buckets(vectors=q_list)
 
             v = dict()
@@ -701,9 +638,10 @@ class AgentMPQ(AgentRL):
                 bucket.sort(key=lambda x: x.index)
 
                 # Set V values (Getting vector with lower index) (simplified)
-                v.update({bucket[0].index: bucket[0].vector})
+                first_index_vector = bucket[0]
+                v.update({first_index_vector.index: first_index_vector.vector})
 
-            # Update V(s)
+            # Update V(state)
             self.v.update({state: v})
 
             # Restore position
@@ -714,7 +652,7 @@ class AgentMPQ(AgentRL):
 
     def relevant_indexes_of_state(self, state: object) -> set:
         """
-        Return a set of relevant indexes from V(s)
+        Return a set of relevant indexes from V(state)
         :param state:
         :return:
         """
@@ -756,7 +694,7 @@ class AgentMPQ(AgentRL):
 
     def json_filename(self) -> str:
         """
-        Generate a filename for json dump file
+        Generate a filename for json dump path
         :return:
         """
         # Get environment name in snake case
@@ -794,13 +732,125 @@ class AgentMPQ(AgentRL):
             self.v.update({state: dict()})
             self.indexes_counter.update({state: 0})
 
+    def convergence_train(self, tolerance: float, graph_type: GraphType = None):
+        """
+        Return this agent trained until get convergence.
+        :param tolerance:
+        :param graph_type:
+        :return:
+        """
+
+        converged = False
+        first = True
+
+        if self.convergence_graph:
+            self.convergence_graph_data = list()
+
+        while not converged:
+
+            # V_k
+            v_k = self.v.copy()
+
+            # Do an iteration
+            self.do_iteration()
+
+            # Update graph info
+            if (graph_type in (GraphType.MEMORY, GraphType.EPISODES, GraphType.V_S_0)) and (
+                    self.total_episodes % self.interval_to_get_data == 0
+            ):
+                self.update_graph(graph_type=graph_type)
+
+            # MARK: Calc Convergence
+
+            # V_k+1
+            v_k_1 = self.v.copy()
+
+            # If is the first iterations doesn't possible model converge, and
+            if not first:
+                # Checking if model has converged
+                converged = self.has_converged(v_k=v_k, v_k_1=v_k_1, tolerance=tolerance)
+            else:
+                first = False
+
+    def has_converged(self, v_k: dict, v_k_1: dict, tolerance: float) -> bool:
+        """
+        Check if a policy has converged
+        :param v_k:
+        :param v_k_1:
+        :param tolerance:
+        :return:
+        """
+        # By default
+        converged = False
+
+        # If have different length do anything
+        if len(v_k) != len(v_k_1):
+            pass
+        elif self.convergence_graph:
+
+            # List of differences
+            differences = list()
+
+            for key, vectors_v_k_s in v_k.items():
+                # Recover vectors from both V'state
+                vectors_v_k_1_s = v_k_1[key]
+
+                # If the checks get here, we calculate the hypervolume
+                hv_v_k = uh.calc_hypervolume(
+                    vectors=[v for v in vectors_v_k_s.values()], reference=self.environment.hv_reference
+                )
+                hv_v_k_1 = uh.calc_hypervolume(
+                    vectors=[v for v in vectors_v_k_1_s.values()], reference=self.environment.hv_reference
+                )
+
+                # Check if absolute difference is lower than tolerance
+                differences.append(abs(hv_v_k_1 - hv_v_k))
+
+            max_difference = max(differences)
+            converged = max_difference < tolerance
+            self.convergence_graph_data.append(max_difference)
+
+        else:
+            for key, vectors_v_k_s in v_k.items():
+
+                # If all checks are right, convergence will be True, but at the moment...
+                converged = False
+
+                # Recover vectors from both V'state
+                vectors_v_k_1_s = v_k_1[key]
+
+                # V_k(state) and V_K_1(state) has different lengths
+                len_vectors = len(vectors_v_k_s)
+                if not (len_vectors == len(vectors_v_k_1_s)):
+                    break
+                # If the length of vectors is lower than 1, try with the next state
+                elif len_vectors < 1:
+                    continue
+
+                # If the checks get here, we calculate the hypervolume
+                hv_v_k = uh.calc_hypervolume(
+                    vectors=[v for v in vectors_v_k_s.values()], reference=self.environment.hv_reference
+                )
+                hv_v_k_1 = uh.calc_hypervolume(
+                    vectors=[v for v in vectors_v_k_1_s.values()], reference=self.environment.hv_reference
+                )
+
+                # Check if absolute difference is lower than tolerance
+                converged = abs(hv_v_k_1 - hv_v_k) < tolerance
+
+                # If difference between HV(V_k(state)) and HV(V_k_1(state)) is greater than tolerance, not converged
+                if not converged:
+                    break
+
+        return converged
+
     @staticmethod
     def load(filename: str = None, environment: Environment = None, evaluation_mechanism: EvaluationMechanism = None):
         """
-        Load json string from file and convert to dictionary.
+        Load json string from path and convert to dictionary.
         :param evaluation_mechanism: It is an evaluation mechanism that you want load
         :param environment: It is an environment that you want load.
-        :param filename: If is None, then get last timestamp file from 'dumps' dir.
+        :param filename: If is None, then get last timestamp path from 'dumps' dir.
         :return:
         """
 
@@ -826,7 +876,7 @@ class AgentMPQ(AgentRL):
 
             # Filter files with that environment and evaluation mechanism
             files = filter(lambda f: filter_str in f,
-                           [path.name for path in os.scandir(AgentA1.models_dumps_path) if path.is_file()])
+                           [path.name for path in os.scandir(AgentMPQ.models_dumps_path) if path.is_file()])
 
             # Files to list
             files = list(files)
@@ -834,24 +884,24 @@ class AgentMPQ(AgentRL):
             # Sort list of files
             files.sort()
 
-            # At least must have a file
+            # At least must have a path
             if files:
                 # Get last filename
                 filename = files[-1]
 
-        # Prepare file path
-        file_path = AgentA1.models_dumps_file_path(filename)
+        # Prepare path path
+        file_path = AgentMPQ.models_dumps_file_path(filename)
 
-        # Read file from path
+        # Read path from path
         try:
             file = file_path.open(mode='r', encoding='UTF-8')
         except FileNotFoundError:
             return None
 
-        # Load structured train_data from indicated file.
+        # Load structured train_data from indicated path.
         model = json.load(file)
 
-        # Close file
+        # Close path
         file.close()
 
         # Get meta-train_data
@@ -973,9 +1023,9 @@ class AgentMPQ(AgentRL):
                 previous_data.append(vector_index)
                 v.update({key: previous_data})
 
-        # Unpack 's' train_data
+        # Unpack 'state' train_data
         s = dict()
-        for item in model_data.get('s'):
+        for item in model_data.get('state'):
             # Convert to tuples to hash
             key = um.lists_to_tuples(item.get('key'))
             value = item.get('value')
@@ -1025,9 +1075,9 @@ class AgentMPQ(AgentRL):
                 })
 
         # Prepare an instance of model.
-        model = AgentA1(environment=environment, epsilon=epsilon, alpha=alpha, gamma=gamma, seed=seed,
-                        max_steps=max_steps, hv_reference=hv_reference, evaluation_mechanism=evaluation_mechanism,
-                        graph_types=graph_types)
+        model = AgentMPQ(environment=environment, epsilon=epsilon, alpha=alpha, gamma=gamma, seed=seed,
+                         max_steps=max_steps, hv_reference=hv_reference, evaluation_mechanism=evaluation_mechanism,
+                         graph_types=graph_types)
 
         # Set finals settings and return it.
         model.v = v
@@ -1040,31 +1090,131 @@ class AgentMPQ(AgentRL):
 
         return model
 
-    def calc_neighbours(self, from_state: tuple, distance: int = 1) -> set:
+    def recover_policy(self, **kwargs) -> Tuple[List, Dict]:
+
+        # Extract initial state
+        s: tuple = kwargs['initial_state']
+
+        # Extract objective vector
+        objective_vector: IndexVector = kwargs['objective_vector']
+
+        # Final trace
+        trace = list()
+        policy = dict()
+        simulate = True
+
+        # Set of si
+        states_with_objective = {(s, objective_vector)}
+
+        while simulate:
+            # Extract next relevant state
+            s, objective_vector = states_with_objective.pop()
+
+            # Search objective index
+            selected_action, selected_position = self.search_objective_vector_index(objective_vector.index, s)
+
+            # States trace
+            policy.update({s: selected_action})
+
+            # Extract known states data
+            for state_tuple_position, known_state in enumerate(self.s[s][selected_action]):
+                # Extract the next index to search
+                index_to_search = selected_position[state_tuple_position]
+
+                # Check if we know the state indicated (maybe is a final state)
+                if self.q.get(known_state, False):
+                    # Search objective index
+                    selected_action_vector, selected_position_vector = self.search_objective_vector_index(
+                        index=index_to_search, state=known_state
+                    )
+
+                    next_objective_vector = self.q.get(known_state).get(selected_action_vector).get(
+                        selected_position_vector
+                    )
+
+                    # Add to next states with objective the vector founded.
+                    states_with_objective.add((
+                        known_state,
+                        next_objective_vector
+                    ))
+
+                    trace.append((known_state, index_to_search, next_objective_vector))
+
+            # Check if states_with_objective is not empty
+            simulate = len(states_with_objective) > 0
+
+        return trace, policy
+
+    def search_objective_vector_index(self, index: int, state: tuple) -> Tuple[int, tuple]:
         """
-        Only to mesh environments with actions RIGHT and DOWN (TODO: do generic method)
-        :param from_state:
-        :param distance:
+        Search the objective vector in the state given
+        :param index:
+        :param state:
         :return:
         """
-        raise NotImplemented
-        # Decompose from position
-        x_state, y_state = from_state
 
-        current_neighbours = {
-            (x_state, y_state - 1),
-            # (x_state, y_state + 1),
-            (x_state - 1, y_state),
-            # (x_state + 1, y_state)
-        }
+        selected_action = None
+        selected_position = None
 
-        if distance < 1:
-            return set()
-        elif distance < 2:
-            return current_neighbours
-        else:
-            all_neighbours = set().union(
-                *map(lambda x: self.calc_neighbours(from_state=x, distance=distance - 1), current_neighbours)
-            ) - {from_state}
+        found = False
 
-        return all_neighbours
+        for action in self.q[state]:
+            # Extract all vectors with it position
+            for position, vector in self.q[state][action].items():
+                if vector.index == index:
+                    found = True
+                    selected_action = action
+                    selected_position = position
+
+                if found:
+                    break
+
+            if found:
+                break
+
+        return selected_action, selected_position
+
+    def evaluate_policy(self, policy: dict, tolerance: float = 0.) -> Dict:
+
+        # Initialize all vectors to zero
+        vectors = {s: self.environment.default_reward.zero_vector for s in policy.keys()}
+
+        # Initialize looping variable
+        looping = True
+
+        # Continue until A do not change more than tolerance variable
+        while looping:
+            # A <- 0
+            variation = self.environment.default_reward.zero_vector
+
+            # For each state in S
+            for s in policy.keys():
+                # Initial v
+                v = vectors[s]
+                a = policy[s]
+
+                # Initialize summation to zero vector
+                summation = self.environment.default_reward.zero_vector
+
+                for next_s in self.environment.reachable_states(state=s, action=a):
+                    # Calc probability
+                    p = self.environment.transition_probability(state=s, action=a, next_state=next_s)
+                    # Calc reward
+                    r = self.environment.transition_reward(state=s, action=a, next_state=next_s)
+                    # v'
+                    next_v = vectors.get(next_s, self.environment.default_reward.zero_vector)
+                    # Summation
+                    summation += ((next_v * self.gamma) + r) * p
+
+                # V(state) <- summation
+                vectors[s] = summation
+
+                # A <- max(A, |v - V(state)|)
+                abs_difference = abs(v - vectors[s])
+                variation = max(variation, abs_difference)
+
+            # Update looping variable
+            tolerance_checking = [component < tolerance for component in variation]
+            looping = not all(tolerance_checking)
+
+        return vectors

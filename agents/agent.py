@@ -13,7 +13,7 @@ import numpy as np
 import configurations as conf
 import utils.miscellaneous as um
 from environments import Environment
-from models import GraphType, AgentType
+from models import GraphType, AgentType, EvaluationMechanism
 
 
 class Agent:
@@ -25,7 +25,7 @@ class Agent:
     def __init__(self, environment: Environment, gamma: float = 1., seed: int = 0, states_to_observe: set = None,
                  max_steps: int = None, graph_types: set = None, initial_value: object = None):
         """
-        :param environment: the agent's environment.
+        :param environment: the agent'state environment.
         :param gamma: Discount factor
         :param seed: Seed used for np.random.RandomState method.
         :param states_to_observe: List of states from which graphical output is provided.
@@ -212,7 +212,7 @@ class Agent:
 
     def json_filename(self) -> str:
         """
-        Generate a filename for json dump file
+        Generate a filename for json dump path
         :return:
         """
         # Get environment name in snake case
@@ -231,7 +231,7 @@ class Agent:
 
     def save(self, filename: str = None) -> None:
         """
-        Save model into json file.
+        Save model into json path.
         :param filename: If is None, then get current timestamp as filename (defaults 'dumps' dir).
         :return:
         """
@@ -239,7 +239,7 @@ class Agent:
         if filename is None:
             filename = self.json_filename()
 
-        # Prepare file path
+        # Prepare path path
         file_path = conf.models_path.joinpath(filename)
 
         # If any parents doesn't exist, make it.
@@ -248,7 +248,7 @@ class Agent:
         # Get dict model
         model = self.get_dict_model()
 
-        # Open file with filename in write mode with UTF-8 encoding.
+        # Open path with filename in write mode with UTF-8 encoding.
         with file_path.open(mode='w', encoding='UTF-8') as file:
             json.dump(model, file, indent=conf.json_indent)
 
@@ -256,13 +256,13 @@ class Agent:
     def load(filename: str = None, **kwargs) -> object:
         """
         This method load an agent from filename given.
-        :param filename: If is None, then get last timestamp file from 'dumps/models' dir.
+        :param filename: If is None, then get last timestamp path from 'dumps/models' dir.
         :return:
         """
 
         if not filename:
             try:
-                # Get last file from models directory (higher timestamp)
+                # Get last path from models directory (higher timestamp)
                 filename = sorted(
                     filter(
                         # Get only filenames for this agent (first part of name)
@@ -275,19 +275,26 @@ class Agent:
             except Exception as error:
                 print('Cannot read from {} directory because: {}'.format(conf.models_path, error))
 
-        # Read file from path
+        # Read path from path
         model_path = Path(filename)
         model_file = model_path.open(mode='r', encoding='UTF-8')
 
-        # Load structured train_data from indicated file.
+        # Load structured train_data from indicated path.
         model = json.load(model_file)
 
-        # Close file
+        # Close path
         model_file.close()
 
         return model
 
     @staticmethod
     def models_dumps_file_path(filename: str) -> Path:
-        # Return path from file name
+        # Return path from path name
         return conf.models_path.joinpath(filename)
+
+    def recover_policy(self, evaluation_mechanism: EvaluationMechanism, **kwargs) -> dict:
+        """
+        Simulate a walking of the agent, and return a dictionary with each state related with an action.
+        :return:
+        """
+        raise NotImplemented

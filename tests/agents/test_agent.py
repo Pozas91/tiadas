@@ -1,5 +1,5 @@
 """
-Unit tests file where testing Base Agent.
+Unit tests path where testing Base Agent.
 """
 
 import unittest

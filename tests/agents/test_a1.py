@@ -1,5 +1,5 @@
 """
-Unit tests file where testing Algorithm 1 agent.
+Unit tests path where testing Algorithm 1 agent.
 """
 
 import unittest
@@ -32,7 +32,7 @@ class TestA1(unittest.TestCase):
 
         # This agent must have next attributes
         self.assertTrue(hasattr(self.agent, 'q') and isinstance(self.agent.q, dict))
-        self.assertTrue(hasattr(self.agent, 's') and isinstance(self.agent.s, dict))
+        self.assertTrue(hasattr(self.agent, 'state') and isinstance(self.agent.s, dict))
         self.assertTrue(hasattr(self.agent, 'v') and isinstance(self.agent.v, dict))
         self.assertTrue(hasattr(self.agent, 'indexes_counter') and isinstance(self.agent.indexes_counter, dict))
         self.assertTrue(hasattr(self.agent, 'hv_reference') and isinstance(self.agent.hv_reference, Vector))
