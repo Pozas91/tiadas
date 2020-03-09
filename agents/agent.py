@@ -12,8 +12,10 @@ import numpy as np
 
 import configurations as conf
 import utils.miscellaneous as um
+import utils.models as u_models
+from configurations.paths import dumps_path
 from environments import Environment
-from models import GraphType, AgentType, EvaluationMechanism
+from models import GraphType, AgentType, EvaluationMechanism, Vector
 
 
 class Agent:
@@ -286,6 +288,33 @@ class Agent:
         model_file.close()
 
         return model
+
+    def dump(self, **kwargs):
+        """
+        Dumps model given into dumps directory
+        :param kwargs:
+        :return:
+        """
+
+        # Get timestamp
+        timestamp = int(time.time())
+
+        # Get environment name in snake case, get only first letter of each word
+        env_str_abbr = ''.join(
+            word[0] for word in
+            um.str_to_snake_case(self.environment.__class__.__name__).split('_')
+        )
+
+        # Extract agent name
+        agent_str_abbr = um.str_to_snake_case(self.__class__.__name__).split('_')[-1]
+
+        # Define file path
+        file_path = dumps_path.joinpath(
+            '{}/models/{}_{}_{}.bin'.format(agent_str_abbr, env_str_abbr, timestamp, Vector.decimal_precision)
+        )
+
+        # Dumps agent
+        u_models.dump(path=file_path, model=self)
 
     @staticmethod
     def models_dumps_file_path(filename: str) -> Path:

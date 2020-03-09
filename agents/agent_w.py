@@ -329,17 +329,28 @@ class AgentW(Agent):
 
                     t.update({a: t_a})
 
-            # V(state) <- ND[U T(a)]
+            # u_t <- U T(a)
             u_t = set.union(*t.values())
-            u_t = list(map(lambda x: un.round_with_precision(x, Vector.decimal_precision), u_t))
-            self.v.update({s: Vector.m3_max(u_t)})
+
+            # Remove duplicates and after transform to list
+            u_t = set(map(lambda x: un.round_with_precision(x, Vector.decimal_precision), u_t))
+
+            # V(state) <- filter[u_t]
+            self.v.update({
+                s: self.filter_vectors(vectors=u_t)
+            })
+
+    @staticmethod
+    def filter_vectors(vectors: set) -> list:
+        # ND[vectors]
+        return Vector.m3_max(vectors=vectors)
 
     @staticmethod
     def load(filename: str = None, **kwargs) -> object:
         # TODO: Finish this method
         return Agent.load(filename=filename, agent_type=AgentType.W)
 
-    def recover_policy(self, *kwargs) -> Tuple[List, Dict]:
+    def recover_policy(self, **kwargs) -> Tuple[List, Dict]:
 
         # Do a deepcopy from state and reset it.
         environment_copy = deepcopy(self.environment)
@@ -349,7 +360,7 @@ class AgentW(Agent):
         s: tuple = kwargs['initial_state']
 
         # Extract objective vector
-        objective_vector: Vector = kwargs['index']
+        objective_vector: Vector = kwargs['objective_vector']
 
         # Final trace
         trace = list()
@@ -459,8 +470,8 @@ class AgentW(Agent):
 
         # Continue until A do not change more than tolerance variable
         while looping:
-            # A <- 0
-            variation = self.environment.default_reward.zero_vector
+            # Change looping information
+            looping = False
 
             # For each state in S
             for s in policy.keys():
@@ -486,10 +497,11 @@ class AgentW(Agent):
 
                 # A <- max(A, |v - V(state)|)
                 abs_difference = abs(v - vectors[s])
-                variation = max(variation, abs_difference)
 
-            # Update looping variable
-            tolerance_checking = [component < tolerance for component in variation]
-            looping = not all(tolerance_checking)
+                # Update looping variable
+                looping = not all(component < tolerance for component in abs_difference)
+
+                if looping:
+                    break
 
         return vectors

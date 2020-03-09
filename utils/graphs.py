@@ -581,8 +581,8 @@ def prepare_data_and_show_graph(timestamp: int, env_name: str, env_name_snake: s
                 file_data = "Z = [\n{}\n];\n".format(''.join([';\n'.join(map(str, x)) for x in process_data]))
                 file_data += 'bar3(Z);\n'
                 file_data += 'zlim([0, inf]);\n'
-                file_data += "xlabel('Columns');\n"
-                file_data += "ylabel('Rows');\n"
+                file_data += "x_label('Columns');\n"
+                file_data += "y_label('Rows');\n"
                 file_data += "zlabel('# Vectors');\n"
                 file_data += "title('{} {}');\n".format(variable, configuration)
                 file.write(file_data)

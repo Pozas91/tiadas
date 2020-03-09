@@ -9,7 +9,7 @@ from .environment import Environment
 
 class NonRecurrentRings(Environment):
     # Possible actions
-    _actions = {'CLOCKWISE': 0, 'COUNTER-CLOCKWISE': 1}
+    _actions = {'CLOCKWISE': 0, 'COUNTER_CLOCKWISE': 1}
 
     def __init__(self, seed: int = 0, initial_state: int = 0, default_reward: tuple = (0, 0)):
         """
@@ -29,72 +29,72 @@ class NonRecurrentRings(Environment):
         # Rewards dictionary
         self.rewards_dictionary = {
             0: {
-                self.actions['COUNTER-CLOCKWISE']: Vector([2, -1]),
+                self.actions['COUNTER_CLOCKWISE']: Vector([2, -1]),
                 self.actions['CLOCKWISE']: Vector([-1, 0])
             },
             1: {
-                self.actions['COUNTER-CLOCKWISE']: Vector([2, -1]),
+                self.actions['COUNTER_CLOCKWISE']: Vector([2, -1]),
                 self.actions['CLOCKWISE']: Vector([-1, 0])
             },
             2: {
-                self.actions['COUNTER-CLOCKWISE']: Vector([2, -1]),
+                self.actions['COUNTER_CLOCKWISE']: Vector([2, -1]),
                 self.actions['CLOCKWISE']: Vector([-1, 0])
             },
             3: {
-                self.actions['COUNTER-CLOCKWISE']: Vector([2, -1]),
+                self.actions['COUNTER_CLOCKWISE']: Vector([2, -1]),
                 self.actions['CLOCKWISE']: Vector([-1, 0])
             },
             4: {
                 self.actions['CLOCKWISE']: Vector([-1, 2]),
-                self.actions['COUNTER-CLOCKWISE']: Vector([0, -1])
+                self.actions['COUNTER_CLOCKWISE']: Vector([0, -1])
             },
             5: {
                 self.actions['CLOCKWISE']: Vector([-1, 2]),
-                self.actions['COUNTER-CLOCKWISE']: Vector([0, -1])
+                self.actions['COUNTER_CLOCKWISE']: Vector([0, -1])
             },
             6: {
                 self.actions['CLOCKWISE']: Vector([-1, 2]),
-                self.actions['COUNTER-CLOCKWISE']: Vector([0, -1])
+                self.actions['COUNTER_CLOCKWISE']: Vector([0, -1])
             },
             7: {
                 self.actions['CLOCKWISE']: Vector([-1, 2]),
-                self.actions['COUNTER-CLOCKWISE']: Vector([0, -1])
+                self.actions['COUNTER_CLOCKWISE']: Vector([0, -1])
             }
         }
 
         # Possible p_stochastic from a position to another
         self.possible_transitions = {
             0: {
-                self.actions['COUNTER-CLOCKWISE']: 1,
+                self.actions['COUNTER_CLOCKWISE']: 1,
                 self.actions['CLOCKWISE']: 7
             },
             1: {
-                self.actions['COUNTER-CLOCKWISE']: 2,
+                self.actions['COUNTER_CLOCKWISE']: 2,
                 self.actions['CLOCKWISE']: 0
             },
             2: {
-                self.actions['COUNTER-CLOCKWISE']: 3,
+                self.actions['COUNTER_CLOCKWISE']: 3,
                 self.actions['CLOCKWISE']: 1
             },
             3: {
-                self.actions['COUNTER-CLOCKWISE']: 0,
+                self.actions['COUNTER_CLOCKWISE']: 0,
                 self.actions['CLOCKWISE']: 2
             },
             4: {
                 self.actions['CLOCKWISE']: 5,
-                self.actions['COUNTER-CLOCKWISE']: 7
+                self.actions['COUNTER_CLOCKWISE']: 7
             },
             5: {
                 self.actions['CLOCKWISE']: 6,
-                self.actions['COUNTER-CLOCKWISE']: 4
+                self.actions['COUNTER_CLOCKWISE']: 4
             },
             6: {
                 self.actions['CLOCKWISE']: 7,
-                self.actions['COUNTER-CLOCKWISE']: 5
+                self.actions['COUNTER_CLOCKWISE']: 5
             },
             7: {
                 self.actions['CLOCKWISE']: 4,
-                self.actions['COUNTER-CLOCKWISE']: 0
+                self.actions['COUNTER_CLOCKWISE']: 0
             }
         }
 

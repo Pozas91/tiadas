@@ -118,6 +118,3 @@ class TestResourceGatheringLimit(TestResourceGathering):
         self.assertEqual(((4, 4), (1, 1)), next_state)
         self.assertEqual([0, 0, 0], reward)
         self.assertTrue(is_final)
-
-    def test_states_size(self):
-        self.assertEqual(93, len(self.environment.states()))

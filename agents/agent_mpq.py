@@ -170,8 +170,8 @@ class AgentMPQ(AgentRL):
         self.total_steps += 1
         self.steps += 1
 
-        if self.total_episodes >= 21238 and (self.state == (0, 0)):
-            print('Q: \n{} \n\nV: \n{}'.format(self.q, self.v))
+        # if self.total_episodes >= 21238 and (self.state == (0, 0)):
+        #     print('Q: \n{} \n\nV: \n{}'.format(self.q, self.v))
 
         # If next_state is a final position and not is register
         if is_final_state:
@@ -783,7 +783,7 @@ class AgentMPQ(AgentRL):
         # By default
         converged = False
 
-        # If have different length do anything
+        # If have different length do nothing
         if len(v_k) != len(v_k_1):
             pass
         elif self.convergence_graph:

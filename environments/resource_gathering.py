@@ -74,7 +74,7 @@ class ResourceGathering(EnvMesh):
         self.home_position = (2, 4)
         self.attacked = False
 
-        self.checkpoints_states = set(itertools.product(self.home_position, {(1, 0), (0, 1), (1, 1)}))
+        self.checkpoints_states = set(itertools.product({self.home_position}, {(1, 0), (0, 1), (1, 1)}))
 
     def step(self, action: int) -> (tuple, Vector, bool, dict):
         """
@@ -179,14 +179,15 @@ class ResourceGathering(EnvMesh):
         ).difference(
             self.finals
         ).difference(
-            # Cannot be in gold positions without gold.
             set(
+                # Cannot be in gold positions without gold.
                 itertools.product(self.gold_positions, {(0, 0), (0, 1)})
             ).union(
                 # Cannot be in gem positions without gem.
-                set(
-                    itertools.product(self.gem_positions, {(0, 0), (1, 0)})
-                )
+                itertools.product(self.gem_positions, {(0, 0), (1, 0)})
+            ).union(
+                # Cannot be in home position with gem and/or gold.
+                self.checkpoints_states
             )
         )
 

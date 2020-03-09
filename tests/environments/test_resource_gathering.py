@@ -284,7 +284,7 @@ class TestResourceGathering(TestEnvMesh):
         self.assertFalse(is_final)
 
     def test_states_size(self):
-        self.assertEqual(96, len(self.environment.states()))
+        self.assertEqual(93, len(self.environment.states()))
 
     def test_transition_reward(self):
 

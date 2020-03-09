@@ -49,8 +49,8 @@ EXAMPLE OF USE OF AgentMOSP:
 
     # Build and show plot.
     plt.scatter(x, y)
-    plt.ylabel('Reward')
-    plt.xlabel('Time')
+    plt.y_label('Reward')
+    plt.x_label('Time')
     plt.show()
 """
 import numpy as np
