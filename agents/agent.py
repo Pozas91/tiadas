@@ -212,92 +212,11 @@ class Agent:
         model = self.get_dict_model()
         return json.dumps(model, indent=conf.json_indent)
 
-    def json_filename(self) -> str:
+    def default_filename(self) -> str:
         """
-        Generate a filename for json dump path
+        Return default filename
         :return:
         """
-        # Get environment name in snake case
-        env_name_snake = um.str_to_snake_case(self.environment.__class__.__name__)
-
-        # Get only first letter of each word
-        env_name_abbr = ''.join([word[0] for word in env_name_snake.split('_')])
-
-        # Get evaluation mechanism in snake case
-        agent_name = um.str_to_snake_case(self.__class__.__name__).split('_')[1]
-
-        # Get timestamp
-        timestamp = int(time.time())
-
-        return '{}_{}_{}'.format(agent_name, env_name_abbr, timestamp)
-
-    def save(self, filename: str = None) -> None:
-        """
-        Save model into json path.
-        :param filename: If is None, then get current timestamp as filename (defaults 'dumps' dir).
-        :return:
-        """
-
-        if filename is None:
-            filename = self.json_filename()
-
-        # Prepare path path
-        file_path = conf.models_path.joinpath(filename)
-
-        # If any parents doesn't exist, make it.
-        file_path.parent.mkdir(parents=True, exist_ok=True)
-
-        # Get dict model
-        model = self.get_dict_model()
-
-        # Open path with filename in write mode with UTF-8 encoding.
-        with file_path.open(mode='w', encoding='UTF-8') as file:
-            json.dump(model, file, indent=conf.json_indent)
-
-    @staticmethod
-    def load(filename: str = None, **kwargs) -> object:
-        """
-        This method load an agent from filename given.
-        :param filename: If is None, then get last timestamp path from 'dumps/models' dir.
-        :return:
-        """
-
-        if not filename:
-            try:
-                # Get last path from models directory (higher timestamp)
-                filename = sorted(
-                    filter(
-                        # Get only filenames for this agent (first part of name)
-                        lambda path: AgentType.from_string(path.name.split('_')[0]) is kwargs['agent_type'],
-                        os.scandir(conf.models_path)
-                    ),
-                    # Order filenames by timestamp (last part of name)
-                    key=lambda path: int(path.name.split('_')[-1])
-                )[-1]
-            except Exception as error:
-                print('Cannot read from {} directory because: {}'.format(conf.models_path, error))
-
-        # Read path from path
-        model_path = Path(filename)
-        model_file = model_path.open(mode='r', encoding='UTF-8')
-
-        # Load structured train_data from indicated path.
-        model = json.load(model_file)
-
-        # Close path
-        model_file.close()
-
-        return model
-
-    def dump(self, **kwargs):
-        """
-        Dumps model given into dumps directory
-        :param kwargs:
-        :return:
-        """
-
-        # Get timestamp
-        timestamp = int(time.time())
 
         # Get environment name in snake case, get only first letter of each word
         env_str_abbr = ''.join(
@@ -308,13 +227,88 @@ class Agent:
         # Extract agent name
         agent_str_abbr = um.str_to_snake_case(self.__class__.__name__).split('_')[-1]
 
-        # Define file path
-        file_path = dumps_path.joinpath(
-            '{}/models/{}_{}_{}.bin'.format(agent_str_abbr, env_str_abbr, timestamp, Vector.decimal_precision)
+        # Get timestamp
+        timestamp = int(time.time())
+
+        # Prepare default filename
+        return '{}/models/{}_{}_{}.bin'.format(
+            agent_str_abbr, env_str_abbr, timestamp, Vector.decimal_precision
         )
 
-        # Dumps agent
-        u_models.dump(path=file_path, model=self)
+    @staticmethod
+    def load(mode: str = 'binary', filename: str = None, **kwargs):
+        """
+        This method load an agent from filename given.
+        :param mode:
+        :param filename: If is None, then get last timestamp path from 'dumps/models' dir.
+        :return:
+        """
+
+        if mode == 'binary':
+            agent = u_models.load(path=dumps_path.joinpath(filename))
+        else:
+
+            if not filename:
+                try:
+                    # Get last path from models directory (higher timestamp)
+                    filename = sorted(
+                        filter(
+                            # Get only filenames for this agent (first part of name)
+                            lambda path: AgentType.from_string(path.name.split('_')[0]) is kwargs['agent_type'],
+                            os.scandir(conf.models_path)
+                        ),
+                        # Order filenames by timestamp (last part of name)
+                        key=lambda path: int(path.name.split('_')[-1])
+                    )[-1]
+                except Exception as error:
+                    print('Cannot read from {} directory because: {}'.format(conf.models_path, error))
+
+            # Read path from path
+            model_path = Path(filename)
+            model_file = model_path.open(mode='r', encoding='UTF-8')
+
+            # Load structured train_data from indicated path.
+            agent = json.load(model_file)
+
+            # Close path
+            model_file.close()
+
+        return agent
+
+    def save(self, mode: str = 'binary', filename: str = None, **kwargs):
+        """
+        Dumps model given into dumps directory
+        :param filename:
+        :param mode:
+        :param kwargs:
+        :return:
+        """
+
+        if filename is None:
+            filename = self.default_filename()
+
+        if mode == 'binary':
+
+            # Define file path
+            file_path = dumps_path.joinpath(filename)
+
+            # Dumps agent
+            u_models.dump(path=file_path, model=self)
+
+        else:
+
+            # Prepare path path
+            file_path = conf.models_path.joinpath(filename)
+
+            # If any parents doesn't exist, make it.
+            file_path.parent.mkdir(parents=True, exist_ok=True)
+
+            # Get dict model
+            model = self.get_dict_model()
+
+            # Open path with filename in write mode with UTF-8 encoding.
+            with file_path.open(mode='w', encoding='UTF-8') as file:
+                json.dump(model, file, indent=conf.json_indent)
 
     @staticmethod
     def models_dumps_file_path(filename: str) -> Path:

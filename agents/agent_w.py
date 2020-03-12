@@ -64,15 +64,15 @@ class AgentW(Agent):
         self.update_graph(graph_type=graph_type)
 
         # Extract limit information
-        limit = kwargs.get('limit', None)
+        limit = kwargs.pop('limit', None)
 
         if limit is None:
-            tolerance = kwargs.get('tolerance', None)
+            tolerance = kwargs.pop('tolerance', None)
 
             if not tolerance:
                 raise ValueError('Must indicated tolerance to convergence training.')
 
-            self.convergence_train(tolerance=tolerance, graph_type=graph_type)
+            self.convergence_train(tolerance=tolerance, graph_type=graph_type, **kwargs)
         elif graph_type is GraphType.TIME:
             self.time_train(execution_time=limit)
         else:
@@ -121,7 +121,7 @@ class AgentW(Agent):
             ):
                 self.update_graph(graph_type=graph_type)
 
-    def convergence_train(self, tolerance: float, graph_type: GraphType = None):
+    def convergence_train(self, tolerance: float, graph_type: GraphType = None, **kwargs):
         """
         Return this agent trained until get convergence.
         :param tolerance:
@@ -160,6 +160,12 @@ class AgentW(Agent):
                 converged = self.has_converged(v_k=v_k, v_k_1=v_k_1, tolerance=tolerance)
             else:
                 first = False
+
+            # Check if make a save
+            sweeps_dump = kwargs.get('sweeps_dump')
+
+            if sweeps_dump and self.total_sweeps % sweeps_dump == 0:
+                self.save()
 
     def has_converged(self, v_k: dict, v_k_1: dict, tolerance: float) -> bool:
         """

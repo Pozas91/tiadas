@@ -722,7 +722,7 @@ class AgentPQL(AgentRL):
 
     def json_filename(self) -> str:
         """
-        Generate a filename for json dump path
+        Generate a filename for json save path
         :return:
         """
         # Get environment name in snake case

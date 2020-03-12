@@ -2,11 +2,8 @@
 Algorithm MPQ
 """
 import datetime
-import importlib
 import itertools
-import json
 import math
-import os
 import time
 from typing import Dict, List, Tuple
 
@@ -694,7 +691,7 @@ class AgentMPQ(AgentRL):
 
     def json_filename(self) -> str:
         """
-        Generate a filename for json dump path
+        Generate a filename for json save path
         :return:
         """
         # Get environment name in snake case
@@ -844,251 +841,251 @@ class AgentMPQ(AgentRL):
 
         return converged
 
-    @staticmethod
-    def load(filename: str = None, environment: Environment = None, evaluation_mechanism: EvaluationMechanism = None):
-        """
-        Load json string from path and convert to dictionary.
-        :param evaluation_mechanism: It is an evaluation mechanism that you want load
-        :param environment: It is an environment that you want load.
-        :param filename: If is None, then get last timestamp path from 'dumps' dir.
-        :return:
-        """
-
-        # Check if filename is None
-        if filename is None:
-
-            # Check if environment is also None
-            if environment is None:
-                raise ValueError('If you has not indicated a filename, you must indicate a environment.')
-
-            # Check if evaluation mechanism is also None
-            if evaluation_mechanism is None:
-                raise ValueError('If you has not indicated a filename, you must indicate a evaluation mechanism.')
-
-            # Get environment name in snake case
-            environment = um.str_to_snake_case(environment.__class__.__name__)
-
-            # Get evaluation mechanism name in snake case
-            evaluation_mechanism_value = um.str_to_snake_case(str(evaluation_mechanism.value))
-
-            # Filter str
-            filter_str = '{}_{}'.format(environment, evaluation_mechanism_value)
-
-            # Filter files with that environment and evaluation mechanism
-            files = filter(lambda f: filter_str in f,
-                           [path.name for path in os.scandir(AgentMPQ.models_dumps_path) if path.is_file()])
-
-            # Files to list
-            files = list(files)
-
-            # Sort list of files
-            files.sort()
-
-            # At least must have a path
-            if files:
-                # Get last filename
-                filename = files[-1]
-
-        # Prepare path path
-        file_path = AgentMPQ.models_dumps_file_path(filename)
-
-        # Read path from path
-        try:
-            file = file_path.open(mode='r', encoding='UTF-8')
-        except FileNotFoundError:
-            return None
-
-        # Load structured train_data from indicated path.
-        model = json.load(file)
-
-        # Close path
-        file.close()
-
-        # Get meta-train_data
-        # model_meta = model.get('meta')
-
-        # Get train_data
-        model_data = model.get('train_data')
-
-        # ENVIRONMENT
-        environment = model_data.get('environment')
-
-        # Meta
-        environment_meta = environment.get('meta')
-        environment_class_name = environment_meta.get('class')
-        environment_module_name = environment_meta.get('module')
-        environment_module = importlib.import_module(environment_module_name)
-        environment_class_ = getattr(environment_module, environment_class_name)
-
-        # Data
-        environment_data = environment.get('train_data')
-
-        # Instance
-        environment = environment_class_()
-
-        # Set environment train_data
-        for key, value in environment_data.items():
-
-            if 'position' in key or 'p_stochastic' in key:
-                # Convert to tuples to hash
-                value = um.lists_to_tuples(value)
-
-            elif 'default_reward' in key:
-                # If all elements are int, then default_reward is a integer Vector, otherwise float Vector
-                value = VectorDecimal(value)
-
-            vars(environment)[key] = value
-
-        # Set initial_seed
-        environment.seed(seed=environment.initial_seed)
-
-        # Get default reward as reference
-        default_reward = environment.default_reward
-
-        # AgentA1
-
-        # Meta
-
-        # Prepare module and class to make an instance.
-        # class_name = model_meta.get('class')
-        # module_name = model_meta.get('module')
-        # module = importlib.import_module(module_name)
-        # class_ = getattr(module, class_name)
-
-        # Data
-        epsilon = model_data.get('epsilon')
-        gamma = model_data.get('gamma')
-        alpha = model_data.get('alpha')
-        total_episodes = model_data.get('total_episodes')
-        total_steps = model_data.get('total_steps')
-        state = tuple(model_data.get('position'))
-        max_steps = model_data.get('max_steps')
-        seed = model_data.get('initial_seed')
-
-        # Recover evaluation mechanism from string
-        evaluation_mechanism = EvaluationMechanism.from_string(
-            evaluation_mechanism=model_data.get('evaluation_mechanism'))
-
-        # default_reward is reference so, reset components (multiply by zero) and add hv_reference to get hv_reference.
-        hv_reference = default_reward.zero_vector + model_data.get('hv_reference')
-
-        # Prepare Graph Types
-        graph_types = set()
-
-        # Update 'states_to_observe' train_data
-        states_to_observe = dict()
-        for item in model_data.get('states_to_observe'):
-
-            # Get graph type
-            key = GraphType.from_string(item.get('key'))
-            graph_types.add(key)
-
-            value = item.get('value')
-            key_state = um.lists_to_tuples(value.get('key'))
-            value = value.get('value')
-
-            if key not in states_to_observe.keys():
-                states_to_observe.update({
-                    key: dict()
-                })
-
-            states_to_observe.get(key).update({
-                key_state: value
-            })
-
-        # Unpack 'indexes_counter' train_data
-        indexes_counter = dict()
-        for item in model_data.get('indexes_counter'):
-            # Convert to tuples for hashing
-            key = um.lists_to_tuples(item.get('key'))
-            value = item.get('value')
-
-            indexes_counter.update({key: value})
-
-        # Unpack 'v' train_data
-        v = dict()
-        for item in model_data.get('v'):
-            # Convert to tuples to hash
-            key = um.lists_to_tuples(item.get('key'))
-            value = item.get('value')
-            vector_index = value.get('key')
-            value = default_reward.zero_vector + value.get('value')
-
-            vector_index = IndexVector(index=vector_index, vector=value)
-
-            if key not in v.keys():
-                v.update({key: [vector_index]})
-            else:
-                previous_data = v.get(key)
-                previous_data.append(vector_index)
-                v.update({key: previous_data})
-
-        # Unpack 'state' train_data
-        s = dict()
-        for item in model_data.get('state'):
-            # Convert to tuples to hash
-            key = um.lists_to_tuples(item.get('key'))
-            value = item.get('value')
-            action = value.get('key')
-            values = [um.lists_to_tuples(x) for x in value.get('value')]
-
-            if key not in s.keys():
-                s.update({
-                    key: {
-                        action: values
-                    }
-                })
-            else:
-                previous_data = s.get(key)
-                previous_data.update({action: values})
-                s.update({key: previous_data})
-
-        # Unpack 'q' train_data
-        q = dict()
-        for item in model_data.get('q'):
-            # Convert to tuples to hash
-            q_state = um.lists_to_tuples(item.get('key'))
-            value = item.get('value')
-            q_action = value.get('key')
-            value = value.get('value')
-            q_index = um.lists_to_tuples(value.get('key'))
-            value = value.get('value')
-
-            index_vector = IndexVector(index=value[0], vector=default_reward.zero_vector + value[1])
-
-            if q_state not in q.keys():
-                q.update({
-                    q_state: dict()
-                })
-
-            q_dict_state = q.get(q_state)
-
-            if q_action not in q_dict_state.keys():
-                q_dict_state.update({
-                    q_action: {
-                        q_index: index_vector
-                    }
-                })
-            else:
-                q_dict_state.get(q_action).update({
-                    q_index: index_vector
-                })
-
-        # Prepare an instance of model.
-        model = AgentMPQ(environment=environment, epsilon=epsilon, alpha=alpha, gamma=gamma, seed=seed,
-                         max_steps=max_steps, hv_reference=hv_reference, evaluation_mechanism=evaluation_mechanism,
-                         graph_types=graph_types)
-
-        # Set finals settings and return it.
-        model.v = v
-        model.s = s
-        model.q = q
-        model.graph_info = states_to_observe
-        model.state = state
-        model.total_episodes = total_episodes
-        model.total_steps = total_steps
-
-        return model
+    # @staticmethod
+    # def load(filename: str = None, environment: Environment = None, evaluation_mechanism: EvaluationMechanism = None):
+    #     """
+    #     Load json string from path and convert to dictionary.
+    #     :param evaluation_mechanism: It is an evaluation mechanism that you want load
+    #     :param environment: It is an environment that you want load.
+    #     :param filename: If is None, then get last timestamp path from 'dumps' dir.
+    #     :return:
+    #     """
+    #
+    #     # Check if filename is None
+    #     if filename is None:
+    #
+    #         # Check if environment is also None
+    #         if environment is None:
+    #             raise ValueError('If you has not indicated a filename, you must indicate a environment.')
+    #
+    #         # Check if evaluation mechanism is also None
+    #         if evaluation_mechanism is None:
+    #             raise ValueError('If you has not indicated a filename, you must indicate a evaluation mechanism.')
+    #
+    #         # Get environment name in snake case
+    #         environment = um.str_to_snake_case(environment.__class__.__name__)
+    #
+    #         # Get evaluation mechanism name in snake case
+    #         evaluation_mechanism_value = um.str_to_snake_case(str(evaluation_mechanism.value))
+    #
+    #         # Filter str
+    #         filter_str = '{}_{}'.format(environment, evaluation_mechanism_value)
+    #
+    #         # Filter files with that environment and evaluation mechanism
+    #         files = filter(lambda f: filter_str in f,
+    #                        [path.name for path in os.scandir(AgentMPQ.models_dumps_path) if path.is_file()])
+    #
+    #         # Files to list
+    #         files = list(files)
+    #
+    #         # Sort list of files
+    #         files.sort()
+    #
+    #         # At least must have a path
+    #         if files:
+    #             # Get last filename
+    #             filename = files[-1]
+    #
+    #     # Prepare path path
+    #     file_path = AgentMPQ.models_dumps_file_path(filename)
+    #
+    #     # Read path from path
+    #     try:
+    #         file = file_path.open(mode='r', encoding='UTF-8')
+    #     except FileNotFoundError:
+    #         return None
+    #
+    #     # Load structured train_data from indicated path.
+    #     model = json.load(file)
+    #
+    #     # Close path
+    #     file.close()
+    #
+    #     # Get meta-train_data
+    #     # model_meta = model.get('meta')
+    #
+    #     # Get train_data
+    #     model_data = model.get('train_data')
+    #
+    #     # ENVIRONMENT
+    #     environment = model_data.get('environment')
+    #
+    #     # Meta
+    #     environment_meta = environment.get('meta')
+    #     environment_class_name = environment_meta.get('class')
+    #     environment_module_name = environment_meta.get('module')
+    #     environment_module = importlib.import_module(environment_module_name)
+    #     environment_class_ = getattr(environment_module, environment_class_name)
+    #
+    #     # Data
+    #     environment_data = environment.get('train_data')
+    #
+    #     # Instance
+    #     environment = environment_class_()
+    #
+    #     # Set environment train_data
+    #     for key, value in environment_data.items():
+    #
+    #         if 'position' in key or 'p_stochastic' in key:
+    #             # Convert to tuples to hash
+    #             value = um.lists_to_tuples(value)
+    #
+    #         elif 'default_reward' in key:
+    #             # If all elements are int, then default_reward is a integer Vector, otherwise float Vector
+    #             value = VectorDecimal(value)
+    #
+    #         vars(environment)[key] = value
+    #
+    #     # Set initial_seed
+    #     environment.seed(seed=environment.initial_seed)
+    #
+    #     # Get default reward as reference
+    #     default_reward = environment.default_reward
+    #
+    #     # AgentA1
+    #
+    #     # Meta
+    #
+    #     # Prepare module and class to make an instance.
+    #     # class_name = model_meta.get('class')
+    #     # module_name = model_meta.get('module')
+    #     # module = importlib.import_module(module_name)
+    #     # class_ = getattr(module, class_name)
+    #
+    #     # Data
+    #     epsilon = model_data.get('epsilon')
+    #     gamma = model_data.get('gamma')
+    #     alpha = model_data.get('alpha')
+    #     total_episodes = model_data.get('total_episodes')
+    #     total_steps = model_data.get('total_steps')
+    #     state = tuple(model_data.get('position'))
+    #     max_steps = model_data.get('max_steps')
+    #     seed = model_data.get('initial_seed')
+    #
+    #     # Recover evaluation mechanism from string
+    #     evaluation_mechanism = EvaluationMechanism.from_string(
+    #         evaluation_mechanism=model_data.get('evaluation_mechanism'))
+    #
+    #     # default_reward is reference so, reset components (multiply by zero) and add hv_reference to get hv_reference.
+    #     hv_reference = default_reward.zero_vector + model_data.get('hv_reference')
+    #
+    #     # Prepare Graph Types
+    #     graph_types = set()
+    #
+    #     # Update 'states_to_observe' train_data
+    #     states_to_observe = dict()
+    #     for item in model_data.get('states_to_observe'):
+    #
+    #         # Get graph type
+    #         key = GraphType.from_string(item.get('key'))
+    #         graph_types.add(key)
+    #
+    #         value = item.get('value')
+    #         key_state = um.lists_to_tuples(value.get('key'))
+    #         value = value.get('value')
+    #
+    #         if key not in states_to_observe.keys():
+    #             states_to_observe.update({
+    #                 key: dict()
+    #             })
+    #
+    #         states_to_observe.get(key).update({
+    #             key_state: value
+    #         })
+    #
+    #     # Unpack 'indexes_counter' train_data
+    #     indexes_counter = dict()
+    #     for item in model_data.get('indexes_counter'):
+    #         # Convert to tuples for hashing
+    #         key = um.lists_to_tuples(item.get('key'))
+    #         value = item.get('value')
+    #
+    #         indexes_counter.update({key: value})
+    #
+    #     # Unpack 'v' train_data
+    #     v = dict()
+    #     for item in model_data.get('v'):
+    #         # Convert to tuples to hash
+    #         key = um.lists_to_tuples(item.get('key'))
+    #         value = item.get('value')
+    #         vector_index = value.get('key')
+    #         value = default_reward.zero_vector + value.get('value')
+    #
+    #         vector_index = IndexVector(index=vector_index, vector=value)
+    #
+    #         if key not in v.keys():
+    #             v.update({key: [vector_index]})
+    #         else:
+    #             previous_data = v.get(key)
+    #             previous_data.append(vector_index)
+    #             v.update({key: previous_data})
+    #
+    #     # Unpack 'state' train_data
+    #     s = dict()
+    #     for item in model_data.get('state'):
+    #         # Convert to tuples to hash
+    #         key = um.lists_to_tuples(item.get('key'))
+    #         value = item.get('value')
+    #         action = value.get('key')
+    #         values = [um.lists_to_tuples(x) for x in value.get('value')]
+    #
+    #         if key not in s.keys():
+    #             s.update({
+    #                 key: {
+    #                     action: values
+    #                 }
+    #             })
+    #         else:
+    #             previous_data = s.get(key)
+    #             previous_data.update({action: values})
+    #             s.update({key: previous_data})
+    #
+    #     # Unpack 'q' train_data
+    #     q = dict()
+    #     for item in model_data.get('q'):
+    #         # Convert to tuples to hash
+    #         q_state = um.lists_to_tuples(item.get('key'))
+    #         value = item.get('value')
+    #         q_action = value.get('key')
+    #         value = value.get('value')
+    #         q_index = um.lists_to_tuples(value.get('key'))
+    #         value = value.get('value')
+    #
+    #         index_vector = IndexVector(index=value[0], vector=default_reward.zero_vector + value[1])
+    #
+    #         if q_state not in q.keys():
+    #             q.update({
+    #                 q_state: dict()
+    #             })
+    #
+    #         q_dict_state = q.get(q_state)
+    #
+    #         if q_action not in q_dict_state.keys():
+    #             q_dict_state.update({
+    #                 q_action: {
+    #                     q_index: index_vector
+    #                 }
+    #             })
+    #         else:
+    #             q_dict_state.get(q_action).update({
+    #                 q_index: index_vector
+    #             })
+    #
+    #     # Prepare an instance of model.
+    #     model = AgentMPQ(environment=environment, epsilon=epsilon, alpha=alpha, gamma=gamma, seed=seed,
+    #                      max_steps=max_steps, hv_reference=hv_reference, evaluation_mechanism=evaluation_mechanism,
+    #                      graph_types=graph_types)
+    #
+    #     # Set finals settings and return it.
+    #     model.v = v
+    #     model.s = s
+    #     model.q = q
+    #     model.graph_info = states_to_observe
+    #     model.state = state
+    #     model.total_episodes = total_episodes
+    #     model.total_steps = total_steps
+    #
+    #     return model
 
     def recover_policy(self, **kwargs) -> Tuple[List, Dict]:
 
