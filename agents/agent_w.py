@@ -440,6 +440,7 @@ class AgentW(Agent):
 
                     # Check new information
                     if euclidean_distance <= lowest_distance:
+                        #
                         lowest_distance = euclidean_distance
                         policy.update({s: a})
 
