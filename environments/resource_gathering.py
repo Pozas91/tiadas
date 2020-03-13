@@ -207,13 +207,7 @@ class ResourceGathering(EnvMesh):
         # Initialize reward as vector
         reward = self.default_reward.copy()
 
-        # Default attacked is false
-        self.attacked = False
-
         if self.warning_action(state=state, action=action) and next_state[0] == self.home_position:
-            self.attacked = True
-
-        if self.attacked:
             reward[0], reward[1], reward[2] = -1, 0, 0
         elif next_state in self.checkpoints_states:
             reward[1], reward[2] = next_state[1]
@@ -256,6 +250,10 @@ class ResourceGathering(EnvMesh):
             reachable_states.add((self.home_position, (0, 0)))
         else:
             reachable_states.add(self.next_state(action=action, state=state))
+
+            # This is to facilitate the program. We checking the next state with the next_state function, but disable
+            # attacked var to avoid conflicts with rest of execution.
+            self.attacked = False
 
         # Return all possible states reachable with any action
         return reachable_states

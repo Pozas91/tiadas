@@ -403,7 +403,8 @@ class AgentW(Agent):
 
                 # Extract v(si) for each si in S
                 v_reachable_states = {
-                    v: self.v.get(v, [self.environment.default_reward.zero_vector]) for v in reachable_states
+                    next_state: self.v.get(next_state, [self.environment.default_reward.zero_vector])
+                    for next_state in reachable_states
                 }
 
                 # States trace action
@@ -434,7 +435,7 @@ class AgentW(Agent):
                     # Nearest
                     euclidean_distance = um.euclidean_distance(objective_vector, summation)
 
-                    # Save trace (First element is v, and second is euclidean distance)
+                    # Save trace (First element is next_state, and second is euclidean distance)
                     states_trace_action[a].update({product: [summation, euclidean_distance]})
 
                     # Check new information
