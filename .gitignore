@@ -159,8 +159,7 @@ fabric.properties
 .idea/httpRequests
 
 # Ignore draft files
-draft_*.py
-
+drafts/*
 
 # Ignore dumps directory
 dumps/*
