@@ -33,7 +33,7 @@ class ResourceGathering(EnvMesh):
 
     def __init__(self, initial_state: tuple = ((2, 4), (0, 0)), default_reward: tuple = (0, 0, 0), seed: int = 0,
                  p_attack: float = 0.1, mesh_shape: tuple = (5, 5), gold_positions: frozenset = frozenset({(2, 0)}),
-                 gem_positions: frozenset = frozenset({(4, 1)})):
+                 gem_positions: frozenset = frozenset({(4, 1)}), observation_space: gym.spaces = None):
         """
         :param initial_state:
         :param default_reward: (enemy_attack, gold, gems)
@@ -43,17 +43,18 @@ class ResourceGathering(EnvMesh):
 
         default_reward = Vector(default_reward)
 
-        # Build the observation space (position(x, y), quantity(gold, gems))
-        observation_space = gym.spaces.Tuple(
-            (
-                gym.spaces.Tuple(
-                    (gym.spaces.Discrete(mesh_shape[0]), gym.spaces.Discrete(mesh_shape[1]))
-                ),
-                gym.spaces.Tuple(
-                    (gym.spaces.Discrete(2), gym.spaces.Discrete(2))
+        if observation_space is None:
+            # Build the observation space (position(x, y), quantity(gold, gems))
+            observation_space = gym.spaces.Tuple(
+                (
+                    gym.spaces.Tuple(
+                        (gym.spaces.Discrete(mesh_shape[0]), gym.spaces.Discrete(mesh_shape[1]))
+                    ),
+                    gym.spaces.Tuple(
+                        (gym.spaces.Discrete(2), gym.spaces.Discrete(2))
+                    )
                 )
             )
-        )
 
         # Define final states
         finals = frozenset()
@@ -72,9 +73,11 @@ class ResourceGathering(EnvMesh):
         self.enemies_positions = {(3, 0), (2, 1)}
         self.p_attack = p_attack
         self.home_position = (2, 4)
-        self.attacked = False
 
-        self.checkpoints_states = set(itertools.product({self.home_position}, {(1, 0), (0, 1), (1, 1)}))
+        self.checkpoints_states = self._checkpoints_states()
+
+    def _checkpoints_states(self) -> set:
+        return set(itertools.product({self.home_position}, {(1, 0), (0, 1), (1, 1)}))
 
     def step(self, action: int) -> (tuple, Vector, bool, dict):
         """
@@ -83,16 +86,16 @@ class ResourceGathering(EnvMesh):
         :return:
         """
 
-        # Set attacked to False
-        self.attacked = False
-
         # Initialize reward as vector
         reward = self.default_reward.copy()
+
+        # Extract previous state
+        previous_state = self.current_state
 
         # Update previous position
         self.current_state = self.next_state(action=action)
 
-        if self.attacked:
+        if self.warning_action(state=previous_state, action=action) and self.current_state[0] == self.home_position:
             reward[0] = -1
 
         # Check if is final state
@@ -128,7 +131,6 @@ class ResourceGathering(EnvMesh):
         elif next_position in self.enemies_positions and self.p_attack >= self.np_random.uniform():
             next_position, objects = self.initial_state
             next_position = self.home_position
-            self.attacked = True
 
         return next_position, objects
 
@@ -142,7 +144,6 @@ class ResourceGathering(EnvMesh):
         self.seed(seed=self.initial_seed)
 
         self.current_state = self.initial_state
-        self.attacked = False
 
         return self.current_state
 
@@ -250,10 +251,6 @@ class ResourceGathering(EnvMesh):
             reachable_states.add((self.home_position, (0, 0)))
         else:
             reachable_states.add(self.next_state(action=action, state=state))
-
-            # This is to facilitate the program. We checking the next state with the next_state function, but disable
-            # attacked var to avoid conflicts with rest of execution.
-            self.attacked = False
 
         # Return all possible states reachable with any action
         return reachable_states

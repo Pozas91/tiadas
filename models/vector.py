@@ -352,7 +352,9 @@ class Vector:
                 hull = ConvexHull(vectors, incremental=False)
                 vectors = list(operator.itemgetter(*hull.vertices)(vectors))
             except QhullError as e:
-                print('QhullError with vectors: {}'.format(vectors))
+                # Do nothing
+                pass
+                # print('QhullError with vectors: {}'.format(vectors))
 
         return vectors
 

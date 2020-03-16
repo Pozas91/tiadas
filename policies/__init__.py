@@ -1,1 +1,1 @@
-from .resource_gathering import policies as rg_policies
+from .resource_gathering_episodic import policies as rge_policies

@@ -24,7 +24,6 @@ class TestResourceGathering(TestEnvMesh):
         self.assertTrue(hasattr(self.environment, 'gem_positions'))
         self.assertTrue(hasattr(self.environment, 'enemies_positions'))
         self.assertTrue(hasattr(self.environment, 'home_position'))
-        self.assertTrue(hasattr(self.environment, 'attacked'))
 
         # Observation space
         self.assertEqual(
@@ -50,14 +49,12 @@ class TestResourceGathering(TestEnvMesh):
 
         # Set current position to random position
         self.environment.current_state = self.environment.observation_space.sample()
-        self.environment.attacked = True
 
         # Reset environment
         self.environment.reset()
 
         # Asserts
         self.assertEqual(self.environment.initial_state, self.environment.current_state)
-        self.assertEqual(False, self.environment.attacked)
 
     def test__next_state(self):
         """
