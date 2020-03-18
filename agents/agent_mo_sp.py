@@ -8,7 +8,7 @@ EXAMPLE OF USE OF AgentMOSP:
     # Build environment
     env = DeepSeaTreasureSimplified()
 
-    # Pareto's points
+    # Pareto'state points
     pareto_points = env.pareto_optimal
 
     # Build agent
@@ -19,9 +19,9 @@ EXAMPLE OF USE OF AgentMOSP:
     q_learning.objective_training(agent=agent, objective=objective, close_margin=1e-2)
 
     # Get p point from agent test.
-    p = q_learning.testing(agent=agent)
+    p = q_learning.get_accumulated_reward(agent=agent)
 
-    # Reset agent to train again with others weights
+    # Reset agent to episode_train again with others weights
     agent.reset()
 
     # Set weights to find another extreme point
@@ -32,7 +32,7 @@ EXAMPLE OF USE OF AgentMOSP:
     q_learning.objective_training(agent=agent, objective=objective, close_margin=1e-1)
 
     # Get q point from agent test.
-    q = q_learning.testing(agent=agent)
+    q = q_learning.get_accumulated_reward(agent=agent)
 
     # Search pareto points (THIS IS THE CALL OF THESE FUNCTIONS)
     pareto_frontier = pareto.calc_frontier_scalarized(p=p, q=q, problem=agent, solutions_known=pareto_points)
@@ -41,30 +41,32 @@ EXAMPLE OF USE OF AgentMOSP:
     # Calc rest of time
     time_train = time.time() - start_time
 
-    # Get pareto point's x axis
+    # Get pareto point'state x axis
     x = pareto_frontier_np[:, 0]
 
-    # Get pareto point's y axis
+    # Get pareto point'state y axis
     y = pareto_frontier_np[:, 1]
 
     # Build and show plot.
     plt.scatter(x, y)
-    plt.ylabel('Reward')
-    plt.xlabel('Time')
+    plt.y_label('Reward')
+    plt.x_label('Time')
     plt.show()
 """
 import numpy as np
 
+import utils.hypervolume as uh
 import utils.miscellaneous as um
-from gym_tiadas.gym_tiadas.envs import Environment
-from models import Vector, VectorFloat
+from environments import Environment
+from models import Vector, VectorDecimal, GraphType
 from .agent_q import AgentQ
 
 
 class AgentMOSP(AgentQ):
 
     def __init__(self, environment: Environment, alpha: float = 0.1, epsilon: float = 0.1, gamma: float = 1.,
-                 seed: int = 0, states_to_observe: list = None, max_steps: int = None, weights: tuple = None):
+                 seed: int = 0, states_to_observe: set = None, max_steps: int = None, weights: tuple = None,
+                 graph_types: set = None, hv_reference: Vector = None, initial_value: float = 0.):
         """
         :param environment: An environment where agent does any operation.
         :param alpha: Learning rate
@@ -76,48 +78,57 @@ class AgentMOSP(AgentQ):
         :param weights: Tuple of weights to multiply per reward vector.
         """
 
-        # Sum of weights must be 1.
-        assert weights is not None and np.sum(weights) == 1.
+        # Weights must be setting
+        assert weights is not None
+
+        # Types to make graphs
+        if graph_types is None:
+            graph_types = {GraphType.EPISODES, GraphType.STEPS}
 
         # Super call init
         super().__init__(environment=environment, alpha=alpha, epsilon=epsilon, gamma=gamma, seed=seed,
-                         states_to_observe=states_to_observe, max_steps=max_steps)
+                         states_to_observe=states_to_observe, max_steps=max_steps, graph_types=graph_types,
+                         initial_value=initial_value)
 
         # Set weights
         self.weights = weights
 
-    def process_reward(self, reward: Vector) -> Vector:
+        # Pareto'state frontier found
+        self.pareto_frontier_found = list()
+        self.hv_reference = hv_reference
+
+    def process_reward(self, reward: Vector) -> float:
         """
         Processing reward function.
         :param reward:
         :return:
         """
 
+        # Convert to float vector
+        reward = VectorDecimal(reward.components)
+
         # Multiply the reward for the vector weights, sum all components and return a reward of the same type as the
         # original, but with only one component.
-        return reward.__class__(float(np.sum(reward * self.weights)))
+        return float(np.sum(reward * self.weights))
 
-    def _update_q_values(self, reward: Vector, action: int, next_state: object) -> None:
+    def _update_q_values(self, reward: float, action: int, next_state: object) -> None:
         """
-        Update Q-Dictionary with new data
+        Update Q-Dictionary with new train_data
         :param reward:
         :param action:
         :param next_state:
         :return:
         """
 
-        # Apply function
-        reward = self.process_reward(reward=reward)
-
         # Super call
         super()._update_q_values(reward=reward, action=action, next_state=next_state)
 
-    def find_c_vector(self, w1: float, w2: float, solutions_known: list = None) -> Vector:
+    def find_c_vector(self, w1: float, w2: float, solutions_known: list = None) -> VectorDecimal:
         """
-        This method is called from calc_frontier_scalarized method.
+        This method is called from calc_frontier_scalarized method.age
 
-        Try to find an c point to add to the pareto's frontier. There are two options:
-            * We know the solutions of pareto's frontier, and training the agent until get max solution.
+        Try to find an c point to add to the pareto'state frontier. There are two options:
+            * We know the solutions of pareto'state frontier, and training the agent until get max solution.
             * We don't know the solutions and training to try get max solution.
 
         :param solutions_known: If we know the possible solutions, we can indicate them to the algorithm to improve the
@@ -129,32 +140,33 @@ class AgentMOSP(AgentQ):
 
         # Reset agent (forget q-values, initial_state, etc.).
         self.reset()
+        self.reset_totals()
 
         # Set news weights to get the new solution.
         self.weights = [w1, w2]
 
         # If solutions not is None
         if solutions_known:
-            # Multiply and sum all points with agent's weights.
+            # Multiply and sum all points with agent'state weights.
             objectives = np.sum(np.multiply(solutions_known, [w1, w2]), axis=1)
 
             # Get max of these sums (That is the objective).
-            objective = VectorFloat(np.max(objectives))
+            objective = float(np.max(objectives))
 
             # Train agent searching that objective.
             self.objective_training(objective=objective)
         else:
             # Normal training.
-            self.train()
+            self.episode_train(episodes=1000, graph_type=GraphType.EPISODES)
 
-        # Get point c from agent's test.
-        c = self.testing()
+        # Get point c from agent'state test.
+        c = self.get_accumulated_reward()
 
         return c
 
     def calc_frontier_scalarized(self, p: Vector, q: Vector, solutions_known: list = None) -> list:
         """
-        This is a main method to calc pareto's frontier.
+        This is a search_distance method to calc pareto'state frontier.
 
         Return a list of supported solutions costs, this method is only valid to two objectives problems.
         Applies a dichotomous search to find all supported solutions costs.
@@ -179,8 +191,15 @@ class AgentMOSP(AgentQ):
             # Pop the next pair of points from the stack.
             a, b = accumulate.pop()
 
-            # Order points nearest to the center using euclidean distance.
-            a, b = tuple(um.order_vectors_by_origin_nearest([a, b]))
+            try:
+                # Order points nearest to the center using euclidean distance.
+                a, b = tuple(um.order_vectors_by_origin_nearest([a, b]))
+            except ValueError:
+                print('Error to unpack {} and {}'.format(a, b))
+                continue
+
+            # Convert to vectors
+            a, b = VectorDecimal(a), VectorDecimal(b)
 
             # Decompose points
             a_x, a_y = a
@@ -197,7 +216,7 @@ class AgentMOSP(AgentQ):
             # Decompose c vector.
             c_x, c_y = c
 
-            if (w1 * a_x + w2 * a_y) != (w1 * c_x + w2 * c_y):
+            if (w1 * a_x + w2 * a_y) != (w1 * c_x + w2 * c_y) and c not in result:
                 # c is the cost of a new supported solution
 
                 # Push new pair in the stack
@@ -209,4 +228,28 @@ class AgentMOSP(AgentQ):
                 # Add c to the result
                 result.append(c)
 
+                # Pareto'state frontier found
+                self.pareto_frontier_found.append(c)
+
         return result
+
+    def update_graph(self, graph_type: GraphType):
+        """
+        Update specific graph type
+        :param graph_type:
+        :return:
+        """
+
+        for state, data in self.graph_info[graph_type].items():
+            # Calc pareto'state frontier found
+
+            if not self.pareto_frontier_found:
+                value = self.initial_q_value
+            else:
+                value = uh.calc_hypervolume(vectors=self.pareto_frontier_found, reference=self.hv_reference)
+
+            # Add to graph train_data
+            data.append(value)
+
+            # Update dictionary
+            self.graph_info[graph_type].update({state: data})

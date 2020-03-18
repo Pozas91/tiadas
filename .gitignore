@@ -2,7 +2,6 @@
 ### Python template
 # Byte-compiled / optimized / DLL files
 __pycache__/
-*.py[cod]
 *$py.class
 
 # C extensions
@@ -77,7 +76,7 @@ target/
 # pyenv
 .python-version
 
-# celery beat schedule file
+# celery beat schedule path
 celerybeat-schedule
 
 # SageMath parsed files
@@ -158,8 +157,8 @@ fabric.properties
 # Editor-based Rest Client
 .idea/httpRequests
 
-# Ignore draft files
-drafts/*
-
 # Ignore dumps directory
 dumps/*
+
+# Ignore drafts directory
+drafts/*

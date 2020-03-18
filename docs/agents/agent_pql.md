@@ -131,7 +131,7 @@ encontrados.
             * Devuelve un `list`, lista de estados visitados.
     * `_best_hypervolume(self, state: object) -> float`
         * **Descripción**
-            * Calcula el mejor hipervolumen posible dado un estado para todas las acciones posibles.
+            * Calcula el mejor hipervolumen dado un estado y teniendo en cuanta a todas las acciones disponibles.
         * **Parámetros**
             * `state: object` - Estado que estamos examinando.
         * **Salida**

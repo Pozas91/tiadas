@@ -1,11 +1,14 @@
 """
-This class represent a vector with some features necessaries for our program.
-This class have a vector of integers (int32).
+This class represent a vector of integers (int32) with some necessary features for our program.
 """
 
 import math
+import operator
+from decimal import Decimal as D
 
 import numpy as np
+from scipy.spatial import ConvexHull
+from scipy.spatial.qhull import QhullError
 
 import utils.models as um
 from .dominance import Dominance
@@ -14,37 +17,35 @@ from .dominance import Dominance
 class Vector:
     """
     Class Vector with functions to work with int vectors.
+    Vectors are represented internally as one-dimensional numpy arrays of the indicated type (int by default).
     """
 
-    # Number to multiply int vector to allow some decimals (If decimals = 100, two decimals are allowed).
-    decimals = 10 ** 2
+    # Set decimal precision, by default two decimals (0.01)
+    decimal_precision = D('0.01')
 
-    # Relative margin to compare of similarity of two elements.
-    relative_tolerance = 0.00
-    absolute_tolerance = 0
+    @staticmethod
+    def set_decimal_precision(decimal_precision: float):
+        Vector.decimal_precision = D(str(decimal_precision))
 
-    def __init__(self, components, dtype=int):
+    def __init__(self, components):
         """
-        Vector's init
-        :param components:
+        Vector'state init
+        :param components: a numpy array, list or tuple of dtype items
         """
+        self.components = np.array(components)
 
-        assert isinstance(components, (np.ndarray, list, tuple))
-
-        self.components = np.array(components).astype(dtype)
-
-    def __getitem__(self, item):
+    def __getitem__(self, index):
         """
-        Get item from vector:
+        Get the component in the index position
 
         v1 = Vector([10, 2, 3])
         print(v1[0]) -> "10"
         print(v1.components[0]) -> "10"
 
-        :param item:
-        :return:
+        :param index:
+        :return: the component in the index position
         """
-        return self.components[item]
+        return self.components[index]
 
     def __setitem__(self, key, value):
         """
@@ -59,6 +60,13 @@ class Vector:
         :return:
         """
         self.components[key] = value
+
+    def __abs__(self):
+        """
+        Return absolute value of components
+        :return:
+        """
+        return self.__class__(np.absolute(self.components))
 
     def __len__(self):
         """
@@ -77,7 +85,7 @@ class Vector:
 
     def __str__(self):
         """
-        Return a string representation of the data in an array.
+        Return a string representation of the train_data in an array.
         :return:
         """
         return np.array_str(self.components)
@@ -102,50 +110,64 @@ class Vector:
             - A vector of same length has been given, return a new Vector with the sum of each pair of components.
             - A vector of different length has been given, throws an exception.
             - A int, sum that int of each component.
-            - A float, remove decimals, and sum that number as int.
+            - A float, sum that number as float, and remove decimals.
         :param other:
         :return:
         """
 
-        return self.__class__(np.add(self.components, other))
+        if isinstance(other, Vector):
+            return self.__class__(self.components + other.components)
+        else:
+            return self.__class__(self.components + other)
 
     def __sub__(self, other):
         """
-        This method has four options:
-            - A vector of same length has been given, return a new Vector with the subtract of each pair of components.
+        This method performs four different operations, depending on the nature of 'other':
+            - A vector of same length has been given, return a new Vector with the subtraction of each pair of components.
             - A vector of different length has been given, throws an exception.
             - A int, subtract that int of each component.
-            - A float, remove decimals, and subtract that number as int.
+            - A float, subtract that number as float, and remove decimals.
+
         :param other:
         :return:
         """
 
-        return self.__class__(np.subtract(self.components, other))
+        if isinstance(other, Vector):
+            return self.__class__(self.components - other.components)
+        else:
+            return self.__class__(self.components - other)
 
     def __mul__(self, other):
         """
-        This method has four options:
+        This method performs four different operations, depending on the nature of 'other':
             - A vector of same length has been given, return a new Vector with the multiply of each pair of components.
             - A vector of different length has been given, throws an exception.
             - A int, multiply that int of each component.
-            - A float, remove decimals, and multiply that number as int.
+            - A float, multiply that number as float, and remove decimals.
         :param other:
         :return:
         """
 
-        return self.__class__(np.multiply(self.components, other))
+        if isinstance(other, Vector):
+            return self.__class__(self.components * other.components)
+        else:
+            return self.__class__(self.components * other)
 
     def __truediv__(self, other):
         """
-        This method has four options:
+        This method performs four different operations, depending on the nature of 'other':
             - A vector of same length has been given, return a new Vector with the division of each pair of components.
             - A vector of different length has been given, throws an exception.
             - A int, divide that int of each component.
-            - A float, remove decimals, and divide that number as int.
+            - A float, divide that number as float, and remove decimals.
         :param other:
         :return:
         """
-        return self.__class__(np.divide(self.components, other))
+
+        if isinstance(other, Vector):
+            return self.__class__(np.divide(self.components, other.components))
+        else:
+            return self.__class__(np.divide(self.components, other))
 
     def __pow__(self, power, modulo=None):
         """
@@ -198,13 +220,13 @@ class Vector:
         """
         return np.all(np.less_equal(self.components, other.components))
 
-    @um.lazy_property
-    def magnitude(self) -> float:
+    def __round__(self, n=None):
         """
-        Return magnitude of vector
+        Return a vector with components rounded
+        :param n:
         :return:
         """
-        return math.sqrt(np.sum(self.components ** 2))
+        return self.__class__([round(component, n) for component in self.components])
 
     @um.lazy_property
     def zero_vector(self):
@@ -212,29 +234,28 @@ class Vector:
         Return a zero vector of same type and len that this vector
         :return:
         """
-        x = self.__class__(np.zeros_like(self.components))
-        x.relative_tolerance = self.relative_tolerance
-        x.decimals = self.decimals
-
-        return x
+        return self * 0
 
     def copy(self):
         """
         Return a copy of this vector
         :return:
         """
-        x = self.__class__(self.components)
-        x.relative_tolerance = self.relative_tolerance
-        x.decimals = self.decimals
-
-        return x
+        return self.__class__(self.components)
 
     def tolist(self):
         """
-        Return as list al components of this vector
+        Return all components of this vector in a list
         :return:
         """
         return self.components.tolist()
+
+    def magnitude(self) -> float:
+        """
+        Return magnitude of vector
+        :return:
+        """
+        return math.sqrt(np.sum(self.components ** 2))
 
     def all_close(self, v2) -> bool:
         """
@@ -246,13 +267,13 @@ class Vector:
         :param v2:
         :return:
         """
-        return np.allclose(a=self.components, b=v2.components, rtol=self.relative_tolerance,
-                           atol=self.absolute_tolerance)
+        return np.equal(self.components, v2.components)
 
     def dominance(self, v2) -> Dominance:
         """
         Check dominance between two Vector objects. Float values are allowed
-        and treated with precision according to Vector.relative.
+        and treated with precision according to Vector.relative. It is assumed that all
+        vector components are to be maximized.
         :param v2: a Vector object
         :return: an output value according to the Dominance enum.
         """
@@ -260,23 +281,22 @@ class Vector:
         v1_dominate = False
         v2_dominate = False
 
-        for idx, component in enumerate(self.components):
+        for a, b in zip(self.components, v2.components):
 
             # Are equals or close...
-            if np.isclose(a=self.components[idx], b=v2.components[idx], rtol=self.relative_tolerance,
-                          atol=self.absolute_tolerance):
+            if a == b:
                 # Nothing to do at moment
                 pass
 
-            elif self.components[idx] > v2.components[idx]:
+            elif a > b:
                 v1_dominate = True
 
                 # If already dominate v2, then both vectors are independent.
                 if v2_dominate:
                     return Dominance.otherwise
 
-            # v1's component is dominated by v2
-            elif self.components[idx] < v2.components[idx]:
+            # v1'state component is dominated by v2
+            elif a < b:
                 v2_dominate = True
 
                 # If already dominate v1, then both vectors are independent.
@@ -284,27 +304,65 @@ class Vector:
                     return Dominance.otherwise
 
         if v1_dominate == v2_dominate:
-            # If both dominate, then both vectors are independent.
-            if v1_dominate:
+            if v1_dominate:  # both, v1_dominate and v2_dominate are True -> vectors are indifferent
                 return Dominance.otherwise
 
             # Are equals
-            else:
+            else:  # both, v1_dominate and v2_dominate are False -> vectors are (approximately) equal
                 return Dominance.equals
 
-        # v1 dominate to v2
-        elif v1_dominate:
+        elif v1_dominate:  # v1 dominates v2
             return Dominance.dominate
 
-        # v2 dominate to v1
-        else:
+        else:  # v2 dominates v1
             return Dominance.is_dominated
 
     @staticmethod
-    def m3_max(vectors: list) -> list:
+    def convex_hull(vectors: set) -> list:
         """
-        :param vectors : list of Vector objects, float values are assumed.
-        
+        :param vectors: |vectors| >= 3
+            if |vectors| < 3, then return the vectors
+        :return:
+        """
+
+        # # Order vectors by the y-coordinate
+        # vectors.sort(key=lambda x: x[1])
+        #
+        # # The point in vectors with the minimum y-coordinate
+        # p0 = vectors.pop(0)
+        #
+        # return vectors
+
+        # Convert to list to make it indexable
+        vectors = list(vectors)
+
+        if len(vectors) >= 3:
+            # v_reference = vectors.pop()
+            #
+            # all_components = list()
+            #
+            # for v in vectors:
+            #     for i, component in enumerate(v_reference):
+            #         if len(all_components) < (i + 1):
+            #             all_components.append(list())
+            #
+            #         all_components[i].append(v[i] == v_reference[i])
+
+            try:
+                hull = ConvexHull(vectors, incremental=False)
+                vectors = list(operator.itemgetter(*hull.vertices)(vectors))
+            except QhullError as e:
+                # Do nothing
+                pass
+                # print('QhullError with vectors: {}'.format(vectors))
+
+        return vectors
+
+    @staticmethod
+    def m3_max(vectors: set) -> list:
+        """
+        :param vectors : set of Vector objects, float values are assumed.
+
         :return: a list with non-dominated vectors applying the m3 algorithm of
         Bentley, Clarkson and Levine (1990).
             We assume that:
@@ -318,7 +376,7 @@ class Vector:
         non_dominated = list()
         vector_j = None
 
-        for idx_i, vector_i in enumerate(vectors):
+        for vector_i in vectors:
 
             discarded = False
             equals = False
@@ -334,13 +392,13 @@ class Vector:
                 dominance = vector_i.dominance(v2=vector_j)
 
                 # `vector_i` dominate `vector_j`
-                if dominance == Dominance.dominate:
+                if dominance is Dominance.dominate:
 
                     # Remove non-dominated vector
                     non_dominated.pop(idx_j)
 
                 # `vector_j` dominate `vector_i`
-                elif dominance == Dominance.is_dominated:
+                elif dominance is Dominance.is_dominated:
 
                     # Remove non-dominated vector
                     non_dominated.pop(idx_j)
@@ -349,20 +407,20 @@ class Vector:
                     discarded = True
 
                 # `vector_i` and `vector_j` are similar or equals
-                elif dominance == Dominance.equals:
+                elif dominance is Dominance.equals:
                     # Stop to search (keep last one)
                     equals = True
                     break
 
                 # If dominance is otherwise, continue searching
-                if dominance == Dominance.otherwise:
+                if dominance is Dominance.otherwise:
                     # Search in next element
                     idx_j += 1
                 else:
                     # Begin again
                     idx_j = 0
 
-            # If both vectors are equals, do nothing
+            # If both vectors are equal, do nothing
             if equals:
                 pass
             elif discarded:
@@ -375,10 +433,10 @@ class Vector:
         return non_dominated
 
     @staticmethod
-    def m3_max_2_sets(vectors: list) -> (list, list):
+    def m3_max_2_lists(vectors: set) -> (list, list):
         """
-        :param vectors : list of Vector objects.
-        
+        :param vectors : set of Vector objects.
+
         :return: a list with non-dominated vectors applying the m3 algorithm of
         Bentley, Clarkson and Levine (1990).
             We assume that:
@@ -396,7 +454,7 @@ class Vector:
         dominated = list()
         vector_j = None
 
-        for idx_i, vector_i in enumerate(vectors):
+        for vector_i in vectors:
 
             discarded = False
             equals = False
@@ -459,10 +517,10 @@ class Vector:
         return non_dominated, dominated
 
     @staticmethod
-    def m3_max_2_sets_not_duplicates(vectors: list) -> (list, list):
+    def m3_max_2_lists_not_duplicates(vectors: set) -> (list, list):
         """
-        :param vectors: list of Vector objects.
-        
+        :param vectors: set of Vector objects.
+
         :return: a list with non-dominated vectors applying the m3 algorithm of
         Bentley, Clarkson and Levine (1990).
             We assume that:
@@ -479,7 +537,7 @@ class Vector:
         dominated = list()
         vector_j = None
 
-        for idx_i, vector_i in enumerate(vectors):
+        for vector_i in vectors:
 
             # If vector_i is in non_dominated or dominated, not process it.
             if vector_i in non_dominated + dominated:
@@ -537,9 +595,9 @@ class Vector:
         return non_dominated, dominated
 
     @staticmethod
-    def m3_max_2_sets_with_buckets(vectors: list) -> (list, list):
+    def m3_max_2_lists_with_buckets(vectors: set) -> (list, list):
         """
-        :param vectors: list of Vector objects.
+        :param vectors: set of Vector objects.
 
         :return: a list with non-dominated vectors applying the m3 algorithm of
         Bentley, Clarkson and Levine (1990).
@@ -553,7 +611,7 @@ class Vector:
         non_dominated = list()
         dominated = list()
 
-        for idx_i, vector_i in enumerate(vectors):
+        for vector_i in vectors:
 
             discarded = False
             idx_j = 0
@@ -628,9 +686,9 @@ class Vector:
         return non_dominated, dominated
 
     @staticmethod
-    def m3_max_2_sets_with_repetitions(vectors: list) -> (list, list, list):
+    def m3_max_2_lists_with_repetitions(vectors: set) -> (list, list, list):
         """
-        :param vectors: list of Vector objects.
+        :param vectors: set of Vector objects.
 
         :return: a list with non-dominated vectors applying the m3 algorithm of
         Bentley, Clarkson and Levine (1990).
@@ -641,80 +699,7 @@ class Vector:
             second list with the dominated list, and a third list with non-dominated duplicate list.
         """
 
-        non_dominated = list()
-        dominated = list()
-
-        for idx_i, vector_i in enumerate(vectors):
-
-            discarded = False
-            idx_j = 0
-            included_in_bucket = False
-            bucket = None
-
-            # While has more elements
-            while idx_j < len(non_dominated) and not discarded and not included_in_bucket:
-
-                # Get vector and index
-                bucket = non_dominated[idx_j]
-
-                # Get first
-                vector_j = bucket[0]
-
-                # Vector dominance
-                dominance = vector_i.dominance(v2=vector_j)
-
-                # `vector_i` dominate `vector_j`
-                if dominance == Dominance.dominate:
-
-                    # Remove non-dominated vector
-                    non_dominated.pop(idx_j)
-
-                    # All vectors in bucket are added in dominated list
-                    for vector_j in bucket:
-                        # Add dominated vector
-                        dominated.append(vector_j)
-
-                # `vector_j` dominate `vector_i`
-                elif dominance == Dominance.is_dominated:
-
-                    # Remove non-dominated vector
-                    non_dominated.pop(idx_j)
-
-                    # Set discarded to True
-                    discarded = True
-
-                    # Add dominated vector
-                    dominated.append(vector_i)
-
-                # `vector_i` and `vector_j` are similar or equals
-                elif dominance == Dominance.equals:
-
-                    # Remove non-dominated vector
-                    non_dominated.pop(idx_j)
-
-                    # Vector include in bucket
-                    included_in_bucket = True
-
-                    # Add vector_i to exists bucket.
-                    bucket.append(vector_i)
-
-                # If dominance is otherwise, continue searching
-                if dominance == Dominance.otherwise:
-                    # Search in next element
-                    idx_j += 1
-                else:
-                    # Begin again
-                    idx_j = 0
-
-            if discarded or included_in_bucket:
-                # Add all bucket at first of non_dominated list (bucket[:] is to pass value and not reference)
-                non_dominated.insert(0, bucket[:])
-            else:
-                # List of vectors
-                aux = [vector_i]
-
-                # Add list at end
-                non_dominated.append(aux)
+        non_dominated, dominated = Vector.m3_max_2_lists_with_buckets(vectors=vectors)
 
         # Prepare list to non_dominated vectors
         non_dominated_unique = list()

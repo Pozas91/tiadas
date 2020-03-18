@@ -1,3 +1,5 @@
+from copy import copy
+
 from gym.spaces import Discrete
 
 
@@ -20,7 +22,16 @@ class IterableDiscrete(Discrete):
             raise StopIteration
 
     def __repr__(self):
-        return "IterableDiscrete(%d)" % self.n
+        return "IterableDiscrete({})".format(self.n)
+
+    def __str__(self):
+        return "IterableDiscrete({})".format(self.n)
 
     def __eq__(self, other):
         return isinstance(other, IterableDiscrete) and self.n == other.n
+
+    def __copy__(self):
+        return IterableDiscrete(self.n)
+
+    def copy(self):
+        return copy(self)

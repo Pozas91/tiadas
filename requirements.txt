@@ -1,6 +1,9 @@
+colorama
 scipy
 pygmo
 numpy
 matplotlib
 gym
 python>=3.6
+PyYAML
+pickle

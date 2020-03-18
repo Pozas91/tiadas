@@ -5,9 +5,11 @@ Clase que representa a un vector entero y todas las operaciones relacionadas con
 vector y un número, multiplicación, division, obtención de valores, establecer valores, longitud, comparaciones, etc.
 
 * **Atributos**
-    * `decimals` - Variable que indica el número por el que tenemos que multiplicar un vector flotante para convertirlo
-    en entero y eliminar los decimales restantes. Dicho de otra forma, si tenemos el número `12.345` y `decimals` vale
-    `100`, obtendremos el entero `1234`.
+    * `decimals` - Indica el número por el que tenemos que multiplicar el vector entero, para admitir decimales, dicho 
+    de otra forma, si `decimals = 100`, podemos hacer operaciones con enteros y admitir hasta dos decimales. Por 
+    ejemplo, si `decimals = 100`, podemos multiplicar el vector entero por `decimals`, y realizar las operaciones
+    deseadas y divirlo por `decimals` al mostrarlo, para dar el resultado en flotante, habiendo realizado las
+    como número entero.
     * `relative_tolerance` - Tolerancia relativa que se usará para comparar la igualdad entre vectores.
     * `absolute_tolerance` - Tolerancia absoluta que se usará para comparar la igualdad entre vectores.
     * `components` - Atributo de la clase `np.array` donde almacenaremos los números para que las operaciones sean más 
@@ -15,7 +17,6 @@ vector y un número, multiplicación, division, obtención de valores, establece
     
     * **Propiedades**
         * **Estas propiedades son perezosas, para evitar el cálculo si no es necesario** 
-        * `magnitude` - Devuelve la magnitud del vector.
         * `zero_vector` - Devuelve un vector de la misma longitud y tipo que el vector actual, pero con todas las
         componentes a cero.
     
@@ -54,7 +55,14 @@ vector y un número, multiplicación, division, obtención de valores, establece
             * Para que un vector sea igual o menor a otro, todas las componentes, deben ser mayores o iguales a su
             pareja.
         * `__le__(self, other)`
-            * Para que un vector sea estrictamente menor a otro, todas las componentes, deben ser menores a su pareja. 
+            * Para que un vector sea estrictamente menor a otro, todas las componentes, deben ser menores a su pareja.
+    * `magnitude(self)`
+        * **Descripción**
+            * Devuelve la magnitud del vector.
+        * **Parámetros**
+            * **No recibe parámetros**
+        * **Salida**
+            * Devuelve un `float`, magnitud del vector. 
     * `tolist(self)`
         * **Descripción**
             * Devuelve una lista con los componentes del vector.
@@ -69,21 +77,19 @@ vector y un número, multiplicación, division, obtención de valores, establece
             * **No recibe parámetros**
         * **Salida**
             * Devuelve un `Vector`, instancia nueva del vector actual.
-    * `all_close(self, v2, relative=None) -> bool`
+    * `all_close(self, v2) -> bool`
         * **Descripción**
-            * Devuelve un booleano que indica si dos vectores son cercanos, con una cierta tolerancia.
+            * Devuelve un booleano que indica si dos vectores son cercanos, con las tolerancias definidas.
         * **Parámetros**
             * `v2` - Vector con el cual vamos a comparar el nuestro.
-            * `relative=None` - Tolerancia para la comparación.
         * **Salida**
             * Devuelve un `bool`, booleano que indica si son parecidos o no.
-    * `dominance(self, v2, relative=None) -> Dominance`
+    * `dominance(self, v2) -> Dominance`
         * **Descripción**
-            * Devuelve un objeto de la clase [`Dominance`](dominance.md), con la dominancia entre vectores, con cierta
-            tolerancia.
+            * Devuelve un objeto de la clase [`Dominance`](dominance.md), con la dominancia entre vectores, con las 
+            tolerancias definidas.
         * **Parámetros**
             * `v2` - Vector con el cual vamos a comprar el nuestro.
-            * `relative=None` - Tolerancia para la comparación.
         * **Salida**
             * Devuelve un `Dominance`, objeto que indica la dominancia entre vectores.
     * **Estáticos**
@@ -103,7 +109,7 @@ vector y un número, multiplicación, division, obtención de valores, establece
             * **Salida**
                 * Devuelve un `tuple` con dos `list`, tupla con dos lista que representa a los vectores no dominados y 
                 dominados.
-        * `m3_max_2_sets_not_duplicates(vectors: list) -> (list, list)`
+        * `m3_max_2_lists_not_duplicates(vectors: list) -> (list, list)`
             * **Descripción**
                 * Tiene la misma función que el anterior, pero evita vectores duplicados en la segunda lista.
             * **Parámetros**

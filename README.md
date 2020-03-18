@@ -1,6 +1,6 @@
 # TIADAS
 
-Parrafo para la descripción del proyecto
+Párrafo para la descripción del proyecto
 
 ## Empezando
 
@@ -56,7 +56,7 @@ Puedes encontrar mucho más sobre como utilizar este proyecto en nuestra [Wiki](
 ## Versionado
 
 Usamos [SemVer](http://semver.org/) para el versionado. Para ver las versiones disponibles, ver 
-[tags on this repository](https://github.com/your/project/tags).
+[tags on this repository](http://belinda.lcc.uma.es/tiadas/tiadas/-/tags).
 
 ## Autores
 * Autor uno - Trabajo - Enlace
@@ -69,4 +69,4 @@ ESte proyecto está bajo licencia tal tal tal, para ver licencia visitar el arch
 Agradecimientos a:
 * Uno
 * Dos
-* Tres
+* Tresa

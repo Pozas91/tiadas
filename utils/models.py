@@ -1,3 +1,7 @@
+import pickle
+from pathlib import Path
+
+
 def lazy_property(fn) -> object:
     """
     Decorator that makes a property lazy-evaluated.
@@ -14,3 +18,27 @@ def lazy_property(fn) -> object:
         return getattr(self, attr_name)
 
     return _lazy_property
+
+
+def dump(path: Path, model: object) -> None:
+    """
+    Dump model given in path given
+    :param path:
+    :param model:
+    :return:
+    """
+    # If any parents doesn't exist, make it.
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    with path.open(mode='wb+') as f:
+        pickle.dump(model, f)
+
+
+def load(path: Path):
+    """
+    Load a model from path given
+    :param path:
+    :return:
+    """
+    with path.open(mode='rb') as f:
+        return pickle.load(f)

@@ -10,9 +10,9 @@ forma se pueden hacer unas operaciones más eficientes en algunos puntos del pro
 * **Métodos**
     * **Métodos mágicos**
         * `__str__(self)`
-            * Devuelve una cadena de texto para mostrar por pantalla la acción y el vector.
+            * Devuelve una cadena de texto para mostrar por pantalla el índice y el vector.
         * `__repr__(self)`
-            * Devuelve una cadena de texto para representar a la acción y al vector.
+            * Devuelve una cadena de texto para representar el índice y al vector.
         * `__mul__(self, other)`
             * Devuelve un nuevo vector con la multiplicación de dos vectores, o la multiplicación de un vector con un 
             número entero.
@@ -29,7 +29,7 @@ forma se pueden hacer unas operaciones más eficientes en algunos puntos del pro
             * **Descripción**
                 * Método para obtener el número de vectores no dominados que tiene cada acción asociada. Este algoritmo
                 está basado en el `m3_max_2_sets_with_repetitions` de la clase [`Vector`](vector.md) para hacer más
-                eficiente el cáculo de la cardinalidad.
+                eficiente el cálculo de la cardinalidad.
             * **Parámetros**
                 * `vectors: list` - Lista de vectores.
                 * `actions` - Lista de acciones posibles.
