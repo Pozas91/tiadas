@@ -17,7 +17,7 @@ We consider the following operations and functions:
 import itertools
 import time
 from copy import deepcopy
-from typing import Tuple, List, Dict
+from typing import List, Dict
 
 import utils.hypervolume as uh
 import utils.miscellaneous as um
@@ -286,6 +286,9 @@ class AgentW(Agent):
         # For each state available
         for s in self.environment.states():
 
+            if s in {((2, 4), (1, 0)), ((2, 4), (0, 1)), ((2, 4), (1, 1))}:
+                pass
+
             # A(state) <- Extract all actions available from position `state`
             self.environment.current_state = s
 
@@ -356,30 +359,39 @@ class AgentW(Agent):
         # TODO: Finish this method
         return Agent.load(filename=filename, agent_type=AgentType.W)
 
-    def recover_policy(self, **kwargs) -> Tuple[List, Dict]:
+    def recover_policy(self, initial_state: tuple, objective_vector: Vector, **kwargs) -> List:
+        """
+        Return a policy in order
+        :param initial_state:
+        :param objective_vector:
+        :param kwargs:
+        :return:
+        """
 
         # Do a deepcopy from state and reset it.
         environment_copy = deepcopy(self.environment)
         self.environment.reset()
 
-        # Extract initial state
-        s: tuple = kwargs['initial_state']
+        # Extract steps limit
+        iterations_limit = kwargs.get('iterations_limit', float('inf'))
 
-        # Extract objective vector
-        objective_vector: Vector = kwargs['objective_vector']
+        # Define initial state
+        s = initial_state
 
-        # Final trace
-        trace = list()
-        policy = dict()
+        # Final policy
+        policy = list()
         simulate = True
 
-        # Set of si
-        states_with_objective = {(s, objective_vector)}
+        # Set of si (iterations, state, objective vector)
+        states_with_objective = {(0, s, objective_vector)}
 
         while simulate:
 
             # Extract next relevant state
-            s, objective_vector = states_with_objective.pop()
+            iterations, s, objective_vector = states_with_objective.pop()
+
+            # Increment iterations
+            iterations += 1
 
             # Set current state
             self.environment.current_state = s
@@ -387,14 +399,14 @@ class AgentW(Agent):
             # Get all actions available
             actions = self.environment.action_space.copy()
 
-            # States trace
-            states_trace = {s: dict()}
-
             # Best parameters
             lowest_distance = float('inf')
 
             # Best options
             best_possible_objective = None
+
+            # Desirable action
+            desirable_action = dict()
 
             # For a in actions
             for a in actions:
@@ -406,9 +418,6 @@ class AgentW(Agent):
                     next_state: self.v.get(next_state, [self.environment.default_reward.zero_vector])
                     for next_state in reachable_states
                 }
-
-                # States trace action
-                states_trace_action = {a: dict()}
 
                 # Calc cartesian product
                 cartesian_product = itertools.product(*v_reachable_states.values())
@@ -435,29 +444,26 @@ class AgentW(Agent):
                     # Nearest
                     euclidean_distance = um.euclidean_distance(objective_vector, summation)
 
-                    # Save trace (First element is next_state, and second is euclidean distance)
-                    states_trace_action[a].update({product: [summation, euclidean_distance]})
-
                     # Check new information
                     if euclidean_distance <= lowest_distance:
                         # Update lowest distance
                         lowest_distance = euclidean_distance
-                        policy.update({s: a})
+                        desirable_action.update({s: a})
 
                         # Prepare next states to recover_policy, except if it are final states.
                         best_possible_objective = {
-                            (next_s, product[i]) for i, next_s in enumerate(v_reachable_states)
+                            (iterations, next_s, product[i]) for i, next_s in enumerate(v_reachable_states)
                             if not self.environment.is_final(state=next_s)
                         }
 
-                # Update states trace
-                states_trace[s].update(states_trace_action)
-
-                # Update trace
-                trace.append(states_trace.copy())
+            # Append desirable action to policy list
+            policy.append(desirable_action)
 
             # Update best possible options
             states_with_objective = states_with_objective.union(best_possible_objective)
+
+            # Filter all states that no exceed limits of iterations
+            states_with_objective = set(filter(lambda x: x[0] < iterations_limit, states_with_objective))
 
             # Continue with the simulation?
             simulate = len(states_with_objective) > 0
@@ -465,10 +471,10 @@ class AgentW(Agent):
         # Restore original environment
         self.environment = environment_copy
 
-        # Return simulation
-        return trace, policy
+        # Return the policy
+        return policy
 
-    def evaluate_policy(self, policy: dict, tolerance: float = 0.) -> Dict:
+    def evaluate_policy(self, policy: list, tolerance: float = 0.) -> Dict:
 
         # Initialize all vectors to zero
         vectors = {s: self.environment.default_reward.zero_vector for s in policy.keys()}

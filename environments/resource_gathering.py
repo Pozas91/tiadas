@@ -97,16 +97,15 @@ class ResourceGathering(EnvMesh):
 
         if self.warning_action(state=previous_state, action=action) and self.current_state[0] == self.home_position:
             reward[0] = -1
-
-        # Check if is final state
-        final = self.is_final()
-
-        # Check is_final
-        if final or self.current_state in self.checkpoints_states:
-            reward[1], reward[2] = self.current_state[1]
+        # If we reach any checkpoint
+        elif self.current_state in self.checkpoints_states:
+            reward[1:3] = self.current_state[1]
 
         # Set extra
         info = {}
+
+        # In this environment always return False
+        final = self.is_final()
 
         return self.current_state, reward, final, info
 
@@ -209,9 +208,9 @@ class ResourceGathering(EnvMesh):
         reward = self.default_reward.copy()
 
         if self.warning_action(state=state, action=action) and next_state[0] == self.home_position:
-            reward[0], reward[1], reward[2] = -1, 0, 0
+            reward[:] = -1, 0, 0
         elif next_state in self.checkpoints_states:
-            reward[1], reward[2] = next_state[1]
+            reward[1:3] = next_state[1]
 
         return reward
 
@@ -227,6 +226,10 @@ class ResourceGathering(EnvMesh):
     def reachable_states(self, state: tuple, action: int) -> set:
 
         reachable_states = set()
+
+        # If current state is on checkpoints (in home position with any resource) then reset resources
+        if state in self.checkpoints_states:
+            state = (state[0], (0, 0))
 
         if (state[0] == (3, 1) or state[0] == (3, 0)) and action == self.actions['UP']:
             reachable_states.add(((3, 0), state[1]))

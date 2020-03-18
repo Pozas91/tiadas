@@ -6,6 +6,7 @@ import os
 import time
 from pathlib import Path
 from pprint import pprint
+from typing import Tuple, List, Dict
 
 import matplotlib
 import numpy as np
@@ -15,7 +16,7 @@ import utils.miscellaneous as um
 import utils.models as u_models
 from configurations.paths import dumps_path
 from environments import Environment
-from models import GraphType, AgentType, EvaluationMechanism, Vector
+from models import GraphType, AgentType, Vector
 
 
 class Agent:
@@ -315,7 +316,7 @@ class Agent:
         # Return path from path name
         return conf.models_path.joinpath(filename)
 
-    def recover_policy(self, evaluation_mechanism: EvaluationMechanism, **kwargs) -> dict:
+    def recover_policy(self, initial_state: tuple, objective_vector: Vector, **kwargs) -> Tuple[List, Dict]:
         """
         Simulate a walking of the agent, and return a dictionary with each state related with an action.
         :return:

@@ -326,3 +326,163 @@ class TestResourceGatheringLimit(TestResourceGathering):
 
         next_state = self.environment.next_state(action=self.environment.actions['UP'])
         self.assertEqual(((4, 1), (0, 1), False), next_state)
+
+    def test_reachable_states(self):
+
+        limit_x = (self.environment.observation_space[0][0].n - 1)
+        limit_y = (self.environment.observation_space[0][1].n - 1)
+
+        # For any state the following happens
+        for state in self.environment.states():
+
+            # Decompose state
+            position, objects, attacked = state
+
+            # Decompose elements
+            (x, y) = position
+            (gold, gems) = objects
+
+            # Go to UP
+            reachable_states = self.environment.reachable_states(state=state, action=self.environment.actions['UP'])
+            reachable_states_len = len(reachable_states)
+
+            expected_reachable_states = set()
+            expected_reachable_states_len = 1
+
+            if position == (2, 2):
+                expected_reachable_states_len = 2
+                expected_reachable_states.add(((2, 4), (0, 0), True))
+                expected_reachable_states.add(((2, 1), objects, False))
+
+            elif position == (3, 1) or position == (3, 0):
+                expected_reachable_states_len = 2
+                expected_reachable_states.add(((2, 4), (0, 0), True))
+                expected_reachable_states.add(((3, 0), objects, False))
+
+            elif position == (4, 2):
+                expected_reachable_states.add(((x, y - 1), (gold, 1), False))
+
+            elif position == (2, 1):
+                expected_reachable_states.add(((x, y - 1), (1, gems), False))
+
+            elif y <= 0:
+                expected_reachable_states.add(((x, y), objects, False))
+
+            elif y > 0:
+                expected_reachable_states.add(((x, y - 1), objects, False))
+
+            self.assertEqual(expected_reachable_states_len, reachable_states_len)
+            self.assertTrue(
+                all(
+                    element in expected_reachable_states for element in reachable_states
+                ) and
+                all(
+                    element in reachable_states for element in expected_reachable_states
+                )
+            )
+
+            # Go to RIGHT
+            reachable_states = self.environment.reachable_states(state=state, action=self.environment.actions['RIGHT'])
+            reachable_states_len = len(reachable_states)
+
+            expected_reachable_states = set()
+            expected_reachable_states_len = 1
+
+            if position == (2, 0):
+                expected_reachable_states_len = 2
+                expected_reachable_states.add(((2, 4), (0, 0), True))
+                expected_reachable_states.add(((3, 0), objects, False))
+
+            elif position == (1, 1):
+                expected_reachable_states_len = 2
+                expected_reachable_states.add(((2, 4), (0, 0), True))
+                expected_reachable_states.add(((2, 1), objects, False))
+
+            elif position == (3, 1):
+                expected_reachable_states.add(((x + 1, y), (gold, 1), False))
+
+            elif position == (1, 0):
+                expected_reachable_states.add(((x + 1, y), (1, gems), False))
+
+            elif x >= limit_x:
+                expected_reachable_states.add(((x, y), objects, False))
+
+            elif x < limit_x:
+                expected_reachable_states.add(((x + 1, y), objects, False))
+
+            self.assertEqual(expected_reachable_states_len, reachable_states_len)
+            self.assertTrue(
+                all(
+                    element in expected_reachable_states for element in reachable_states
+                ) and
+                all(
+                    element in reachable_states for element in expected_reachable_states
+                )
+            )
+
+            # Go to DOWN
+            reachable_states = self.environment.reachable_states(state=state, action=self.environment.actions['DOWN'])
+            reachable_states_len = len(reachable_states)
+
+            expected_reachable_states = set()
+            expected_reachable_states_len = 1
+
+            if position == (2, 0):
+                expected_reachable_states_len = 2
+                expected_reachable_states.add(((2, 4), (0, 0), True))
+                expected_reachable_states.add(((2, 1), objects, False))
+
+            elif position == (4, 0):
+                expected_reachable_states.add(((x, y + 1), (gold, 1), False))
+
+            elif y >= limit_y:
+                expected_reachable_states.add(((x, y), objects, False))
+
+            elif y < limit_y:
+                expected_reachable_states.add(((x, y + 1), objects, False))
+
+            self.assertEqual(expected_reachable_states_len, reachable_states_len)
+            self.assertTrue(
+                all(
+                    element in expected_reachable_states for element in reachable_states
+                ) and
+                all(
+                    element in reachable_states for element in expected_reachable_states
+                )
+            )
+
+            # Go to LEFT
+            reachable_states = self.environment.reachable_states(state=state, action=self.environment.actions['LEFT'])
+            reachable_states_len = len(reachable_states)
+
+            expected_reachable_states = set()
+            expected_reachable_states_len = 1
+
+            if position == (4, 0):
+                expected_reachable_states_len = 2
+                expected_reachable_states.add(((2, 4), (0, 0), True))
+                expected_reachable_states.add(((3, 0), objects, False))
+
+            elif position == (3, 1):
+                expected_reachable_states_len = 2
+                expected_reachable_states.add(((2, 4), (0, 0), True))
+                expected_reachable_states.add(((2, 1), objects, False))
+
+            elif position == (3, 0):
+                expected_reachable_states.add(((x - 1, y), (1, gems), False))
+
+            elif x <= 0:
+                expected_reachable_states.add(((x, y), objects, False))
+
+            elif x > 0:
+                expected_reachable_states.add(((x - 1, y), objects, False))
+
+            self.assertEqual(expected_reachable_states_len, reachable_states_len)
+            self.assertTrue(
+                all(
+                    element in expected_reachable_states for element in reachable_states
+                ) and
+                all(
+                    element in reachable_states for element in expected_reachable_states
+                )
+            )

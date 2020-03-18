@@ -28,7 +28,6 @@ class TestAgent(unittest.TestCase):
 
         # All agents must be have next attributes
         self.assertTrue(hasattr(self.agent, 'gamma'))
-        self.assertTrue(hasattr(self.agent, 'epsilon'))
         self.assertTrue(hasattr(self.agent, 'environment'))
         self.assertTrue(hasattr(self.agent, 'max_steps'))
         self.assertTrue(hasattr(self.agent, 'steps'))

@@ -64,9 +64,6 @@ class ResourceGatheringEpisodic(ResourceGathering):
         # Initialize reward as vector
         reward = self.default_reward.copy()
 
-        # Extract previous state
-        previous_state = self.current_state
-
         # Update previous position
         self.current_state = self.next_state(action=action)
 
@@ -79,12 +76,12 @@ class ResourceGatheringEpisodic(ResourceGathering):
 
         # Final by timeout
         elif self.steps >= self.steps_limit:
-            reward[1], reward[2] = 0, 0
+            reward[:] = 0
             final = True
 
         # Another final
         elif final or self.current_state in self.checkpoints_states:
-            reward[1], reward[2] = self.current_state[1]
+            reward[1:3] = self.current_state[1]
             final = True
 
         # Set extra
@@ -94,7 +91,7 @@ class ResourceGatheringEpisodic(ResourceGathering):
 
     def next_state(self, action: int, state: tuple = None) -> tuple:
 
-        # Unpack complex state (position, objects(gold, gem))
+        # Unpack complex state (position, objects(gold, gem), attacked)
         position, objects, attacked = state if state else self.current_state
 
         # Calc next position
@@ -111,9 +108,7 @@ class ResourceGatheringEpisodic(ResourceGathering):
             objects = objects[0], 1
 
         elif next_position in self.enemies_positions and self.p_attack >= self.np_random.uniform():
-            next_position, objects, attacked = self.initial_state
-            next_position = self.home_position
-            attacked = True
+            next_position, objects, attacked = self.home_position, (0, 0), True
 
         return next_position, objects, attacked
 
@@ -133,12 +128,22 @@ class ResourceGatheringEpisodic(ResourceGathering):
 
     def transition_reward(self, state: tuple, action: int, next_state: tuple) -> Vector:
 
-        # Super method call
-        reward = super().transition_reward(state=state, action=action, next_state=next_state)
+        # Initialize reward as vector
+        reward = self.default_reward.copy()
+        # Unpack next state
+        _, _, attacked = next_state
+
+        # Check if has been attacked
+        if attacked:
+            reward[:] = -1, 0, 0
+
+        # Check if next state is on checkpoints states
+        elif next_state in self.checkpoints_states:
+            reward[1:3] = next_state[1]
 
         # Final timeout
-        if self.steps >= self.steps_limit:
-            reward[1], reward[2] = 0, 0
+        elif self.steps >= self.steps_limit:
+            reward[1:3] = 0
 
         return reward
 
