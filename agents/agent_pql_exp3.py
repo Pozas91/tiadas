@@ -39,7 +39,7 @@ class AgentPQLEXP3(AgentPQLEXP):
 
         # calculate array of accumulated credit
         accumulation = np.zeros(n)
-        summation = 0  # al final debería ser s + nk
+        summation = 0  # al final debería ser state + nk
         for i in range(n):
             summation += info[i][1] + k
             accumulation[i] = summation
@@ -90,7 +90,7 @@ class AgentPQLEXP3(AgentPQLEXP):
 
         s2 = s + n * k  # suma de los creditos suavizados
 
-        # print('n: {} s: {} e: {} k: {}'.format (n, s, e, k))
+        # print('n: {} state: {} e: {} k: {}'.format (n, state, e, k))
 
         # calculate array accumulated probabilites
         acu = np.zeros(n)

@@ -17,7 +17,7 @@ class VectorDecimal(Vector):
 
     def __init__(self, components):
         """
-        Vector's init
+        Vector'state init
         :param components: a numpy array, list or tuple of dtype items
         """
 
@@ -179,7 +179,7 @@ class VectorDecimal(Vector):
                 if v2_dominate:
                     return Dominance.otherwise
 
-            # v1's component_v1 is dominated by v2
+            # v1'state component_v1 is dominated by v2
             elif a < b:
                 v2_dominate = True
 

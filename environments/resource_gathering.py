@@ -1,6 +1,6 @@
 """
 An agent begins at the home location in a 2D grid, and can move one square at a time in each of the four cardinal
-directions. The agent's task is to collect either or both of two resources (gold and gems) which are available at fixed
+directions. The agent'state task is to collect either or both of two resources (gold and gems) which are available at fixed
 locations, and return home with these resources. The environment contains two locations at which an enemy attack may
 occur, with a 10% probability. If an attack happens, the agent loses any resources currently being carried and is
 returned to the home location. The reward vector is ordered as [enemy, gold, gems] and there are four possible rewards
@@ -33,7 +33,7 @@ class ResourceGathering(EnvMesh):
 
     def __init__(self, initial_state: tuple = ((2, 4), (0, 0)), default_reward: tuple = (0, 0, 0), seed: int = 0,
                  p_attack: float = 0.1, mesh_shape: tuple = (5, 5), gold_positions: frozenset = frozenset({(2, 0)}),
-                 gem_positions: frozenset = frozenset({(4, 1)})):
+                 gem_positions: frozenset = frozenset({(4, 1)}), observation_space: gym.spaces = None):
         """
         :param initial_state:
         :param default_reward: (enemy_attack, gold, gems)
@@ -43,17 +43,18 @@ class ResourceGathering(EnvMesh):
 
         default_reward = Vector(default_reward)
 
-        # Build the observation space (position(x, y), quantity(gold, gems))
-        observation_space = gym.spaces.Tuple(
-            (
-                gym.spaces.Tuple(
-                    (gym.spaces.Discrete(mesh_shape[0]), gym.spaces.Discrete(mesh_shape[1]))
-                ),
-                gym.spaces.Tuple(
-                    (gym.spaces.Discrete(2), gym.spaces.Discrete(2))
+        if observation_space is None:
+            # Build the observation space (position(x, y), quantity(gold, gems))
+            observation_space = gym.spaces.Tuple(
+                (
+                    gym.spaces.Tuple(
+                        (gym.spaces.Discrete(mesh_shape[0]), gym.spaces.Discrete(mesh_shape[1]))
+                    ),
+                    gym.spaces.Tuple(
+                        (gym.spaces.Discrete(2), gym.spaces.Discrete(2))
+                    )
                 )
             )
-        )
 
         # Define final states
         finals = frozenset()
@@ -72,9 +73,11 @@ class ResourceGathering(EnvMesh):
         self.enemies_positions = {(3, 0), (2, 1)}
         self.p_attack = p_attack
         self.home_position = (2, 4)
-        self.attacked = False
 
-        self.checkpoints_states = set(itertools.product(self.home_position, {(1, 0), (0, 1), (1, 1)}))
+        self.checkpoints_states = self._checkpoints_states()
+
+    def _checkpoints_states(self) -> set:
+        return set(itertools.product({self.home_position}, {(1, 0), (0, 1), (1, 1)}))
 
     def step(self, action: int) -> (tuple, Vector, bool, dict):
         """
@@ -83,27 +86,26 @@ class ResourceGathering(EnvMesh):
         :return:
         """
 
-        # Set attacked to False
-        self.attacked = False
-
         # Initialize reward as vector
         reward = self.default_reward.copy()
+
+        # Extract previous state
+        previous_state = self.current_state
 
         # Update previous position
         self.current_state = self.next_state(action=action)
 
-        if self.attacked:
+        if self.warning_action(state=previous_state, action=action) and self.current_state[0] == self.home_position:
             reward[0] = -1
-
-        # Check if is final state
-        final = self.is_final()
-
-        # Check is_final
-        if final or self.current_state in self.checkpoints_states:
-            reward[1], reward[2] = self.current_state[1]
+        # If we reach any checkpoint
+        elif self.current_state in self.checkpoints_states:
+            reward[1:3] = self.current_state[1]
 
         # Set extra
         info = {}
+
+        # In this environment always return False
+        final = self.is_final()
 
         return self.current_state, reward, final, info
 
@@ -128,7 +130,6 @@ class ResourceGathering(EnvMesh):
         elif next_position in self.enemies_positions and self.p_attack >= self.np_random.uniform():
             next_position, objects = self.initial_state
             next_position = self.home_position
-            self.attacked = True
 
         return next_position, objects
 
@@ -142,7 +143,6 @@ class ResourceGathering(EnvMesh):
         self.seed(seed=self.initial_seed)
 
         self.current_state = self.initial_state
-        self.attacked = False
 
         return self.current_state
 
@@ -179,14 +179,15 @@ class ResourceGathering(EnvMesh):
         ).difference(
             self.finals
         ).difference(
-            # Cannot be in gold positions without gold.
             set(
+                # Cannot be in gold positions without gold.
                 itertools.product(self.gold_positions, {(0, 0), (0, 1)})
             ).union(
                 # Cannot be in gem positions without gem.
-                set(
-                    itertools.product(self.gem_positions, {(0, 0), (1, 0)})
-                )
+                itertools.product(self.gem_positions, {(0, 0), (1, 0)})
+            ).union(
+                # Cannot be in home position with gem and/or gold.
+                self.checkpoints_states
             )
         )
 
@@ -206,16 +207,10 @@ class ResourceGathering(EnvMesh):
         # Initialize reward as vector
         reward = self.default_reward.copy()
 
-        # Default attacked is false
-        self.attacked = False
-
         if self.warning_action(state=state, action=action) and next_state[0] == self.home_position:
-            self.attacked = True
-
-        if self.attacked:
-            reward[0], reward[1], reward[2] = -1, 0, 0
+            reward[:] = -1, 0, 0
         elif next_state in self.checkpoints_states:
-            reward[1], reward[2] = next_state[1]
+            reward[1:3] = next_state[1]
 
         return reward
 
@@ -231,6 +226,10 @@ class ResourceGathering(EnvMesh):
     def reachable_states(self, state: tuple, action: int) -> set:
 
         reachable_states = set()
+
+        # If current state is on checkpoints (in home position with any resource) then reset resources
+        if state in self.checkpoints_states:
+            state = (state[0], (0, 0))
 
         if (state[0] == (3, 1) or state[0] == (3, 0)) and action == self.actions['UP']:
             reachable_states.add(((3, 0), state[1]))

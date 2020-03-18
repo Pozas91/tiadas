@@ -131,7 +131,7 @@ class BonusWorld(EnvMesh):
         if not self.observation_space[0].contains(next_position) or not is_valid:
             next_position = position
 
-        # If agent is in pit, it's returned at initial position and deactivate the bonus.
+        # If agent is in pit, it'state returned at initial position and deactivate the bonus.
         if next_position in self.pits:
             next_position, bonus = self.initial_state
             bonus = False

@@ -89,7 +89,7 @@ class AgentA1(AgentRL):
         :return:
         """
 
-        # Get parent's model
+        # Get parent'state model
         model = super().get_dict_model()
 
         # Own properties
@@ -113,7 +113,7 @@ class AgentA1(AgentRL):
         })
 
         model.get('train_data').update({
-            's': [
+            'state': [
                 dict(key=list(state), value={
                     'key': int(action), 'value': v2
                 }) for state, v in self.s.items() for action, v2 in v.items()
@@ -178,10 +178,10 @@ class AgentA1(AgentRL):
                     }
                 })
 
-        # S(s) -> All known states with its action for the position given.
+        # S(state) -> All known states with its action for the position given.
         pair_action_states_known_by_state = self.s.get(self.state)
 
-        # S(s, a) -> All known states for position and action given.
+        # S(state, a) -> All known states for position and action given.
         states_known_by_state = pair_action_states_known_by_state.get(action, list())
 
         # I_s_k
@@ -192,14 +192,14 @@ class AgentA1(AgentRL):
 
         # Check if sk not in S, and I_s_k is not empty
         if not next_state_is_in_states_known and relevant_indexes_of_next_state:
-            # Q_n = N_n(s, a)
+            # Q_n = N_n(state, a)
             self.new_operation(state=self.state, action=action, reward=reward, next_state=next_state)
 
         elif next_state_is_in_states_known:
-            # Q_n = U_n(s, a)
+            # Q_n = U_n(state, a)
             self.update_operation(state=self.state, action=action, reward=reward, next_state=next_state)
 
-        # Check if is necessary update V(s) to improve the performance
+        # Check if is necessary update V(state) to improve the performance
         self.check_if_need_update_v()
 
         # Update position
@@ -438,7 +438,7 @@ class AgentA1(AgentRL):
                 (0,): IndexVector(index=a, vector=self.initial_q_value)
             })
 
-            # for each Q in Q_set(s, a)
+            # for each Q in Q_set(state, a)
             for q in q_set.values():
                 all_q.append(IndexVector(index=a, vector=q.vector))
 
@@ -477,7 +477,7 @@ class AgentA1(AgentRL):
                 (0,): IndexVector(index=a, vector=self.initial_q_value)
             })
 
-            # for each Q in Q_set(s, a)
+            # for each Q in Q_set(state, a)
             for q in q_set.values():
                 all_q.append(IndexVector(index=a, vector=q.vector))
 
@@ -525,10 +525,10 @@ class AgentA1(AgentRL):
         # Index counter
         index_counter = self.indexes_counter.get(state)
 
-        # Data position Q(s)
+        # Data position Q(state)
         data_state = self.q.get(state)
 
-        # Data action Q(s, a)
+        # Data action Q(state, a)
         data_action = data_state.get(action, dict())
 
         # Control update flag
@@ -545,25 +545,25 @@ class AgentA1(AgentRL):
             # alpha * (reward + gamma * associate_vector)
             next_q = (reward + v.get(next_state_index) * self.gamma) * self.alpha
 
-            # Q_{n - 1}(s, a, p)
+            # Q_{n - 1}(state, a, p)
             previous_q = data_state.get(action, {}).get(p)
 
-            # If not exists Q_{n - 1}(s, a, p), then create a new IndexVector with the next index available.
+            # If not exists Q_{n - 1}(state, a, p), then create a new IndexVector with the next index available.
             if not previous_q:
-                # Q_{n - 1}(s, a, p)
+                # Q_{n - 1}(state, a, p)
                 previous_q = self.default_vector_value(index=index_counter)
 
                 # Update index counter
                 index_counter += 1
                 self.indexes_counter[state] = index_counter
 
-            # (1 - alpha) * Q_{n - 1}(s, a, p)
+            # (1 - alpha) * Q_{n - 1}(state, a, p)
             previous_q = previous_q * (1 - self.alpha)
 
-            # Q(s, a)
+            # Q(state, a)
             q = IndexVector(index=previous_q.index, vector=previous_q.vector + next_q)
 
-            # Q(s, a, p_prime)
+            # Q(state, a, p_prime)
             data_action.update({p_prime: q})
 
             # Need delete previous index of table if is necessary
@@ -601,10 +601,10 @@ class AgentA1(AgentRL):
         # Index counter
         index_counter = self.indexes_counter[state]
 
-        # Data position Q(s)
+        # Data position Q(state)
         data_state = self.q[state]
 
-        # Data action position Q(s, a)
+        # Data action position Q(state, a)
         data_action = data_state.get(action, dict())
 
         # Control update flag
@@ -625,25 +625,25 @@ class AgentA1(AgentRL):
             # alpha * (reward + gamma * associate_vector)
             next_q = (reward + v[next_state_reference_vector_index] * self.gamma) * self.alpha
 
-            # Q_{n - 1}(s, a, p)
+            # Q_{n - 1}(state, a, p)
             previous_q = data_state.get(action, {}).get(p)
 
-            # If not exists Q_{n - 1}(s, a, p), then create a new IndexVector with the next index available.
+            # If not exists Q_{n - 1}(state, a, p), then create a new IndexVector with the next index available.
             if not previous_q:
-                # Q_{n - 1}(s, a, p)
+                # Q_{n - 1}(state, a, p)
                 previous_q = self.default_vector_value(index_counter)
 
                 # Update index counter
                 index_counter += 1
                 self.indexes_counter[state] = index_counter
 
-            # (1 - alpha) * Q_{n - 1}(s, a, p)
+            # (1 - alpha) * Q_{n - 1}(state, a, p)
             previous_q = previous_q * (1 - self.alpha)
 
-            # Q(s, a)
+            # Q(state, a)
             q = IndexVector(index=previous_q.index, vector=previous_q.vector + next_q)
 
-            # Q(s, a, p)
+            # Q(state, a, p)
             data_action.update({p: q})
             data_state.update({action: data_action})
 
@@ -664,7 +664,7 @@ class AgentA1(AgentRL):
 
     def default_vector_value(self, index):
         """
-        This method get a default value if a vector doesn't exist. It's possible change the zero vector for a
+        This method get a default value if a vector doesn't exist. It'state possible change the zero vector for a
         heuristic function.
         :param index:
         :return:
@@ -675,7 +675,7 @@ class AgentA1(AgentRL):
 
         # For each position that need be updated
         for state in self.states_to_update:
-            # Get Q(s)
+            # Get Q(state)
             q_s = self.q[state]
 
             # List accumulative to save all vectors
@@ -689,10 +689,10 @@ class AgentA1(AgentRL):
 
             # for each action available in position given
             for a in self.environment.action_space:
-                # Q(s, a)
+                # Q(state, a)
                 q_list += q_s.get(a, dict()).values()
 
-            # Get all non dominated vectors -> V(s)
+            # Get all non dominated vectors -> V(state)
             non_dominated_vectors, _ = self.environment.default_reward.m3_max_2_lists_with_buckets(vectors=q_list)
 
             v = dict()
@@ -704,7 +704,7 @@ class AgentA1(AgentRL):
                 # Set V values (Getting vector with lower index) (simplified)
                 v.update({bucket[0].index: bucket[0].vector})
 
-            # Update V(s)
+            # Update V(state)
             self.v.update({state: v})
 
             # Restore position
@@ -715,7 +715,7 @@ class AgentA1(AgentRL):
 
     def relevant_indexes_of_state(self, state: object) -> set:
         """
-        Return a set of relevant indexes from V(s)
+        Return a set of relevant indexes from V(state)
         :param state:
         :return:
         """
@@ -757,7 +757,7 @@ class AgentA1(AgentRL):
 
     def json_filename(self) -> str:
         """
-        Generate a filename for json dump file
+        Generate a filename for json save path
         :return:
         """
         # Get environment name in snake case
@@ -798,10 +798,10 @@ class AgentA1(AgentRL):
     @staticmethod
     def load(filename: str = None, environment: Environment = None, evaluation_mechanism: EvaluationMechanism = None):
         """
-        Load json string from file and convert to dictionary.
+        Load json string from path and convert to dictionary.
         :param evaluation_mechanism: It is an evaluation mechanism that you want load
         :param environment: It is an environment that you want load.
-        :param filename: If is None, then get last timestamp file from 'dumps' dir.
+        :param filename: If is None, then get last timestamp path from 'dumps' dir.
         :return:
         """
 
@@ -835,24 +835,24 @@ class AgentA1(AgentRL):
             # Sort list of files
             files.sort()
 
-            # At least must have a file
+            # At least must have a path
             if files:
                 # Get last filename
                 filename = files[-1]
 
-        # Prepare file path
+        # Prepare path path
         file_path = AgentA1.models_dumps_file_path(filename)
 
-        # Read file from path
+        # Read path from path
         try:
             file = file_path.open(mode='r', encoding='UTF-8')
         except FileNotFoundError:
             return None
 
-        # Load structured train_data from indicated file.
+        # Load structured train_data from indicated path.
         model = json.load(file)
 
-        # Close file
+        # Close path
         file.close()
 
         # Get meta-train_data
@@ -974,9 +974,9 @@ class AgentA1(AgentRL):
                 previous_data.append(vector_index)
                 v.update({key: previous_data})
 
-        # Unpack 's' train_data
+        # Unpack 'state' train_data
         s = dict()
-        for item in model_data.get('s'):
+        for item in model_data.get('state'):
             # Convert to tuples to hash
             key = um.lists_to_tuples(item.get('key'))
             value = item.get('value')

@@ -1,6 +1,6 @@
 """
 An agent begins at the home location in a 2D grid, and can move one square at a time in each of the four cardinal
-directions. The agent's task is to collect either or both of two resources (gold and gems) which are available at fixed
+directions. The agent'state task is to collect either or both of two resources (gold and gems) which are available at fixed
 locations, and return home with these resources. The environment contains two locations at which an enemy attack may
 occur, with a 10% probability. If an attack happens, the agent loses any resources currently being carried and is
 returned to the home location. The reward vector is ordered as [enemy, gold, gems] and there are four possible rewards

@@ -1,5 +1,5 @@
 """
-Unit tests file where testing BuridanAss environment.
+Unit tests path where testing BuridanAss environment.
 """
 import gym
 

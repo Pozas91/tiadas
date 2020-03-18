@@ -66,7 +66,7 @@ class AgentRL(Agent):
         """
         return self.environment.action_space.sample()
 
-    def do_iteration(self, graph_type: GraphType) -> None:
+    def do_iteration(self, graph_type: GraphType = None) -> None:
         self.episode(graph_type=graph_type)
 
     def episode(self, graph_type: GraphType) -> None:
@@ -157,7 +157,7 @@ class AgentRL(Agent):
 
         return model
 
-    def train(self, graph_type: GraphType, limit: int):
+    def train(self, graph_type: GraphType, **kwargs):
 
         self.reference_time_to_train = time.time()
 
@@ -165,8 +165,19 @@ class AgentRL(Agent):
             # Check if the graph needs to be updated (Before training)
             self.update_graph(graph_type=graph_type)
 
-        if graph_type is GraphType.TIME:
-            self.time_train(execution_time=limit, graph_type=graph_type)
+        # Extract limit information
+        limit = kwargs.get('limit', None)
+
+        if limit is None:
+            tolerance = kwargs.get('tolerance', None)
+
+            if not tolerance:
+                raise ValueError('Must indicated tolerance to convergence training.')
+
+            self.convergence_train(tolerance=tolerance, graph_type=graph_type)
+
+        elif graph_type is GraphType.TIME:
+            self.time_train(execution_time=limit)
         elif graph_type is GraphType.EPISODES:
             self.episode_train(episodes=limit, graph_type=graph_type)
         else:
@@ -192,6 +203,35 @@ class AgentRL(Agent):
     def do_step(self) -> bool:
         """
         Does a step, and return if the process continues.
+        :return:
+        """
+        raise NotImplemented
+
+    def time_train(self, execution_time):
+        """
+        Return this agent trained during `time_execution` seconds.
+        :param execution_time:
+        :return:
+        """
+
+        while (time.time() - self.reference_time_to_train) < execution_time:
+            # Do an iteration
+            self.do_iteration()
+
+            # Get time after
+            current_time = time.time()
+
+            if (current_time - self.last_time_to_get_graph_data) > self.interval_to_get_data:
+                self.update_graph(graph_type=GraphType.TIME)
+
+                # Update last execution
+                self.last_time_to_get_graph_data = current_time
+
+    def convergence_train(self, tolerance: float, graph_type: GraphType = None):
+        """
+        Return this agent trained until get convergence.
+        :param tolerance:
+        :param graph_type:
         :return:
         """
         raise NotImplemented

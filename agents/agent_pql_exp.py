@@ -172,7 +172,7 @@ class AgentPQLEXP(AgentPQL):
             # Get Q-set from position given for each possible action.
             q_set = self.q_set(state=self.state, action=a)
 
-            # for each Q in Q_set(s, a)
+            # for each Q in Q_set(state, a)
             for q in q_set:
                 all_q.append(IndexVector(index=a, vector=q))
 
@@ -215,7 +215,7 @@ class AgentPQLEXP(AgentPQL):
             # Get Q-set from position given for each possible action.
             q_set = self.q_set(state=self.state, action=a)
 
-            # for each Q in Q_set(s, a)
+            # for each Q in Q_set(state, a)
             for q in q_set:
                 all_q.append(IndexVector(index=a, vector=q))
 
@@ -257,7 +257,7 @@ class AgentPQLEXP(AgentPQL):
             # Get Q-set from position given for each possible action.
             q_set = self.q_set(state=self.state, action=a)
 
-            # for each Q in Q_set(s, a)
+            # for each Q in Q_set(state, a)
             for q in q_set:
                 all_q.append(IndexVector(index=a, vector=q))
 

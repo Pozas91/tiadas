@@ -1,5 +1,5 @@
 """
-Unit tests file where testing BonusWorld environment.
+Unit tests path where testing BonusWorld environment.
 """
 
 from environments import BonusWorldAcyclic
@@ -232,7 +232,7 @@ class TestBonusWorldAcyclic(TestBonusWorld):
             ((0, 7), False), action=self.environment.actions['RIGHT']
         )
 
-        # Doesn't reset to initial state (it's a final state)
+        # Doesn't reset to initial state (it'state a final state)
         self.assertTrue(len(reachable_states) == 1)
         self.assertIn(((1, 7), False), reachable_states)
 

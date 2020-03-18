@@ -1,5 +1,5 @@
 """
-Unit tests file where testing SpaceExploration environment.
+Unit tests path where testing SpaceExploration environment.
 """
 
 import utils.environments as ue

@@ -1,5 +1,5 @@
 """
-Unit tests file where testing Vector model.
+Unit tests path where testing Vector model.
 """
 
 import math

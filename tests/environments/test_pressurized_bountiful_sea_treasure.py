@@ -1,5 +1,5 @@
 """
-Unit tests file where testing test PressurizedBountifulSeaTreasure environment.
+Unit tests path where testing test PressurizedBountifulSeaTreasure environment.
 """
 
 from gym import spaces

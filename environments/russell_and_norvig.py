@@ -1,6 +1,6 @@
 """
 Mesh problem with a 4x3 grid. We have an agent that try reached goal avoiding a trap. The environment has a p_stochastic
-list of probabilities that can change agent's action to another.
+list of probabilities that can change agent'state action to another.
 """
 
 import utils.environments as ue

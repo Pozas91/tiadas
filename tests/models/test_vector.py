@@ -1,5 +1,5 @@
 """
-Unit tests file where testing vector model.
+Unit tests path where testing vector model.
 """
 
 import random as rnd

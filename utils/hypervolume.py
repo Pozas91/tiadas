@@ -36,13 +36,5 @@ def calc_hypervolume(vectors: list, reference: Vector) -> float:
     :param reference: Reference vector to calc hypervolume
     :return: hypervolume area.
     """
-
-    # if reference is None:
-    #     # Get min of all axis, and subtract 1.
-    #     reference = (np.min(vectors, axis=0) - 1)
-
     # Multiply by -1, to convert maximize problem into minimize problem.
-    reference = np.multiply(reference, -1)
-    vectors = np.multiply(vectors, -1)
-
-    return pg.hypervolume(vectors).compute(reference)
+    return pg.hypervolume([v.components * -1 for v in vectors]).compute(reference.components * -1)

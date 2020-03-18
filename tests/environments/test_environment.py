@@ -1,5 +1,5 @@
 """
-Unit tests file where testing Environment.
+Unit tests path where testing Environment.
 """
 
 import unittest

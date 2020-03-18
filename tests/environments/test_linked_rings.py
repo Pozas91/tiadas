@@ -1,5 +1,5 @@
 """
-Unit tests file where testing LinkedRings environment.
+Unit tests path where testing LinkedRings environment.
 """
 
 from gym import spaces

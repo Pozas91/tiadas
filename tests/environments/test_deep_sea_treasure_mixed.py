@@ -1,5 +1,5 @@
 """
-Unit tests file where testing DeepSeaTreasure environment.
+Unit tests path where testing DeepSeaTreasure environment.
 """
 
 from environments import DeepSeaTreasureMixed

@@ -1,5 +1,5 @@
 """
-Unit tests file where testing test ResourceGathering environment.
+Unit tests path where testing test ResourceGathering environment.
 """
 import gym
 
@@ -24,7 +24,6 @@ class TestResourceGathering(TestEnvMesh):
         self.assertTrue(hasattr(self.environment, 'gem_positions'))
         self.assertTrue(hasattr(self.environment, 'enemies_positions'))
         self.assertTrue(hasattr(self.environment, 'home_position'))
-        self.assertTrue(hasattr(self.environment, 'attacked'))
 
         # Observation space
         self.assertEqual(
@@ -50,14 +49,12 @@ class TestResourceGathering(TestEnvMesh):
 
         # Set current position to random position
         self.environment.current_state = self.environment.observation_space.sample()
-        self.environment.attacked = True
 
         # Reset environment
         self.environment.reset()
 
         # Asserts
         self.assertEqual(self.environment.initial_state, self.environment.current_state)
-        self.assertEqual(False, self.environment.attacked)
 
     def test__next_state(self):
         """
@@ -284,7 +281,7 @@ class TestResourceGathering(TestEnvMesh):
         self.assertFalse(is_final)
 
     def test_states_size(self):
-        self.assertEqual(96, len(self.environment.states()))
+        self.assertEqual(93, len(self.environment.states()))
 
     def test_transition_reward(self):
 
@@ -312,7 +309,7 @@ class TestResourceGathering(TestEnvMesh):
 
                         self.assertEqual(expected_reward, reward)
 
-                    # It's attacked
+                    # It'state attacked
                     elif self.environment.warning_action(state=state, action=a) and next_position == (2, 4):
                         self.assertEqual([-1, 0, 0], reward)
 

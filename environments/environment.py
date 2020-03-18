@@ -127,7 +127,7 @@ class Environment(gym.Env):
         """
 
         # Reset to initial seed
-        self.seed(seed=self.initial_seed)
+        # self.seed(seed=self.initial_seed)
 
         self.current_state = self.initial_state
         return self.current_state
@@ -212,7 +212,7 @@ class Environment(gym.Env):
 
     def reachable_states(self, state: object, action: int) -> set:
         """
-        Return all reachable states for pair (s, a) given.
+        Return all reachable states for pair (state, a) given.
         :param state:
         :param action:
         :return:

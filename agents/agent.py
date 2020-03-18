@@ -6,14 +6,17 @@ import os
 import time
 from pathlib import Path
 from pprint import pprint
+from typing import Tuple, List, Dict
 
 import matplotlib
 import numpy as np
 
 import configurations as conf
 import utils.miscellaneous as um
+import utils.models as u_models
+from configurations.paths import dumps_path
 from environments import Environment
-from models import GraphType, AgentType
+from models import GraphType, AgentType, Vector
 
 
 class Agent:
@@ -25,7 +28,7 @@ class Agent:
     def __init__(self, environment: Environment, gamma: float = 1., seed: int = 0, states_to_observe: set = None,
                  max_steps: int = None, graph_types: set = None, initial_value: object = None):
         """
-        :param environment: the agent's environment.
+        :param environment: the agent'state environment.
         :param gamma: Discount factor
         :param seed: Seed used for np.random.RandomState method.
         :param states_to_observe: List of states from which graphical output is provided.
@@ -210,84 +213,112 @@ class Agent:
         model = self.get_dict_model()
         return json.dumps(model, indent=conf.json_indent)
 
-    def json_filename(self) -> str:
+    def default_filename(self) -> str:
         """
-        Generate a filename for json dump file
+        Return default filename
         :return:
         """
-        # Get environment name in snake case
-        env_name_snake = um.str_to_snake_case(self.environment.__class__.__name__)
 
-        # Get only first letter of each word
-        env_name_abbr = ''.join([word[0] for word in env_name_snake.split('_')])
+        # Get environment name in snake case, get only first letter of each word
+        env_str_abbr = ''.join(
+            word[0] for word in
+            um.str_to_snake_case(self.environment.__class__.__name__).split('_')
+        )
 
-        # Get evaluation mechanism in snake case
-        agent_name = um.str_to_snake_case(self.__class__.__name__).split('_')[1]
+        # Extract agent name
+        agent_str_abbr = um.str_to_snake_case(self.__class__.__name__).split('_')[-1]
 
         # Get timestamp
         timestamp = int(time.time())
 
-        return '{}_{}_{}'.format(agent_name, env_name_abbr, timestamp)
+        # Prepare default filename
+        return '{}/models/{}_{}_{}.bin'.format(
+            agent_str_abbr, env_str_abbr, timestamp, Vector.decimal_precision
+        )
 
-    def save(self, filename: str = None) -> None:
+    @staticmethod
+    def load(mode: str = 'binary', filename: str = None, **kwargs):
         """
-        Save model into json file.
-        :param filename: If is None, then get current timestamp as filename (defaults 'dumps' dir).
+        This method load an agent from filename given.
+        :param mode:
+        :param filename: If is None, then get last timestamp path from 'dumps/models' dir.
+        :return:
+        """
+
+        if mode == 'binary':
+            agent = u_models.load(path=dumps_path.joinpath(filename))
+        else:
+
+            if not filename:
+                try:
+                    # Get last path from models directory (higher timestamp)
+                    filename = sorted(
+                        filter(
+                            # Get only filenames for this agent (first part of name)
+                            lambda path: AgentType.from_string(path.name.split('_')[0]) is kwargs['agent_type'],
+                            os.scandir(conf.models_path)
+                        ),
+                        # Order filenames by timestamp (last part of name)
+                        key=lambda path: int(path.name.split('_')[-1])
+                    )[-1]
+                except Exception as error:
+                    print('Cannot read from {} directory because: {}'.format(conf.models_path, error))
+
+            # Read path from path
+            model_path = Path(filename)
+            model_file = model_path.open(mode='r', encoding='UTF-8')
+
+            # Load structured train_data from indicated path.
+            agent = json.load(model_file)
+
+            # Close path
+            model_file.close()
+
+        return agent
+
+    def save(self, mode: str = 'binary', filename: str = None, **kwargs):
+        """
+        Dumps model given into dumps directory
+        :param filename:
+        :param mode:
+        :param kwargs:
         :return:
         """
 
         if filename is None:
-            filename = self.json_filename()
+            filename = self.default_filename()
 
-        # Prepare file path
-        file_path = conf.models_path.joinpath(filename)
+        if mode == 'binary':
 
-        # If any parents doesn't exist, make it.
-        file_path.parent.mkdir(parents=True, exist_ok=True)
+            # Define file path
+            file_path = dumps_path.joinpath(filename)
 
-        # Get dict model
-        model = self.get_dict_model()
+            # Dumps agent
+            u_models.dump(path=file_path, model=self)
 
-        # Open file with filename in write mode with UTF-8 encoding.
-        with file_path.open(mode='w', encoding='UTF-8') as file:
-            json.dump(model, file, indent=conf.json_indent)
+        else:
 
-    @staticmethod
-    def load(filename: str = None, **kwargs) -> object:
-        """
-        This method load an agent from filename given.
-        :param filename: If is None, then get last timestamp file from 'dumps/models' dir.
-        :return:
-        """
+            # Prepare path path
+            file_path = conf.models_path.joinpath(filename)
 
-        if not filename:
-            try:
-                # Get last file from models directory (higher timestamp)
-                filename = sorted(
-                    filter(
-                        # Get only filenames for this agent (first part of name)
-                        lambda path: AgentType.from_string(path.name.split('_')[0]) is kwargs['agent_type'],
-                        os.scandir(conf.models_path)
-                    ),
-                    # Order filenames by timestamp (last part of name)
-                    key=lambda path: int(path.name.split('_')[-1])
-                )[-1]
-            except Exception as error:
-                print('Cannot read from {} directory because: {}'.format(conf.models_path, error))
+            # If any parents doesn't exist, make it.
+            file_path.parent.mkdir(parents=True, exist_ok=True)
 
-        # Read file from path
-        model_path = Path(filename)
-        model_file = model_path.open(mode='r', encoding='UTF-8')
+            # Get dict model
+            model = self.get_dict_model()
 
-        # Load structured train_data from indicated file.
-        model = json.load(model_file)
-
-        # Close file
-        model_file.close()
-
-        return model
+            # Open path with filename in write mode with UTF-8 encoding.
+            with file_path.open(mode='w', encoding='UTF-8') as file:
+                json.dump(model, file, indent=conf.json_indent)
 
     @staticmethod
     def models_dumps_file_path(filename: str) -> Path:
-        # Return path from file name
+        # Return path from path name
         return conf.models_path.joinpath(filename)
+
+    def recover_policy(self, initial_state: tuple, objective_vector: Vector, **kwargs) -> Tuple[List, Dict]:
+        """
+        Simulate a walking of the agent, and return a dictionary with each state related with an action.
+        :return:
+        """
+        raise NotImplemented

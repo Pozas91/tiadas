@@ -3,9 +3,12 @@ This class represent a vector of integers (int32) with some necessary features f
 """
 
 import math
+import operator
 from decimal import Decimal as D
 
 import numpy as np
+from scipy.spatial import ConvexHull
+from scipy.spatial.qhull import QhullError
 
 import utils.models as um
 from .dominance import Dominance
@@ -26,10 +29,9 @@ class Vector:
 
     def __init__(self, components):
         """
-        Vector's init
+        Vector'state init
         :param components: a numpy array, list or tuple of dtype items
         """
-
         self.components = np.array(components)
 
     def __getitem__(self, index):
@@ -58,6 +60,13 @@ class Vector:
         :return:
         """
         self.components[key] = value
+
+    def __abs__(self):
+        """
+        Return absolute value of components
+        :return:
+        """
+        return self.__class__(np.absolute(self.components))
 
     def __len__(self):
         """
@@ -286,7 +295,7 @@ class Vector:
                 if v2_dominate:
                     return Dominance.otherwise
 
-            # v1's component is dominated by v2
+            # v1'state component is dominated by v2
             elif a < b:
                 v2_dominate = True
 
@@ -309,9 +318,50 @@ class Vector:
             return Dominance.is_dominated
 
     @staticmethod
-    def m3_max(vectors: list) -> list:
+    def convex_hull(vectors: set) -> list:
         """
-        :param vectors : list of Vector objects, float values are assumed.
+        :param vectors: |vectors| >= 3
+            if |vectors| < 3, then return the vectors
+        :return:
+        """
+
+        # # Order vectors by the y-coordinate
+        # vectors.sort(key=lambda x: x[1])
+        #
+        # # The point in vectors with the minimum y-coordinate
+        # p0 = vectors.pop(0)
+        #
+        # return vectors
+
+        # Convert to list to make it indexable
+        vectors = list(vectors)
+
+        if len(vectors) >= 3:
+            # v_reference = vectors.pop()
+            #
+            # all_components = list()
+            #
+            # for v in vectors:
+            #     for i, component in enumerate(v_reference):
+            #         if len(all_components) < (i + 1):
+            #             all_components.append(list())
+            #
+            #         all_components[i].append(v[i] == v_reference[i])
+
+            try:
+                hull = ConvexHull(vectors, incremental=False)
+                vectors = list(operator.itemgetter(*hull.vertices)(vectors))
+            except QhullError as e:
+                # Do nothing
+                pass
+                # print('QhullError with vectors: {}'.format(vectors))
+
+        return vectors
+
+    @staticmethod
+    def m3_max(vectors: set) -> list:
+        """
+        :param vectors : set of Vector objects, float values are assumed.
 
         :return: a list with non-dominated vectors applying the m3 algorithm of
         Bentley, Clarkson and Levine (1990).
@@ -326,7 +376,7 @@ class Vector:
         non_dominated = list()
         vector_j = None
 
-        for idx_i, vector_i in enumerate(vectors):
+        for vector_i in vectors:
 
             discarded = False
             equals = False
@@ -383,9 +433,9 @@ class Vector:
         return non_dominated
 
     @staticmethod
-    def m3_max_2_lists(vectors: list) -> (list, list):
+    def m3_max_2_lists(vectors: set) -> (list, list):
         """
-        :param vectors : list of Vector objects.
+        :param vectors : set of Vector objects.
 
         :return: a list with non-dominated vectors applying the m3 algorithm of
         Bentley, Clarkson and Levine (1990).
@@ -404,7 +454,7 @@ class Vector:
         dominated = list()
         vector_j = None
 
-        for idx_i, vector_i in enumerate(vectors):
+        for vector_i in vectors:
 
             discarded = False
             equals = False
@@ -467,9 +517,9 @@ class Vector:
         return non_dominated, dominated
 
     @staticmethod
-    def m3_max_2_lists_not_duplicates(vectors: list) -> (list, list):
+    def m3_max_2_lists_not_duplicates(vectors: set) -> (list, list):
         """
-        :param vectors: list of Vector objects.
+        :param vectors: set of Vector objects.
 
         :return: a list with non-dominated vectors applying the m3 algorithm of
         Bentley, Clarkson and Levine (1990).
@@ -487,7 +537,7 @@ class Vector:
         dominated = list()
         vector_j = None
 
-        for idx_i, vector_i in enumerate(vectors):
+        for vector_i in vectors:
 
             # If vector_i is in non_dominated or dominated, not process it.
             if vector_i in non_dominated + dominated:
@@ -545,9 +595,9 @@ class Vector:
         return non_dominated, dominated
 
     @staticmethod
-    def m3_max_2_lists_with_buckets(vectors: list) -> (list, list):
+    def m3_max_2_lists_with_buckets(vectors: set) -> (list, list):
         """
-        :param vectors: list of Vector objects.
+        :param vectors: set of Vector objects.
 
         :return: a list with non-dominated vectors applying the m3 algorithm of
         Bentley, Clarkson and Levine (1990).
@@ -561,7 +611,7 @@ class Vector:
         non_dominated = list()
         dominated = list()
 
-        for idx_i, vector_i in enumerate(vectors):
+        for vector_i in vectors:
 
             discarded = False
             idx_j = 0
@@ -636,9 +686,9 @@ class Vector:
         return non_dominated, dominated
 
     @staticmethod
-    def m3_max_2_lists_with_repetitions(vectors: list) -> (list, list, list):
+    def m3_max_2_lists_with_repetitions(vectors: set) -> (list, list, list):
         """
-        :param vectors: list of Vector objects.
+        :param vectors: set of Vector objects.
 
         :return: a list with non-dominated vectors applying the m3 algorithm of
         Bentley, Clarkson and Levine (1990).

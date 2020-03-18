@@ -8,7 +8,7 @@ EXAMPLE OF USE OF AgentMOSP:
     # Build environment
     env = DeepSeaTreasureSimplified()
 
-    # Pareto's points
+    # Pareto'state points
     pareto_points = env.pareto_optimal
 
     # Build agent
@@ -41,16 +41,16 @@ EXAMPLE OF USE OF AgentMOSP:
     # Calc rest of time
     time_train = time.time() - start_time
 
-    # Get pareto point's x axis
+    # Get pareto point'state x axis
     x = pareto_frontier_np[:, 0]
 
-    # Get pareto point's y axis
+    # Get pareto point'state y axis
     y = pareto_frontier_np[:, 1]
 
     # Build and show plot.
     plt.scatter(x, y)
-    plt.ylabel('Reward')
-    plt.xlabel('Time')
+    plt.y_label('Reward')
+    plt.x_label('Time')
     plt.show()
 """
 import numpy as np
@@ -93,7 +93,7 @@ class AgentMOSP(AgentQ):
         # Set weights
         self.weights = weights
 
-        # Pareto's frontier found
+        # Pareto'state frontier found
         self.pareto_frontier_found = list()
         self.hv_reference = hv_reference
 
@@ -127,8 +127,8 @@ class AgentMOSP(AgentQ):
         """
         This method is called from calc_frontier_scalarized method.age
 
-        Try to find an c point to add to the pareto's frontier. There are two options:
-            * We know the solutions of pareto's frontier, and training the agent until get max solution.
+        Try to find an c point to add to the pareto'state frontier. There are two options:
+            * We know the solutions of pareto'state frontier, and training the agent until get max solution.
             * We don't know the solutions and training to try get max solution.
 
         :param solutions_known: If we know the possible solutions, we can indicate them to the algorithm to improve the
@@ -147,7 +147,7 @@ class AgentMOSP(AgentQ):
 
         # If solutions not is None
         if solutions_known:
-            # Multiply and sum all points with agent's weights.
+            # Multiply and sum all points with agent'state weights.
             objectives = np.sum(np.multiply(solutions_known, [w1, w2]), axis=1)
 
             # Get max of these sums (That is the objective).
@@ -159,14 +159,14 @@ class AgentMOSP(AgentQ):
             # Normal training.
             self.episode_train(episodes=1000, graph_type=GraphType.EPISODES)
 
-        # Get point c from agent's test.
+        # Get point c from agent'state test.
         c = self.get_accumulated_reward()
 
         return c
 
     def calc_frontier_scalarized(self, p: Vector, q: Vector, solutions_known: list = None) -> list:
         """
-        This is a search_distance method to calc pareto's frontier.
+        This is a search_distance method to calc pareto'state frontier.
 
         Return a list of supported solutions costs, this method is only valid to two objectives problems.
         Applies a dichotomous search to find all supported solutions costs.
@@ -228,7 +228,7 @@ class AgentMOSP(AgentQ):
                 # Add c to the result
                 result.append(c)
 
-                # Pareto's frontier found
+                # Pareto'state frontier found
                 self.pareto_frontier_found.append(c)
 
         return result
@@ -241,7 +241,7 @@ class AgentMOSP(AgentQ):
         """
 
         for state, data in self.graph_info[graph_type].items():
-            # Calc pareto's frontier found
+            # Calc pareto'state frontier found
 
             if not self.pareto_frontier_found:
                 value = self.initial_q_value

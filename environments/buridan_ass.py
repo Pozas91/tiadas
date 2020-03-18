@@ -2,7 +2,7 @@
 food is visible only from the neighboring squares in the eight directions. If the donkey moves away from the
 neighboring square of a food pile, there is a certain probability `p_stolen` with which the food is stolen. Food is
 regenerated once every `n_appear` time-steps. The donkey has to strike a compromise between minimizing the three
-different costs: hunger, lost food, and walking. A position is a tuple (s, f, t), where s stands for the square in which
+different costs: hunger, lost food, and walking. A position is a tuple (state, f, t), where state stands for the square in which
 the donkey is present, f for food in the two piles, and t for the time since the donkey last ate food. If t = 9,
 it is not incremented and the donkey incurs a penalty of -1 per time step till it eats the food when t is reset to 0.
 The actions are move up, down, left, right, and stay. It is assumed that if the donkey chooses to stay at a square
@@ -190,7 +190,7 @@ class BuridanAss(EnvMesh):
 
         visible_food = self.__near_food(position=self.current_state[0])
 
-        # Get all food that exists and aren't in donkey's vision.
+        # Get all food that exists and aren't in donkey'state vision.
         unprotected_food = frozenset(
             filter(lambda position_with_food: self.food_counter[position_with_food] <= 0, self.food_counter.keys())
         ) - visible_food
