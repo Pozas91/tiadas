@@ -20,9 +20,9 @@ class ResourceGatheringEpisodic(ResourceGathering):
     def __init__(self, initial_state: tuple = ((2, 4), (0, 0), False), default_reward: tuple = (0, 0, 0), seed: int = 0,
                  p_attack: float = 0.1, steps_limit: int = 1000, mesh_shape: tuple = (5, 5)):
         """
-        :param initial_state:
+        :param initial_state: Initial state where start the agent.
         :param default_reward: (enemy_attack, gold, gems)
-        :param seed:
+        :param seed: Seed used for np.random.RandomState method.
         :param p_attack: Probability that a enemy attacks when agent stay in an enemy position.
         """
 
@@ -49,6 +49,10 @@ class ResourceGatheringEpisodic(ResourceGathering):
         self.steps_limit = steps_limit
 
     def _checkpoints_states(self) -> set:
+        """
+        Return states where the agent will get favorable reward.
+        :return:
+        """
         return set(itertools.product({self.home_position}, {(1, 0), (0, 1), (1, 1)}, {False}))
 
     def step(self, action: int) -> (tuple, Vector, bool, dict):
@@ -90,6 +94,12 @@ class ResourceGatheringEpisodic(ResourceGathering):
         return self.current_state, reward, final, info
 
     def next_state(self, action: int, state: tuple = None) -> tuple:
+        """
+        Calc next position with current position and action given. Default is 4-neighbors (UP, LEFT, DOWN, RIGHT)
+        :param state: If a position is given, do action from that position.
+        :param action: from action_space
+        :return: a new position (or old if is invalid action)
+        """
 
         # Unpack complex state (position, objects(gold, gem), attacked)
         position, objects, attacked = state if state else self.current_state
@@ -127,7 +137,14 @@ class ResourceGatheringEpisodic(ResourceGathering):
         return self.current_state
 
     def transition_reward(self, state: tuple, action: int, next_state: tuple) -> Vector:
+        """
+        Return reward for reach `next_state` from `state` using `action`.
 
+        :param state: initial position
+        :param action: action to do
+        :param next_state: next position reached
+        :return:
+        """
         # Initialize reward as vector
         reward = self.default_reward.copy()
         # Unpack next state
@@ -148,6 +165,10 @@ class ResourceGatheringEpisodic(ResourceGathering):
         return reward
 
     def states(self) -> set:
+        """
+        Return all states from this environment
+        :return:
+        """
 
         # Unpack spaces
         x_position, y_position = self.observation_space[0]
@@ -180,12 +201,19 @@ class ResourceGatheringEpisodic(ResourceGathering):
 
     def is_final(self, state: tuple = None) -> bool:
         """
-        Return True if position given is terminal, agent was attacked or steps_limit was exceeded, False in otherwise.
+        Return True if position given is terminal
         :return:
         """
-        return super().is_final(state=state)
+        state = state if state else self.current_state
+        return state in self.finals
 
     def reachable_states(self, state: tuple, action: int) -> set:
+        """
+        Return all reachable states for pair (state, action) given.
+        :param state:
+        :param action:
+        :return:
+        """
 
         reachable_states = set()
 

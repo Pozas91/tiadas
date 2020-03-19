@@ -25,6 +25,11 @@ class Vector:
 
     @staticmethod
     def set_decimal_precision(decimal_precision: float):
+        """
+        Set precision for work with decimals
+        :param decimal_precision:
+        :return:
+        """
         Vector.decimal_precision = D(str(decimal_precision))
 
     def __init__(self, components):
@@ -325,28 +330,10 @@ class Vector:
         :return:
         """
 
-        # # Order vectors by the y-coordinate
-        # vectors.sort(key=lambda x: x[1])
-        #
-        # # The point in vectors with the minimum y-coordinate
-        # p0 = vectors.pop(0)
-        #
-        # return vectors
-
         # Convert to list to make it indexable
         vectors = list(vectors)
 
         if len(vectors) >= 3:
-            # v_reference = vectors.pop()
-            #
-            # all_components = list()
-            #
-            # for v in vectors:
-            #     for i, component in enumerate(v_reference):
-            #         if len(all_components) < (i + 1):
-            #             all_components.append(list())
-            #
-            #         all_components[i].append(v[i] == v_reference[i])
 
             try:
                 hull = ConvexHull(vectors, incremental=False)
@@ -354,7 +341,6 @@ class Vector:
             except QhullError as e:
                 # Do nothing
                 pass
-                # print('QhullError with vectors: {}'.format(vectors))
 
         return vectors
 

@@ -1,3 +1,7 @@
+"""
+Init file for models module.
+"""
+
 # Vectors
 from .index_vector import IndexVector
 from .vector import Vector

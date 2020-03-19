@@ -19,10 +19,11 @@ class DeepSeaTreasureRightDownStochastic(DeepSeaTreasureRightDown):
     def __init__(self, initial_state: tuple = (0, 0), default_reward: tuple = (0,), seed: int = 0,
                  p_stochastic: float = 0.8, columns: int = 10):
         """
-        :param initial_state:
-        :param default_reward:
-        :param seed:
-        :param columns: Number of diagonals to use with this environment.
+        :param initial_state: Initial state where start the agent.
+        :param default_reward: (time_inverted, treasure_value)
+        :param seed: Seed used for np.random.RandomState method.
+        :param columns: Number of columns to be used to build this environment (allows experimenting with an identical
+                        environment, but considering only the first k columns) (By default 10).
         :param p_stochastic: transition probability model. Is the probability of achieving the desired result of the
         action (i.e. moving right in RIGHT_PROB, and down with DOWN_PROB).
         """
@@ -33,23 +34,36 @@ class DeepSeaTreasureRightDownStochastic(DeepSeaTreasureRightDown):
         self.p_stochastic = p_stochastic
 
     def next_position(self, action: int, position: tuple) -> (tuple, bool):
+        """
+        Given a action an initial position, returns the next position and if the next position is valid or not.
+        :param action:
+        :param position:
+        :return:
+        """
+
         # Get my position
         x, y = position
 
         # Do movement
         if action == self.actions['RIGHT_PROB']:
+            # Get a random number between [0, 1]
             rnd_number = self.np_random.uniform()
 
+            # If probability is greater than random number, go to right
             if self.p_stochastic > rnd_number:
                 x += 1
+            # in otherwise go to down
             else:
                 y += 1
 
         elif action == self.actions['DOWN_PROB']:
+            # Get a random number between [0, 1]
             rnd_number = self.np_random.uniform()
 
+            # If probability is greater than random number, go to dowm
             if self.p_stochastic > rnd_number:
                 y += 1
+            # in otherwise go to down
             else:
                 x += 1
         elif action == self.actions['DOWN']:
@@ -96,6 +110,13 @@ class DeepSeaTreasureRightDownStochastic(DeepSeaTreasureRightDown):
         return self._action_space
 
     def transition_probability(self, state: tuple, action: int, next_state: tuple) -> float:
+        """
+        Return probability to reach `next_state` from `position` using `action`.
+        :param state: initial position
+        :param action: action to do
+        :param next_state: next position reached
+        :return:
+        """
 
         probability = 1.
 
@@ -120,6 +141,12 @@ class DeepSeaTreasureRightDownStochastic(DeepSeaTreasureRightDown):
         return probability
 
     def reachable_states(self, state: tuple, action: int) -> set:
+        """
+        Return all reachable states for pair (state, a) given.
+        :param state:
+        :param action:
+        :return:
+        """
 
         # Unpack position
         x, y = state

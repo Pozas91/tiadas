@@ -1,6 +1,6 @@
 """
 This class represent a vector with some features necessaries for our program.
-This class has a vector of floats (float64).
+This class has a vector of decimals (decimal.Decimal).
 """
 
 import numpy as np

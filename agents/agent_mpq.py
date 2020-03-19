@@ -1,17 +1,28 @@
 """
-Algorithm MPQ
+MPQ-learning is an extension of Q-learning to multi-objective problems. The goal is to obtain the set of all
+Pareto-optimal deterministic policies. These include both stationary and non-stationary policies, as non-stationary is
+an essential feature of multi-objective reinforcement learning problems.
+
+An important feature of MPQ-learning is that it learns a partial model of the environment. This is in contrast with
+Q-learning, which is a model -free algorithm. The partial model is necessary for two main reasons. In the first place,
+it helps to reduce the number of candidate policies tracked by the algorithm. Additionally, once learning is over, the
+model can be used to recover the actions associated to a particular Pareto-optimal policy chosen by the agent.
+Therefore, in MPQ-learning ech vector estimate q ∈ Q(s, a) is labeled with a set of indices P, where each index (s, i)
+∈ P indicates that q is updated from the vector with label i in V(s).
+
+To get more information about algorithm, see:
+
+REF: Pruning Dominated Policies in Multi-objective Pareto Q-Learning (Lawrence Mandow, José-Luis Pérez-de-la-Cruz)
 """
-import datetime
 import itertools
 import math
 import time
-from typing import Dict, List, Tuple
+from copy import deepcopy
+from typing import List, Tuple, Iterable
 
-import gym
 import numpy as np
 
 import utils.hypervolume as uh
-import utils.miscellaneous as um
 from environments import Environment
 from models import Vector, IndexVector, VectorDecimal, GraphType, EvaluationMechanism
 from .agent_rl import AgentRL
@@ -25,16 +36,18 @@ class AgentMPQ(AgentRL):
                  initial_value: VectorDecimal = None, convergence_graph: bool = False):
         """
         :param environment: An environment where agent does any operation.
+        :param hv_reference: Reference vector to calc hypervolume
         :param alpha: Learning rate
         :param epsilon: Epsilon using in e-greedy policy, to explore more states.
         :param gamma: Discount factor
         :param seed: Seed used for np.random.RandomState method.
         :param states_to_observe: List of states from that we want to get a graphical output.
         :param max_steps: Limits of steps per episode.
-        :param hv_reference: Reference vector to calc hypervolume
         :param evaluation_mechanism: Evaluation mechanism used to calc best action to choose. Three values are
             available: 'C-PQL', 'PO-PQL', 'HV-PQL'
         :param graph_types: Set of types of graph to generate.
+        :param initial_value: Vector with the algorithm begin to learn (by default zero vector).
+        :param convergence_graph: If is True then algorithm collects data to draw a convergence graph.
         """
 
         # Types to show a graphs
@@ -83,64 +96,13 @@ class AgentMPQ(AgentRL):
         self.convergence_graph = convergence_graph
         self.convergence_graph_data = list()
 
-    def get_dict_model(self) -> dict:
+    def do_step(self) -> bool:
         """
-        Get a dictionary of model
-        In JSON serialize only is valid strings as key on dict, so we convert all numeric keys in strings keys.
+        The agent does a step to learn vectors.
         :return:
         """
 
-        # Get parent'state model
-        model = super().get_dict_model()
-
-        # Own properties
-        model.get('train_data').update({
-            'indexes_counter': [
-                {
-                    'key': list(k), 'value': v
-                } for k, v in self.indexes_counter.items()
-            ]
-        })
-
-        model.get('train_data').update({
-            'q': [
-                dict(key=list(state), value={
-                    'key': int(action), 'value': {
-                        'key': list(table_index), 'value': (v3.index, v3.vector.tolist())
-                    }
-                }) for state, v in self.q.items() for action, v2 in v.items() for table_index, v3
-                in v2.items()
-            ]
-        })
-
-        model.get('train_data').update({
-            'state': [
-                dict(key=list(state), value={
-                    'key': int(action), 'value': v2
-                }) for state, v in self.s.items() for action, v2 in v.items()
-            ]
-        })
-
-        model.get('train_data').update({
-            'v': [
-                dict(key=list(state), value={
-                    'key': int(vector_index), 'value': v2.tolist()
-                }) for state, v in self.v.items() for vector_index, v2 in v.items()
-            ]
-        })
-
-        model.get('train_data').update({'alpha': self.alpha})
-        model.get('train_data').update({'hv_reference': self.hv_reference.tolist()})
-        model.get('train_data').update({'evaluation_mechanism': str(self.evaluation_mechanism)})
-        model.get('train_data').update({'total_episodes': self.total_episodes})
-        model.get('train_data').update({'total_steps': self.total_steps})
-        model.get('train_data').update({'position': list(self.state)})
-
-        return model
-
-    def do_step(self) -> bool:
-
-        # If the position is unknown, register it.
+        # If the position is unknown, register it in different information dictionaries.
         if self.state not in self.q:
             self.q.update({self.state: dict()})
 
@@ -217,6 +179,7 @@ class AgentMPQ(AgentRL):
         :return:
         """
 
+        # Check for each type of graph
         if graph_type is GraphType.MEMORY:
 
             # Count number of vectors in big Q dictionary
@@ -425,12 +388,13 @@ class AgentMPQ(AgentRL):
         # from best actions get one aleatory
         return self.generator.choice(filter_actions)
 
-    def new_operation(self, state: object, action: int, reward: Vector, next_state: object) -> None:
+    def new_operation(self, state: object, action: int, next_state: object, reward: Vector) -> None:
         """
-        :param state:
-        :param action:
-        :param reward:
-        :param next_state:
+        New operation function defines in the article. Register a new vector.
+        :param state: From state
+        :param action: Actions taken
+        :param next_state: Reached state
+        :param reward: Reward given for take that action in that state and reach next state
         :return:
         """
 
@@ -507,12 +471,13 @@ class AgentMPQ(AgentRL):
         if need_update_v:
             self.states_to_update.add(state)
 
-    def update_operation(self, state: object, action: int, reward: Vector, next_state: object) -> None:
+    def update_operation(self, state: object, action: int, next_state: object, reward: Vector) -> None:
         """
-        :param state:
-        :param action:
-        :param reward:
-        :param next_state:
+        Update operation function defines in the article. Update vectors affected by this transition.
+        :param state: From state
+        :param action: Actions taken
+        :param next_state: Reached state
+        :param reward: Reward given for take that action in that state and reach next state
         :return:
         """
 
@@ -595,7 +560,7 @@ class AgentMPQ(AgentRL):
         if need_update_v:
             self.states_to_update.add(state)
 
-    def default_vector_value(self, index):
+    def default_vector_value(self, index: int) -> IndexVector:
         """
         This method get a default value if a vector doesn't exist. It'state possible change the zero vector for a
         heuristic function.
@@ -605,6 +570,10 @@ class AgentMPQ(AgentRL):
         return IndexVector(index=index, vector=self.initial_q_value)
 
     def check_if_need_update_v(self) -> None:
+        """
+        Check if agent needs update v dictionary.
+        :return:
+        """
 
         # For each position that need be updated
         for state in self.states_to_update:
@@ -655,8 +624,9 @@ class AgentMPQ(AgentRL):
         """
         return set(self.v.get(state, {}).keys())
 
-    def cartesian_product_of_relevant_indexes(self, states: list):
+    def cartesian_product_of_relevant_indexes(self, states: list) -> Tuple[Iterable, list]:
         """
+        Calc product of relevant indexes from states given.
         :param states:
         :return:
         """
@@ -669,80 +639,45 @@ class AgentMPQ(AgentRL):
 
         return cartesian_product, indexes
 
-    def objective_training(self, list_of_vectors: list, graph_type: GraphType = None):
+    def objective_training(self, reference_vectors: list, graph_type: GraphType = None) -> None:
         """
         Train until agent V(0, 0) value is close to objective value.
-        :param graph_type:
-        :param list_of_vectors:
+        :param reference_vectors: Pareto-optimal vectors given as reference.
+        :param graph_type: Type of graph to make the graph.
         :return:
         """
 
         # Calc current hypervolume
         current_hypervolume = self._best_hypervolume(self.environment.initial_state)
 
-        objective_hypervolume = uh.calc_hypervolume(vectors=list_of_vectors, reference=self.hv_reference)
+        # Calc objective hypervolume
+        objective_hypervolume = uh.calc_hypervolume(vectors=reference_vectors, reference=self.hv_reference)
 
-        while not math.isclose(a=current_hypervolume, b=objective_hypervolume, rel_tol=0.02):
+        # While current hypervolume is different to objective hypervolume (With a tolerance indicates by
+        # Vector.decimal_precision) do an episode.
+        while not math.isclose(a=current_hypervolume, b=objective_hypervolume, rel_tol=Vector.decimal_precision):
             # Do an episode
             self.episode(graph_type=graph_type)
 
             # Update hypervolume
             current_hypervolume = self._best_hypervolume(self.environment.initial_state)
 
-    def json_filename(self) -> str:
+    def convergence_train(self, tolerance: float, graph_type: GraphType = None) -> None:
         """
-        Generate a filename for json save path
-        :return:
-        """
-        # Get environment name in snake case
-        environment = um.str_to_snake_case(self.environment.__class__.__name__)
-
-        # Get evaluation mechanism in snake case
-        agent = um.str_to_snake_case(self.__class__.__name__)
-
-        # Get evaluation mechanism in snake case
-        evaluation_mechanism = um.str_to_snake_case(str(self.evaluation_mechanism))
-
-        # Get date
-        date = datetime.datetime.now().timestamp()
-
-        return '{}_{}_{}_{}'.format(agent, environment, evaluation_mechanism, date)
-
-    def initialize_dictionaries(self):
-        """
-        Function to initialize all possible states in this problem
-        :return:
-        """
-        states = list()
-
-        if isinstance(self.environment.observation_space, gym.spaces.Tuple):
-
-            for x in range(self.environment.observation_space.spaces[0].n):
-                for y in range(self.environment.observation_space.spaces[1].n):
-                    states.append((x, y))
-
-        elif isinstance(self.environment.observation_space, gym.spaces.Discrete):
-            states.append(range(self.environment.observation_space.n))
-
-        for state in states:
-            self.s.update({state: dict()})
-            self.v.update({state: dict()})
-            self.indexes_counter.update({state: 0})
-
-    def convergence_train(self, tolerance: float, graph_type: GraphType = None):
-        """
-        Return this agent trained until get convergence.
+        Return this agent trained when it has converged.
         :param tolerance:
         :param graph_type:
         :return:
         """
 
+        # Initialize variables
         converged = False
         first = True
 
         if self.convergence_graph:
             self.convergence_graph_data = list()
 
+        # While not is converge do an iteration
         while not converged:
 
             # V_k
@@ -777,6 +712,7 @@ class AgentMPQ(AgentRL):
         :param tolerance:
         :return:
         """
+
         # By default
         converged = False
 
@@ -841,280 +777,49 @@ class AgentMPQ(AgentRL):
 
         return converged
 
-    # @staticmethod
-    # def load(filename: str = None, environment: Environment = None, evaluation_mechanism: EvaluationMechanism = None):
-    #     """
-    #     Load json string from path and convert to dictionary.
-    #     :param evaluation_mechanism: It is an evaluation mechanism that you want load
-    #     :param environment: It is an environment that you want load.
-    #     :param filename: If is None, then get last timestamp path from 'dumps' dir.
-    #     :return:
-    #     """
-    #
-    #     # Check if filename is None
-    #     if filename is None:
-    #
-    #         # Check if environment is also None
-    #         if environment is None:
-    #             raise ValueError('If you has not indicated a filename, you must indicate a environment.')
-    #
-    #         # Check if evaluation mechanism is also None
-    #         if evaluation_mechanism is None:
-    #             raise ValueError('If you has not indicated a filename, you must indicate a evaluation mechanism.')
-    #
-    #         # Get environment name in snake case
-    #         environment = um.str_to_snake_case(environment.__class__.__name__)
-    #
-    #         # Get evaluation mechanism name in snake case
-    #         evaluation_mechanism_value = um.str_to_snake_case(str(evaluation_mechanism.value))
-    #
-    #         # Filter str
-    #         filter_str = '{}_{}'.format(environment, evaluation_mechanism_value)
-    #
-    #         # Filter files with that environment and evaluation mechanism
-    #         files = filter(lambda f: filter_str in f,
-    #                        [path.name for path in os.scandir(AgentMPQ.models_dumps_path) if path.is_file()])
-    #
-    #         # Files to list
-    #         files = list(files)
-    #
-    #         # Sort list of files
-    #         files.sort()
-    #
-    #         # At least must have a path
-    #         if files:
-    #             # Get last filename
-    #             filename = files[-1]
-    #
-    #     # Prepare path path
-    #     file_path = AgentMPQ.models_dumps_file_path(filename)
-    #
-    #     # Read path from path
-    #     try:
-    #         file = file_path.open(mode='r', encoding='UTF-8')
-    #     except FileNotFoundError:
-    #         return None
-    #
-    #     # Load structured train_data from indicated path.
-    #     model = json.load(file)
-    #
-    #     # Close path
-    #     file.close()
-    #
-    #     # Get meta-train_data
-    #     # model_meta = model.get('meta')
-    #
-    #     # Get train_data
-    #     model_data = model.get('train_data')
-    #
-    #     # ENVIRONMENT
-    #     environment = model_data.get('environment')
-    #
-    #     # Meta
-    #     environment_meta = environment.get('meta')
-    #     environment_class_name = environment_meta.get('class')
-    #     environment_module_name = environment_meta.get('module')
-    #     environment_module = importlib.import_module(environment_module_name)
-    #     environment_class_ = getattr(environment_module, environment_class_name)
-    #
-    #     # Data
-    #     environment_data = environment.get('train_data')
-    #
-    #     # Instance
-    #     environment = environment_class_()
-    #
-    #     # Set environment train_data
-    #     for key, value in environment_data.items():
-    #
-    #         if 'position' in key or 'p_stochastic' in key:
-    #             # Convert to tuples to hash
-    #             value = um.lists_to_tuples(value)
-    #
-    #         elif 'default_reward' in key:
-    #             # If all elements are int, then default_reward is a integer Vector, otherwise float Vector
-    #             value = VectorDecimal(value)
-    #
-    #         vars(environment)[key] = value
-    #
-    #     # Set initial_seed
-    #     environment.seed(seed=environment.initial_seed)
-    #
-    #     # Get default reward as reference
-    #     default_reward = environment.default_reward
-    #
-    #     # AgentA1
-    #
-    #     # Meta
-    #
-    #     # Prepare module and class to make an instance.
-    #     # class_name = model_meta.get('class')
-    #     # module_name = model_meta.get('module')
-    #     # module = importlib.import_module(module_name)
-    #     # class_ = getattr(module, class_name)
-    #
-    #     # Data
-    #     epsilon = model_data.get('epsilon')
-    #     gamma = model_data.get('gamma')
-    #     alpha = model_data.get('alpha')
-    #     total_episodes = model_data.get('total_episodes')
-    #     total_steps = model_data.get('total_steps')
-    #     state = tuple(model_data.get('position'))
-    #     max_steps = model_data.get('max_steps')
-    #     seed = model_data.get('initial_seed')
-    #
-    #     # Recover evaluation mechanism from string
-    #     evaluation_mechanism = EvaluationMechanism.from_string(
-    #         evaluation_mechanism=model_data.get('evaluation_mechanism'))
-    #
-    #     # default_reward is reference so, reset components (multiply by zero) and add hv_reference to get hv_reference.
-    #     hv_reference = default_reward.zero_vector + model_data.get('hv_reference')
-    #
-    #     # Prepare Graph Types
-    #     graph_types = set()
-    #
-    #     # Update 'states_to_observe' train_data
-    #     states_to_observe = dict()
-    #     for item in model_data.get('states_to_observe'):
-    #
-    #         # Get graph type
-    #         key = GraphType.from_string(item.get('key'))
-    #         graph_types.add(key)
-    #
-    #         value = item.get('value')
-    #         key_state = um.lists_to_tuples(value.get('key'))
-    #         value = value.get('value')
-    #
-    #         if key not in states_to_observe.keys():
-    #             states_to_observe.update({
-    #                 key: dict()
-    #             })
-    #
-    #         states_to_observe.get(key).update({
-    #             key_state: value
-    #         })
-    #
-    #     # Unpack 'indexes_counter' train_data
-    #     indexes_counter = dict()
-    #     for item in model_data.get('indexes_counter'):
-    #         # Convert to tuples for hashing
-    #         key = um.lists_to_tuples(item.get('key'))
-    #         value = item.get('value')
-    #
-    #         indexes_counter.update({key: value})
-    #
-    #     # Unpack 'v' train_data
-    #     v = dict()
-    #     for item in model_data.get('v'):
-    #         # Convert to tuples to hash
-    #         key = um.lists_to_tuples(item.get('key'))
-    #         value = item.get('value')
-    #         vector_index = value.get('key')
-    #         value = default_reward.zero_vector + value.get('value')
-    #
-    #         vector_index = IndexVector(index=vector_index, vector=value)
-    #
-    #         if key not in v.keys():
-    #             v.update({key: [vector_index]})
-    #         else:
-    #             previous_data = v.get(key)
-    #             previous_data.append(vector_index)
-    #             v.update({key: previous_data})
-    #
-    #     # Unpack 'state' train_data
-    #     s = dict()
-    #     for item in model_data.get('state'):
-    #         # Convert to tuples to hash
-    #         key = um.lists_to_tuples(item.get('key'))
-    #         value = item.get('value')
-    #         action = value.get('key')
-    #         values = [um.lists_to_tuples(x) for x in value.get('value')]
-    #
-    #         if key not in s.keys():
-    #             s.update({
-    #                 key: {
-    #                     action: values
-    #                 }
-    #             })
-    #         else:
-    #             previous_data = s.get(key)
-    #             previous_data.update({action: values})
-    #             s.update({key: previous_data})
-    #
-    #     # Unpack 'q' train_data
-    #     q = dict()
-    #     for item in model_data.get('q'):
-    #         # Convert to tuples to hash
-    #         q_state = um.lists_to_tuples(item.get('key'))
-    #         value = item.get('value')
-    #         q_action = value.get('key')
-    #         value = value.get('value')
-    #         q_index = um.lists_to_tuples(value.get('key'))
-    #         value = value.get('value')
-    #
-    #         index_vector = IndexVector(index=value[0], vector=default_reward.zero_vector + value[1])
-    #
-    #         if q_state not in q.keys():
-    #             q.update({
-    #                 q_state: dict()
-    #             })
-    #
-    #         q_dict_state = q.get(q_state)
-    #
-    #         if q_action not in q_dict_state.keys():
-    #             q_dict_state.update({
-    #                 q_action: {
-    #                     q_index: index_vector
-    #                 }
-    #             })
-    #         else:
-    #             q_dict_state.get(q_action).update({
-    #                 q_index: index_vector
-    #             })
-    #
-    #     # Prepare an instance of model.
-    #     model = AgentMPQ(environment=environment, epsilon=epsilon, alpha=alpha, gamma=gamma, seed=seed,
-    #                      max_steps=max_steps, hv_reference=hv_reference, evaluation_mechanism=evaluation_mechanism,
-    #                      graph_types=graph_types)
-    #
-    #     # Set finals settings and return it.
-    #     model.v = v
-    #     model.s = s
-    #     model.q = q
-    #     model.graph_info = states_to_observe
-    #     model.state = state
-    #     model.total_episodes = total_episodes
-    #     model.total_steps = total_steps
-    #
-    #     return model
+    def recover_policy(self, initial_state: tuple, objective_vector: Vector, **kwargs) -> List[tuple]:
+        """
+        Returns a policy in temporary order. This way to recover policy allows recover non-stationary policies.
+        :param initial_state: State to begin to calculate the policy
+        :param objective_vector: Objective vector to search the policy
+        :param kwargs: Extra args.
+        :return:
+        """
 
-    def recover_policy(self, **kwargs) -> Tuple[List, Dict]:
+        # Do a deepcopy from state and reset it.
+        environment_copy = deepcopy(self.environment)
+        self.environment.reset()
 
-        # Extract initial state
-        s: tuple = kwargs['initial_state']
+        # Extract steps limit
+        iterations_limit = kwargs.get('iterations_limit', float('inf'))
 
-        # Extract objective vector
-        objective_vector: IndexVector = kwargs['objective_vector']
+        # Define initial state
+        s = initial_state
 
-        # Final trace
-        trace = list()
-        policy = dict()
+        # Final policy
+        policy = list()
         simulate = True
 
-        # Set of si
-        states_with_objective = {(s, objective_vector)}
+        # Set of si (iterations, state, objective vector)
+        states_with_objective = {(0, s, objective_vector)}
 
         while simulate:
+
             # Extract next relevant state
-            s, objective_vector = states_with_objective.pop()
+            iterations, s, objective_vector = states_with_objective.pop()
+
+            # Increment iterations
+            iterations += 1
 
             # Search objective index
             selected_action, selected_position = self.search_objective_vector_index(objective_vector.index, s)
 
             # States trace
-            policy.update({s: selected_action})
+            policy.append((s, selected_action))
 
             # Extract known states data
             for state_tuple_position, known_state in enumerate(self.s[s][selected_action]):
+
                 # Extract the next index to search
                 index_to_search = selected_position[state_tuple_position]
 
@@ -1135,12 +840,17 @@ class AgentMPQ(AgentRL):
                         next_objective_vector
                     ))
 
-                    trace.append((known_state, index_to_search, next_objective_vector))
+            # Filter all states that no exceed limits of iterations
+            states_with_objective = set(filter(lambda x: x[0] < iterations_limit, states_with_objective))
 
             # Check if states_with_objective is not empty
             simulate = len(states_with_objective) > 0
 
-        return trace, policy
+        # Restore original environment
+        self.environment = environment_copy
+
+        # Return the policy
+        return policy
 
     def search_objective_vector_index(self, index: int, state: tuple) -> Tuple[int, tuple]:
         """
@@ -1155,6 +865,7 @@ class AgentMPQ(AgentRL):
 
         found = False
 
+        # For each action in Q dictionary
         for action in self.q[state]:
             # Extract all vectors with it position
             for position, vector in self.q[state][action].items():
@@ -1163,55 +874,12 @@ class AgentMPQ(AgentRL):
                     selected_action = action
                     selected_position = position
 
+                # If vector has found break loop
                 if found:
                     break
 
+            # If vector has found break loop
             if found:
                 break
 
         return selected_action, selected_position
-
-    def evaluate_policy(self, policy: dict, tolerance: float = 0.) -> Dict:
-
-        # Initialize all vectors to zero
-        vectors = {s: self.environment.default_reward.zero_vector for s in policy.keys()}
-
-        # Initialize looping variable
-        looping = True
-
-        # Continue until A do not change more than tolerance variable
-        while looping:
-            # A <- 0
-            variation = self.environment.default_reward.zero_vector
-
-            # For each state in S
-            for s in policy.keys():
-                # Initial v
-                v = vectors[s]
-                a = policy[s]
-
-                # Initialize summation to zero vector
-                summation = self.environment.default_reward.zero_vector
-
-                for next_s in self.environment.reachable_states(state=s, action=a):
-                    # Calc probability
-                    p = self.environment.transition_probability(state=s, action=a, next_state=next_s)
-                    # Calc reward
-                    r = self.environment.transition_reward(state=s, action=a, next_state=next_s)
-                    # v'
-                    next_v = vectors.get(next_s, self.environment.default_reward.zero_vector)
-                    # Summation
-                    summation += ((next_v * self.gamma) + r) * p
-
-                # V(state) <- summation
-                vectors[s] = summation
-
-                # A <- max(A, |v - V(state)|)
-                abs_difference = abs(v - vectors[s])
-                variation = max(variation, abs_difference)
-
-            # Update looping variable
-            tolerance_checking = [component < tolerance for component in variation]
-            looping = not all(tolerance_checking)
-
-        return vectors

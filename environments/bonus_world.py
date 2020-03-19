@@ -34,9 +34,10 @@ class BonusWorld(EnvMesh):
     def __init__(self, initial_state: tuple = ((0, 0), False), default_reward: tuple = (0, 0), seed: int = 0,
                  action_space: gym.spaces = None):
         """
-        :param initial_state:
+        :param initial_state: Initial state where start the agent.
         :param default_reward: (objective 1, objective 2)
-        :param seed:
+        :param seed: Seed used for np.random.RandomState method.
+        :param action_space:
         """
 
         # List of all treasures and its reward.
@@ -120,6 +121,12 @@ class BonusWorld(EnvMesh):
         return self.current_state, reward, final, info
 
     def next_state(self, action: int, state: tuple = None) -> tuple:
+        """
+        Given a state and an action, return the next state
+        :param action:
+        :param state:
+        :return:
+        """
 
         # Unpack complex position (position, bonus_activated)
         position, bonus = state if state else self.current_state
@@ -151,21 +158,14 @@ class BonusWorld(EnvMesh):
         """
         return state[0] in self.finals.keys()
 
-    def get_dict_model(self) -> dict:
+    def transition_reward(self, state: tuple, action: int, next_state: tuple) -> Vector:
         """
-        Get dict model of environment
+        Given a state, an action and a next state, return the corresponding reward.
+        :param state:
+        :param action:
+        :param next_state:
         :return:
         """
-
-        data = super().get_dict_model()
-
-        # Clean specific environment train_data
-        del data['pits']
-        del data['bonus']
-
-        return data
-
-    def transition_reward(self, state: tuple, action: int, next_state: tuple) -> Vector:
 
         # Separate position from bonus_activated
         position, bonus_activated = next_state
@@ -184,6 +184,10 @@ class BonusWorld(EnvMesh):
         return reward
 
     def states(self) -> set:
+        """
+        Return a set with all states of this environment
+        :return:
+        """
 
         # Unpack spaces
         position, bonus_activate = self.observation_space.spaces

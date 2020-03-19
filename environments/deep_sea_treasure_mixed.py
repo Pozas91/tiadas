@@ -13,9 +13,9 @@ class DeepSeaTreasureMixed(DeepSeaTreasure):
 
     def __init__(self, initial_state: tuple = (0, 0), default_reward: tuple = (0,), seed: int = 0):
         """
-        :param initial_state:
-        :param default_reward:
-        :param seed:
+        :param initial_state: Initial state where start the agent.
+        :param default_reward: (time_inverted, treasure_value)
+        :param seed: Seed used for np.random.RandomState method.
         """
 
         super().__init__(initial_state=initial_state, default_reward=default_reward, seed=seed)

@@ -1,22 +1,18 @@
 """
 Base Agent class, other agent classes inherited from this.
 """
-import json
-import os
-import time
-from pathlib import Path
-from pprint import pprint
-from typing import Tuple, List, Dict
 
-import matplotlib
+import time
+from pprint import pprint
+from typing import List, Dict
+
 import numpy as np
 
-import configurations as conf
 import utils.miscellaneous as um
 import utils.models as u_models
 from configurations.paths import dumps_path
 from environments import Environment
-from models import GraphType, AgentType, Vector
+from models import GraphType, Vector
 
 
 class Agent:
@@ -92,14 +88,14 @@ class Agent:
 
     def show_graph_info(self) -> None:
         """
-        Show graph extra
+        Show for console "raw" graph information
         :return:
         """
         pprint(self.graph_info)
 
     def print_information(self) -> None:
         """
-        Print basic information about agent
+        Show for console basic information about agent
         :return:
         """
         print('- Agent information! -')
@@ -123,9 +119,9 @@ class Agent:
         """
         raise NotImplemented
 
-    def reset_graph_info(self):
+    def reset_graph_info(self) -> None:
         """
-        Reset states to observe
+        Reset the structure where store graph information
         :return:
         """
 
@@ -169,51 +165,7 @@ class Agent:
 
     # MARK: Dumps model
 
-    def get_dict_model(self) -> dict:
-        """
-        Get a dictionary of model
-        In JSON serialize only is valid strings as key on dict, so we convert all numeric keys in strings keys.
-        :return:
-        """
-        model = {
-            'meta': {
-                'class': self.__class__.__name__,
-                'module': self.__module__,
-                'dependencies': {
-                    'numpy': np.__version__,
-                    'matplotlib': matplotlib.__version__
-                }
-            },
-            'train_data': {
-                'gamma': self.gamma,
-                'environment': {
-                    'meta': {
-                        'class': self.environment.__class__.__name__,
-                        'module': self.environment.__module__,
-                    },
-                    'train_data': self.environment.get_dict_model()
-                },
-                'max_steps': self.max_steps,
-                'states_to_observe': [
-                    {
-                        'key': str(k), 'value': {'key': k2 if isinstance(k2, int) else list(k2), 'value': v2}
-                    } for k, v in self.graph_info.items() for k2, v2 in v.items()
-                ],
-                'initial_seed': self.initial_seed
-            }
-        }
-
-        return model
-
-    def to_json(self) -> str:
-        """
-        Get a dict model from current object and return as json string.
-        :return:
-        """
-        model = self.get_dict_model()
-        return json.dumps(model, indent=conf.json_indent)
-
-    def default_filename(self) -> str:
+    def default_filename(self, mode: str = 'binary') -> str:
         """
         Return default filename
         :return:
@@ -231,94 +183,112 @@ class Agent:
         # Get timestamp
         timestamp = int(time.time())
 
+        if mode == 'binary':
+            extension = 'bin'
+        else:
+            extension = ''
+
         # Prepare default filename
-        return '{}/models/{}_{}_{}.bin'.format(
-            agent_str_abbr, env_str_abbr, timestamp, Vector.decimal_precision
+        return '{}/models/{}_{}_{}.{}'.format(
+            agent_str_abbr, env_str_abbr, timestamp, Vector.decimal_precision, extension
         )
 
     @staticmethod
-    def load(mode: str = 'binary', filename: str = None, **kwargs):
+    def load(filename: str, mode: str = 'binary', **kwargs) -> 'Agent':
         """
         This method load an agent from filename given.
+        At moment only can load in binary mode
+        :param filename: Filename from load the model.
         :param mode:
-        :param filename: If is None, then get last timestamp path from 'dumps/models' dir.
         :return:
         """
 
         if mode == 'binary':
             agent = u_models.load(path=dumps_path.joinpath(filename))
         else:
-
-            if not filename:
-                try:
-                    # Get last path from models directory (higher timestamp)
-                    filename = sorted(
-                        filter(
-                            # Get only filenames for this agent (first part of name)
-                            lambda path: AgentType.from_string(path.name.split('_')[0]) is kwargs['agent_type'],
-                            os.scandir(conf.models_path)
-                        ),
-                        # Order filenames by timestamp (last part of name)
-                        key=lambda path: int(path.name.split('_')[-1])
-                    )[-1]
-                except Exception as error:
-                    print('Cannot read from {} directory because: {}'.format(conf.models_path, error))
-
-            # Read path from path
-            model_path = Path(filename)
-            model_file = model_path.open(mode='r', encoding='UTF-8')
-
-            # Load structured train_data from indicated path.
-            agent = json.load(model_file)
-
-            # Close path
-            model_file.close()
+            raise ValueError('Indicate mode don\'t recognize.')
 
         return agent
 
-    def save(self, mode: str = 'binary', filename: str = None, **kwargs):
+    def save(self, mode: str = 'binary', filename: str = None) -> None:
         """
         Dumps model given into dumps directory
+        At moment only can save in binary mode
         :param filename:
         :param mode:
-        :param kwargs:
         :return:
         """
 
         if filename is None:
-            filename = self.default_filename()
+            filename = self.default_filename(mode=mode)
+
+        # Define file path
+        file_path = dumps_path.joinpath(filename)
+
+        # If does not exists make it.
+        file_path.parent.mkdir(parents=True, exist_ok=True)
 
         if mode == 'binary':
-
-            # Define file path
-            file_path = dumps_path.joinpath(filename)
-
-            # Dumps agent
-            u_models.dump(path=file_path, model=self)
-
+            # Dumps model in binary mode
+            u_models.binary_dump(path=file_path, model=self)
         else:
+            raise ValueError('Indicate mode don\'t recognize.')
 
-            # Prepare path path
-            file_path = conf.models_path.joinpath(filename)
-
-            # If any parents doesn't exist, make it.
-            file_path.parent.mkdir(parents=True, exist_ok=True)
-
-            # Get dict model
-            model = self.get_dict_model()
-
-            # Open path with filename in write mode with UTF-8 encoding.
-            with file_path.open(mode='w', encoding='UTF-8') as file:
-                json.dump(model, file, indent=conf.json_indent)
-
-    @staticmethod
-    def models_dumps_file_path(filename: str) -> Path:
-        # Return path from path name
-        return conf.models_path.joinpath(filename)
-
-    def recover_policy(self, initial_state: tuple, objective_vector: Vector, **kwargs) -> Tuple[List, Dict]:
+    def recover_policy(self, initial_state: tuple, objective_vector: Vector, **kwargs) -> List[tuple]:
         """
         Simulate a walking of the agent, and return a dictionary with each state related with an action.
         :return:
         """
         raise NotImplemented
+
+    def evaluate_policy(self, policy: list, tolerance: float = 0.1) -> dict:
+        """
+        Evaluates a policy given. This method cannot evaluate non-stationary policies.
+        :param policy: The policy to evaluate
+        :param tolerance: Tolerance to stops of evaluate
+        :return:
+        """
+
+        # Convert to stationary policy
+        policy = {s: a for s, a in policy}
+
+        # Initialize all vectors to zero
+        vectors = {s: self.environment.default_reward.zero_vector for s in policy.keys()}
+
+        # Initialize looping variable
+        looping = True
+
+        # Continue until A do not change more than tolerance variable
+        while looping:
+
+            # For each state in S
+            for s, v in vectors.items():
+                # Initial v
+                a = policy[s]
+
+                # Initialize summation to zero vector
+                summation = self.environment.default_reward.zero_vector
+
+                for next_s in self.environment.reachable_states(state=s, action=a):
+                    # Calc probability
+                    p = self.environment.transition_probability(state=s, action=a, next_state=next_s)
+                    # Calc reward
+                    r = self.environment.transition_reward(state=s, action=a, next_state=next_s)
+                    # v'
+                    next_v = vectors.get(next_s, self.environment.default_reward.zero_vector)
+                    # Summation
+                    summation += ((next_v * self.gamma) + r) * p
+
+                # V(state) <- summation
+                vectors[s] = summation
+
+                # A <- max(A, |v - V(state)|)
+                abs_difference = abs(v - vectors[s])
+
+                # Update looping variable
+                looping = not all(component < tolerance for component in abs_difference)
+
+                if looping:
+                    break
+
+        return vectors

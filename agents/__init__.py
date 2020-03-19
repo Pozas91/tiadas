@@ -1,6 +1,5 @@
 # Init file for the agents module
 from .agent import Agent
-from .agent_a1 import AgentA1
 from .agent_b import AgentB
 from .agent_mo_sp import AgentMOSP
 from .agent_mpq import AgentMPQ

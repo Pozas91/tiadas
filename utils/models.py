@@ -1,8 +1,10 @@
 import pickle
 from pathlib import Path
 
+from typing import Any
 
-def lazy_property(fn) -> object:
+
+def lazy_property(fn) -> Any:
     """
     Decorator that makes a property lazy-evaluated.
     :param fn:
@@ -20,7 +22,7 @@ def lazy_property(fn) -> object:
     return _lazy_property
 
 
-def dump(path: Path, model: object) -> None:
+def binary_dump(path: Path, model: Any) -> None:
     """
     Dump model given in path given
     :param path:
@@ -34,7 +36,7 @@ def dump(path: Path, model: object) -> None:
         pickle.dump(model, f)
 
 
-def load(path: Path):
+def load(path: Path) -> Any:
     """
     Load a model from path given
     :param path:

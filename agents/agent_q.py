@@ -11,6 +11,7 @@ The train_data structure of q dictionary is as follows:
 }
 """
 from copy import deepcopy
+from pprint import pprint
 
 import numpy as np
 
@@ -33,6 +34,7 @@ class AgentQ(AgentRL):
         :param states_to_observe: List of states from that we want to get a graphical output.
         :param max_steps: Limits of steps per episode.
         :param graph_types: Types of graphs to generate.
+        :param initial_value: Value with the algorithm begin to learn (by default zero).
         """
 
         # Types to make graphs
@@ -99,6 +101,10 @@ class AgentQ(AgentRL):
         return history
 
     def do_step(self) -> bool:
+        """
+        The agent does a step to learn vectors.
+        :return:
+        """
 
         # Get an action
         action = self.select_action()
@@ -176,7 +182,7 @@ class AgentQ(AgentRL):
         Show Q-Data
         :return:
         """
-        print(self.q)
+        pprint(self.q)
 
     def show_policy(self) -> None:
         """

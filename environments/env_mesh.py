@@ -168,5 +168,11 @@ class EnvMesh(Environment):
         return sorted(self.states(), key=lambda state: self.quantify_state(state=state), reverse=reverse)
 
     def quantify_state(self, state: object, **kwargs) -> int:
+        """
+        Quantify a state to order from last to begin
+        :param state:
+        :param kwargs:
+        :return:
+        """
         x, y = state
         return x * self.mesh_shape[1] + y

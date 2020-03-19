@@ -29,7 +29,8 @@ class MoPuddleWorld(EnvMesh):
         """
         :param default_reward: (non_goal_reached, puddle_penalize)
         :param penalize_non_goal: While agent does not reach a final position get a penalize.
-        :param seed:
+        :param seed: Initial initial_seed. The same is used for _action_space,
+                     observation_space, and random number generator
         :param final_state: This environment only has a final position.
         """
 
@@ -79,7 +80,13 @@ class MoPuddleWorld(EnvMesh):
 
         return self.current_state, reward, final, info
 
-    def calc_puddle_penalization(self, state: tuple):
+    def calc_puddle_penalization(self, state: tuple) -> float:
+        """
+        Return a float that represents a penalization, the penalization is the lowest distance between current state
+        and the nearest border in manhattan distance.
+        :param state:
+        :return:
+        """
         # Min distance found!
         min_distance = min(distance.cityblock(self.current_state, state) for state in self.free_spaces)
 
@@ -111,21 +118,15 @@ class MoPuddleWorld(EnvMesh):
         """
         return state == self.final_state
 
-    def get_dict_model(self) -> dict:
+    def transition_reward(self, state: tuple, action: int, next_state: tuple) -> Vector:
         """
-        Get dict model of environment
+        Return reward for reach `next_state` from `position` using `action`.
+
+        :param state: initial position
+        :param action: action to do
+        :param next_state: next position reached
         :return:
         """
-
-        data = super().get_dict_model()
-
-        # Clean specific environment train_data
-        del data['puddles']
-        del data['initial_state']
-
-        return data
-
-    def transition_reward(self, state: tuple, action: int, next_state: tuple) -> Vector:
 
         # Initialize reward as vector
         reward = self.default_reward.copy()
@@ -148,10 +149,14 @@ class MoPuddleWorld(EnvMesh):
         return reward
 
     def states(self) -> set:
+        """
+        Return all possible states of this environment.
+        :return:
+        """
 
         # Unpack spaces
         x_position, y_position = self.observation_space.spaces
 
-        return {
-                   (x, y) for x in range(x_position.n) for y in range(y_position.n)
-               } - {self.final_state}
+        return set(
+            (x, y) for x in range(x_position.n) for y in range(y_position.n)
+        ).difference({self.final_state})

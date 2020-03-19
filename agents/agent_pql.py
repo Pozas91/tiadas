@@ -60,8 +60,6 @@ multiply the default reward by zero using our defined operation * for vectors.
 This seems faster than using either deepcopy (≈ 247% faster) or copy 
 (≈ 118% faster).
 """
-import datetime
-import importlib
 import math
 import time
 from copy import deepcopy
@@ -70,9 +68,8 @@ import numpy as np
 
 import utils.hypervolume as uh
 import utils.miscellaneous as um
-from agents import Agent
 from environments import Environment
-from models import IndexVector, GraphType, EvaluationMechanism, Vector, VectorDecimal, AgentType
+from models import IndexVector, GraphType, EvaluationMechanism, Vector
 from .agent_rl import AgentRL
 
 
@@ -82,16 +79,17 @@ class AgentPQL(AgentRL):
                  max_steps: int = None, hv_reference: Vector = None, graph_types: set = None,
                  evaluation_mechanism: EvaluationMechanism = EvaluationMechanism.HV, initial_value: Vector = None,
                  states_to_observe: set = None):
-
         """
         :param environment: instance of any environment class.
         :param epsilon: Epsilon used in epsilon-greedy policy, to determine degree of exploration
+        :param gamma: Discount factor
         :param seed: Seed used for np.random.RandomState method.
         :param max_steps: Limit of steps per episode.
         :param hv_reference: Reference vector for hypervolume calculations
         :param evaluation_mechanism: Evaluation mechanism used to calc best action to choose among those with
                non-dominated policy estimates. Three values are available: EvaluationMechanism.{C, PO, HV}
         :param states_to_observe: List of states to be traced in a graphical output.
+        :param initial_value: Vector with the algorithm begin to learn (by default zero vector).
         :param graph_types: types of graphical outputs that will be produced.
         """
 
@@ -129,6 +127,11 @@ class AgentPQL(AgentRL):
         self.hv_reference = hv_reference
 
     def do_step(self) -> bool:
+        """
+        The agent does a step to learn vectors.
+        :return:
+        """
+
         # Choose action a from state using a policy derived from the Q-set
         action = self.select_action()
 
@@ -167,6 +170,7 @@ class AgentPQL(AgentRL):
         :return:
         """
 
+        # Check for each type of graph
         if graph_type is GraphType.MEMORY:
 
             # Count number of vectors in non dominate dictionary
@@ -213,7 +217,7 @@ class AgentPQL(AgentRL):
 
     def get_and_update_n_s_a(self, state: object, action: int) -> int:
         """
-        Update n(state, a) dictionary.
+        Update R(s, a) dictionary.
         :param state:
         :param action:
         :return:
@@ -232,7 +236,7 @@ class AgentPQL(AgentRL):
 
     def update_r_s_a(self, state: object, action: int, reward: Vector, occurrences: int) -> None:
         """
-        Update r(state, a) dictionary.
+        Update R(s, a) dictionary.
         :param state:
         :param action:
         :param reward:
@@ -253,7 +257,7 @@ class AgentPQL(AgentRL):
 
     def update_nd_s_a(self, state: object, action: int, next_state: object) -> None:
         """
-        Update ND(state, a)
+        Update ND(s, a)
         :param state:
         :param action:
         :param next_state:
@@ -656,49 +660,6 @@ class AgentPQL(AgentRL):
         # from best actions get one aleatory
         return self.generator.choice(filter_actions)
 
-    def get_dict_model(self) -> dict:
-        """
-        Get a dictionary of model
-        In JSON serialize only is valid strings as key on dict, so we convert all numeric keys in strings keys.
-        :return:
-        """
-
-        # Get parent'state model
-        model = super().get_dict_model()
-
-        # Own properties
-        model['train_data'].update({
-            'r': [
-                {
-                    'key': k, 'value': {'key': int(k2), 'value': v2.tolist()}
-                } for k, v in self.r.items() for k2, v2 in v.items()
-            ]
-        })
-
-        model['train_data'].update({
-            'nd': [
-                {
-                    'key': k, 'value': {'key': int(k2), 'value': [vector.tolist() for vector in v2]}
-                } for k, v in self.nd.items() for k2, v2 in v.items()
-            ]
-        })
-
-        model['train_data'].update({
-            'n': [
-                {
-                    'key': k, 'value': {'key': int(k2), 'value': v2}
-                } for k, v in self.n.items() for k2, v2 in v.items()
-            ]
-        })
-
-        model['train_data'].update({'hv_reference': self.hv_reference.tolist()})
-        model['train_data'].update({'evaluation_mechanism': str(self.evaluation_mechanism)})
-        model['train_data'].update({'total_episodes': self.total_episodes})
-        model['train_data'].update({'total_steps': self.total_steps})
-        model['train_data'].update({'position': list(self.state)})
-
-        return model
-
     def non_dominated_vectors_from_state(self, state: object) -> list:
         """
         Return all non dominate vectors from position given.
@@ -715,201 +676,35 @@ class AgentPQL(AgentRL):
         return self.environment.default_reward.m3_max(nd)
 
     def print_information(self) -> None:
+        """
+        Show information about agent
+        :return:
+        """
+
         super().print_information()
 
         print("Hypervolume reference: {}".format(self.hv_reference))
         print('Evaluation mechanism: {}'.format(self.evaluation_mechanism))
 
-    def json_filename(self) -> str:
-        """
-        Generate a filename for json save path
-        :return:
-        """
-        # Get environment name in snake case
-        environment = um.str_to_snake_case(self.environment.__class__.__name__)
-
-        # Get evaluation mechanism in snake case
-        agent = um.str_to_snake_case(self.__class__.__name__)
-
-        # Get evaluation mechanism in snake case
-        evaluation_mechanism = um.str_to_snake_case(str(self.evaluation_mechanism.value))
-
-        # Get date
-        date = datetime.datetime.now().timestamp()
-
-        return '{}_{}_{}_{}'.format(agent, environment, evaluation_mechanism, date)
-
-    @staticmethod
-    def load(filename: str = None, **kwargs) -> object:
-
-        # Load structured train_data from indicated path.
-        model = Agent.load(filename=filename, agent_type=AgentType.PQL)
-
-        # Get meta-train_data
-        meta = model.get('meta')
-        # Get train_data
-        model_data = model.get('train_data')
-
-        # ENVIRONMENT
-        environment = model_data.get('environment')
-
-        # Meta
-        environment_meta = environment.get('meta')
-        environment_class_name = environment_meta.get('class')
-        environment_module_name = environment_meta.get('module')
-        environment_module = importlib.import_module(environment_module_name)
-        environment_class_ = getattr(environment_module, environment_class_name)
-
-        # Data
-        environment_data = environment.get('train_data')
-
-        # Instance
-        environment = environment_class_()
-
-        # Set environment train_data
-        for key, value in environment_data.items():
-
-            if 'position' in key or 'p_stochastic' in key:
-                # Convert to tuples to hash
-                value = um.lists_to_tuples(value)
-
-            elif 'default_reward' in key:
-                # If all elements are int, then default_reward is a integer Vector, otherwise float Vector
-                value = Vector(value) if (all([isinstance(x, int) for x in value])) else VectorDecimal(value)
-
-            vars(environment)[key] = value
-
-        # Set initial_seed
-        environment.seed(seed=environment.initial_seed)
-
-        # Get default reward as reference
-        default_reward = environment.default_reward
-
-        # AgentMOMP
-
-        # Meta
-
-        # Prepare module and class to make an instance.
-        class_name = meta.get('class')
-        module_name = meta.get('module')
-        module = importlib.import_module(module_name)
-        class_ = getattr(module, class_name)
-
-        # Data
-        epsilon = model_data.get('epsilon')
-        gamma = model_data.get('gamma')
-        total_episodes = model_data.get('total_episodes')
-        total_steps = model_data.get('total_steps')
-        state = tuple(model_data.get('position'))
-        max_steps = model_data.get('max_steps')
-        seed = model_data.get('initial_seed')
-
-        # Recover evaluation mechanism from string
-        evaluation_mechanism = EvaluationMechanism.from_string(
-            evaluation_mechanism=model_data.get('evaluation_mechanism'))
-
-        # default_reward is reference so, reset components (multiply by zero) and add hv_reference to get hv_reference.
-        hv_reference = default_reward.zero_vector + model_data.get('hv_reference')
-
-        # Prepare Graph Types
-        graph_types = set()
-
-        # Update 'states_to_observe' train_data
-        states_to_observe = dict()
-        for item in model_data.get('states_to_observe'):
-
-            # Get graph type
-            key = GraphType.from_string(item.get('key'))
-            graph_types.add(key)
-
-            value = item.get('value')
-            state = um.lists_to_tuples(value.get('key'))
-            value = value.get('value')
-
-            if key not in states_to_observe.keys():
-                states_to_observe.update({
-                    key: dict()
-                })
-
-            states_to_observe.get(key).update({
-                state: value
-            })
-
-        # Unpack 'r' train_data
-        r = dict()
-        for item in model_data.get('r'):
-            # Convert to tuples to hash
-            key = um.lists_to_tuples(item.get('key'))
-            value = item.get('value')
-            action = value.get('key')
-            value = default_reward.zero_vector + value.get('value')
-
-            if key not in r.keys():
-                r.update({key: dict()})
-
-            r.get(key).update({action: value})
-
-        # Unpack 'nd' train_data
-        nd = dict()
-        for item in model_data.get('nd'):
-            # Convert to tuples to hash
-            key = um.lists_to_tuples(item.get('key'))
-            value = item.get('value')
-            action = value.get('key')
-            value = [default_reward.zero_vector + v for v in value.get('value')]
-
-            if key not in nd.keys():
-                nd.update({key: dict()})
-
-            nd.get(key).update({action: value})
-
-        # Unpack 'n' train_data
-        n = dict()
-        for item in model_data.get('n'):
-            # Convert to tuples to hash
-            key = um.lists_to_tuples(item.get('key'))
-            value = item.get('value')
-            action = value.get('key')
-            value = int(value.get('value'))
-
-            if key not in n.keys():
-                n.update({key: dict()})
-
-            n.get(key).update({action: value})
-
-        # Prepare an instance of model.
-        model = AgentPQL(environment=environment, epsilon=epsilon, gamma=gamma, seed=seed, max_steps=max_steps,
-                         hv_reference=hv_reference, evaluation_mechanism=evaluation_mechanism, graph_types=graph_types)
-
-        # Set finals settings and return it.
-        model.r = r
-        model.nd = nd
-        model.n = n
-        model.graph_info = states_to_observe
-        model.state = state
-        model.total_episodes = total_episodes
-        model.total_steps = total_steps
-
-        return model
-
-    def objective_training(self, list_of_vectors: list, graph_type: GraphType = None):
+    def objective_training(self, reference_vectors: list, graph_type: GraphType = None):
         """
         Train until V(s0) value is close to objective value.
         :param graph_type:
-        :param list_of_vectors:
+        :param reference_vectors:
         :return:
         """
 
         # Calc current hypervolume
         current_hypervolume = self._best_hypervolume(self.environment.initial_state)
 
-        objective_hypervolume = uh.calc_hypervolume(vectors=list_of_vectors, reference=self.hv_reference)
+        # Calc objective hypervolume
+        objective_hypervolume = uh.calc_hypervolume(vectors=reference_vectors, reference=self.hv_reference)
 
-        while not math.isclose(a=current_hypervolume, b=objective_hypervolume, rel_tol=0.01, abs_tol=0.0):
+        # While current hypervolume is different to objective hypervolume (With a tolerance indicates by
+        # Vector.decimal_precision) do an episode.
+        while not math.isclose(a=current_hypervolume, b=objective_hypervolume, rel_tol=Vector.decimal_precision):
             # Do an episode
             self.episode(graph_type=graph_type)
 
             # Update hypervolume
             current_hypervolume = self._best_hypervolume(self.environment.initial_state)
-
-        pass

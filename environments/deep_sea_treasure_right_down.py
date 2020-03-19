@@ -30,12 +30,11 @@ class DeepSeaTreasureRightDown(DeepSeaTreasure):
 
     def __init__(self, initial_state: tuple = (0, 0), default_reward: tuple = (0,), seed: int = 0, columns: int = 10):
         """
-        :param initial_state:
-        :param default_reward:
-        :param seed:
-        :param columns: Number of diagonals to be used to build this environment
-                        (allows experimenting with an identical environment,
-                        but considering only the first k diagonals).
+        :param initial_state: Initial state where start the agent.
+        :param default_reward: (time_inverted, treasure_value)
+        :param seed: Seed used for np.random.RandomState method.
+        :param columns: Number of columns to be used to build this environment (allows experimenting with an identical
+                        environment, but considering only the first k columns) (By default 10).
         """
 
         # Action space
@@ -46,6 +45,12 @@ class DeepSeaTreasureRightDown(DeepSeaTreasure):
                          action_space=action_space)
 
     def next_position(self, action: int, position: tuple) -> (tuple, bool):
+        """
+        Given a position and an action, returns the next_position
+        :param action:
+        :param position:
+        :return:
+        """
         # Unpack
         x, y = position
 

@@ -31,9 +31,9 @@ class PressurizedBountifulSeaTreasure(EnvMesh):
     def __init__(self, initial_state: tuple = (0, 0), default_reward: tuple = (0,), seed: int = 0, columns: int = 0,
                  action_space: gym.spaces = None):
         """
-        :param initial_state:
-        :param default_reward: (treasure_value)
-        :param seed:
+        :param initial_state: Initial state where start the agent.
+        :param default_reward: (treasure_value, )
+        :param seed: Seed used for np.random.RandomState method.
         """
 
         original_mesh_shape = (10, 11)
@@ -111,6 +111,14 @@ class PressurizedBountifulSeaTreasure(EnvMesh):
         return self.current_state, reward, final, info
 
     def transition_reward(self, state: tuple, action: int, next_state: tuple) -> Vector:
+        """
+        Return reward for reach `next_state` from `position` using `action`.
+
+        :param state: initial position
+        :param action: action to do
+        :param next_state: next position reached
+        :return:
+        """
         # Default reward
         reward = self.default_reward.copy()
 
