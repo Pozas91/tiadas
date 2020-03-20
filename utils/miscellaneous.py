@@ -39,17 +39,6 @@ def tuples_to_string(x, level: int = 1):
     return separator.join(map(lambda y: tuples_to_string(y, level + 1), x))
 
 
-def string_to_tuples(x, level: int = 1):
-    """
-    Invert operation of tuples_to_string
-    :param x:
-    :param level:
-    :return:
-    """
-
-    pass
-
-
 def sum_a_vector_and_a_list_of_vectors(v: Vector, v_list: list):
     """
     Performs a vector-sum between a vector v and a set of vectors V.

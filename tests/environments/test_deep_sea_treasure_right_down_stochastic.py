@@ -231,6 +231,7 @@ class TestDeepSeaTreasureRightDownStochastic(TestDeepSeaTreasureRightDown):
             # Set state as current state
             self.environment.current_state = state
 
+            # For each action in action space
             for action in self.environment.action_space:
 
                 for next_state in self.environment.reachable_states(state=state, action=action):
@@ -242,16 +243,16 @@ class TestDeepSeaTreasureRightDownStochastic(TestDeepSeaTreasureRightDown):
                     if action == self.environment.actions['RIGHT_PROB']:
 
                         if ue.is_on_right_or_same_position(state=state, next_state=next_state):
-                            self.assertEqual(1. - self.environment.p_stochastic, probability)
-                        else:
                             self.assertEqual(self.environment.p_stochastic, probability)
+                        else:
+                            self.assertEqual(1. - self.environment.p_stochastic, probability)
 
                     elif action == self.environment.actions['DOWN_PROB']:
 
                         if ue.is_on_down_or_same_position(state=state, next_state=next_state):
-                            self.assertEqual(1. - self.environment.p_stochastic, probability)
-                        else:
                             self.assertEqual(self.environment.p_stochastic, probability)
+                        else:
+                            self.assertEqual(1. - self.environment.p_stochastic, probability)
 
                     elif action == self.environment.actions['DOWN']:
                         self.assertEqual(1., probability)

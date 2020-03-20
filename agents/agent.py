@@ -4,7 +4,7 @@ Base Agent class, other agent classes inherited from this.
 
 import time
 from pprint import pprint
-from typing import List, Dict
+from typing import List
 
 import numpy as np
 
@@ -22,13 +22,13 @@ class Agent:
     available_graph_types = set()
 
     def __init__(self, environment: Environment, gamma: float = 1., seed: int = 0, states_to_observe: set = None,
-                 max_steps: int = None, graph_types: set = None, initial_value: object = None):
+                 graph_types: set = None, initial_value: object = None, **kwargs):
         """
         :param environment: the agent'state environment.
         :param gamma: Discount factor
         :param seed: Seed used for np.random.RandomState method.
         :param states_to_observe: List of states from which graphical output is provided.
-        :param max_steps: Limit of steps per episode.
+        :param max_iterations: Limit of steps per episode.
         :param graph_types: Types of graphs where we want extract extra
         :param initial_value: default value for vectors and another calc.
         """
@@ -42,9 +42,6 @@ class Agent:
 
         # Set environment
         self.environment = environment
-
-        # To intensive problems
-        self.max_steps = max_steps
 
         # States to observe
         self.states_to_observe = states_to_observe

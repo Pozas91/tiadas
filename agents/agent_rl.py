@@ -28,10 +28,13 @@ class AgentRL(Agent):
         """
 
         super().__init__(environment=environment, gamma=gamma, seed=seed, states_to_observe=states_to_observe,
-                         max_steps=max_steps, graph_types=graph_types, initial_value=initial_value)
+                         graph_types=graph_types, initial_value=initial_value)
 
         # Epsilon to exploration
         self.epsilon = epsilon
+
+        # Define maximum of iterations
+        self.max_steps = max_steps
 
         # Total of this agent
         self.total_steps = 0

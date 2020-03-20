@@ -22,7 +22,6 @@ EXAMPLE OF USE:
         calc_hypervolume(vectors=vectors, reference=Vector([-6, -6]))   # Returns 49.0
 
 """
-import numpy as np
 import pygmo as pg
 
 from models import Vector

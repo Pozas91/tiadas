@@ -1,3 +1,6 @@
+"""
+This file has many functions to help us work with graphs.
+"""
 import math
 import os
 import time
@@ -9,7 +12,8 @@ import numpy as np
 from colorama import Fore, init
 
 import utils.miscellaneous as um
-from agents import Agent, AgentPQL, AgentMOSP, AgentA1, AgentPQLEXP, AgentPQLEXP3, AgentW
+from agents import Agent, AgentPQL, AgentMOSP, AgentPQLEXP, AgentPQLEXP3, AgentW
+from configurations import dumps_path
 from environments import Environment
 from models import AgentType, GraphType, Vector, EvaluationMechanism
 from .hypervolume import calc_hypervolume
@@ -17,8 +21,6 @@ from .miscellaneous import str_to_snake_case, order_vectors_by_origin_nearest
 from .numbers import are_equal_two_decimal_numbers
 
 init(autoreset=True)
-
-dumps_directory = Path(__file__).parent.parent.joinpath('dumps')
 
 
 def write_config_file(timestamp: int, number_of_agents: int, env_name_snake: str, **kwargs):
@@ -37,7 +39,7 @@ def write_config_file(timestamp: int, number_of_agents: int, env_name_snake: str
     env_name_abbr = ''.join([word[0] for word in env_name_snake.split('_')])
 
     # Create path from above path
-    config_file = dumps_directory.joinpath(
+    config_file = dumps_path.joinpath(
         config_path.format(env_name_abbr, number_of_agents, timestamp).lower()
     )
 
@@ -75,9 +77,11 @@ def dumps_train_data(timestamp: int, seed: int, env_name_snake: str, agent_type:
     env_name_abbr = ''.join([word[0] for word in env_name_snake.split('_')])
 
     # Create path from above path
-    data_file = dumps_directory.joinpath(
-        data_path.format(str(agent_type.value), env_name_abbr, seed, variable, configuration, evaluation_mechanism,
-                         timestamp, kwargs['diagonals']).lower()
+    data_file = dumps_path.joinpath(
+        data_path.format(
+            str(agent_type.value), env_name_abbr, seed, variable, configuration, evaluation_mechanism, timestamp,
+            kwargs['diagonals']
+        ).lower()
     )
 
     # If any parents doesn't exist, make it.
@@ -184,8 +188,6 @@ def update_graphs(graphs: dict, graph_type: GraphType, agent: Agent, configurati
     :param states_to_observe:
     :return:
     """
-
-    # for graph_type in graphs:
 
     # Recover old train_data
     old_data_list = graphs[graph_type][agent_type][configuration]
@@ -362,9 +364,8 @@ def test_agents(environment: Environment, hv_reference: Vector, variable: str, a
 
                     agent, v_s_0 = train_agent_and_get_v_s_0(agent_type=agent_type, environment=environment,
                                                              graph_type=graph_type, graph_types=graph_types,
-                                                             hv_reference=hv_reference, initial_q_value=initial_q_value,
-                                                             limit=limit, seed=seed, parameters=parameters,
-                                                             states_to_observe=states_to_observe)
+                                                             hv_reference=hv_reference, limit=limit, seed=seed,
+                                                             parameters=parameters, states_to_observe=states_to_observe)
 
                     print('-> {:.2f}s'.format(time.time() - t0))
 
@@ -405,7 +406,7 @@ def test_agents(environment: Environment, hv_reference: Vector, variable: str, a
 
 
 def train_agent_and_get_v_s_0(agent_type: AgentType, environment: Environment, graph_type: GraphType, graph_types: set,
-                              hv_reference: Vector, initial_q_value: Vector, limit: int, parameters: dict, seed: int,
+                              hv_reference: Vector, limit: int, parameters: dict, seed: int,
                               states_to_observe: set) -> (Agent, set):
     """
     :param agent_type:
@@ -413,7 +414,6 @@ def train_agent_and_get_v_s_0(agent_type: AgentType, environment: Environment, g
     :param graph_type:
     :param graph_types:
     :param hv_reference:
-    :param initial_q_value:
     :param limit:
     :param parameters:
     :param seed:
@@ -490,18 +490,6 @@ def train_agent_and_get_v_s_0(agent_type: AgentType, environment: Environment, g
         # Non-dominated vectors found in V(s0)
         v_s_0 = set(agent.q_set_from_state(state=agent.environment.initial_state))
 
-    elif agent_type is AgentType.A1:
-
-        # Build an instance of agent
-        agent = AgentA1(environment=environment, seed=seed, hv_reference=hv_reference, graph_types=graph_types,
-                        states_to_observe=states_to_observe, **parameters)
-
-        # Train the agent
-        agent.train(graph_type=graph_type, limit=limit)
-
-        # Extract V from s0, by default is `initial_value`
-        v_s_0 = set(agent.v.get(agent.environment.initial_state, {0: initial_q_value}).values())
-
     elif agent_type is AgentType.W:
 
         # Removing useless parameters
@@ -569,7 +557,7 @@ def prepare_data_and_show_graph(timestamp: int, env_name: str, env_name_snake: s
             process_data = np.average(data, axis=0).tolist()
 
             # Create path from given path.
-            matlab_file = dumps_directory.joinpath(
+            matlab_file = dumps_path.joinpath(
                 graph_path.format(agent_type.value, env_name_abbr, number_of_agents, variable, configuration,
                                   GraphType.DATA_PER_STATE.value, evaluation_mechanism, timestamp).lower()
             )
@@ -626,7 +614,7 @@ def prepare_data_and_show_graph(timestamp: int, env_name: str, env_name_snake: s
                 color = agents_configuration[agent_type][configuration]
 
                 # Create path from given path.
-                matlab_file = dumps_directory.joinpath(
+                matlab_file = dumps_path.joinpath(
                     graph_path.format(agent_type.value, env_name_abbr, number_of_agents, variable, configuration,
                                       graph_name, evaluation_mechanism, timestamp).lower()
                 )
@@ -773,7 +761,7 @@ def prepare_data_and_show_graph(timestamp: int, env_name: str, env_name_snake: s
     plt.text(0.85, 0.5, text_information, bbox=props, transform=plt.gcf().transFigure)
 
     # Define figure path
-    plot_file = dumps_directory.joinpath(
+    plot_file = dumps_path.joinpath(
         plot_path.format(env_name_abbr, number_of_agents, timestamp).lower()
     )
 
@@ -842,7 +830,7 @@ def unified_graphs(line_specification: dict, input_path: str = None, output_path
 
     # Create an instance of Path with input and output paths.
     if input_path is None:
-        input_directory = dumps_directory.joinpath('unify')
+        input_directory = dumps_path.joinpath('unify')
     else:
         input_directory = Path(input_path)
 
@@ -913,7 +901,7 @@ def unified_graphs(line_specification: dict, input_path: str = None, output_path
             )
 
         if output_path is None:
-            output_file = dumps_directory.joinpath('unify/unified/{}.m'.format(description_file_name))
+            output_file = dumps_path.joinpath('unify/unified/{}.m'.format(description_file_name))
         else:
             output_file = Path(output_path)
 
