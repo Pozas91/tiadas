@@ -1,3 +1,7 @@
+"""
+Really is not an Agent, only iterates about all states
+Backtracking agent, this agent begins its simulation from last to initials states.
+"""
 import itertools
 import json
 import time
@@ -13,7 +17,9 @@ class AgentB:
 
     def __init__(self, environment: Environment, limited_precision: bool = False, dumps_format: str = 'yml'):
         """
-        :param environment:
+        :param environment: Environment with we are going to work.
+        :param limited_precision: If is True then model work with limited precision indicated by
+        'Vector.decimal_precision', else model work with full decimals.
         """
         self.environment = environment
         self.states_vectors = dict()
@@ -21,11 +27,15 @@ class AgentB:
         self.limited_precision = limited_precision
 
         # Check if specifies a correct format
-        # assert dumps_format in ('json', 'yml')
         assert dumps_format in ('yml',)
         self.dumps_format = dumps_format
 
     def simulate(self):
+        """
+        Iterates about all sorted states (from last to begin), on each iteration extract all vectors from that state
+        to a final state, then save that state information.
+        :return:
+        """
         # Time train
         self.initial_time = time.time()
 
@@ -40,6 +50,13 @@ class AgentB:
         self.dumps()
 
     def simulate_state(self, state: object) -> set:
+        """
+        Given an state iterates about itself, extracting all possible actions, the reachable states from it, and
+        calculating it reward.
+        :param state:
+        :return:
+        """
+
         # Set current state
         self.environment.current_state = state
 
@@ -109,7 +126,7 @@ class AgentB:
             vectors = map(lambda x: un.round_with_precision(x, Vector.decimal_precision), vectors)
 
         # Return all vectors found
-        return set(Vector.m3_max(list(vectors)))
+        return set(Vector.m3_max(vectors))
 
     def reset(self):
         self.environment.reset()

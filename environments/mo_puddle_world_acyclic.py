@@ -3,7 +3,6 @@ Variant of Mo Puddle World for Acyclic agents.
 
 HV REFERENCE: (-50, -150)
 """
-from colorama import Fore
 from scipy.spatial import distance
 
 from environments import MoPuddleWorld
@@ -31,6 +30,13 @@ class MoPuddleWorldAcyclic(MoPuddleWorld):
                          final_state=final_state, action_space=action_space)
 
     def next_position(self, action: int, position: tuple) -> (tuple, bool):
+        """
+        Given a action an initial position, returns the next position and if the next position is valid or not.
+        :param action:
+        :param position:
+        :return:
+        """
+
         # Unpack position (x, y)
         x, y = position
 
@@ -103,6 +109,14 @@ class MoPuddleWorldAcyclic(MoPuddleWorld):
         return self._action_space
 
     def transition_reward(self, state: tuple, action: int, next_state: tuple) -> Vector:
+        """
+        Return reward for reach `next_state` from `position` using `action`.
+
+        :param state: initial position
+        :param action: action to do
+        :param next_state: next position reached
+        :return:
+        """
 
         # Initialize reward as vector
         reward = self.default_reward.copy()
@@ -125,6 +139,12 @@ class MoPuddleWorldAcyclic(MoPuddleWorld):
         return reward
 
     def calc_puddle_penalization(self, state: tuple):
+        """
+        Return a float that represents a penalization, the penalization is the lowest distance between current state
+        and the nearest border in manhattan distance.
+        :param state:
+        :return:
+        """
 
         # Get free spaces
         free_spaces = set(filter(lambda x: x[0] >= state[0] and x[1] <= state[1], self.free_spaces))

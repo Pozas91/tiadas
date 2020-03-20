@@ -7,10 +7,12 @@ class PyramidMDPNoBounces(PyramidMDP):
     def __init__(self, initial_state: tuple = (0, 0), default_reward: tuple = (-1, -1), seed: int = 0,
                  n_transition: float = 0.95, diagonals: int = 9):
         """
-        :param initial_state:
-        :param default_reward:
-        :param seed:
+        :param initial_state: Initial state where start the agent.
+        :param default_reward: (objective 1, objective 2)
+        :param seed: Seed used for np.random.RandomState method.
         :param n_transition: if is 1, always do the action indicated. (Original is about 0.6)
+        :param diagonals: Number of diagonals to be used to build this environment (allows experimenting with an
+                        identical environment, but considering only the first k diagonals) (By default 9 - all).
         """
 
         # Action space
@@ -69,7 +71,12 @@ class PyramidMDPNoBounces(PyramidMDP):
         return self._action_space
 
     def reachable_states(self, state: tuple, action: int) -> set:
-
+        """
+        Return all reachable states for pair (state, a) given.
+        :param state:
+        :param action:
+        :return:
+        """
         # Set current state with state indicated
         self.current_state = state
 

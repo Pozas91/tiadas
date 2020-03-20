@@ -28,12 +28,15 @@ class BuridanAss(EnvMesh):
                  p_stolen: float = .9, n_appear: int = 10, stolen_penalty: float = -.5, walking_penalty: float = -1,
                  hunger_penalty: float = -1., last_ate_limit: int = 9, seed: int = 0):
         """
+        :param initial_state: Initial state where start the agent.
         :param default_reward: (hunger, stolen, walking)
         :param p_stolen: Probability to stole food if not are visible.
         :param n_appear: Number of time-steps until food is regenerated.
         :param stolen_penalty: Penalty when the food are stolen.
         :param walking_penalty: Penalty for each step.
         :param hunger_penalty: Penalty for not eat.
+        :param last_ate_limit: Limit of steps for the donkey has hungry.
+        :param seed: Seed used for np.random.RandomState method.
         """
 
         mesh_shape = (3, 3)
@@ -76,6 +79,12 @@ class BuridanAss(EnvMesh):
         }
 
     def next_state(self, action: int, state: tuple = None) -> tuple:
+        """
+        Given a state and an action, return the next state.
+        :param state: If a position is given, do action from that position.
+        :param action: from action_space
+        :return: a new position (or old if is invalid action)
+        """
 
         # Unpack complex position
         position, _, last_ate = state if state else self.current_state
@@ -121,6 +130,10 @@ class BuridanAss(EnvMesh):
         return next_position, positions_with_food, last_ate
 
     def __positions_with_food(self) -> frozenset:
+        """
+        Return all positions where there are food.
+        :return:
+        """
         return frozenset(filter(lambda key: self.food_counter[key] <= 0, self.food_counter.keys()))
 
     def step(self, action: int) -> (tuple, VectorDecimal, bool, dict):
@@ -158,6 +171,10 @@ class BuridanAss(EnvMesh):
         return self.current_state, reward, final, info
 
     def reset(self) -> tuple:
+        """
+        Reset relevant information about environment
+        :return:
+        """
         # Reset to initial seed
         self.seed(seed=self.initial_seed)
 
@@ -239,6 +256,10 @@ class BuridanAss(EnvMesh):
         return position_b in a_neighbours
 
     def states(self) -> set:
+        """
+        Return a set with all states of this environment
+        :return:
+        """
 
         # States
         states = list()

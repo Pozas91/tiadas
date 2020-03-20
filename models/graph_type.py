@@ -1,3 +1,6 @@
+"""
+Enum class for do easiest work with different graph types.
+"""
 from enum import Enum
 
 
@@ -11,13 +14,26 @@ class GraphType(Enum):
     V_S_0 = 'v_s_0'
 
     def __str__(self):
+        """
+        Convert the agent type to a string
+        :return:
+        """
         return str(self.value)
 
     def __repr__(self):
+        """
+        Return a string that represent the agent type
+        :return:
+        """
         return str(self.value)
 
     @staticmethod
     def from_string(graph_type: str):
+        """
+        Return a type of agent from the string given
+        :param graph_type:
+        :return:
+        """
 
         if graph_type == str(GraphType.STEPS.value):
             result = GraphType.STEPS

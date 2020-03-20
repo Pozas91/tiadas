@@ -20,11 +20,12 @@ class BonusWorldAcyclic(BonusWorld):
 
     def __init__(self, initial_state: tuple = ((0, 0), False), default_reward: tuple = (0, 0), seed: int = 0):
         """
-        :param initial_state:
+        :param initial_state: Initial state where start the agent.
         :param default_reward: (objective 1, objective 2)
-        :param seed:
+        :param seed: Seed used for np.random.RandomState method.
         """
 
+        # Create a bag action space
         action_space = Bag([])
         action_space.seed(seed)
 
@@ -44,6 +45,12 @@ class BonusWorldAcyclic(BonusWorld):
         self.pits = list()
 
     def next_position(self, action: int, position: tuple) -> (tuple, bool):
+        """
+        Given a position and an action, return the next position of this environment
+        :param action:
+        :param position:
+        :return:
+        """
         # Unpack position (x, y)
         x, y = position
 

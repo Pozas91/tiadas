@@ -1,5 +1,5 @@
 """
-Agent for reinforcement learning agents.
+Base Agent for reinforcement learning agents.
 """
 import time
 
@@ -17,14 +17,24 @@ class AgentRL(Agent):
                  states_to_observe: list = None, max_steps: int = None, graph_types: set = None,
                  initial_value: object = None):
         """
+        :param environment: An environment where agent does any operation.
         :param epsilon: Epsilon used in epsilon-greedy policy to control exploration.
+        :param gamma: Discount factor
+        :param seed: Seed used for np.random.RandomState method.
+        :param states_to_observe: List of states from that we want to get a graphical output.
+        :param max_steps: Limits of steps per episode.
+        :param graph_types: Set of types of graph to generate.
+        :param initial_value: Vector with the algorithm begin to learn (by default zero vector).
         """
 
         super().__init__(environment=environment, gamma=gamma, seed=seed, states_to_observe=states_to_observe,
-                         max_steps=max_steps, graph_types=graph_types, initial_value=initial_value)
+                         graph_types=graph_types, initial_value=initial_value)
 
         # Epsilon to exploration
         self.epsilon = epsilon
+
+        # Define maximum of iterations
+        self.max_steps = max_steps
 
         # Total of this agent
         self.total_steps = 0
@@ -147,17 +157,13 @@ class AgentRL(Agent):
                 # Update Graph
                 self.update_graph(graph_type=GraphType.EPISODES)
 
-    def get_dict_model(self) -> dict:
-
-        model = super().get_dict_model()
-
-        model['train_data'].update({
-            'epsilon': self.epsilon
-        })
-
-        return model
-
     def train(self, graph_type: GraphType, **kwargs):
+        """
+        Method to train this model.
+        :param graph_type:
+        :param kwargs:
+        :return:
+        """
 
         self.reference_time_to_train = time.time()
 

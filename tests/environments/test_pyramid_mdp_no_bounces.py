@@ -103,7 +103,7 @@ class TestPyramidMDPNoBounces(TestPyramidMDP):
             next_state, reward, is_final, _ = self.environment.step(action=self.environment.actions['RIGHT'])
 
         # Remember that initial position is (0, 0)
-        self.assertEqual((2, 1), next_state)
+        self.assertEqual((0, 3), next_state)
         self.assertEqual([-1, -1], reward)
         self.assertFalse(is_final)
 

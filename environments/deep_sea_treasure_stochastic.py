@@ -14,9 +14,9 @@ class DeepSeaTreasureStochastic(DeepSeaTreasure):
     def __init__(self, initial_state: tuple = (0, 0), default_reward: tuple = (0,), seed: int = 0,
                  n_transition: float = 0.3, columns: int = 10):
         """
-        :param initial_state:
-        :param default_reward:
-        :param seed:
+        :param initial_state: start position for each episode.
+        :param default_reward: (time_inverted, treasure_value)
+        :param seed: Initial initial_seed for the random number generator.
         :param n_transition: if is 0, the action affected by the transition is always the same action.
         """
 
@@ -68,14 +68,32 @@ class DeepSeaTreasureStochastic(DeepSeaTreasure):
         return (direction + action) % self.action_space.n
 
     def transition_probability(self, state: tuple, action: int, next_state: tuple) -> float:
+        """
+        Return probability to reach `next_state` from `position` using `action`.
+
+        In non-stochastic environments this return always 1.
+
+        :param state: initial position
+        :param action: action to do
+        :param next_state: next position reached
+        :return:
+        """
 
         probability = self.transitions[1]
 
         straight_movement = (
-            (action == self.actions['UP'] and ue.is_on_up_or_same_position(state=state, next_state=next_state)) or
-            (action == self.actions['RIGHT'] and ue.is_on_right_or_same_position(state=state, next_state=next_state)) or
-            (action == self.actions['DOWN'] and ue.is_on_down_or_same_position(state=state, next_state=next_state)) or
-            (action == self.actions['LEFT'] and ue.is_on_left_or_same_position(state=state, next_state=next_state))
+                (action == self.actions['UP'] and ue.is_on_up_or_same_position(
+                    state=state, next_state=next_state)
+                 ) or
+                (action == self.actions['RIGHT'] and ue.is_on_right_or_same_position(
+                    state=state, next_state=next_state)
+                 ) or
+                (action == self.actions['DOWN'] and ue.is_on_down_or_same_position(
+                    state=state, next_state=next_state)
+                 ) or
+                (action == self.actions['LEFT'] and ue.is_on_left_or_same_position(
+                    state=state, next_state=next_state
+                ))
         )
 
         if straight_movement:
@@ -84,6 +102,13 @@ class DeepSeaTreasureStochastic(DeepSeaTreasure):
         return probability
 
     def reachable_states(self, state: tuple, action: int) -> set:
+        """
+        Return all reachable states for pair (state, a) given.
+        :param state:
+        :param action:
+        :return:
+        """
+
         # Set current state with state indicated
         self.current_state = state
 

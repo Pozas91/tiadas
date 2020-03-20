@@ -1,3 +1,6 @@
+"""
+This file has functions to work with numbers, specially with float and decimals numbers.
+"""
 from decimal import Decimal
 
 from models import Vector

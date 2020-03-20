@@ -103,6 +103,14 @@ class RussellNorvig(EnvMesh):
         return reward
 
     def transition_probability(self, state: tuple, action: int, next_state: tuple) -> float:
+        """
+        Return probability to reach `next_state` from `state` using `action`.
+
+        :param state: initial position
+        :param action: action to do
+        :param next_state: next position reached
+        :return:
+        """
 
         n_actions = len(self.actions)
         coefficient = (n_actions - action)
@@ -119,6 +127,12 @@ class RussellNorvig(EnvMesh):
         return probability
 
     def reachable_states(self, state: tuple, action: int) -> set:
+        """
+        Return all reachable states for pair (state, action) given.
+        :param state:
+        :param action:
+        :return:
+        """
         # Set current state with state indicated
         self.current_state = state
 

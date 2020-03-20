@@ -35,9 +35,9 @@ class ResourceGathering(EnvMesh):
                  p_attack: float = 0.1, mesh_shape: tuple = (5, 5), gold_positions: frozenset = frozenset({(2, 0)}),
                  gem_positions: frozenset = frozenset({(4, 1)}), observation_space: gym.spaces = None):
         """
-        :param initial_state:
+        :param initial_state: Initial state where start the agent.
         :param default_reward: (enemy_attack, gold, gems)
-        :param seed:
+        :param seed: Seed used for np.random.RandomState method.
         :param p_attack: Probability that a enemy attacks when agent stay in an enemy position.
         """
 
@@ -77,6 +77,10 @@ class ResourceGathering(EnvMesh):
         self.checkpoints_states = self._checkpoints_states()
 
     def _checkpoints_states(self) -> set:
+        """
+        Return states where the agent will get favorable reward.
+        :return:
+        """
         return set(itertools.product({self.home_position}, {(1, 0), (0, 1), (1, 1)}))
 
     def step(self, action: int) -> (tuple, Vector, bool, dict):
@@ -110,7 +114,12 @@ class ResourceGathering(EnvMesh):
         return self.current_state, reward, final, info
 
     def next_state(self, action: int, state: tuple = None) -> tuple:
-
+        """
+        Calc next position with current position and action given. Default is 4-neighbors (UP, LEFT, DOWN, RIGHT)
+        :param state: If a position is given, do action from that position.
+        :param action: from action_space
+        :return: a new position (or old if is invalid action)
+        """
         # Unpack complex state (position, objects(gold, gem))
         position, objects = state if state else self.current_state
 
@@ -146,24 +155,11 @@ class ResourceGathering(EnvMesh):
 
         return self.current_state
 
-    def get_dict_model(self) -> dict:
+    def states(self) -> set:
         """
-        Get dict model of environment
+        Return all states from this environment
         :return:
         """
-
-        data = super().get_dict_model()
-
-        # Clean specific environment train_data
-        del data['gold_positions']
-        del data['gem_positions']
-        del data['enemies_positions']
-        del data['home_position']
-        del data['checkpoints_states']
-
-        return data
-
-    def states(self) -> set:
 
         # Unpack spaces
         x_position, y_position = self.observation_space[0]
@@ -194,7 +190,13 @@ class ResourceGathering(EnvMesh):
         # Return all spaces
         return states
 
-    def warning_action(self, state: tuple, action: int):
+    def warning_action(self, state: tuple, action: int) -> bool:
+        """
+        Check if that in that state the agent can be attacked.
+        :param state:
+        :param action:
+        :return:
+        """
         return ((state[0] == (3, 1) or state[0] == (3, 0)) and action == self.actions['UP']) or \
                (state[0] == (3, 1) and action == self.actions['LEFT']) or \
                (state[0] == (4, 0) and action == self.actions['LEFT']) or \
@@ -204,6 +206,14 @@ class ResourceGathering(EnvMesh):
                (state[0] == (2, 0) and action == self.actions['RIGHT'])
 
     def transition_reward(self, state: tuple, action: int, next_state: tuple) -> Vector:
+        """
+        Return reward for reach `next_state` from `state` using `action`.
+
+        :param state: initial position
+        :param action: action to do
+        :param next_state: next position reached
+        :return:
+        """
         # Initialize reward as vector
         reward = self.default_reward.copy()
 
@@ -215,7 +225,14 @@ class ResourceGathering(EnvMesh):
         return reward
 
     def transition_probability(self, state: tuple, action: int, next_state: tuple) -> float:
+        """
+        Return probability to reach `next_state` from `state` using `action`.
 
+        :param state: initial position
+        :param action: action to do
+        :param next_state: next position reached
+        :return:
+        """
         transition_probability = 1.
 
         if self.warning_action(state=state, action=action):
@@ -224,7 +241,12 @@ class ResourceGathering(EnvMesh):
         return transition_probability
 
     def reachable_states(self, state: tuple, action: int) -> set:
-
+        """
+        Return all reachable states for pair (state, action) given.
+        :param state:
+        :param action:
+        :return:
+        """
         reachable_states = set()
 
         # If current state is on checkpoints (in home position with any resource) then reset resources
@@ -263,5 +285,4 @@ class ResourceGathering(EnvMesh):
         Return always false (No episodic task)
         :return:
         """
-        state = state if state else self.current_state
-        return state in self.finals
+        return False

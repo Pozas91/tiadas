@@ -17,13 +17,13 @@ We consider the following operations and functions:
 import itertools
 import time
 from copy import deepcopy
-from typing import List, Dict
+from typing import List
 
 import utils.hypervolume as uh
 import utils.miscellaneous as um
 import utils.numbers as un
 from environments import Environment
-from models import Vector, GraphType, AgentType
+from models import Vector, GraphType
 from .agent import Agent
 
 
@@ -35,6 +35,16 @@ class AgentW(Agent):
     def __init__(self, environment: Environment, gamma: float = 1., seed: int = 0, initial_value: Vector = None,
                  states_to_observe: set = None, graph_types: set = None, hv_reference: Vector = None,
                  convergence_graph: bool = False):
+        """
+        :param environment: An environment where agent does any operation.
+        :param gamma: Discount factor
+        :param seed: Seed used for np.random.RandomState method.
+        :param initial_value: Vector with the algorithm begin to learn (by default zero vector).
+        :param states_to_observe: List of states from that we want to get a graphical output.
+        :param graph_types: Set of types of graph to generate.
+        :param hv_reference: Reference vector to calc hypervolume
+        :param convergence_graph: If is True then algorithm collects data to draw a convergence graph.
+        """
 
         # Super call __init__
         super().__init__(environment=environment, gamma=gamma, seed=seed, initial_value=initial_value,
@@ -57,6 +67,12 @@ class AgentW(Agent):
         self.convergence_graph_data = list()
 
     def train(self, graph_type: GraphType = None, **kwargs):
+        """
+        Method to train this agent.
+        :param graph_type:
+        :param kwargs:
+        :return:
+        """
 
         self.reference_time_to_train = time.time()
 
@@ -226,7 +242,12 @@ class AgentW(Agent):
         return converged
 
     def update_graph(self, graph_type: GraphType) -> None:
+        """
+        Update specific graph type
+        :return:
+        """
 
+        # Check for each type of graph
         if graph_type not in self.available_graph_types:
             raise ValueError('Invalid GraphType {} for this agent.'.format(graph_type))
 
@@ -273,6 +294,10 @@ class AgentW(Agent):
                 self.graph_info.get(graph_type).update({state: data})
 
     def do_iteration(self) -> None:
+        """
+        Does an iteration (In this case a Sweeps)
+        :return:
+        """
 
         # Increment total sweeps
         self.total_sweeps += 1
@@ -285,9 +310,6 @@ class AgentW(Agent):
 
         # For each state available
         for s in self.environment.states():
-
-            if s in {((2, 4), (1, 0)), ((2, 4), (0, 1)), ((2, 4), (1, 1))}:
-                pass
 
             # A(state) <- Extract all actions available from position `state`
             self.environment.current_state = s
@@ -354,17 +376,12 @@ class AgentW(Agent):
         # ND[vectors]
         return Vector.m3_max(vectors=vectors)
 
-    @staticmethod
-    def load(filename: str = None, **kwargs) -> object:
-        # TODO: Finish this method
-        return Agent.load(filename=filename, agent_type=AgentType.W)
-
-    def recover_policy(self, initial_state: tuple, objective_vector: Vector, **kwargs) -> List:
+    def recover_policy(self, initial_state: tuple, objective_vector: Vector, **kwargs) -> List[tuple]:
         """
-        Return a policy in order
-        :param initial_state:
-        :param objective_vector:
-        :param kwargs:
+        Returns a policy in temporary order. This way to recover policy allows recover non-stationary policies.
+        :param initial_state: State to begin to calculate the policy
+        :param objective_vector: Objective vector to search the policy
+        :param kwargs: Extra args.
         :return:
         """
 
@@ -406,7 +423,7 @@ class AgentW(Agent):
             best_possible_objective = None
 
             # Desirable action
-            desirable_action = dict()
+            desirable_action = tuple()
 
             # For a in actions
             for a in actions:
@@ -448,7 +465,7 @@ class AgentW(Agent):
                     if euclidean_distance <= lowest_distance:
                         # Update lowest distance
                         lowest_distance = euclidean_distance
-                        desirable_action.update({s: a})
+                        desirable_action = (s, a)
 
                         # Prepare next states to recover_policy, except if it are final states.
                         best_possible_objective = {
@@ -473,49 +490,3 @@ class AgentW(Agent):
 
         # Return the policy
         return policy
-
-    def evaluate_policy(self, policy: list, tolerance: float = 0.) -> Dict:
-
-        # Initialize all vectors to zero
-        vectors = {s: self.environment.default_reward.zero_vector for s in policy.keys()}
-
-        # Initialize looping variable
-        looping = True
-
-        # Continue until A do not change more than tolerance variable
-        while looping:
-            # Change looping information
-            looping = False
-
-            # For each state in S
-            for s in policy.keys():
-                # Initial v
-                v = vectors[s]
-                a = policy[s]
-
-                # Initialize summation to zero vector
-                summation = self.environment.default_reward.zero_vector
-
-                for next_s in self.environment.reachable_states(state=s, action=a):
-                    # Calc probability
-                    p = self.environment.transition_probability(state=s, action=a, next_state=next_s)
-                    # Calc reward
-                    r = self.environment.transition_reward(state=s, action=a, next_state=next_s)
-                    # v'
-                    next_v = vectors.get(next_s, self.environment.default_reward.zero_vector)
-                    # Summation
-                    summation += ((next_v * self.gamma) + r) * p
-
-                # V(state) <- summation
-                vectors[s] = summation
-
-                # A <- max(A, |v - V(state)|)
-                abs_difference = abs(v - vectors[s])
-
-                # Update looping variable
-                looping = not all(component < tolerance for component in abs_difference)
-
-                if looping:
-                    break
-
-        return vectors

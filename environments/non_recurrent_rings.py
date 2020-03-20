@@ -13,8 +13,11 @@ class NonRecurrentRings(Environment):
 
     def __init__(self, seed: int = 0, initial_state: int = 0, default_reward: tuple = (0, 0)):
         """
-        :param seed:
-        :param initial_state:
+        :param seed: Initial initial_seed. The same is used for _action_space,
+                     observation_space, and random number generator
+        :param initial_state: start position for all episodes.
+        :param default_reward: Default reward returned by the environment when
+                               a reward is not defined (objective 1, objective 2).
         """
 
         # Create the observation space
@@ -144,28 +147,37 @@ class NonRecurrentRings(Environment):
         return next_position
 
     def is_final(self, state: int = None) -> bool:
+        """
+        Check if state given is final or not, in this case any state is final.
+        :param state:
+        :return:
+        """
         # (This is a non-episodic problem, so doesn't have final states)
         return False
 
-    def get_dict_model(self) -> dict:
+    def transition_reward(self, state: int, action: int, next_state: int) -> Vector:
         """
-        Get dict model of environment
+        Return reward for reach `next_state` from `position` using `action`.
+
+        :param state: initial position
+        :param action: action to do
+        :param next_state: next position reached
         :return:
         """
-
-        data = super().get_dict_model()
-
-        # Clean specific environment train_data
-        del data['possible_transitions']
-        del data['rewards_dictionary']
-
-        return data
-
-    def transition_reward(self, state: int, action: int, next_state: int) -> Vector:
         return self.rewards_dictionary[state][action]
 
     def states(self) -> set:
+        """
+        Return all possible states of this environment.
+        :return:
+        """
         return set(range(self.observation_space.n))
 
     def reachable_states(self, state: int, action: int) -> set:
+        """
+        Return all reachable states for pair (state, a) given.
+        :param state:
+        :param action:
+        :return:
+        """
         return {self.possible_transitions[state][action]}

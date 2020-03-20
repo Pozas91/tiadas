@@ -1,4 +1,5 @@
-"""The agent controls a spaceship which starts each episode in the location marked ’S’ and aims to discover a
+"""
+The agent controls a spaceship which starts each episode in the location marked ’S’ and aims to discover a
 habitable planet while minimising the amount of radiation to which it is exposed. A penalty of −1 is received for the
 radiation objective on all time-steps, except when in a region of high radiation (marked ’R’) when the penalty is
 −11. A positive reward is received for the mission success objective whenever a terminal position corresponding to a
@@ -33,9 +34,9 @@ class SpaceExploration(EnvMesh):
     def __init__(self, initial_state: tuple = (5, 2), default_reward: tuple = (0, -1), seed: int = 0,
                  action_space: gym.spaces = None):
         """
-        :param initial_state:
+        :param initial_state: Initial state where start the agent.
         :param default_reward: (mission_success, radiation)
-        :param seed:
+        :param seed: Seed used for np.random.RandomState method.
         """
 
         # List of all treasures and its reward.
@@ -55,6 +56,7 @@ class SpaceExploration(EnvMesh):
             (5, 0), (4, 1), (6, 1), (3, 2), (7, 2), (4, 3), (6, 3), (5, 4)
         }
 
+        # Define radiations states (If the agent is on any of these, then receive -100 penalization)
         self.radiations = set()
         self.radiations = self.radiations.union({(1, i) for i in range(5)})
         self.radiations = self.radiations.union({(10, i) for i in range(5)})
@@ -90,6 +92,12 @@ class SpaceExploration(EnvMesh):
         return self.current_state, reward, final, info
 
     def next_position(self, action: int, position: tuple) -> (tuple, bool):
+        """
+        Given an action and a position, return the next position reached.
+        :param action:
+        :param position:
+        :return:
+        """
 
         # Get my position
         x, y = position
@@ -158,21 +166,15 @@ class SpaceExploration(EnvMesh):
 
         return crash or final
 
-    def get_dict_model(self) -> dict:
+    def transition_reward(self, state: tuple, action: int, next_state: tuple) -> Vector:
         """
-        Get dict model of environment
+        Return reward for reach `next_state` from `state` using `action`.
+
+        :param state: initial position
+        :param action: action to do
+        :param next_state: next position reached
         :return:
         """
-
-        data = super().get_dict_model()
-
-        # Clean specific environment train_data
-        del data['radiations']
-        del data['asteroids']
-
-        return data
-
-    def transition_reward(self, state: tuple, action: int, next_state: tuple) -> Vector:
         # Initialize reward as vector
         reward = self.default_reward.copy()
 

@@ -1,3 +1,6 @@
+"""
+Enum class for do easiest work with different agents.
+"""
 from enum import Enum
 
 
@@ -12,13 +15,26 @@ class AgentType(Enum):
     W = 'w'
 
     def __str__(self):
+        """
+        Convert the agent type to a string
+        :return:
+        """
         return str(self.value)
 
     def __repr__(self):
+        """
+        Return a string that represent the agent type
+        :return:
+        """
         return str(self.value)
 
     @staticmethod
     def from_string(agent_type: str):
+        """
+        Return a type of agent from the string given
+        :param agent_type:
+        :return:
+        """
 
         if agent_type == str(AgentType.A1.value):
             result = AgentType.A1

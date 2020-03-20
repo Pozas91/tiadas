@@ -44,9 +44,12 @@ class DeepSeaTreasure(EnvMesh):
     def __init__(self, initial_state: tuple = (0, 0), default_reward: tuple = (0,), columns: int = 10, seed: int = 0,
                  action_space: gym.spaces = None):
         """
-        :param initial_state:
-        :param default_reward:
-        :param seed:
+        :param initial_state: Initial state where start the agent.
+        :param default_reward: (time_inverted, treasure_value)
+        :param columns: Number of columns to be used to build this environment (allows experimenting with an identical
+                        environment, but considering only the first k columns) (By default 10 - all).
+        :param seed: Seed used for np.random.RandomState method.
+        :param action_space: Specific action space
         """
 
         # the original full-size environment.
@@ -120,6 +123,14 @@ class DeepSeaTreasure(EnvMesh):
         return self.current_state, reward, final, info
 
     def transition_reward(self, state: tuple, action: int, next_state: tuple) -> Vector:
+        """
+        Given a state, an action and a next state, return the corresponding reward.
+        :param state:
+        :param action:
+        :param next_state:
+        :return:
+        """
+
         # Default reward
         reward = self.default_reward.copy()
 

@@ -39,7 +39,7 @@ class TestNonRecurrentRings(TestEnvironment):
         # Set position
         self.environment.current_state = 0
 
-        # Go to counter-clockwise sense
+        # Go to COUNTER_CLOCKWISE sense
         new_state = self.environment.next_state(action=self.environment.actions['CLOCKWISE'])
 
         # State 8
@@ -50,8 +50,8 @@ class TestNonRecurrentRings(TestEnvironment):
         # Set position
         self.environment.current_state = 7
 
-        # Go to counter-clockwise sense
-        new_state = self.environment.next_state(action=self.environment.actions['COUNTER-CLOCKWISE'])
+        # Go to COUNTER_CLOCKWISE sense
+        new_state = self.environment.next_state(action=self.environment.actions['COUNTER_CLOCKWISE'])
 
         # State 1
         self.assertEqual(0, new_state)
@@ -61,8 +61,8 @@ class TestNonRecurrentRings(TestEnvironment):
         # Set position
         self.environment.current_state = 0
 
-        # Go to counter-clockwise sense
-        new_state = self.environment.next_state(action=self.environment.actions['COUNTER-CLOCKWISE'])
+        # Go to COUNTER_CLOCKWISE sense
+        new_state = self.environment.next_state(action=self.environment.actions['COUNTER_CLOCKWISE'])
 
         # State 2
         self.assertEqual(1, new_state)
@@ -72,8 +72,8 @@ class TestNonRecurrentRings(TestEnvironment):
         # Set position
         self.environment.current_state = 1
 
-        # Go to counter-clockwise sense
-        new_state = self.environment.next_state(action=self.environment.actions['COUNTER-CLOCKWISE'])
+        # Go to COUNTER_CLOCKWISE sense
+        new_state = self.environment.next_state(action=self.environment.actions['COUNTER_CLOCKWISE'])
 
         # State 3
         self.assertEqual(2, new_state)
@@ -83,8 +83,8 @@ class TestNonRecurrentRings(TestEnvironment):
         # Set position
         self.environment.current_state = 3
 
-        # Go to counter-clockwise sense from position 3.
-        new_state = self.environment.next_state(action=self.environment.actions['COUNTER-CLOCKWISE'])
+        # Go to COUNTER_CLOCKWISE sense from position 3.
+        new_state = self.environment.next_state(action=self.environment.actions['COUNTER_CLOCKWISE'])
 
         # State 1
         self.assertEqual(0, new_state)
@@ -101,7 +101,7 @@ class TestNonRecurrentRings(TestEnvironment):
 
         # Simple valid step, begin at position 0
         next_state, reward, is_final, info = self.environment.step(
-            action=self.environment.actions['COUNTER-CLOCKWISE']
+            action=self.environment.actions['COUNTER_CLOCKWISE']
         )
 
         self.assertEqual(1, next_state)
@@ -113,7 +113,7 @@ class TestNonRecurrentRings(TestEnvironment):
 
         # State 2
         next_state, reward, is_final, info = self.environment.step(
-            action=self.environment.actions['COUNTER-CLOCKWISE']
+            action=self.environment.actions['COUNTER_CLOCKWISE']
         )
 
         self.assertEqual(2, next_state)
@@ -121,7 +121,7 @@ class TestNonRecurrentRings(TestEnvironment):
 
         # State 3
         next_state, reward, is_final, info = self.environment.step(
-            action=self.environment.actions['COUNTER-CLOCKWISE']
+            action=self.environment.actions['COUNTER_CLOCKWISE']
         )
 
         self.assertEqual(3, next_state)
@@ -129,7 +129,7 @@ class TestNonRecurrentRings(TestEnvironment):
 
         # State 4
         next_state, reward, is_final, info = self.environment.step(
-            action=self.environment.actions['COUNTER-CLOCKWISE']
+            action=self.environment.actions['COUNTER_CLOCKWISE']
         )
 
         self.assertEqual(0, next_state)
@@ -137,7 +137,7 @@ class TestNonRecurrentRings(TestEnvironment):
 
         # State 1
         _ = self.environment.step(
-            action=self.environment.actions['COUNTER-CLOCKWISE']
+            action=self.environment.actions['COUNTER_CLOCKWISE']
         )
 
         next_state, reward, is_final, info = self.environment.step(
@@ -193,7 +193,7 @@ class TestNonRecurrentRings(TestEnvironment):
         )
 
         next_state, reward, is_final, info = self.environment.step(
-            action=self.environment.actions['COUNTER-CLOCKWISE']
+            action=self.environment.actions['COUNTER_CLOCKWISE']
         )
 
         self.assertEqual(7, next_state)

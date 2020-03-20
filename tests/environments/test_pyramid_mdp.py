@@ -181,7 +181,7 @@ class TestPyramidMDP(TestEnvMesh):
         for _ in range(4):
             next_state, reward, is_final, _ = self.environment.step(action=self.environment.actions['DOWN'])
 
-        self.assertEqual((1, 0), next_state)
+        self.assertEqual((0, 2), next_state)
         self.assertEqual([-1, -1], reward)
         self.assertFalse(is_final)
 
@@ -189,7 +189,7 @@ class TestPyramidMDP(TestEnvMesh):
             next_state, reward, is_final, _ = self.environment.step(action=self.environment.actions['RIGHT'])
 
         # Remember that initial position is (0, 0)
-        self.assertEqual((1, 0), next_state)
+        self.assertEqual((0, 2), next_state)
         self.assertEqual([-1, -1], reward)
         self.assertFalse(is_final)
 

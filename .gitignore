@@ -159,6 +159,3 @@ fabric.properties
 
 # Ignore dumps directory
 dumps/*
-
-# Ignore drafts directory
-drafts/*

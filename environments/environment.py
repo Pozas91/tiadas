@@ -15,8 +15,7 @@ vector as follows:
 Obstacles is a frozenset of states: {state_1, state_2, ...}
 """
 
-from copy import deepcopy
-from typing import Iterable
+from typing import Union
 
 import gym
 from gym.utils import seeding
@@ -41,7 +40,8 @@ class Environment(gym.Env):
     }
 
     def __init__(self, observation_space: gym.spaces, default_reward: Vector, action_space: gym.spaces = None,
-                 seed: int = None, initial_state: Iterable = None, obstacles: frozenset = None, finals: object = None):
+                 seed: int = None, initial_state: Union[tuple, int] = None, obstacles: frozenset = None,
+                 finals: object = None):
         """
         :param default_reward: Default reward returned by the environment when
                                a reward is not defined.
@@ -97,6 +97,10 @@ class Environment(gym.Env):
 
     @property
     def action_space(self) -> gym.spaces:
+        """
+        Get a dynamic action space with only valid actions.
+        :return:
+        """
         return self._action_space
 
     def step(self, action: int) -> (object, Vector, bool, dict):
@@ -149,29 +153,6 @@ class Environment(gym.Env):
         """
         raise NotImplemented
 
-    def get_dict_model(self) -> dict:
-        """
-        :return: a dictionary with the environments parameters.
-        """
-
-        # Prepare a deepcopy to do not override original properties
-        model = deepcopy(self)
-
-        # Extract properties
-        data = vars(model)
-
-        # Prepare train_data
-        data['default_reward'] = model.default_reward.tolist()
-
-        # Clean Environment Data
-        del data['_action_space']
-        del data['observation_space']
-        del data['np_random']
-        del data['finals']
-        del data['obstacles']
-
-        return data
-
     def is_final(self, state: object = None) -> bool:
         """
         Return True if position given is terminal, False in otherwise.
@@ -212,7 +193,7 @@ class Environment(gym.Env):
 
     def reachable_states(self, state: object, action: int) -> set:
         """
-        Return all reachable states for pair (state, a) given.
+        Return all reachable states for pair (state, action) given.
         :param state:
         :param action:
         :return:
@@ -234,7 +215,7 @@ class Environment(gym.Env):
 
     def transition_reward(self, state: object, action: int, next_state: object) -> Vector:
         """
-        Return reward for reach `next_state` from `position` using `action`.
+        Return reward for reach `next_state` from `state` using `action`.
 
         :param state: initial position
         :param action: action to do

@@ -317,17 +317,6 @@ class TestResourceGathering(TestEnvMesh):
                     else:
                         self.assertEqual([0, 0, 0], reward)
 
-    def test_get_dict_model(self):
-        super().test_get_dict_model()
-
-        model = self.environment.get_dict_model()
-
-        self.assertIsNone(model.get('gold_positions'))
-        self.assertIsNone(model.get('gem_positions'))
-        self.assertIsNone(model.get('enemies_positions'))
-        self.assertIsNone(model.get('home_position'))
-        self.assertIsNone(model.get('checkpoints_states'))
-
     def test_reachable_states(self):
 
         limit_x = (self.environment.observation_space[0][0].n - 1)

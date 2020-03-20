@@ -5,13 +5,12 @@ A modification of AgentPQL that implements more general exploration/exploitation
 Each action selection is assigned a credit (HV,PO,C) according to its contribution of Pareto-optimal policies.
 During exploitation (greedy action selection), each action is selected with a probability proportional to its credit.
 During exploration, each action is selected with a probability inversely proportional to its credit.
-
 """
 
 import numpy as np
 
 import utils.hypervolume as uh
-from agents.agent_pql import AgentPQL
+from . import AgentPQL
 from models import IndexVector, EvaluationMechanism
 
 
@@ -66,23 +65,17 @@ class AgentPQLEXP(AgentPQL):
             accumulation[i] = summation
 
         if summation == 0:
-            # print('Warning: zero credit')
             return self.environment.action_space.sample()
 
         # select action with probability proportional to hv
         num = self.generator.uniform(low=0, high=summation)
 
-        # print('--AgentPQLEXP-_best_action----extra-accumulation-num-accion------')
-        # print(extra)
-        # print(accumulation)
-        # print(num)
-
         for i in range(action_space_n):
             if num <= accumulation[i]:
-                # print(extra[i][0])
                 return info[i][0]
 
-        print('Warning: agent_pql_exp._best_action: seleccionando acción de emergencia')
+        print('Warning: agent_pql_exp._best_action: Selecting emergency action')
+
         return info[action_space_n - 1][0]
 
     def _non_greedy_action(self, state: object = None, extra: object = None) -> int:
@@ -107,7 +100,6 @@ class AgentPQLEXP(AgentPQL):
             accumulation[i] = summation
 
         if summation == 0:
-            # print('Warning: zero credit')
             return self.environment.action_space.sample()
 
         # select action with probability proportional to hv
@@ -115,10 +107,9 @@ class AgentPQLEXP(AgentPQL):
 
         for i in range(action_space_n):
             if num <= accumulation[i]:
-                # print(extra[i][0])
                 return info[i][0]
 
-        print('Warning: agent_pql_exp._non_greedy_action: seleccionando acción de emergencia')
+        print('Warning: agent_pql_exp._non_greedy_action: Selecting emergency action')
         return info[action_space_n - 1][0]
 
     def calculate_hypervolume(self):
@@ -147,7 +138,6 @@ class AgentPQLEXP(AgentPQL):
 
             summation += hv
 
-        # return (max-hv, list of tuples, summation-hv).
         return maximum, result, summation
 
     def calculate_cardinality(self):

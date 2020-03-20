@@ -17,9 +17,9 @@ class SpaceExplorationAcyclic(SpaceExploration):
 
     def __init__(self, initial_state: tuple = (0, 0), default_reward: tuple = (0, -1), seed: int = 0):
         """
-        :param initial_state:
+        :param initial_state: Initial state where start the agent.
         :param default_reward: (mission_success, radiation)
-        :param seed:
+        :param seed: Seed used for np.random.RandomState method.
         """
 
         action_space = Bag([])
@@ -46,7 +46,12 @@ class SpaceExplorationAcyclic(SpaceExploration):
         self.radiations = self.radiations.union({(11, i) for i in range(5)})
 
     def next_position(self, action: int, position: tuple) -> (tuple, bool):
-
+        """
+        Given an action and a position, return the next position reached.
+        :param action:
+        :param position:
+        :return:
+        """
         # Get my position
         x, y = position
 

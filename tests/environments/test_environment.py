@@ -52,7 +52,6 @@ class TestEnvironment(unittest.TestCase):
         self.assertTrue(hasattr(self.environment, 'reset'))
         self.assertTrue(hasattr(self.environment, 'render'))
         self.assertTrue(hasattr(self.environment, 'next_state'))
-        self.assertTrue(hasattr(self.environment, 'get_dict_model'))
         self.assertTrue(hasattr(self.environment, 'is_final'))
 
         self.assertIsInstance(self.environment.observation_space, gym.spaces.Space)
@@ -108,18 +107,6 @@ class TestEnvironment(unittest.TestCase):
 
         # Asserts
         self.assertEqual(self.environment.initial_state, self.environment.current_state)
-
-    def test_get_dict_model(self):
-        """"
-        Testing get_dict_model method
-        """
-
-        model = self.environment.get_dict_model()
-
-        self.assertEqual(self.environment.initial_seed, model.get('initial_seed'))
-        self.assertEqual(self.environment.initial_state, model.get('initial_state'))
-        self.assertEqual(self.environment.current_state, model.get('current_state'))
-        self.assertEqual(self.environment.default_reward, model.get('default_reward'))
 
     def test_states(self):
         """

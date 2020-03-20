@@ -1,6 +1,10 @@
+"""
+This file was used for evaluate policies from Resource Gathering Episodic environment manually.
+"""
+
 from agents.agent_bn import AgentBN
 from environments import ResourceGathering
-from policies import rg_policies
+from policies import rge_policies
 
 
 def main():
@@ -8,7 +12,7 @@ def main():
     agent: AgentBN = AgentBN(environment=ResourceGathering(), gamma=0.9)
 
     # Policies
-    policies = rg_policies.copy()
+    policies = rge_policies.copy()
 
     # Simulation
     simulation = dict()
@@ -29,5 +33,4 @@ def main():
 
 
 if __name__ == '__main__':
-    # main()
     main()

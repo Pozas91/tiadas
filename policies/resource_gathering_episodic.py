@@ -1,3 +1,11 @@
+"""
+In this file we define manually of policies that appears in:
+
+Empirical Evaluation methods for multi-objective reinforcement learning algorithms
+    (Vamplew, Dazeley, Berry, Issabekov and Dekker) 2011
+
+article for evaluate then.
+"""
 from environments import ResourceGatheringEpisodic
 
 nothing = (0, 0)

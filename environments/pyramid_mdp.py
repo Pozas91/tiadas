@@ -34,10 +34,12 @@ class PyramidMDP(EnvMesh):
     def __init__(self, initial_state: tuple = (0, 0), default_reward: tuple = (-1, -1), seed: int = 0,
                  n_transition: float = 0.95, diagonals: int = 9, action_space: gym.spaces = None):
         """
-        :param initial_state:
-        :param default_reward:
-        :param seed:
+        :param initial_state: Initial state where start the agent.
+        :param default_reward: (objective 1, objective 2)
+        :param seed: Seed used for np.random.RandomState method.
         :param n_transition: if is 1, always do the action indicated. (Original is about 0.6)
+        :param diagonals: Number of diagonals to be used to build this environment (allows experimenting with an
+                        identical environment, but considering only the first k diagonals) (By default 9 - all).
         """
 
         # the original full-size environment.
@@ -111,18 +113,41 @@ class PyramidMDP(EnvMesh):
         return action
 
     def transition_reward(self, state: tuple, action: int, next_state: tuple) -> Vector:
+        """
+        Return reward for reach `next_state` from `position` using `action`.
+
+        :param state: initial position
+        :param action: action to do
+        :param next_state: next position reached
+        :return:
+        """
         # Default reward
         return self.finals.get(next_state, self.default_reward.copy())
 
     def transition_probability(self, state: tuple, action: int, next_state: tuple) -> float:
+        """
+        Return probability to reach `next_state` from `position` using `action`.
+        :param state: initial position
+        :param action: action to do
+        :param next_state: next position reached
+        :return:
+        """
         # Probability
         desired_probability = self.n_transition
 
         desired_transition = (
-            (action == self.actions['UP'] and ue.is_on_up_or_same_position(state=state, next_state=next_state)) or
-            (action == self.actions['RIGHT'] and ue.is_on_right_or_same_position(state=state, next_state=next_state)) or
-            (action == self.actions['DOWN'] and ue.is_on_down_or_same_position(state=state, next_state=next_state)) or
-            (action == self.actions['LEFT'] and ue.is_on_left_or_same_position(state=state, next_state=next_state))
+                (action == self.actions['UP'] and ue.is_on_up_or_same_position(
+                    state=state, next_state=next_state
+                )) or
+                (action == self.actions['RIGHT'] and ue.is_on_right_or_same_position(
+                    state=state, next_state=next_state
+                )) or
+                (action == self.actions['DOWN'] and ue.is_on_down_or_same_position(
+                    state=state, next_state=next_state
+                )) or
+                (action == self.actions['LEFT'] and ue.is_on_left_or_same_position(
+                    state=state, next_state=next_state
+                ))
         )
 
         if not desired_transition:
@@ -131,6 +156,12 @@ class PyramidMDP(EnvMesh):
         return desired_probability
 
     def reachable_states(self, state: tuple, action: int) -> set:
+        """
+        Return all reachable states for pair (state, a) given.
+        :param state:
+        :param action:
+        :return:
+        """
         # Set current state with state indicated
         self.current_state = state
 
