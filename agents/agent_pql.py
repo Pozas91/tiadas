@@ -10,6 +10,7 @@ Evaluation mechanisms available
     - HV-PQL: Based on hypervolume
     - C-PQL: Based on cardinality of the set of Pareto-optimal vectors
     - PO-PQL: Based on existence of at least one Pareto-optimal vector
+    - CHV-PQL: Combination of HV-PQL and C-PQL.
     
     
 Sample call: 
@@ -51,14 +52,6 @@ Sample call:
 
         # Optional you can pass a filename
         agent = AgentPQL.load(filename='my_agent')
-    
-
-NOTE: Each environment defines its default reward, either integer or float.
-The agent uses a default value of zero for various operations. In order to get
-this zero vector of the same length and type of the default reward, we
-multiply the default reward by zero using our defined operation * for vectors.
-This seems faster than using either deepcopy (≈ 247% faster) or copy 
-(≈ 118% faster).
 """
 import math
 import time
@@ -67,7 +60,6 @@ from copy import deepcopy
 import numpy as np
 
 import utils.hypervolume as uh
-import utils.miscellaneous as um
 from environments import Environment
 from models import IndexVector, GraphType, EvaluationMechanism, Vector
 from .agent_rl import AgentRL
@@ -415,7 +407,7 @@ class AgentPQL(AgentRL):
                 for q in nd:
 
                     # Calc vector to follow
-                    v = (q * self.gamma) + r
+                    v: Vector = (q * self.gamma) + r
 
                     # if are equals with relaxed equality operator
                     if v.all_close(target):
@@ -434,7 +426,7 @@ class AgentPQL(AgentRL):
                         break
 
                     # Calc manhattan distance
-                    manhattan_distance = um.manhattan_distance(a=v, b=target)
+                    manhattan_distance = v.manhattan_distance(v2=target)
 
                     # Check if current manhattan distance is lower than min manhattan distance
                     if manhattan_distance < min_manhattan_distance:

@@ -8,6 +8,7 @@ from decimal import Decimal as D
 
 import numpy as np
 from scipy.spatial import ConvexHull
+from scipy.spatial.distance import cityblock
 from scipy.spatial.qhull import QhullError
 
 import utils.models as um
@@ -274,6 +275,29 @@ class Vector:
         """
         return np.equal(self.components, v2.components)
 
+    def manhattan_distance(self, v2: 'Vector') -> float:
+        """
+        Manhattan distance between two vectors
+        :param v2:
+        :return:
+        """
+        return cityblock(u=self.components, v=v2.components)
+
+    def euclidean_distance(self, v2: 'Vector') -> float:
+        """
+        Euclidean distance between two vectors
+        :param v2:
+        :return:
+        """
+        return np.linalg.norm(self.components - v2.components)
+
+    def distance_to_origin(self) -> float:
+        """
+        Distance between a vector and origin vector
+        :return:
+        """
+        return self.euclidean_distance(v2=self.zero_vector)
+
     def dominance(self, v2) -> Dominance:
         """
         Check dominance between two Vector objects. Float values are allowed
@@ -323,6 +347,20 @@ class Vector:
             return Dominance.is_dominated
 
     @staticmethod
+    def order_vectors_by_origin_nearest(vectors: list) -> list:
+        """
+        Order given vectors by nearest to origin
+        :param vectors:
+        :return:
+        """
+
+        # Get all vectors with its distance to origin.
+        distances = {tuple(vector): Vector.distance_to_origin(vector) for vector in vectors}
+
+        # Sort dictionary by value from lower to higher.
+        return sorted(distances, key=distances.get, reverse=False)
+
+    @staticmethod
     def convex_hull(vectors: set) -> list:
         """
         :param vectors: |vectors| >= 3
@@ -339,7 +377,7 @@ class Vector:
                 hull = ConvexHull(vectors, incremental=False)
                 vectors = list(operator.itemgetter(*hull.vertices)(vectors))
             except QhullError as e:
-                # Do nothing
+                # Expected error
                 pass
 
         return vectors

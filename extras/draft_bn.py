@@ -47,7 +47,7 @@ def dumps(data: dict, environment: Environment, **kwargs):
         f.write(um.structures_to_yaml(data=data))
 
 
-def draft_bn():
+def main():
     # Define gamma
     gamma = .9
     # Each 30 sweeps make it a dump
@@ -116,4 +116,4 @@ def draft_bn():
 
 
 if __name__ == '__main__':
-    draft_bn()
+    main()

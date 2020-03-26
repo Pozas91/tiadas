@@ -9,7 +9,6 @@ class EvaluationMechanism(Enum):
     PO = 'PO'
     HV = 'HV'
     CHV = 'CHV'
-    PARETO = 'Pareto'
     SCALARIZED = 'Linear Scalarized'
 
     def __str__(self):
@@ -39,8 +38,6 @@ class EvaluationMechanism(Enum):
             result = EvaluationMechanism.PO
         elif evaluation_mechanism == str(EvaluationMechanism.HV.value):
             result = EvaluationMechanism.HV
-        elif evaluation_mechanism == str(EvaluationMechanism.PARETO.value):
-            result = EvaluationMechanism.PARETO
         elif evaluation_mechanism == str(EvaluationMechanism.SCALARIZED.value):
             result = EvaluationMechanism.SCALARIZED
         else:

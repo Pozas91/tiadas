@@ -3,7 +3,7 @@ Variant of Mo Puddle World for Acyclic agents.
 
 HV REFERENCE: (-50, -150)
 """
-from scipy.spatial import distance
+from scipy.spatial.distance import cityblock
 
 from environments import MoPuddleWorld
 from models import Vector
@@ -131,7 +131,7 @@ class MoPuddleWorldAcyclic(MoPuddleWorld):
         # if the current position is in an puddle
         if next_state in self.puddles:
             # Min distance found!
-            min_distance = min(distance.cityblock(next_state, state) for state in self.free_spaces)
+            min_distance = min(cityblock(next_state, state) for state in self.free_spaces)
 
             # Set penalization per distance
             reward[1] = -min_distance
@@ -150,7 +150,7 @@ class MoPuddleWorldAcyclic(MoPuddleWorld):
         free_spaces = set(filter(lambda x: x[0] >= state[0] and x[1] <= state[1], self.free_spaces))
 
         # Min distance found!
-        min_distance = min(distance.cityblock(x, state) for x in free_spaces)
+        min_distance = min(cityblock(x, state) for x in free_spaces)
 
         # Set penalization per distance
         return -min_distance

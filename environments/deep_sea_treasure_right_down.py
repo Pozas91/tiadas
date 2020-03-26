@@ -16,12 +16,9 @@ All other elements of the environment behave are as in DeepSeaTreasure.
 
 HV REFERENCE: (-25, 0)
 """
-from colorama import Fore, init
 
 from spaces import Bag
 from .deep_sea_treasure import DeepSeaTreasure
-
-init(autoreset=True)
 
 
 class DeepSeaTreasureRightDown(DeepSeaTreasure):

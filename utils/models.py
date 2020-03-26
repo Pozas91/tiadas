@@ -25,7 +25,7 @@ def lazy_property(fn) -> Any:
     return _lazy_property
 
 
-def binary_dump(path: Path, model: Any) -> None:
+def binary_save(path: Path, model: Any) -> None:
     """
     Dump model given in path given
     :param path:
@@ -39,7 +39,7 @@ def binary_dump(path: Path, model: Any) -> None:
         pickle.dump(model, f)
 
 
-def load(path: Path) -> Any:
+def binary_load(path: Path) -> Any:
     """
     Load a model from path given
     :param path:

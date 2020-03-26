@@ -4,7 +4,6 @@ Example of train, recover policies, evaluating policies, and evaluating predefin
 from agents.agent_bn import AgentBN
 from environments import ResourceGatheringEpisodic
 from models import GraphType, Vector
-from policies import rge_policies
 
 
 def get_trained_agent() -> AgentBN:
@@ -18,38 +17,9 @@ def get_trained_agent() -> AgentBN:
     Vector.set_decimal_precision(decimal_precision=0.01)
 
     # Train agent
-    agent.train(graph_type=GraphType.SWEEP, limit=30)
+    agent.train(graph_type=GraphType.SWEEP, limit=10)
 
     return agent
-
-
-def evaluate_predefined_policies():
-    """
-    Evaluate manually predefined policies
-    :return:
-    """
-    # Build agent
-    agent: AgentBN = AgentBN(environment=ResourceGatheringEpisodic(), gamma=0.9)
-
-    # Policies
-    policies = rge_policies.copy()
-
-    # Simulation
-    simulation = dict()
-
-    for n, policy in enumerate(policies):
-        # # of policy
-        n += 1
-
-        # Evaluate policy
-        policy_evaluated = agent.evaluate_policy(policy=policy, tolerance=0.000001)
-
-        # Update simulation
-        simulation.update({
-            n: policy_evaluated
-        })
-
-    print(simulation)
 
 
 def main():
@@ -104,4 +74,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-    # evaluate_predefined_policies()

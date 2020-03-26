@@ -56,7 +56,6 @@ EXAMPLE OF USE OF AgentMOSP:
 import numpy as np
 
 import utils.hypervolume as uh
-import utils.miscellaneous as um
 from environments import Environment
 from models import Vector, VectorDecimal, GraphType
 from .agent_q import AgentQ
@@ -193,7 +192,7 @@ class AgentMOSP(AgentQ):
 
             try:
                 # Order points nearest to the center using euclidean distance.
-                a, b = tuple(um.order_vectors_by_origin_nearest([a, b]))
+                a, b = tuple(Vector.order_vectors_by_origin_nearest([a, b]))
             except ValueError:
                 print('Error to unpack {} and {}'.format(a, b))
                 continue

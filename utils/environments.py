@@ -3,97 +3,97 @@ In this file we define methods to help us with the movements in the environments
 """
 
 
-def is_on_right_or_same_position(state: tuple, next_state: tuple):
+def is_on_right_or_same_position(position: tuple, next_position: tuple):
     """
-    Check if the state is on right or the same position that next state
-    :param state:
-    :param next_state:
+    Check if the position is on right or the same position that next position
+    :param position:
+    :param next_position:
     :return:
     """
-    return is_on_right(state=state, next_state=next_state) or state == next_state
+    return is_on_right(position=position, next_position=next_position) or position == next_position
 
 
-def is_on_right(state: tuple, next_state: tuple):
+def is_on_right(position: tuple, next_position: tuple):
     """
-    Check if the state is on right that next state
-    :param state:
-    :param next_state:
+    Check if the position is on right that next position
+    :param position:
+    :param next_position:
     :return:
     """
 
-    # Decompose state
-    x, y = state
+    # Decompose position
+    x, y = position
 
-    return (x + 1, y) == next_state
+    return (x + 1, y) == next_position
 
 
-def is_on_down_or_same_position(state: tuple, next_state: tuple):
+def is_on_down_or_same_position(position: tuple, next_position: tuple):
     """
-    Check if the state is on down or the same position that next state
-    :param state:
-    :param next_state:
+    Check if the position is on down or the same position that next position
+    :param position:
+    :param next_position:
     :return:
     """
-    return is_on_down(state=state, next_state=next_state) or state == next_state
+    return is_on_down(position=position, next_position=next_position) or position == next_position
 
 
-def is_on_down(state: tuple, next_state: tuple):
+def is_on_down(position: tuple, next_position: tuple):
     """
-    Check if the state is on down that next state
-    :param state:
-    :param next_state:
+    Check if the position is on down that next position
+    :param position:
+    :param next_position:
     :return:
     """
-    # Decompose state
-    x, y = state
+    # Decompose position
+    x, y = position
 
-    return (x, y + 1) == next_state
+    return (x, y + 1) == next_position
 
 
-def is_on_left_or_same_position(state: tuple, next_state: tuple):
+def is_on_left_or_same_position(position: tuple, next_position: tuple):
     """
-    Check if the state is on left or the same position that next state
-    :param state:
-    :param next_state:
+    Check if the position is on left or the same position that next position
+    :param position:
+    :param next_position:
     :return:
     """
-    return is_on_left(state=state, next_state=next_state) or state == next_state
+    return is_on_left(position=position, next_position=next_position) or position == next_position
 
 
-def is_on_left(state: tuple, next_state: tuple):
+def is_on_left(position: tuple, next_position: tuple):
     """
-    Check if the state is on left that next state
-    :param state:
-    :param next_state:
+    Check if the position is on left that next position
+    :param position:
+    :param next_position:
     :return:
     """
-    # Decompose state
-    x, y = state
+    # Decompose position
+    x, y = position
 
-    return (x - 1, y) == next_state
+    return (x - 1, y) == next_position
 
 
-def is_on_up_or_same_position(state: tuple, next_state: tuple):
+def is_on_up_or_same_position(position: tuple, next_position: tuple):
     """
-    Check if the state is on up or the same position that next state
-    :param state:
-    :param next_state:
+    Check if the position is on up or the same position that next position
+    :param position:
+    :param next_position:
     :return:
     """
-    return is_on_up(state=state, next_state=next_state) or state == next_state
+    return is_on_up(position=position, next_position=next_position) or position == next_position
 
 
-def is_on_up(state: tuple, next_state: tuple):
+def is_on_up(position: tuple, next_position: tuple):
     """
-    Check if the state is on up that next state
-    :param state:
-    :param next_state:
+    Check if the position is on up that next position
+    :param position:
+    :param next_position:
     :return:
     """
-    # Decompose state
-    x, y = state
+    # Decompose position
+    x, y = position
 
-    return (x, y - 1) == next_state
+    return (x, y - 1) == next_position
 
 
 def move_up(y: int, limit: int) -> int:

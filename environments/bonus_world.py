@@ -14,7 +14,7 @@ bonus.
 
 FINAL STATE: To reach a final position.
 
-REF: Vamplew et al (2017b)"""
+REF: Softmax exploration strategies for multi-objective reinforcement learning. Vamplew et al (2017b)"""
 from itertools import product
 
 import gym

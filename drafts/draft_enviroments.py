@@ -4,7 +4,6 @@ from pathlib import Path
 import utils.miscellaneous as um
 from agents import AgentW
 from environments import Environment, ResourceGathering, ResourceGatheringEpisodic
-from environments.resource_gathering_simplified import ResourceGatheringSimplified
 from models import GraphType, Vector
 
 

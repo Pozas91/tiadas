@@ -214,7 +214,7 @@ class TestRusselAndNorvig(TestEnvMesh):
 
                     if ue.is_on_up_or_same_position(state=state, next_state=next_state):
                         self.assertEqual(self.environment.transitions[(coefficient + 0) % n_actions], probability)
-                    elif ue.is_on_right_or_same_position(state=state, next_state=next_state):
+                    elif ue.is_on_right_or_same_position(state=state, next_position=next_state):
                         self.assertEqual(self.environment.transitions[(coefficient + 1) % n_actions], probability)
                     elif ue.is_on_down_or_same_position(state=state, next_state=next_state):
                         self.assertEqual(self.environment.transitions[(coefficient + 2) % n_actions], probability)

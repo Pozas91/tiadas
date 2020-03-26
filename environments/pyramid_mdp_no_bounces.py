@@ -55,10 +55,10 @@ class PyramidMDPNoBounces(PyramidMDP):
             # We can go to left
             possible_actions.append(self.actions['LEFT'])
 
-        # Can we go to left?
+        # Can we go to down?
         y_down = y + 1
         if self.observation_space.contains((x, y_down)):
-            # We can go to left
+            # We can go to down
             possible_actions.append(self.actions['DOWN'])
 
         # Setting to dynamic_space

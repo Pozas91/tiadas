@@ -9,18 +9,14 @@ from pathlib import Path
 import gym
 import matplotlib.pyplot as plt
 import numpy as np
-from colorama import Fore, init
 
-import utils.miscellaneous as um
 from agents import Agent, AgentPQL, AgentMOSP, AgentPQLEXP, AgentPQLEXP3, AgentW
 from configurations import dumps_path
 from environments import Environment
 from models import AgentType, GraphType, Vector, EvaluationMechanism
 from .hypervolume import calc_hypervolume
-from .miscellaneous import str_to_snake_case, order_vectors_by_origin_nearest
+from .miscellaneous import str_to_snake_case, structures_to_yaml
 from .numbers import are_equal_two_decimal_numbers
-
-init(autoreset=True)
 
 
 def write_config_file(timestamp: int, number_of_agents: int, env_name_snake: str, **kwargs):
@@ -88,7 +84,7 @@ def dumps_train_data(timestamp: int, seed: int, env_name_snake: str, agent_type:
     data_file.parent.mkdir(parents=True, exist_ok=True)
 
     with data_file.open(mode='w+', encoding='UTF-8') as file:
-        file.write(um.structures_to_yaml(data=train_data))
+        file.write(structures_to_yaml(data=train_data))
 
 
 def initialize_graph_data(graph_types: set, agents_configuration: dict) -> (dict, dict):
@@ -282,7 +278,7 @@ def test_agents(environment: Environment, hv_reference: Vector, variable: str, a
     graph_types = set(graph_configuration.keys())
 
     if len(graph_types) > 2:
-        print(Fore.YELLOW + "Isn't recommended more than 2 graphs")
+        print("Isn't recommended more than 2 graphs")
 
     # Parameters
     if states_to_observe is None:
@@ -291,7 +287,7 @@ def test_agents(environment: Environment, hv_reference: Vector, variable: str, a
     complex_states = isinstance(environment.observation_space[0], gym.spaces.Tuple)
 
     if not complex_states and GraphType.DATA_PER_STATE in graph_types:
-        print(Fore.YELLOW + "This environment has complex states, so DATA_PER_STATE graph is disabled.")
+        print("This environment has complex states, so DATA_PER_STATE graph is disabled.")
         graph_configuration.pop(GraphType.DATA_PER_STATE)
 
     # Build environment
@@ -382,7 +378,7 @@ def test_agents(environment: Environment, hv_reference: Vector, variable: str, a
 
                     # Order vectors by origin Vec(0) nearest
                     train_data.update({
-                        'v_s_0': order_vectors_by_origin_nearest(vectors=v_s_0),
+                        'v_s_0': Vector.order_vectors_by_origin_nearest(vectors=v_s_0),
                         # 'q': agent.q,
                         # 'v': agent.v
                     })

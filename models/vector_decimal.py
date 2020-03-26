@@ -68,6 +68,16 @@ class VectorDecimal(Vector):
             a < b or un.are_equal_two_decimal_numbers(a=a, b=b) for a, b in zip(self.components, other.components)
         )
 
+    def __round__(self, n=None):
+        """
+        Return a vector with components rounded
+        :param n:
+        :return:
+        """
+        return self.__class__([
+            un.round_with_precision(component, Vector.decimal_precision) for component in self.components
+        ])
+
     def all_close(self, v2) -> bool:
 
         return all(

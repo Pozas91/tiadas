@@ -16,7 +16,7 @@ row (y-axis), and a for the column (x-axis).
 
 Episodes end whenever a final position (with a treasure) is reached.
 
-Refernce: 
+Reference:
     Empirical Evaluation methods for multi-objective reinforcement learning algorithms
     (Vamplew, Dazeley, Berry, Issabekov and Dekker) 2011
 

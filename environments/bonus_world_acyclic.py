@@ -5,13 +5,10 @@ Variant of BonusWorld environment to acyclic agents. If agent there on pit posit
 
 HV REFERENCE: (-50, -50, -50)
 """
-from colorama import init
 
 from environments import BonusWorld
 from models import Vector
 from spaces import Bag
-
-init(autoreset=True)
 
 
 class BonusWorldAcyclic(BonusWorld):

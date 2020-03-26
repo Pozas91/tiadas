@@ -5,7 +5,6 @@ from enum import Enum
 
 
 class AgentType(Enum):
-    A1 = 'a1'
     B = 'b'
     PQL = 'pql'
     SCALARIZED = 'scalarized'
@@ -35,10 +34,7 @@ class AgentType(Enum):
         :param agent_type:
         :return:
         """
-
-        if agent_type == str(AgentType.A1.value):
-            result = AgentType.A1
-        elif agent_type == str(AgentType.B.value):
+        if agent_type == str(AgentType.B.value):
             result = AgentType.B
         elif agent_type == str(AgentType.PQL.value):
             result = AgentType.PQL

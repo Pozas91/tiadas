@@ -1,10 +1,6 @@
-from colorama import init
-
 import utils.graphs as ug
-from environments import DeepSeaTreasureRightDownStochastic, PyramidMDP
+from environments import PyramidMDP
 from models import AgentType, GraphType, EvaluationMechanism
-
-init(autoreset=True)
 
 
 def main():

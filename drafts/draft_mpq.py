@@ -135,7 +135,7 @@ def train_from_file():
     # Models Path
     models_path = 'mpq/models/dstrds_1579869395_1.0_4.bin'
 
-    agent: AgentMPQ = u_models.load(path=dumps_path.joinpath(
+    agent: AgentMPQ = u_models.binary_load(path=dumps_path.joinpath(
         models_path
     ))
 
@@ -169,5 +169,5 @@ def train_from_file():
 
 
 if __name__ == '__main__':
-    train_from_zero()
-    # train_from_file()
+    # train_from_zero()
+    train_from_file()

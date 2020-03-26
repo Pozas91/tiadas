@@ -11,7 +11,7 @@ FINAL STATE: To reach (19, 0) position.
 REF: Empirical evaluation methods for multi-objective reinforcement learning algorithms (2011).
 """
 import gym
-from scipy.spatial import distance
+from scipy.spatial.distance import cityblock
 
 from models import VectorDecimal, Vector
 from .env_mesh import EnvMesh
@@ -88,7 +88,7 @@ class MoPuddleWorld(EnvMesh):
         :return:
         """
         # Min distance found!
-        min_distance = min(distance.cityblock(self.current_state, state) for state in self.free_spaces)
+        min_distance = min(cityblock(self.current_state, state) for state in self.free_spaces)
 
         # Set penalization per distance
         return -min_distance
@@ -141,7 +141,7 @@ class MoPuddleWorld(EnvMesh):
         # if the current position is in an puddle
         if next_state in self.puddles:
             # Min distance found!
-            min_distance = min(distance.cityblock(next_state, state) for state in self.free_spaces)
+            min_distance = min(cityblock(next_state, state) for state in self.free_spaces)
 
             # Set penalization per distance
             reward[1] = -min_distance

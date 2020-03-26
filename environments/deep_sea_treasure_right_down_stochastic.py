@@ -123,7 +123,7 @@ class DeepSeaTreasureRightDownStochastic(DeepSeaTreasureRightDown):
         if action == self.actions['DOWN_PROB']:
 
             # Next position is on right
-            if ue.is_on_right_or_same_position(state=state, next_state=next_state):
+            if ue.is_on_right_or_same_position(state=state, next_position=next_state):
                 probability = 1. - self.p_stochastic
             # Next position is on down
             elif ue.is_on_down_or_same_position(state=state, next_state=next_state):
@@ -132,7 +132,7 @@ class DeepSeaTreasureRightDownStochastic(DeepSeaTreasureRightDown):
         elif action == self.actions['RIGHT_PROB']:
 
             # Next position is on right
-            if ue.is_on_right_or_same_position(state=state, next_state=next_state):
+            if ue.is_on_right_or_same_position(state=state, next_position=next_state):
                 probability = self.p_stochastic
             # Next position is on down
             elif ue.is_on_down_or_same_position(state=state, next_state=next_state):

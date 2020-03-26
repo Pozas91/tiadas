@@ -140,7 +140,7 @@ def train_from_file():
     models_path = 'mpq/models/dstrds_1579869395_1.0_4.bin'
     config_path = 'mpq/train_data/dstrds_1579869395_1.0_4.yml'
 
-    agent: AgentMPQ = u_models.load(path=dumps_path.joinpath(
+    agent: AgentMPQ = u_models.binary_load(path=dumps_path.joinpath(
         models_path
     ))
 

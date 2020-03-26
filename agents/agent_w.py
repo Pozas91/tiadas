@@ -20,7 +20,6 @@ from copy import deepcopy
 from typing import List
 
 import utils.hypervolume as uh
-import utils.miscellaneous as um
 import utils.numbers as un
 from environments import Environment
 from models import Vector, GraphType
@@ -459,7 +458,7 @@ class AgentW(Agent):
                         summation += (r + previous_value) * p
 
                     # Nearest
-                    euclidean_distance = um.euclidean_distance(objective_vector, summation)
+                    euclidean_distance = objective_vector.euclidean_distance(summation)
 
                     # Check new information
                     if euclidean_distance <= lowest_distance:

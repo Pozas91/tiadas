@@ -201,7 +201,7 @@ class Agent:
         """
 
         if mode == 'binary':
-            agent = u_models.load(path=dumps_path.joinpath(filename))
+            agent = u_models.binary_load(path=dumps_path.joinpath(filename))
         else:
             raise ValueError('Indicate mode don\'t recognize.')
 
@@ -227,13 +227,13 @@ class Agent:
 
         if mode == 'binary':
             # Dumps model in binary mode
-            u_models.binary_dump(path=file_path, model=self)
+            u_models.binary_save(path=file_path, model=self)
         else:
             raise ValueError('Indicate mode don\'t recognize.')
 
     def recover_policy(self, initial_state: tuple, objective_vector: Vector, **kwargs) -> List[tuple]:
         """
-        Simulate a walking of the agent, and return a dictionary with each state related with an action.
+        Simulate a walking of the agent, and return a list of tuples with each state related with an action.
         :return:
         """
         raise NotImplemented
